@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stock Trader Web | Reviews</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./public-theme.css" />
+  </head>
+  <body data-page="reviews" class="public-page">
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="./index.html">
+          <span class="brand-mark">ST</span>
+          <span><strong>Stock Trader Web</strong><small>Precision, trust, and portfolio clarity</small></span>
+        </a>
+        <nav class="site-nav">
+          <a href="./index.html">Home</a>
+          <a href="./about.html">About</a>
+          <a href="./products.html">Products</a>
+          <a href="./trust-safety.html">Trust &amp; Safety</a>
+          <a href="./legal.html">Legal</a>
+          <a href="./faq.html">FAQ</a>
+          <a class="active" href="./reviews.html">Reviews</a>
+        </nav>
+        <a class="login-link" href="./login.html">Login</a>
+      </header>
+
+      <main class="public-main">
+        <section class="public-hero-card">
+          <div class="public-hero-copy">
+            <p class="eyebrow">Reviews</p>
+            <div class="public-mini-ticker">
+              <span>Premium UI <small>calm and modern</small></span>
+              <span>Operational value <small>useful after login</small></span>
+              <span>Trust signal <small>supports conversion</small></span>
+            </div>
+            <h1>Feedback that makes the platform feel credible, lived-in, and ready for real conversations.</h1>
+            <p class="public-lead">
+              Reviews help the public site feel complete and help explain what people value most about the product:
+              clarity, structure, and confidence during portfolio review.
+            </p>
+          </div>
+          <div class="public-hero-panel">
+            <article class="public-dashboard-card">
+              <div class="public-card-head">
+                <p class="eyebrow">Why Reviews Matter</p>
+                <strong>They turn a strong interface into a more believable product story.</strong>
+                <small>For financial websites, trust signals matter as much as the visuals themselves.</small>
+              </div>
+              <div class="public-dashboard-tiles">
+                <article class="public-mini-card"><strong>Premium UI</strong><p>Looks and feels like a fintech product instead of a template site.</p></article>
+                <article class="public-mini-card"><strong>Operational Value</strong><p>Reinforces that the platform is useful after login, not only before it.</p></article>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="public-section public-review-layout">
+          <div id="reviewsList"></div>
+          <article class="public-review-form">
+            <p class="eyebrow">Add Review</p>
+            <h2>Share how the product feels to you.</h2>
+            <p>Your existing review logic still works here, now in the new public-page format.</p>
+            <form id="reviewForm" class="review-form">
+              <label><span>Name</span><input type="text" name="name" placeholder="Your name" required /></label>
+              <label><span>Role</span><input type="text" name="role" placeholder="Investor / Analyst / Advisor" required /></label>
+              <label><span>Rating</span><input type="number" name="rating" min="1" max="5" value="5" required /></label>
+              <label><span>Review</span><textarea name="message" rows="5" placeholder="Write your feedback" required></textarea></label>
+              <button class="primary-btn" type="submit">Add Review</button>
+            </form>
+          </article>
+        </section>
+
+        <section class="public-section public-grid-two">
+          <article class="public-side-card">
+            <p class="eyebrow">Review System</p>
+            <strong>Designed to strengthen the public trust layer, not just fill space on the website.</strong>
+            <p>Reviews help visitors see the platform through a practical lens and reinforce that it was built for real use.</p>
+          </article>
+          <article class="public-side-card">
+            <p class="eyebrow">Moderation</p>
+            <strong>Reviews can be managed from the admin side so the trust layer stays intentional.</strong>
+            <p>This keeps the public experience credible and connected to the private operational layer.</p>
+          </article>
+        </section>
+
+        <section class="public-dark-cta">
+          <p class="eyebrow">Trust Signal</p>
+          <h2>Good feedback works best when the experience behind it actually delivers.</h2>
+          <p>The public site creates belief. The logged-in workspaces need to justify it, and reviews help connect the two.</p>
+          <div class="public-cta-row">
+            <a class="primary-btn" href="./login.html">Open Platform</a>
+            <a class="secondary-btn" href="./about.html">About The Product</a>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer public-footer">
+        <div class="public-footer-brand">
+          <div><strong>Stock Trader Web</strong><p>Premium public pages outside login, serious portfolio operations inside the platform.</p></div>
+          <div class="public-footer-meta"><p>Built to make trust, proof, and product quality support each other instead of feeling disconnected.</p></div>
+        </div>
+        <div class="public-footer-links">
+          <a href="./index.html">Home</a>
+          <a href="./about.html">About</a>
+          <a href="./products.html">Products</a>
+          <a href="./trust-safety.html">Trust &amp; Safety</a>
+          <a href="./legal.html">Legal</a>
+          <a href="./faq.html">FAQ</a>
+          <a href="./login.html">Login</a>
+        </div>
+      </footer>
+    </div>
+    <script src="./app-live.js"></script>
+  </body>
+</html>

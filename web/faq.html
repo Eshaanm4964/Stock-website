@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stock Trader Web | FAQ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./public-theme.css" />
+  </head>
+  <body data-page="faq" class="public-page">
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="./index.html">
+          <span class="brand-mark">ST</span>
+          <span><strong>Stock Trader Web</strong><small>Precision, trust, and portfolio clarity</small></span>
+        </a>
+        <nav class="site-nav">
+          <a href="./index.html">Home</a>
+          <a href="./about.html">About</a>
+          <a href="./products.html">Products</a>
+          <a href="./trust-safety.html">Trust &amp; Safety</a>
+          <a href="./legal.html">Legal</a>
+          <a class="active" href="./faq.html">FAQ</a>
+          <a href="./reviews.html">Reviews</a>
+        </nav>
+        <a class="login-link" href="./login.html">Login</a>
+      </header>
+
+      <main class="public-main">
+        <section class="public-hero-card">
+          <div class="public-hero-copy">
+            <p class="eyebrow">Frequently Asked Questions</p>
+            <div class="public-mini-ticker">
+              <span>Website outside login <small>trust and explanation</small></span>
+              <span>Workspace inside login <small>utility and action</small></span>
+              <span>Admin and user roles <small>separate experiences</small></span>
+            </div>
+            <h1>Answers for investors, admins, and anyone evaluating how the platform works.</h1>
+            <p class="public-lead">
+              This section explains the public experience, the login flow, the dashboards, and the operational behavior
+              that makes the product useful after authentication.
+            </p>
+          </div>
+          <div class="public-hero-panel">
+            <article class="public-faq-summary">
+              <p class="eyebrow">Quick Summary</p>
+              <strong>The product is designed as a website outside login and a software workspace inside it.</strong>
+              <p>That two-layer structure is exactly what gives the platform stronger value than a dashboard-only demo.</p>
+              <div class="public-pill-row">
+                <span class="public-pill">Website outside login</span>
+                <span class="public-pill">Workspace after login</span>
+                <span class="public-pill">Admin and user roles</span>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="faq-list">
+          <article class="faq-item"><button class="faq-question" type="button">How does the admin login work?</button><div class="faq-answer"><p>The admin flow uses username, password, phone number, and OTP verification before opening the private admin workspace.</p></div></article>
+          <article class="faq-item"><button class="faq-question" type="button">How does the user login work?</button><div class="faq-answer"><p>Users sign in with a fixed client ID, password, phone number, and OTP before entering their portfolio workspace.</p></div></article>
+          <article class="faq-item"><button class="faq-question" type="button">What can the admin do after login?</button><div class="faq-answer"><p>The admin can review portfolios, inspect holdings, moderate reviews, manage users, control public-site settings, and export client dashboard views.</p></div></article>
+          <article class="faq-item"><button class="faq-question" type="button">What can users do after login?</button><div class="faq-answer"><p>Users can review portfolio performance, see allocation breakdowns, track live holdings, add stocks, remove stocks, and monitor recent activity.</p></div></article>
+          <article class="faq-item"><button class="faq-question" type="button">Are market prices real-time?</button><div class="faq-answer"><p>The platform is structured for live quote integration and quote caching, with fallback handling when live data is unavailable.</p></div></article>
+          <article class="faq-item"><button class="faq-question" type="button">How are reviews handled?</button><div class="faq-answer"><p>The reviews page can display seeded testimonials and submitted reviews, while admins can moderate or remove non-protected entries.</p></div></article>
+        </section>
+
+        <section class="public-section public-grid-two" id="faqHighlightCards">
+          <article class="public-side-card">
+            <p class="eyebrow">Admin Drilldowns</p>
+            <strong>Click a client name to open live holdings and older purchase history.</strong>
+            <p>The admin dashboard includes direct client-level drilldowns so portfolio reviews take fewer clicks.</p>
+          </article>
+          <article class="public-side-card">
+            <p class="eyebrow">Stock Exposure</p>
+            <strong>Click a stock name to identify all clients currently holding that stock.</strong>
+            <p>This makes concentration reviews faster and gives the admin a better owner-level view.</p>
+          </article>
+        </section>
+
+        <section class="public-dark-cta">
+          <p class="eyebrow">Need More Detail?</p>
+          <h2>Read the trust, legal, and review layers together to understand the full product story.</h2>
+          <p>The FAQ answers the practical questions while the surrounding pages explain the product's positioning and boundaries.</p>
+          <div class="public-cta-row">
+            <a class="primary-btn" href="./trust-safety.html">Trust &amp; Safety</a>
+            <a class="secondary-btn" href="./reviews.html">Read Reviews</a>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer public-footer">
+        <div class="public-footer-brand">
+          <div><strong>Stock Trader Web</strong><p>Premium public pages outside login, serious portfolio operations inside the platform.</p></div>
+          <div class="public-footer-meta"><p>Built to answer the right questions before users ever enter the dashboard.</p></div>
+        </div>
+        <div class="public-footer-links">
+          <a href="./index.html">Home</a>
+          <a href="./about.html">About</a>
+          <a href="./products.html">Products</a>
+          <a href="./trust-safety.html">Trust &amp; Safety</a>
+          <a href="./legal.html">Legal</a>
+          <a href="./reviews.html">Reviews</a>
+          <a href="./login.html">Login</a>
+        </div>
+      </footer>
+    </div>
+    <script src="./app-live.js"></script>
+  </body>
+</html>

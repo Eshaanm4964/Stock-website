@@ -1,0 +1,132 @@
+body.dashboard-page {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(77, 107, 255, 0.08), transparent 20%),
+    linear-gradient(180deg, #f7f9fd 0%, #eef3f9 100%);
+}
+
+.dashboard-app-shell {
+  min-height: 100vh;
+  padding: 16px;
+}
+
+.dashboard-app-shell .dashboard-section {
+  margin-top: 0;
+}
+
+.dashboard-loading {
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - 32px);
+  border: 1px solid rgba(17, 35, 63, 0.08);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.06);
+  color: #44526b;
+  text-align: center;
+  padding: 32px;
+}
+
+.dashboard-loading strong {
+  display: block;
+  margin-bottom: 10px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.6rem;
+  color: #11203d;
+}
+
+@media (max-width: 760px) {
+  .dashboard-app-shell {
+    padding: 8px;
+  }
+
+  .dashboard-loading {
+    min-height: calc(100vh - 16px);
+    border-radius: 20px;
+    padding: 24px;
+  }
+}
+
+.search-helper-row {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.search-chip-list,
+.recommendation-grid,
+.symbol-suggestion-list {
+  display: grid;
+  gap: 10px;
+}
+
+.search-chip-list {
+  grid-template-columns: repeat(auto-fit, minmax(150px, max-content));
+}
+
+.search-chip,
+.symbol-suggestion-btn,
+.recommendation-card {
+  border: 1px solid rgba(17, 35, 63, 0.08);
+  border-radius: 16px;
+  background: #f8fbff;
+  color: #11203d;
+}
+
+.search-chip,
+.symbol-suggestion-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 10px 12px;
+}
+
+.search-chip small,
+.symbol-suggestion-btn small,
+.recommendation-card small,
+.search-empty {
+  color: #70809c;
+}
+
+.portfolio-symbol-wrap {
+  position: relative;
+}
+
+.symbol-suggestion-list {
+  margin-top: 10px;
+}
+
+.symbol-suggestion-btn {
+  width: 100%;
+  text-align: left;
+}
+
+.recommendation-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.recommendation-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  text-align: left;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.recommendation-card:hover,
+.symbol-suggestion-btn:hover,
+.search-chip:hover {
+  transform: translateY(-1px);
+  border-color: rgba(77, 107, 255, 0.24);
+  box-shadow: 0 12px 24px rgba(17, 35, 63, 0.08);
+}
+
+.recommendation-metrics {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}

@@ -1,0 +1,6 @@
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT FALSE;
+
+UPDATE users
+SET is_demo = TRUE
+WHERE role = 'user' AND fixed_user_id IN ('CLIENT-1001', 'CLIENT-2002', 'CLIENT-3003');

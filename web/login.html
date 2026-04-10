@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stock Trader Web | Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./public-theme.css" />
+  </head>
+  <body data-page="login" class="public-page">
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="./index.html">
+          <span class="brand-mark">ST</span>
+          <span><strong>Stock Trader Web</strong><small>Precision, trust, and portfolio clarity</small></span>
+        </a>
+        <nav class="site-nav">
+          <a href="./index.html">Home</a>
+          <a href="./about.html">About</a>
+          <a href="./products.html">Products</a>
+          <a href="./trust-safety.html">Trust &amp; Safety</a>
+          <a href="./legal.html">Legal</a>
+          <a href="./faq.html">FAQ</a>
+          <a href="./reviews.html">Reviews</a>
+        </nav>
+        <a class="login-link active" href="./login.html">Login</a>
+      </header>
+
+      <main class="public-main">
+        <section class="public-hero-card public-auth-grid">
+          <div class="public-auth-copy">
+            <p class="eyebrow">Secure Access</p>
+            <div class="public-mini-ticker">
+              <span>Admin review <small>client oversight</small></span>
+              <span>User workspace <small>holdings and performance</small></span>
+              <span>Verified entry <small>OTP-backed access</small></span>
+            </div>
+            <h2 id="authHeroTitle">Enter the platform with confidence.</h2>
+            <p id="authHeroText" class="public-lead">
+              Public pages build trust. Login moves users into a portfolio workspace designed for client servicing,
+              faster review calls, and cleaner day-to-day visibility.
+            </p>
+            <div class="public-side-stack">
+              <article class="public-auth-note"><strong>Secure</strong><p>OTP verification flow</p></article>
+              <article class="public-auth-note"><strong>Live</strong><p>Portfolio-linked market data</p></article>
+              <article class="public-auth-note"><strong>Export</strong><p>Admin dashboard downloads</p></article>
+              <article class="public-auth-note demo-credentials-card">
+                <strong>Demo Credentials</strong>
+                <p><b>Admin:</b> `admin_dev` / `Admin@123` / `9876543210` / OTP `123456`</p>
+                <p><b>User:</b> `CLIENT-1001` / `User@123` / `9123456780` / OTP `123456`</p>
+              </article>
+            </div>
+          </div>
+          <div class="auth-workspace-shell">
+            <div class="login-switcher auth-switcher">
+              <button class="role-toggle active" data-role-tab="admin">Login as Admin</button>
+              <button class="role-toggle" data-role-tab="user">Login as User</button>
+              <button class="role-toggle" data-role-tab="register">Register User</button>
+            </div>
+
+            <section class="auth-showcase auth-showcase-premium">
+              <div class="auth-stage auth-stage-card">
+                <form id="adminForm" class="feature-card auth-card auth-form-card" novalidate>
+                  <p class="eyebrow">Admin Login</p>
+                  <h2>Developer / admin access</h2>
+                  <label><span>Username</span><input name="username" type="text" placeholder="Enter admin username" autocomplete="username" required /></label>
+                  <label><span>Password</span><input name="password" type="password" placeholder="Enter password" autocomplete="current-password" required /></label>
+                  <label><span>Phone Number</span><input name="phone" type="tel" placeholder="Enter registered number" autocomplete="tel" required /></label>
+                  <div class="split-row">
+                    <label><span>OTP</span><input name="otp" type="text" required /></label>
+                    <button class="secondary-btn" type="button" data-send-otp="admin">Send OTP</button>
+                  </div>
+                  <p class="helper-text" id="adminOtpHint">OTP status will appear here after request.</p>
+                  <p class="error-text" id="adminError"></p>
+                  <button class="primary-btn" type="submit">Open Admin Dashboard</button>
+                </form>
+
+                <form id="userForm" class="feature-card auth-card auth-form-card hidden" novalidate>
+                  <p class="eyebrow">User Login</p>
+                  <h2>Client access</h2>
+                  <label><span>Fixed User ID</span><input name="userId" type="text" placeholder="Enter client ID" autocomplete="username" required /></label>
+                  <label><span>Password</span><input name="password" type="password" placeholder="Enter password" autocomplete="current-password" required /></label>
+                  <label><span>Phone Number</span><input name="phone" type="tel" placeholder="Enter registered number" autocomplete="tel" required /></label>
+                  <div class="split-row">
+                    <label><span>Verification Code</span><input name="otp" type="text" required /></label>
+                    <button class="secondary-btn" type="button" data-send-otp="user">Send Code</button>
+                  </div>
+                  <p class="helper-text" id="userOtpHint">Verification status will appear here after request.</p>
+                  <p class="error-text" id="userError"></p>
+                  <button class="primary-btn" type="submit">Open User Dashboard</button>
+                </form>
+
+                <form id="registerForm" class="feature-card auth-card auth-form-card hidden" novalidate>
+                  <p class="eyebrow">New User</p>
+                  <h2>Create a secure client account</h2>
+                  <label><span>Full Name</span><input name="full_name" type="text" placeholder="Enter full name" autocomplete="name" required /></label>
+                  <label><span>Email</span><input name="email" type="email" placeholder="Enter email address" autocomplete="email" required /></label>
+                  <label><span>Phone Number</span><input name="phone_number" type="tel" placeholder="Enter phone number" autocomplete="tel" required /></label>
+                  <label><span>Password</span><input name="password" type="password" placeholder="Create password" autocomplete="new-password" required /></label>
+                  <p class="helper-text" id="registerHint">A fixed client ID will be generated and stored in the database.</p>
+                  <p class="error-text" id="registerError"></p>
+                  <button class="primary-btn" type="submit">Create User Account</button>
+                </form>
+              </div>
+
+              <aside class="auth-aside auth-side-stack">
+                <article class="auth-aside-card auth-gradient-card" id="authDynamicCard">
+                  <p class="eyebrow" id="authAsideEyebrow">Platform Snapshot</p>
+                  <h3 id="authAsideTitle">Everything important, in one place.</h3>
+                  <div class="mini-metrics" id="authAsideMetrics">
+                    <div><strong>Admin</strong><span>Client oversight</span></div>
+                    <div><strong>User</strong><span>Portfolio tracking</span></div>
+                    <div><strong>AI</strong><span>Finance support</span></div>
+                  </div>
+                </article>
+
+                <article class="auth-aside-card" id="authDynamicListCard">
+                  <p class="eyebrow" id="authAsideListEyebrow">What You Get</p>
+                  <ul class="clean-list" id="authAsideList">
+                    <li>Secure login with OTP verification</li>
+                    <li>Persistent portfolio records</li>
+                    <li>Admin dashboard exports</li>
+                    <li>Finance-only AI assistant</li>
+                  </ul>
+                </article>
+              </aside>
+            </section>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer public-footer">
+        <div class="public-footer-brand">
+          <div><strong>Stock Trader Web</strong><p>Premium public pages outside login, serious portfolio operations inside the platform.</p></div>
+          <div class="public-footer-meta"><p>The login page now matches the same premium public format before the dashboard loads.</p></div>
+        </div>
+        <div class="public-footer-links">
+          <a href="./index.html">Home</a>
+          <a href="./about.html">About</a>
+          <a href="./products.html">Products</a>
+          <a href="./trust-safety.html">Trust &amp; Safety</a>
+          <a href="./legal.html">Legal</a>
+          <a href="./faq.html">FAQ</a>
+          <a href="./reviews.html">Reviews</a>
+        </div>
+      </footer>
+    </div>
+    <div id="authLoadingOverlay" class="auth-loading-overlay hidden" aria-hidden="true">
+      <div class="auth-loading-card">
+        <div class="auth-loading-spinner" aria-hidden="true"></div>
+        <p class="eyebrow">Secure Workspace</p>
+        <h2 id="authLoadingTitle">Opening dashboard...</h2>
+        <p id="authLoadingText">Please wait while we verify access and load your workspace.</p>
+      </div>
+    </div>
+    <script src="./app-live.js"></script>
+  </body>
+</html>
+

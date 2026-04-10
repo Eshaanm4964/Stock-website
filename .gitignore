@@ -1,0 +1,13 @@
+.venv/
+backend-api/.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.log
+.vercel/
+.env
+.env.*
+!.env.example
+node_modules/
