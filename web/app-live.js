@@ -168,7 +168,7 @@ function saveSiteControls(nextControls) {
 }
 
 function getApiBase() {
-  return localStorage.getItem("stock_trader_api_url") || "https://lovely-sites-go.loca.lt/api/v1";
+  return localStorage.getItem("stock_trader_api_url") || "https://stock-trader-demo-backend.onrender.com/api/v1";
 }
 
 function formatError(error) {
@@ -2658,6 +2658,7 @@ setupPageTransitions();
 setupLogin();
 setupDashboardPages();
 setupFinanceChatbot();
+
 
 
 
