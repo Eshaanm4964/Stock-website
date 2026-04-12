@@ -8,6 +8,7 @@ from app.db.session import get_db
 from app.models.user import User, UserRole
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 
 async def get_current_user(
@@ -24,6 +25,23 @@ async def get_current_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User account is inactive")
+    return user
+
+
+async def get_optional_current_user(
+    token: str | None = Depends(optional_oauth2_scheme), db: AsyncSession = Depends(get_db)
+) -> User | None:
+    if not token:
+        return None
+    try:
+        payload = decode_token(token)
+    except ValueError:
+        return None
+
+    result = await db.execute(select(User).where(User.id == int(payload["sub"])))
+    user = result.scalar_one_or_none()
+    if not user or not user.is_active:
+        return None
     return user
 
 

@@ -38,6 +38,18 @@ class AdminHoldingSnapshot(BaseModel):
     created_at: datetime | None = None
 
 
+class AdminSaleSnapshot(BaseModel):
+    sale_id: int
+    symbol: str
+    quantity: float
+    buy_price: float
+    sell_price: float
+    profit_loss: float
+    sector: str | None
+    exchange: str | None = None
+    sold_at: datetime | None = None
+
+
 class AdminUserDashboardResponse(BaseModel):
     user_id: int
     username: str
@@ -46,8 +58,11 @@ class AdminUserDashboardResponse(BaseModel):
     phone_number: str
     total_portfolio_value: float
     total_profit_loss: float
+    booked_profit_loss: float = 0.0
+    lifetime_profit_loss: float = 0.0
     total_holdings: int
     holdings: list[AdminHoldingSnapshot]
+    sales: list[AdminSaleSnapshot] = []
 
 
 class AdminAuditLogResponse(BaseModel):
@@ -99,6 +114,13 @@ class AdminSystemStatusResponse(BaseModel):
     otp_debug_mode: bool
     total_admin_logs: int
     total_auth_attempts: int
+
+
+class AdminPortfolioOverviewResponse(BaseModel):
+    dashboard: AdminDashboardResponse
+    users: list[AdminUserSummary]
+    system_status: AdminSystemStatusResponse
+    user_dashboards: list[AdminUserDashboardResponse]
 
 
 class AdminStockConcentrationItem(BaseModel):

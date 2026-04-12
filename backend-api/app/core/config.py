@@ -20,7 +20,14 @@ class Settings(BaseSettings):
     redis_url: str | None = Field(default=None, alias="REDIS_URL")
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
     openai_model: str = Field(default="gpt-4.1-mini", alias="OPENAI_MODEL")
+    xai_api_key: str = Field(default="", alias="XAI_API_KEY")
+    xai_model: str = Field(default="grok-4.20-reasoning", alias="XAI_MODEL")
+    xai_base_url: str = Field(default="https://api.x.ai/v1", alias="XAI_BASE_URL")
+    groq_api_key: str = Field(default="", alias="GROQ_API_KEY")
+    groq_model: str = Field(default="llama-3.3-70b-versatile", alias="GROQ_MODEL")
+    groq_base_url: str = Field(default="https://api.groq.com/openai/v1", alias="GROQ_BASE_URL")
     news_api_key: str = Field(default="", alias="NEWS_API_KEY")
+    alpha_vantage_api_key: str = Field(default="", alias="ALPHA_VANTAGE_API_KEY")
     frontend_url: str = Field(default="http://localhost:5500", alias="FRONTEND_URL")
     allowed_origins_raw: str = Field(
         default="http://localhost:5500,http://127.0.0.1:5500,http://localhost:8000,http://127.0.0.1:8000",

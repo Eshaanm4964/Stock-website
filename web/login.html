@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Stock Trader Web | Login</title>
+    <title>Yantra | Login</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -17,19 +17,16 @@
     <div class="site-shell">
       <header class="site-header">
         <a class="brand" href="./index.html">
-          <span class="brand-mark">ST</span>
-          <span><strong>Stock Trader Web</strong><small>Precision, trust, and portfolio clarity</small></span>
+          <span class="brand-mark brand-logo"><img src="./assets/yantra-logo.svg" alt="Yantra logo" /></span>
+          <span><strong>Yantra</strong><small>Price is what you pay. Value is what you get</small></span>
         </a>
         <nav class="site-nav">
           <a href="./index.html">Home</a>
           <a href="./about.html">About</a>
-          <a href="./products.html">Products</a>
-          <a href="./trust-safety.html">Trust &amp; Safety</a>
-          <a href="./legal.html">Legal</a>
           <a href="./faq.html">FAQ</a>
           <a href="./reviews.html">Reviews</a>
         </nav>
-        <a class="login-link active" href="./login.html">Login</a>
+        <span class="login-link active">Login</span>
       </header>
 
       <main class="public-main">
@@ -52,8 +49,8 @@
               <article class="public-auth-note"><strong>Export</strong><p>Admin dashboard downloads</p></article>
               <article class="public-auth-note demo-credentials-card">
                 <strong>Demo Credentials</strong>
-                <p><b>Admin:</b> `admin_dev` / `Admin@123` / `9876543210` / OTP `123456`</p>
-                <p><b>User:</b> `CLIENT-1001` / `User@123` / `9123456780` / OTP `123456`</p>
+                <p class="credential-line"><b>Admin</b><code>admin_dev</code><code>Admin@123</code><code>9876543210</code><code>OTP 123456</code></p>
+                <p class="credential-line"><b>User</b><code>CLIENT-1001</code><code>User@123</code><code>9123456780</code><code>OTP 123456</code></p>
               </article>
             </div>
           </div>
@@ -137,15 +134,12 @@
 
       <footer class="site-footer public-footer">
         <div class="public-footer-brand">
-          <div><strong>Stock Trader Web</strong><p>Premium public pages outside login, serious portfolio operations inside the platform.</p></div>
+          <div><strong>Yantra</strong><p>Price is what you pay. Value is what you get</p></div>
           <div class="public-footer-meta"><p>The login page now matches the same premium public format before the dashboard loads.</p></div>
         </div>
         <div class="public-footer-links">
           <a href="./index.html">Home</a>
           <a href="./about.html">About</a>
-          <a href="./products.html">Products</a>
-          <a href="./trust-safety.html">Trust &amp; Safety</a>
-          <a href="./legal.html">Legal</a>
           <a href="./faq.html">FAQ</a>
           <a href="./reviews.html">Reviews</a>
         </div>
@@ -153,10 +147,21 @@
     </div>
     <div id="authLoadingOverlay" class="auth-loading-overlay hidden" aria-hidden="true">
       <div class="auth-loading-card">
-        <div class="auth-loading-spinner" aria-hidden="true"></div>
+        <div class="auth-loading-brand">Yantra Secure Login</div>
+        <div class="auth-orbit-loader" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <img src="./assets/yantra-logo.svg" alt="" />
+        </div>
         <p class="eyebrow">Secure Workspace</p>
         <h2 id="authLoadingTitle">Opening dashboard...</h2>
         <p id="authLoadingText">Please wait while we verify access and load your workspace.</p>
+        <div class="auth-loading-progress" aria-hidden="true"><span></span></div>
+        <div class="auth-loading-steps" aria-hidden="true">
+          <span>Verify</span>
+          <span>Load Data</span>
+          <span>Open</span>
+        </div>
       </div>
     </div>
     <script src="./app-live.js"></script>

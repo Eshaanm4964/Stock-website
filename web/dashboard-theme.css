@@ -95,12 +95,96 @@ body.dashboard-page {
 }
 
 .symbol-suggestion-list {
-  margin-top: 10px;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  max-height: 250px;
+  overflow-y: auto;
+  margin-top: 0;
+  padding: 8px;
+  border: 1px solid rgba(17, 35, 63, 0.1);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 18px 42px rgba(17, 35, 63, 0.14);
+}
+
+.symbol-suggestion-list:empty {
+  display: none;
 }
 
 .symbol-suggestion-btn {
   width: 100%;
   text-align: left;
+}
+
+.price-up,
+.profit {
+  color: #087a46;
+}
+
+.price-down,
+.loss {
+  color: #c62828;
+}
+
+.price-buy {
+  color: #9a5a00;
+}
+
+.sell-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 9px 16px;
+  border: 1px solid #b71c1c;
+  border-radius: 999px;
+  color: #111111;
+  background: #ff4d4f;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(198, 40, 40, 0.22);
+}
+
+.sell-action-btn:hover {
+  background: #e53935;
+  transform: translateY(-1px);
+}
+
+.logout-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 10px 16px;
+  border: 1px solid #9f1d1d;
+  border-radius: 999px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #c62828 0%, #8f1d1d 100%);
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 12px 26px rgba(198, 40, 40, 0.2);
+}
+
+.logout-btn:hover {
+  background: linear-gradient(135deg, #e53935 0%, #a61b1b 100%);
+  transform: translateY(-1px);
+}
+
+[data-live-price-cell],
+[data-live-value-cell],
+[data-pnl-cell],
+[data-return-cell],
+[data-live-total-value],
+[data-live-total-pnl] {
+  transition: color 180ms ease, background-color 180ms ease;
+}
+
+[data-live-price-status] {
+  color: #0f8a55;
+  font-weight: 800;
 }
 
 .recommendation-grid {

@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import pandas as pd
+import httpx
 import yfinance as yf
 from redis.asyncio import Redis
 
@@ -15,6 +16,10 @@ from app.services.cache_service import get_cached_json, set_cached_json
 settings = get_settings()
 LOCAL_QUOTE_CACHE: dict[str, tuple[datetime, dict[str, Any]]] = {}
 FALLBACK_QUOTES: dict[str, dict[str, Any]] = {
+    "^NSEI": {"price": 22580.35, "shortName": "NIFTY 50", "marketCap": None, "sector": "Index"},
+    "^BSESN": {"price": 74221.06, "shortName": "SENSEX", "marketCap": None, "sector": "Index"},
+    "NIFTY50": {"price": 22580.35, "shortName": "NIFTY 50", "marketCap": None, "sector": "Index"},
+    "SENSEX": {"price": 74221.06, "shortName": "SENSEX", "marketCap": None, "sector": "Index"},
     "INFY": {"price": 1512.0, "shortName": "Infosys", "marketCap": 6.4e12, "sector": "Technology"},
     "SBIN": {"price": 768.0, "shortName": "State Bank of India", "marketCap": 6.8e12, "sector": "Financial Services"},
     "TATAMOTORS": {"price": 904.0, "shortName": "Tata Motors", "marketCap": 3.3e12, "sector": "Automotive"},
@@ -26,12 +31,35 @@ FALLBACK_QUOTES: dict[str, dict[str, Any]] = {
     "SUNPHARMA": {"price": 1710.0, "shortName": "Sun Pharma", "marketCap": 4.2e12, "sector": "Healthcare"},
 }
 
+ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query"
+ALPHA_SYMBOL_OVERRIDES: dict[str, str] = {
+    "NIFTY50": "NIFTY50",
+    "SENSEX": "BSESN",
+}
+
 
 def _normalize_symbol(symbol: str, exchange: str = "NSE") -> str:
     upper = symbol.upper()
-    if upper.endswith(".NS") or upper.endswith(".BO"):
+    if upper.startswith("^"):
         return upper
-    return f"{upper}.NS" if exchange.upper() == "NSE" else f"{upper}.BO"
+    if upper == "NIFTY50":
+        return "^NSEI"
+    if upper == "SENSEX":
+        return "^BSESN"
+    if upper.endswith(".NS"):
+        return upper
+    return f"{upper}.NS"
+
+
+def _alpha_symbol_candidates(symbol: str) -> list[str]:
+    upper = symbol.upper().replace(" ", "")
+    if upper in ALPHA_SYMBOL_OVERRIDES:
+        return [ALPHA_SYMBOL_OVERRIDES[upper], upper]
+    if upper.startswith("^"):
+        return [upper]
+    if "." in upper or ":" in upper:
+        return [upper]
+    return [f"NSE:{upper}", f"{upper}.NSE", upper]
 
 
 def classify_market_cap(market_cap: float | None) -> str:
@@ -98,6 +126,96 @@ def _build_quote(symbol: str, exchange: str, info: dict[str, Any], *, source: st
     )
 
 
+def _build_alpha_quote(symbol: str, exchange: str, payload: dict[str, Any]) -> StockQuote | None:
+    global_quote = payload.get("Global Quote") or {}
+    price = global_quote.get("05. price")
+    previous = global_quote.get("08. previous close")
+    change_percent = str(global_quote.get("10. change percent") or "0").replace("%", "")
+    if not price:
+        return None
+    return StockQuote(
+        symbol=symbol.upper(),
+        short_name=symbol.upper(),
+        exchange=exchange.upper(),
+        price=float(price),
+        change_percent=float(change_percent or 0),
+        currency="INR",
+        market_cap=None,
+        sector=FALLBACK_QUOTES.get(symbol.upper(), {}).get("sector"),
+        previous_close=float(previous) if previous else None,
+        fetched_at=_utc_now().isoformat(),
+        cache_until=(_utc_now() + timedelta(seconds=settings.cache_ttl_seconds)).isoformat(),
+        data_source="alpha_vantage",
+        is_fallback=False,
+    )
+
+
+def _build_alpha_daily_quote(symbol: str, exchange: str, payload: dict[str, Any]) -> StockQuote | None:
+    series = payload.get("Time Series (Daily)") or {}
+    if not series:
+        return None
+    latest_dates = sorted(series.keys(), reverse=True)
+    latest = series.get(latest_dates[0], {})
+    previous_day = series.get(latest_dates[1], latest) if len(latest_dates) > 1 else latest
+    price = latest.get("4. close")
+    previous = previous_day.get("4. close") or price
+    if not price:
+        return None
+    price_float = float(price)
+    previous_float = float(previous or price_float)
+    return StockQuote(
+        symbol=symbol.upper(),
+        short_name=symbol.upper(),
+        exchange=exchange.upper(),
+        price=price_float,
+        change_percent=((price_float - previous_float) / previous_float) * 100 if previous_float else 0,
+        currency="INR",
+        market_cap=None,
+        sector=FALLBACK_QUOTES.get(symbol.upper(), {}).get("sector"),
+        previous_close=previous_float,
+        fetched_at=_utc_now().isoformat(),
+        cache_until=(_utc_now() + timedelta(seconds=settings.cache_ttl_seconds)).isoformat(),
+        data_source="alpha_vantage_daily",
+        is_fallback=False,
+    )
+
+
+async def _fetch_alpha_quote(symbol: str, exchange: str) -> StockQuote | None:
+    if not settings.alpha_vantage_api_key:
+        return None
+
+    async with httpx.AsyncClient(timeout=12) as client:
+        for alpha_symbol in _alpha_symbol_candidates(symbol):
+            response = await client.get(
+                ALPHA_VANTAGE_BASE_URL,
+                params={
+                    "function": "GLOBAL_QUOTE",
+                    "symbol": alpha_symbol,
+                    "apikey": settings.alpha_vantage_api_key,
+                },
+            )
+            response.raise_for_status()
+            quote = _build_alpha_quote(symbol, exchange, response.json())
+            if quote:
+                return quote
+
+        for alpha_symbol in _alpha_symbol_candidates(symbol):
+            daily_response = await client.get(
+                ALPHA_VANTAGE_BASE_URL,
+                params={
+                    "function": "TIME_SERIES_DAILY",
+                    "symbol": alpha_symbol,
+                    "outputsize": "compact",
+                    "apikey": settings.alpha_vantage_api_key,
+                },
+            )
+            daily_response.raise_for_status()
+            quote = _build_alpha_daily_quote(symbol, exchange, daily_response.json())
+            if quote:
+                return quote
+    return None
+
+
 async def fetch_quote(symbol: str, exchange: str = "NSE", redis: Redis | None = None) -> StockQuote:
     cache_key = _cache_key(symbol, exchange)
     if redis:
@@ -112,6 +230,17 @@ async def fetch_quote(symbol: str, exchange: str = "NSE", redis: Redis | None = 
     info: dict[str, Any]
     source = "yfinance"
     is_fallback = False
+    try:
+        alpha_quote = await _fetch_alpha_quote(symbol, exchange)
+        if alpha_quote:
+            if redis:
+                await set_cached_json(redis, cache_key, _serialize_quote(alpha_quote), settings.cache_ttl_seconds)
+            else:
+                _set_local_cached_quote(cache_key, alpha_quote)
+            return alpha_quote
+    except Exception:
+        pass
+
     try:
         ticker = yf.Ticker(_normalize_symbol(symbol, exchange))
         info = ticker.info

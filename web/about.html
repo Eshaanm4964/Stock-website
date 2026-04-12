@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Stock Trader Web | About</title>
+    <title>Yantra | About</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -17,15 +17,12 @@
     <div class="site-shell">
       <header class="site-header">
         <a class="brand" href="./index.html">
-          <span class="brand-mark">ST</span>
-          <span><strong>Stock Trader Web</strong><small>Precision, trust, and portfolio clarity</small></span>
+          <span class="brand-mark brand-logo"><img src="./assets/yantra-logo.svg" alt="Yantra logo" /></span>
+          <span><strong>Yantra</strong><small>Price is what you pay. Value is what you get</small></span>
         </a>
         <nav class="site-nav">
           <a href="./index.html">Home</a>
           <a class="active" href="./about.html">About</a>
-          <a href="./products.html">Products</a>
-          <a href="./trust-safety.html">Trust &amp; Safety</a>
-          <a href="./legal.html">Legal</a>
           <a href="./faq.html">FAQ</a>
           <a href="./reviews.html">Reviews</a>
         </nav>
@@ -33,30 +30,51 @@
       </header>
 
       <main class="public-main">
-        <section class="public-hero-card">
-          <div class="public-hero-copy">
+        <section class="public-hero-card about-hero-card">
+          <div class="public-hero-copy about-hero-copy">
             <p class="eyebrow">About Us</p>
             <div class="public-mini-ticker">
-              <span>Brand-led onboarding <small>calm first impressions</small></span>
-              <span>Operational depth <small>real workspace utility</small></span>
-              <span>Unified system <small>one design language</small></span>
+              <span>Brand confidence <small>calm first impression</small></span>
+              <span>Portfolio clarity <small>daily workspace utility</small></span>
+              <span>Client reports <small>simple review output</small></span>
             </div>
-            <h1>We build a clearer bridge between public trust and private portfolio operations.</h1>
+            <h1>A calmer way to present portfolios, performance, and client trust.</h1>
             <p class="public-lead">
-              Stock Trader Web is designed as a complete investment product story: credible outside login and practical
-              inside the authenticated experience.
+              Yantra is built for a simple job: help clients understand the service quickly, then give admins and
+              investors a clean workspace for holdings, profit/loss, and reports.
             </p>
           </div>
           <div class="public-hero-panel">
-            <article class="public-dashboard-card">
-              <div class="public-card-head">
-                <p class="eyebrow">Operating Model</p>
-                <strong>One brand system, two very different moments.</strong>
-                <small>First impression, secure access, then operational portfolio work.</small>
+            <article class="public-dashboard-card about-summary-card">
+              <p class="eyebrow">Operating Model</p>
+              <strong>Public trust outside. Portfolio work inside.</strong>
+              <p>One focused product flow from first impression to daily client review.</p>
+              <div class="about-layer-grid">
+                <div>
+                  <span>01</span>
+                  <strong>Explain</strong>
+                  <small>Public pages tell clients what the platform does.</small>
+                </div>
+                <div>
+                  <span>02</span>
+                  <strong>Secure</strong>
+                  <small>Login separates admin and investor workspaces.</small>
+                </div>
+                <div>
+                  <span>03</span>
+                  <strong>Review</strong>
+                  <small>Dashboards show holdings, live values, and P/L.</small>
+                </div>
+                <div>
+                  <span>04</span>
+                  <strong>Report</strong>
+                  <small>Client snapshots make follow-up conversations easier.</small>
+                </div>
               </div>
-              <div class="public-dashboard-tiles">
-                <article class="public-mini-card"><strong>Public Layer</strong><p>Explains value, trust, and service confidence.</p></article>
-                <article class="public-mini-card"><strong>Private Layer</strong><p>Supports holdings, reviews, exports, and daily oversight.</p></article>
+              <div class="about-score-strip">
+                <span><strong>Live</strong><small>NSE prices</small></span>
+                <span><strong>P/L</strong><small>clear tracking</small></span>
+                <span><strong>PDF</strong><small>client-ready</small></span>
               </div>
             </article>
           </div>
@@ -65,8 +83,8 @@
         <section class="public-section public-story-grid">
           <div class="public-copy">
             <p class="eyebrow">Why This Exists</p>
-            <h2>Most wealth products explain too little before login and too little after it.</h2>
-            <p>We designed this platform so visitors understand the promise and teams still get a useful system when they sign in.</p>
+            <h2>A simple public site outside login, a useful dashboard inside login.</h2>
+            <p>The goal is simple: help clients understand the platform quickly and then move them into the working dashboard.</p>
           </div>
           <div class="public-side-stack">
             <article class="public-side-card"><strong>Public</strong><p>Storytelling pages built for trust, clarity, and conversion.</p></article>
@@ -81,7 +99,7 @@
             <p>Each layer supports a different stage of the customer relationship.</p>
           </div>
           <div class="public-process-layout">
-            <article class="public-process-card"><time>01</time><strong>Public brand layer</strong><p>Home, product, trust, FAQ, and reviews set expectations before authentication.</p></article>
+            <article class="public-process-card"><time>01</time><strong>Public brand layer</strong><p>Home, About, FAQ, and Reviews set expectations before authentication.</p></article>
             <article class="public-process-card"><time>02</time><strong>Investor workspace</strong><p>Users see performance, allocation, holdings, and recent activity in a cleaner shell.</p></article>
             <article class="public-process-card"><time>03</time><strong>Admin control</strong><p>Teams review client portfolios, manage trust content, and monitor operations.</p></article>
             <article class="public-process-card"><time>04</time><strong>Backend discipline</strong><p>Auth, persistence, and role separation hold the product together underneath.</p></article>
@@ -106,22 +124,19 @@
           <h2>A brand-first website outside, a portfolio-first application inside.</h2>
           <p>That combination is what makes the product feel more valuable than a dashboard demo alone.</p>
           <div class="public-cta-row">
-            <a class="primary-btn" href="./products.html">Explore The Product</a>
-            <a class="secondary-btn" href="./login.html">Open Login</a>
+            <a class="primary-btn" href="./login.html">Open Login</a>
+            <a class="secondary-btn" href="./faq.html">Read FAQ</a>
           </div>
         </section>
       </main>
 
       <footer class="site-footer public-footer">
         <div class="public-footer-brand">
-          <div><strong>Stock Trader Web</strong><p>Premium public pages outside login, serious portfolio operations inside the platform.</p></div>
+          <div><strong>Yantra</strong><p>Price is what you pay. Value is what you get</p></div>
           <div class="public-footer-meta"><p>Built to make trust, onboarding, and ongoing servicing feel like one connected system.</p></div>
         </div>
         <div class="public-footer-links">
           <a href="./index.html">Home</a>
-          <a href="./products.html">Products</a>
-          <a href="./trust-safety.html">Trust &amp; Safety</a>
-          <a href="./legal.html">Legal</a>
           <a href="./faq.html">FAQ</a>
           <a href="./reviews.html">Reviews</a>
           <a href="./login.html">Login</a>

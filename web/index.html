@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Stock Trader Web | Home</title>
+    <title>Yantra | Home</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -17,243 +17,101 @@
     <div class="site-shell">
       <header class="site-header">
         <a class="brand" href="./index.html">
-          <span class="brand-mark">ST</span>
+          <span class="brand-mark brand-logo"><img src="./assets/yantra-logo.svg" alt="Yantra logo" /></span>
           <span>
-            <strong>Stock Trader Web</strong>
-            <small>Precision, trust, and portfolio clarity</small>
+            <strong>Yantra</strong>
+            <small>Price is what you pay. Value is what you get</small>
           </span>
         </a>
         <nav class="site-nav">
           <a class="active" href="./index.html">Home</a>
           <a href="./about.html">About</a>
-          <a href="./products.html">Products</a>
-          <a href="./trust-safety.html">Trust &amp; Safety</a>
-          <a href="./legal.html">Legal</a>
           <a href="./faq.html">FAQ</a>
           <a href="./reviews.html">Reviews</a>
         </nav>
         <a class="login-link" href="./login.html">Login</a>
       </header>
 
-      <main class="public-main">
-        <section class="public-hero-card">
-          <div class="public-hero-copy">
-            <p class="eyebrow">Private Stock Platform</p>
-            <div class="public-mini-ticker">
-              <span>Private investing <small>Structured onboarding</small></span>
-              <span>Precision visibility <small>Live portfolio cues</small></span>
-              <span>Simple service <small>Admin-ready reporting</small></span>
-            </div>
-            <h1>Invest in private stock with precision and simplicity.</h1>
-            <p class="public-lead">
-              A premium public website for investor confidence, product storytelling, and smoother transitions into
-              your secure dashboard experience.
-            </p>
-            <div class="public-cta-row">
-              <a class="primary-btn" href="./login.html">Sign In Now</a>
-              <a class="secondary-btn" href="./products.html">Explore Platform</a>
-            </div>
-            <div class="public-hero-stats">
-              <article><strong>350+</strong><span>client conversations</span><small>clearer review meetings</small></article>
-              <article><strong>120M+</strong><span>visible asset value</span><small>stronger reporting context</small></article>
-              <article><strong>24/7</strong><span>workspace availability</span><small>admin and investor access</small></article>
-              <article><strong>1</strong><span>connected system</span><small>brand, login, and operations</small></article>
+      <main class="public-main compact-public-main">
+        <section class="public-hero-card compact-hero-card">
+          <p class="eyebrow hero-market-label">Private Stock Platform</p>
+          <div id="homeLiveTicker" class="home-live-ticker" aria-live="polite">
+            <div class="home-ticker-track">
+              <article class="home-ticker-item is-up">
+                <span class="ticker-dot"></span>
+                <strong>NIFTY 50 <em>Loading...</em></strong>
+                <small>Live</small>
+              </article>
             </div>
           </div>
+          <div class="public-hero-copy">
+            <h1>Track client portfolios with live prices and clear profit/loss.</h1>
+            <p class="public-lead">
+              A simple stock dashboard for admins and investors. Add holdings, view live values, check profit/loss, and
+              download clean client reports.
+            </p>
+          </div>
+
           <div class="public-hero-panel">
-            <article class="public-dashboard-card">
+            <article class="public-dashboard-card compact-market-card">
               <div class="public-dashboard-top">
                 <div>
-                  <p class="eyebrow">Portfolio Snapshot</p>
-                  <strong>Balanced Investor Visibility</strong>
-                  <small>Global reach, local service, and portfolio-first clarity.</small>
+                  <p class="eyebrow">Live Market News</p>
+                  <strong>Today’s market pulse.</strong>
+                  <small>Rotating stock updates with today’s date for quick client context.</small>
                 </div>
-                <span class="public-badge">Live insights</span>
+                <span class="public-badge green" id="homeNewsDate">Today</span>
               </div>
-              <div class="public-curve" aria-hidden="true">
-                <svg viewBox="0 0 600 220" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="publicHeroFill" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stop-color="rgba(31,99,255,0.30)"></stop>
-                      <stop offset="100%" stop-color="rgba(31,99,255,0.04)"></stop>
-                    </linearGradient>
-                  </defs>
-                  <path d="M0,170 C58,164 74,112 124,124 C176,136 212,62 266,74 C320,86 346,158 392,144 C440,130 470,86 520,82 C554,80 580,70 600,40 L600,220 L0,220 Z" fill="url(#publicHeroFill)"></path>
-                  <path d="M0,170 C58,164 74,112 124,124 C176,136 212,62 266,74 C320,86 346,158 392,144 C440,130 470,86 520,82 C554,80 580,70 600,40" fill="none" stroke="#1f63ff" stroke-width="4" stroke-linecap="round"></path>
-                </svg>
-              </div>
-              <div class="public-dashboard-tiles">
-                <article class="public-mini-card">
-                  <strong>Investor Portals</strong>
-                  <p>Clear P&amp;L, holdings, and activity from a single polished workspace.</p>
-                </article>
-                <article class="public-mini-card">
-                  <strong>Admin Oversight</strong>
-                  <p>Review clients, moderate trust content, and export clean snapshots.</p>
+              <div id="homeLiveNews" class="home-live-news">
+                <article class="home-news-item">
+                  <span>Market Update</span>
+                  <strong>Loading today’s stock news...</strong>
+                  <small>Please wait</small>
                 </article>
               </div>
             </article>
           </div>
         </section>
 
-        <section class="public-section">
-          <div class="public-card-head">
-            <p class="eyebrow">Trusted Format</p>
-            <strong>A public experience shaped like a modern finance brand.</strong>
-            <small>Clear sections, quiet motion, proof cards, and a softer wealth-tech visual language.</small>
-          </div>
-          <div class="public-logo-row">
-            <span>Portfolio clarity</span>
-            <span>Guided support</span>
-            <span>Investor onboarding</span>
-            <span>Transparent reporting</span>
-            <span>Secure access</span>
-          </div>
-        </section>
-
-        <section class="public-section public-story-grid">
-          <div class="public-copy">
-            <p class="eyebrow">Global Reach, Local Expertise</p>
-            <h2>Personalized support outside login, stronger utility after login.</h2>
-            <p>
-              The homepage now mirrors the reference style with a premium hero, proof-driven sections, chart-inspired
-              cards, and a trust-building narrative that feels made for finance.
-            </p>
-          </div>
-          <div class="public-side-stack">
-            <article class="public-side-card">
-              <strong>Actionable insight</strong>
-              <p>Explain the value before users ever see the dashboard.</p>
-            </article>
-            <article class="public-side-card">
-              <strong>Competitive positioning</strong>
-              <p>Rounded cards, soft blue surfaces, and strong spacing create a sellable first impression.</p>
-            </article>
-          </div>
-        </section>
-
-        <section class="public-section public-grid-two">
-          <article class="public-chart-card">
-            <div class="public-chart-meta">
-              <div>
-                <p class="eyebrow">Worldwide Insights</p>
-                <strong>Signals designed for faster client conversations.</strong>
-              </div>
-              <div class="public-kpi-float"><span>Quarter trend</span><strong>+8.4%</strong></div>
-            </div>
-            <div class="public-curve" aria-hidden="true">
-              <svg viewBox="0 0 600 220" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="publicSectionFill" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stop-color="rgba(31,99,255,0.24)"></stop>
-                    <stop offset="100%" stop-color="rgba(31,99,255,0.03)"></stop>
-                  </linearGradient>
-                </defs>
-                <path d="M0,148 C54,156 68,120 120,126 C180,134 198,178 252,170 C314,160 340,74 390,84 C446,96 470,146 520,138 C556,132 580,94 600,98 L600,220 L0,220 Z" fill="url(#publicSectionFill)"></path>
-                <path d="M0,148 C54,156 68,120 120,126 C180,134 198,178 252,170 C314,160 340,74 390,84 C446,96 470,146 520,138 C556,132 580,94 600,98" fill="none" stroke="#1f63ff" stroke-width="4" stroke-linecap="round"></path>
-              </svg>
-            </div>
+        <section class="public-section compact-feature-strip">
+          <article>
+            <span>01</span>
+            <strong>Admin Dashboard</strong>
+            <p>Click any stock to see all users holding it, quantity, live value, and P/L.</p>
           </article>
-          <div class="public-side-stack">
-            <article class="public-signal-card">
-              <strong>Advisory-led design</strong>
-              <p>Use a public site that feels helpful, not overly technical, while still hinting at depth.</p>
-            </article>
-            <article class="public-signal-card">
-              <strong>Investor-ready trust</strong>
-              <p>About, legal, safety, FAQ, and reviews support one calm and confident product narrative.</p>
-            </article>
-            <article class="public-signal-card">
-              <strong>Better handoff to the app</strong>
-              <p>After login, the visual language already feels like software instead of a disconnected website.</p>
-            </article>
-          </div>
+          <article>
+            <span>02</span>
+            <strong>User Portfolio</strong>
+            <p>Users can add stocks, sell holdings, and see lifetime profit/loss clearly.</p>
+          </article>
+          <article>
+            <span>03</span>
+            <strong>Client Reports</strong>
+            <p>Download simple portfolio snapshots for review meetings and demos.</p>
+          </article>
         </section>
 
-        <section class="public-section">
-          <div class="public-section-heading">
-            <p class="eyebrow">Streamlined Process</p>
-            <h2>From first impression to active portfolio workspace.</h2>
-            <p>The same premium format can now carry the full public journey.</p>
-          </div>
-          <div class="public-process-layout">
-            <article class="public-process-card">
-              <time>01</time>
-              <strong>Discover the platform</strong>
-              <p>Visitors meet a premium finance brand instead of a basic admin website.</p>
-            </article>
-            <article class="public-process-card">
-              <time>02</time>
-              <strong>Build trust quickly</strong>
-              <p>Proof, process, and reassurance appear in a layout that feels intentional and modern.</p>
-            </article>
-            <article class="public-process-card">
-              <time>03</time>
-              <strong>Enter securely</strong>
-              <p>Login becomes a natural next step, supported by role-based entry and verification.</p>
-            </article>
-            <article class="public-process-card">
-              <time>04</time>
-              <strong>Operate with clarity</strong>
-              <p>Inside the platform, holdings, P&amp;L, and exports continue the same design discipline.</p>
-            </article>
-          </div>
-        </section>
-
-        <section class="public-section">
-          <div class="public-section-heading">
-            <p class="eyebrow">Trusted By Clients</p>
-            <h2>Leaders in finance, united by vision.</h2>
-            <p>A people-and-proof section helps the site feel more human, like your reference image.</p>
-          </div>
-          <div class="public-team-grid">
-            <article class="public-person-card">
-              <div class="public-avatar"></div>
-              <strong>Capital Strategy</strong>
-              <p>Advisor-led workflows with cleaner review meetings and stronger reporting structure.</p>
-            </article>
-            <article class="public-person-card">
-              <div class="public-avatar avatar-two"></div>
-              <strong>Wealth Operations</strong>
-              <p>Admin tools for user oversight, moderation, and downloadable dashboard snapshots.</p>
-            </article>
-            <article class="public-person-card">
-              <div class="public-avatar avatar-three"></div>
-              <strong>Investor Experience</strong>
-              <p>Simple enough for clients, polished enough for premium financial conversations.</p>
-            </article>
-          </div>
-        </section>
-
-        <section class="public-dark-cta">
-          <p class="eyebrow">Build With Confidence</p>
-          <h2>Embark on your wealth-building journey with a stronger public brand.</h2>
-          <p>Every public page can now follow this same premium format before we move on to the dashboard design.</p>
+        <section class="public-dark-cta compact-dark-cta">
+          <p class="eyebrow">Demo Ready</p>
+          <h2>Open the platform and show the dashboard directly.</h2>
+          <p>Clean public pages outside login. Functional admin and user dashboards after login.</p>
           <div class="public-cta-row">
-            <a class="primary-btn" href="./login.html">Get Started</a>
-            <a class="secondary-btn" href="./about.html">Learn More</a>
+            <a class="secondary-btn" href="./faq.html">Questions</a>
           </div>
         </section>
       </main>
 
-      <footer class="site-footer public-footer">
+      <footer class="site-footer public-footer compact-footer">
         <div class="public-footer-brand">
           <div>
-            <strong>Stock Trader Web</strong>
-            <p>Premium public pages outside login, serious portfolio operations inside the platform.</p>
-          </div>
-          <div class="public-footer-meta">
-            <p>Designed to make trust, onboarding, and investor servicing feel like one connected product.</p>
+            <strong>Yantra</strong>
+            <p>Price is what you pay. Value is what you get</p>
           </div>
         </div>
         <div class="public-footer-links">
           <a href="./about.html">About</a>
-          <a href="./products.html">Products</a>
-          <a href="./trust-safety.html">Trust &amp; Safety</a>
-          <a href="./legal.html">Legal</a>
           <a href="./faq.html">FAQ</a>
           <a href="./reviews.html">Reviews</a>
-          <a href="./login.html">Login</a>
         </div>
       </footer>
     </div>

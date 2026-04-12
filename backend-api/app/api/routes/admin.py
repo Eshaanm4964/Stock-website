@@ -12,7 +12,7 @@ from app.models.admin_setting import AdminSetting
 from app.models.admin_audit_log import AdminAuditLog
 from app.models.auth_attempt import AuthAttempt
 from app.models.notification import Notification
-from app.models.portfolio import PortfolioHolding
+from app.models.portfolio import PortfolioHolding, PortfolioSale
 from app.models.review import Review
 from app.models.user import User, UserRole
 from app.schemas.admin import (
@@ -21,8 +21,10 @@ from app.schemas.admin import (
     AdminBulkUserActionResponse,
     AdminDashboardResponse,
     AdminHoldingSnapshot,
+    AdminSaleSnapshot,
     AdminLoginIssueItem,
     AdminOperationsOverviewResponse,
+    AdminPortfolioOverviewResponse,
     AdminSettingsOverview,
     AdminStockConcentrationItem,
     AdminSystemStatusResponse,
@@ -80,7 +82,10 @@ async def admin_users(
             holdings = list(
                 (await db.execute(select(PortfolioHolding).where(PortfolioHolding.user_id == user.id))).scalars().all()
             )
-            portfolio = await build_portfolio_summary(holdings, redis)
+            sales = list(
+                (await db.execute(select(PortfolioSale).where(PortfolioSale.user_id == user.id))).scalars().all()
+            )
+            portfolio = await build_portfolio_summary(holdings, redis, sales)
             summaries.append(
                 AdminUserSummary(
                     user_id=user.id,
@@ -131,7 +136,10 @@ async def admin_user_dashboard(
     holdings = list(
         (await db.execute(select(PortfolioHolding).where(PortfolioHolding.user_id == user.id))).scalars().all()
     )
-    portfolio = await build_portfolio_summary(holdings, redis)
+    sales = list(
+        (await db.execute(select(PortfolioSale).where(PortfolioSale.user_id == user.id).order_by(PortfolioSale.sold_at.desc()))).scalars().all()
+    )
+    portfolio = await build_portfolio_summary(holdings, redis, sales)
     snapshots = [
         AdminHoldingSnapshot(
             holding_id=item.holding_id,
@@ -148,6 +156,20 @@ async def admin_user_dashboard(
         )
         for item in portfolio.performance
     ]
+    sale_snapshots = [
+        AdminSaleSnapshot(
+            sale_id=sale.id,
+            symbol=sale.symbol,
+            quantity=float(sale.quantity),
+            buy_price=float(sale.buy_price),
+            sell_price=float(sale.sell_price),
+            profit_loss=float(sale.profit_loss),
+            sector=sale.sector,
+            exchange=sale.exchange,
+            sold_at=sale.sold_at,
+        )
+        for sale in sales
+    ]
     response = AdminUserDashboardResponse(
         user_id=user.id,
         username=user.username,
@@ -156,8 +178,11 @@ async def admin_user_dashboard(
         phone_number=user.phone_number,
         total_portfolio_value=portfolio.total_portfolio_value,
         total_profit_loss=portfolio.total_profit_loss,
+        booked_profit_loss=portfolio.booked_profit_loss,
+        lifetime_profit_loss=portfolio.lifetime_profit_loss,
         total_holdings=len(holdings),
         holdings=snapshots,
+        sales=sale_snapshots,
     )
     if audit:
         await log_admin_action(
@@ -170,6 +195,135 @@ async def admin_user_dashboard(
             details={"fixed_user_id": user.fixed_user_id, "full_name": user.full_name},
         )
     return response
+
+
+@router.get("/portfolio-overview", response_model=AdminPortfolioOverviewResponse)
+async def admin_portfolio_overview(
+    _: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+    redis: Redis = Depends(get_redis),
+) -> AdminPortfolioOverviewResponse:
+    seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
+    users = list((await db.execute(select(User).where(User.role == UserRole.USER))).scalars().all())
+    holdings = list((await db.execute(select(PortfolioHolding))).scalars().all())
+    sales = list((await db.execute(select(PortfolioSale).order_by(PortfolioSale.sold_at.desc()))).scalars().all())
+
+    holdings_by_user: dict[int, list[PortfolioHolding]] = {}
+    for holding in holdings:
+        holdings_by_user.setdefault(holding.user_id, []).append(holding)
+
+    sales_by_user: dict[int, list[PortfolioSale]] = {}
+    for sale in sales:
+        sales_by_user.setdefault(sale.user_id, []).append(sale)
+
+    user_dashboards: list[AdminUserDashboardResponse] = []
+    user_summaries: list[AdminUserSummary] = []
+    for user in users:
+        user_holdings = holdings_by_user.get(user.id, [])
+        user_sales = sales_by_user.get(user.id, [])
+        portfolio = await build_portfolio_summary(user_holdings, redis, user_sales, use_live_quotes=False)
+        snapshots = [
+            AdminHoldingSnapshot(
+                holding_id=item.holding_id,
+                symbol=item.symbol,
+                quantity=item.quantity,
+                buy_price=item.buy_price,
+                current_price=item.current_price,
+                value=item.value,
+                profit_loss=item.profit_loss,
+                percent_change=item.percent_change,
+                sector=item.sector,
+                exchange=item.exchange,
+                created_at=item.created_at,
+            )
+            for item in portfolio.performance
+        ]
+        sale_snapshots = [
+            AdminSaleSnapshot(
+                sale_id=sale.id,
+                symbol=sale.symbol,
+                quantity=float(sale.quantity),
+                buy_price=float(sale.buy_price),
+                sell_price=float(sale.sell_price),
+                profit_loss=float(sale.profit_loss),
+                sector=sale.sector,
+                exchange=sale.exchange,
+                sold_at=sale.sold_at,
+            )
+            for sale in user_sales
+        ]
+        user_dashboards.append(
+            AdminUserDashboardResponse(
+                user_id=user.id,
+                username=user.username,
+                fixed_user_id=user.fixed_user_id,
+                full_name=user.full_name,
+                phone_number=user.phone_number,
+                total_portfolio_value=portfolio.total_portfolio_value,
+                total_profit_loss=portfolio.total_profit_loss,
+                booked_profit_loss=portfolio.booked_profit_loss,
+                lifetime_profit_loss=portfolio.lifetime_profit_loss,
+                total_holdings=len(user_holdings),
+                holdings=snapshots,
+                sales=sale_snapshots,
+            )
+        )
+        user_summaries.append(
+            AdminUserSummary(
+                user_id=user.id,
+                username=user.username,
+                fixed_user_id=user.fixed_user_id,
+                full_name=user.full_name,
+                phone_number=user.phone_number,
+                role=user.role.value,
+                is_active=user.is_active,
+                is_demo=user.is_demo,
+                created_at=user.created_at,
+                portfolio_value=portfolio.total_portfolio_value,
+                total_holdings=len(user_holdings),
+            )
+        )
+
+    total_users = (
+        await db.execute(select(func.count(User.id)).where(User.role == UserRole.USER, User.is_demo.is_(False)))
+    ).scalar_one()
+    new_users = (
+        await db.execute(
+            select(func.count(User.id)).where(
+                User.role == UserRole.USER,
+                User.is_demo.is_(False),
+                User.created_at >= seven_days_ago,
+            )
+        )
+    ).scalar_one()
+    total_notifications = (await db.execute(select(func.count(Notification.id)))).scalar_one()
+    total_admin_logs = (await db.execute(select(func.count(AdminAuditLog.id)))).scalar_one()
+    total_auth_attempts = (await db.execute(select(func.count(AuthAttempt.id)))).scalar_one()
+    database_status = "connected"
+    try:
+        await db.execute(text("SELECT 1"))
+    except Exception:
+        database_status = "error"
+
+    return AdminPortfolioOverviewResponse(
+        dashboard=AdminDashboardResponse(
+            total_users=total_users,
+            newly_registered_users=new_users,
+            total_notifications=total_notifications,
+            total_holdings=len(holdings),
+        ),
+        users=user_summaries,
+        system_status=AdminSystemStatusResponse(
+            backend_status="online",
+            database_status=database_status,
+            redis_status="enabled" if redis else "disabled",
+            environment=settings.app_env,
+            otp_debug_mode=settings.otp_debug_mode,
+            total_admin_logs=total_admin_logs,
+            total_auth_attempts=total_auth_attempts,
+        ),
+        user_dashboards=user_dashboards,
+    )
 
 
 @router.patch("/users/{user_id}/status", response_model=AdminUserSummary)
@@ -192,7 +346,10 @@ async def update_admin_user_status(
     holdings = list(
         (await db.execute(select(PortfolioHolding).where(PortfolioHolding.user_id == user.id))).scalars().all()
     )
-    portfolio = await build_portfolio_summary(holdings, redis)
+    sales = list(
+        (await db.execute(select(PortfolioSale).where(PortfolioSale.user_id == user.id).order_by(PortfolioSale.sold_at.desc()))).scalars().all()
+    )
+    portfolio = await build_portfolio_summary(holdings, redis, sales)
     await log_admin_action(
         db,
         admin_user=current_admin,

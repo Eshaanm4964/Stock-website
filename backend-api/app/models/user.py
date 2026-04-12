@@ -39,6 +39,7 @@ class User(Base):
     )
 
     holdings = relationship("PortfolioHolding", back_populates="user", cascade="all, delete-orphan")
+    sales = relationship("PortfolioSale", back_populates="user", cascade="all, delete-orphan")
     watchlist_items = relationship("WatchlistItem", back_populates="user", cascade="all, delete-orphan")
     alerts = relationship("Alert", back_populates="user", cascade="all, delete-orphan")
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")

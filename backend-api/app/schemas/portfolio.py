@@ -11,6 +11,25 @@ class HoldingCreateRequest(BaseModel):
     exchange: str = Field(default="NSE", min_length=2, max_length=10)
 
 
+class HoldingSellRequest(BaseModel):
+    quantity: float = Field(gt=0)
+    sell_price: float | None = Field(default=None, gt=0)
+
+
+class SaleResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    symbol: str
+    exchange: str
+    quantity: float
+    buy_price: float
+    sell_price: float
+    profit_loss: float
+    sector: str | None
+    sold_at: datetime
+
+
 class HoldingResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -49,8 +68,11 @@ class PortfolioSummaryResponse(BaseModel):
     total_portfolio_value: float
     total_quantity: float
     total_profit_loss: float
+    booked_profit_loss: float = 0.0
+    lifetime_profit_loss: float = 0.0
     performance: list[PortfolioPerformanceItem]
     market_cap_breakdown: list[MarketCapDistribution]
     risk_level: str
     diversification_analysis: str
     sector_exposure: dict[str, float]
+    sales: list[SaleResponse] = []

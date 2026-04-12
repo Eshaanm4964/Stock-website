@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from redis.asyncio import Redis
 
-from app.models.portfolio import PortfolioHolding
+from app.models.portfolio import PortfolioHolding, PortfolioSale
 from app.schemas.portfolio import (
     MarketCapDistribution,
     PortfolioPerformanceItem,
@@ -14,8 +14,12 @@ from app.services.stock_service import classify_market_cap, fetch_quote
 
 
 async def build_portfolio_summary(
-    holdings: list[PortfolioHolding], redis: Redis | None = None
+    holdings: list[PortfolioHolding],
+    redis: Redis | None = None,
+    sales: list[PortfolioSale] | None = None,
+    use_live_quotes: bool = True,
 ) -> PortfolioSummaryResponse:
+    sales = sales or []
     performance: list[PortfolioPerformanceItem] = []
     category_totals: dict[str, dict[str, float]] = defaultdict(lambda: {"quantity": 0.0, "value": 0.0})
     sector_totals: dict[str, float] = defaultdict(float)
@@ -25,21 +29,22 @@ async def build_portfolio_summary(
     total_profit_loss = 0.0
 
     for holding in holdings:
-        quote = await fetch_quote(holding.symbol, holding.exchange, redis)
+        quote = await fetch_quote(holding.symbol, holding.exchange, redis) if use_live_quotes else None
         quantity = float(holding.quantity)
         buy_price = float(holding.buy_price)
-        current_price = quote.price
+        current_price = quote.price if quote else buy_price
         value = current_price * quantity
         profit_loss = (current_price - buy_price) * quantity
-        category = classify_market_cap(quote.market_cap)
+        category = classify_market_cap(quote.market_cap) if quote else "Unknown"
 
         total_value += value
         total_quantity += quantity
         total_profit_loss += profit_loss
         category_totals[category]["quantity"] += quantity
         category_totals[category]["value"] += value
-        if quote.sector:
-            sector_totals[quote.sector] += value
+        sector = (quote.sector if quote else None) or holding.sector or "Tracked holding"
+        if sector:
+            sector_totals[sector] += value
 
         performance.append(
             PortfolioPerformanceItem(
@@ -53,7 +58,7 @@ async def build_portfolio_summary(
                 profit_loss=round(profit_loss, 2),
                 percent_change=round(((current_price - buy_price) / buy_price) * 100, 2) if buy_price else 0.0,
                 market_cap_category=category,
-                sector=quote.sector or holding.sector,
+                sector=sector,
                 created_at=holding.created_at,
             )
         )
@@ -81,13 +86,17 @@ async def build_portfolio_summary(
         if len(sector_exposure) <= 2
         else "Portfolio shows a reasonable spread across multiple sectors."
     )
+    booked_profit_loss = sum(float(sale.profit_loss) for sale in sales)
     return PortfolioSummaryResponse(
         total_portfolio_value=round(total_value, 2),
         total_quantity=round(total_quantity, 2),
         total_profit_loss=round(total_profit_loss, 2),
+        booked_profit_loss=round(booked_profit_loss, 2),
+        lifetime_profit_loss=round(total_profit_loss + booked_profit_loss, 2),
         performance=performance,
         market_cap_breakdown=breakdown,
         risk_level=risk_level,
         diversification_analysis=diversification,
         sector_exposure=sector_exposure,
+        sales=sales,
     )

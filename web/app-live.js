@@ -2,13 +2,32 @@ const STORAGE_KEY = "stock_trader_auth";
 const SITE_CONTROL_KEY = "stock_trader_site_controls";
 const REVIEW_STORAGE_KEY = "stock_trader_reviews";
 const USER_RECOMMENDATION_SYMBOLS = ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN", "LT", "ITC", "AXISBANK", "KOTAKBANK", "BHARTIARTL", "ASIANPAINT"];
+const HOME_TICKER_SYMBOLS = ["NIFTY50", "SENSEX", "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN", "LT", "TATAMOTORS", "SUNPHARMA"];
+const HOME_TICKER_FALLBACK = {
+  NIFTY50: { symbol: "NIFTY 50", price: 22580.35, change_percent: 0.42, is_fallback: true },
+  SENSEX: { symbol: "SENSEX", price: 74221.06, change_percent: 0.36, is_fallback: true },
+  RELIANCE: { symbol: "RELIANCE", price: 2910, change_percent: 1.12, is_fallback: true },
+  TCS: { symbol: "TCS", price: 3660, change_percent: -0.34, is_fallback: true },
+  INFY: { symbol: "INFY", price: 1512, change_percent: 0.82, is_fallback: true },
+  HDFCBANK: { symbol: "HDFCBANK", price: 1618, change_percent: -0.76, is_fallback: true },
+  ICICIBANK: { symbol: "ICICIBANK", price: 1112, change_percent: 1.45, is_fallback: true },
+  SBIN: { symbol: "SBIN", price: 768, change_percent: 0.28, is_fallback: true },
+  LT: { symbol: "LT", price: 3475, change_percent: -0.18, is_fallback: true },
+  TATAMOTORS: { symbol: "TATAMOTORS", price: 904, change_percent: 2.04, is_fallback: true },
+  SUNPHARMA: { symbol: "SUNPHARMA", price: 1710, change_percent: -0.41, is_fallback: true }
+};
 let activeRole = null;
 let activeUserId = null;
 let liveTickerTimer = null;
 let chatNudgeTimer = null;
+let adminSearchRenderTimer = null;
+let liveDashboardPriceTimer = null;
 let adminUiState = {
   search: "",
-  status: "all"
+  scriptSearch: "",
+  status: "all",
+  detailType: "",
+  detailKey: ""
 };
 let userUiState = {
   search: "",
@@ -98,7 +117,47 @@ function isUserDashboardPage() {
 
 function goToDashboard(role) {
   const target = role === "admin" ? "./admin-dashboard.html" : "./user-dashboard.html";
+  try {
+    localStorage.setItem(
+      "stock_trader_dashboard_launch",
+      JSON.stringify({ role, at: Date.now() })
+    );
+  } catch {
+    // Navigation should never fail because localStorage is unavailable.
+  }
+  if (isLoginPage()) {
+    const overlay = document.getElementById("authLoadingOverlay");
+    document.body.classList.add("dashboard-launching");
+    if (overlay && !overlay.classList.contains("hidden")) {
+      overlay.classList.add("auth-loading-success");
+    }
+    window.setTimeout(() => {
+      window.location.href = target;
+    }, 620);
+    return;
+  }
   window.location.href = target;
+}
+
+function setupSmartLoginLinks() {
+  document.querySelectorAll('a[href="./login.html"]').forEach((link) => {
+    link.addEventListener("click", (event) => {
+      const auth = getAuth();
+      if (!auth?.token || !auth.role) return;
+      event.preventDefault();
+      goToDashboard(auth.role);
+    });
+  });
+}
+
+function removeDeprecatedPublicNavigation() {
+  const blockedTargets = ["products.html", "trust-safety.html", "legal.html"];
+  document.querySelectorAll("a[href]").forEach((link) => {
+    const href = String(link.getAttribute("href") || "").toLowerCase();
+    if (blockedTargets.some((target) => href.includes(target))) {
+      link.remove();
+    }
+  });
 }
 
 function setButtonLoading(button, loadingText) {
@@ -133,8 +192,6 @@ function hidePortalMounts() {
 function revealPortal(target) {
   if (!target) return;
   target.classList.remove("hidden");
-  target.classList.remove("portal-visible");
-  void target.offsetWidth;
   target.classList.add("portal-visible");
 }
 
@@ -145,6 +202,7 @@ function showAuthLoading(title, text) {
   if (!overlay) return;
   if (titleNode) titleNode.textContent = title || "Opening dashboard...";
   if (textNode) textNode.textContent = text || "Please wait while we verify access and load your workspace.";
+  overlay.classList.remove("auth-loading-success");
   overlay.classList.remove("hidden");
   overlay.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
@@ -154,8 +212,29 @@ function hideAuthLoading() {
   const overlay = document.getElementById("authLoadingOverlay");
   if (!overlay) return;
   overlay.classList.add("hidden");
+  overlay.classList.remove("auth-loading-success");
+  document.body.classList.remove("dashboard-launching");
   overlay.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
+}
+
+function setupDashboardLaunchReveal() {
+  if (!isAdminDashboardPage() && !isUserDashboardPage()) return;
+  let launch = null;
+  try {
+    launch = JSON.parse(localStorage.getItem("stock_trader_dashboard_launch") || "null");
+    localStorage.removeItem("stock_trader_dashboard_launch");
+  } catch {
+    launch = null;
+  }
+  const isFreshLaunch = launch && Date.now() - Number(launch.at || 0) < 8000;
+  if (!isFreshLaunch) return;
+  document.body.classList.add("dashboard-arriving");
+  document.body.dataset.launchRole = launch.role || "";
+  window.setTimeout(() => {
+    document.body.classList.remove("dashboard-arriving");
+    delete document.body.dataset.launchRole;
+  }, 2600);
 }
 
 function getSiteControls() {
@@ -168,9 +247,23 @@ function saveSiteControls(nextControls) {
 }
 
 function getApiBase() {
-  return localStorage.getItem("stock_trader_api_url") || "https://stock-trader-demo-backend.onrender.com/api/v1";
+  const savedApiUrl = localStorage.getItem("stock_trader_api_url");
+  const host = window.location.hostname;
+  const isLocalFrontend = host === "localhost" || host === "127.0.0.1";
+  if (isLocalFrontend) {
+    const isLocalApi = savedApiUrl && /localhost|127\.0\.0\.1/i.test(savedApiUrl);
+    return isLocalApi ? savedApiUrl : "http://localhost:8000/api/v1";
+  }
+  return savedApiUrl || "https://stock-trader-demo-backend.onrender.com/api/v1";
 }
 
+function notifyPortfolioChanged() {
+  try {
+    localStorage.setItem("stock_trader_portfolio_updated", String(Date.now()));
+  } catch {
+    // Ignore storage errors; polling still keeps dashboards fresh.
+  }
+}
 function formatError(error) {
   if (
     error instanceof TypeError &&
@@ -387,7 +480,7 @@ function buildUserSymbolCatalog(performance = [], recommendationFeed = []) {
   performance.forEach((holding) => {
     pushCandidate(
       holding.symbol,
-      `${holding.symbol} · ${holding.sector || "Tracked holding"}`,
+      `${holding.symbol}  -  ${holding.sector || "Tracked holding"}`,
       holding.sector || "Tracked holding",
       holding.current_price || holding.buy_price
     );
@@ -395,13 +488,13 @@ function buildUserSymbolCatalog(performance = [], recommendationFeed = []) {
   recommendationFeed.forEach((quote) => {
     pushCandidate(
       quote.symbol,
-      `${quote.symbol} · ${quote.short_name || "Suggested stock"}`,
+      `${quote.symbol}  -  ${quote.short_name || "Suggested stock"}`,
       quote.short_name || "Suggested stock",
       quote.price
     );
   });
   USER_RECOMMENDATION_SYMBOLS.forEach((symbol) => {
-    pushCandidate(symbol, `${symbol} · Suggested stock`, "Suggested stock", 0);
+    pushCandidate(symbol, `${symbol}  -  Suggested stock`, "Suggested stock", 0);
   });
 
   return [...map.values()];
@@ -533,7 +626,7 @@ function applyUserPortfolioFilters() {
   const summary = document.getElementById("userSearchSummary");
   if (summary) {
     summary.textContent = visibleCount
-      ? `${visibleCount} holding${visibleCount === 1 ? "" : "s"} visible · ${currency(visibleValue)} in view`
+      ? `${visibleCount} holding${visibleCount === 1 ? "" : "s"} visible  -  ${currency(visibleValue)} in view`
       : "No holdings match the current search or filter.";
   }
 
@@ -575,8 +668,13 @@ function setupPortfolioSymbolSuggestions() {
     if (buyPriceInput && !String(buyPriceInput.value || "").trim() && Number(button.dataset.symbolPrice || 0) > 0) {
       buyPriceInput.value = Number(button.dataset.symbolPrice).toFixed(2);
     }
-    renderSuggestions();
-    input.focus();
+    suggestions.innerHTML = "";
+    buyPriceInput?.focus();
+  });
+
+  document.addEventListener("click", (event) => {
+    if (event.target === input || suggestions.contains(event.target)) return;
+    suggestions.innerHTML = "";
   });
 
   renderSuggestions();
@@ -759,6 +857,8 @@ function setupReviewForm() {
 }
 
 function setupPageTransitions() {
+  if (document.body.classList.contains("dashboard-page")) return;
+
   document.body.classList.add("page-enter");
 
   window.requestAnimationFrame(() => {
@@ -834,11 +934,29 @@ function setupHoldingDeleteButtons() {
     button.addEventListener("click", async () => {
       const holdingId = button.dataset.deleteHolding;
       const symbol = button.dataset.symbol || "this stock";
-      const confirmed = window.confirm(`Remove ${symbol} from the portfolio?`);
-      if (!confirmed) return;
-      const stopLoading = setButtonLoading(button, "Removing...");
+      const maxQuantity = Number(button.dataset.quantity || 0);
+      const livePrice = Number(button.dataset.livePrice || 0);
+      const quantityInput = window.prompt(`How many shares of ${symbol} do you want to sell?`, String(maxQuantity || 1));
+      if (quantityInput === null) return;
+      const sellQuantity = Number(quantityInput);
+      if (!sellQuantity || sellQuantity <= 0 || sellQuantity > maxQuantity) {
+        alert(`Enter a sell quantity between 1 and ${maxQuantity}.`);
+        return;
+      }
+      const priceInput = window.prompt(`Sell price for ${symbol}`, livePrice ? String(livePrice.toFixed(2)) : "");
+      if (priceInput === null) return;
+      const sellPrice = Number(priceInput);
+      if (!sellPrice || sellPrice <= 0) {
+        alert("Enter a valid sell price.");
+        return;
+      }
+      const stopLoading = setButtonLoading(button, "Selling...");
       try {
-        await api(`/portfolio/${holdingId}`, { method: "DELETE" });
+        await api(`/portfolio/${holdingId}/sell`, {
+          method: "POST",
+          body: JSON.stringify({ quantity: sellQuantity, sell_price: sellPrice })
+        });
+        notifyPortfolioChanged();
         await renderUserPortal();
       } catch (error) {
         alert(formatError(error));
@@ -856,44 +974,80 @@ async function safeAdminUserDashboards(users) {
     .map((result) => result.value);
 }
 
+async function loadAdminPortalData() {
+  try {
+    const overview = await api("/admin/portfolio-overview");
+    return {
+      dashboard: overview.dashboard || {},
+      users: Array.isArray(overview.users) ? overview.users : [],
+      systemStatus: overview.system_status || {},
+      userDashboards: Array.isArray(overview.user_dashboards) ? overview.user_dashboards : []
+    };
+  } catch {
+    const [dashboard, users, systemStatus] = await Promise.all([
+      api("/admin/dashboard"),
+      api("/admin/users"),
+      api("/admin/system-status")
+    ]);
+    const safeUsers = Array.isArray(users) ? users : [];
+    return {
+      dashboard,
+      users: safeUsers,
+      systemStatus,
+      userDashboards: await safeAdminUserDashboards(safeUsers)
+    };
+  }
+}
+
 function buildUserDownloadHtml(dashboard) {
+  const investedValue = (dashboard.holdings || []).reduce(
+    (sum, holding) => sum + Number(holding.buy_price || 0) * Number(holding.quantity || 0),
+    0
+  );
+  const lifetimeReturn = investedValue ? (Number(dashboard.total_profit_loss || 0) / investedValue) * 100 : 0;
   return `
     <!DOCTYPE html>
     <html lang="en">
       <head>
         <meta charset="UTF-8" />
-        <title>${dashboard.full_name} Dashboard</title>
+        <title>${dashboard.full_name} Client Dashboard</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 28px; color: #11233f; }
+          body { font-family: Arial, sans-serif; padding: 28px; color: #11233f; background: #f7f9fd; }
           h1, h2 { margin-bottom: 8px; }
-          .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
-          .card { border: 1px solid #d9e3f2; border-radius: 16px; padding: 16px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+          .subtle { color: #667085; margin-top: 0; }
+          .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0; }
+          .card { border: 1px solid #d9e3f2; border-radius: 16px; padding: 16px; background: #fff; }
+          .card div { margin-top: 8px; font-size: 1.35rem; font-weight: 800; }
+          table { width: 100%; border-collapse: collapse; margin-top: 12px; background: #fff; }
           th, td { border-bottom: 1px solid #d9e3f2; padding: 10px 8px; text-align: left; }
+          th { color: #667085; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; }
           .profit { color: #0f9f62; font-weight: bold; }
           .loss { color: #d64045; font-weight: bold; }
+          .note { margin-top: 18px; color: #667085; font-size: 0.9rem; }
         </style>
       </head>
       <body>
-        <h1>${dashboard.full_name} Portfolio Dashboard</h1>
-        <p>${dashboard.fixed_user_id || dashboard.username}</p>
+        <h1>${dashboard.full_name} Client Dashboard</h1>
+        <p class="subtle">${dashboard.fixed_user_id || dashboard.username} | Generated from admin dashboard | Live prices where available</p>
         <div class="grid">
           <div class="card"><strong>Total Holdings</strong><div>${dashboard.total_holdings}</div></div>
+          <div class="card"><strong>Invested Value</strong><div>${currency(investedValue)}</div></div>
           <div class="card"><strong>Current Value</strong><div>${currency(dashboard.total_portfolio_value)}</div></div>
-          <div class="card"><strong>Total P&amp;L</strong><div class="${dashboard.total_profit_loss >= 0 ? "profit" : "loss"}">${currency(dashboard.total_profit_loss)}</div></div>
+          <div class="card"><strong>Lifetime P&amp;L</strong><div class="${dashboard.total_profit_loss >= 0 ? "profit" : "loss"}">${currency(dashboard.total_profit_loss)} (${percent(lifetimeReturn)})</div></div>
         </div>
-        <h2>Holdings</h2>
+        <h2>Investor Trade Positions</h2>
         <table>
-          <thead><tr><th>Stock</th><th>Qty</th><th>Buy</th><th>Current</th><th>P&amp;L</th></tr></thead>
+          <thead><tr><th>Script</th><th>Deal Type</th><th>Buy Qty</th><th>Pending Qty</th><th>Buy Price</th><th>Live Price</th><th>Running P&amp;L</th><th>Booked P&amp;L</th><th>Lifetime P&amp;L</th></tr></thead>
           <tbody>
-            ${dashboard.holdings
+            ${(dashboard.holdings || [])
               .map(
                 (holding) =>
-                  `<tr><td>${holding.symbol}</td><td>${holding.quantity}</td><td>${currency(holding.buy_price)}</td><td>${currency(holding.current_price)}</td><td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}</td></tr>`
+                  `<tr><td>${holding.symbol}</td><td>${holding.exchange || "NSE"}</td><td>${holding.quantity}</td><td>${holding.quantity}</td><td>${currency(holding.buy_price)}</td><td>${currency(holding.current_price)}</td><td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}</td><td>${currency(0)}</td><td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}</td></tr>`
               )
               .join("")}
           </tbody>
         </table>
+        <p class="note">Booked profit is shown as zero in the demo because sell/exit transactions are not yet recorded separately.</p>
       </body>
     </html>
   `;
@@ -912,9 +1066,10 @@ function logoutAndResetPortals() {
   clearAuth();
   activeRole = null;
   activeUserId = null;
+  stopLiveDashboardPrices();
   hidePortalMounts();
   hideAuthLoading();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  window.location.href = "./login.html";
 }
 
 async function renderTicker(elementId, symbols) {
@@ -941,6 +1096,177 @@ async function renderTicker(elementId, symbols) {
       `
     )
     .join("");
+}
+
+async function setupHomeLiveTicker() {
+  const mount = document.getElementById("homeLiveTicker");
+  if (!mount) return;
+
+  const fallbackFeed = HOME_TICKER_SYMBOLS.map((symbol) => HOME_TICKER_FALLBACK[symbol]);
+  const feed = await api(`/stocks/feed?symbols=${encodeURIComponent(HOME_TICKER_SYMBOLS.join(","))}`).catch(() => fallbackFeed);
+  const quotes = Array.isArray(feed) && feed.length ? feed : fallbackFeed;
+  const tickerItems = quotes
+    .map((quote) => {
+    const change = Number(quote.change_percent || 0);
+      const symbol = quote.symbol === "NIFTY50" ? "NIFTY 50" : quote.symbol;
+      return `
+        <article class="home-ticker-item ${change >= 0 ? "is-up" : "is-down"}">
+          <span class="ticker-dot"></span>
+          <strong>${escapeHtml(symbol)} <em>${currency(quote.price)}</em></strong>
+          <small>${percent(change)} ${quote.is_fallback ? "Backup" : "Live"}</small>
+        </article>
+    `;
+    })
+    .join("");
+  mount.innerHTML = `<div class="home-ticker-track">${tickerItems}${tickerItems}</div>`;
+}
+
+function setPriceClass(node, value) {
+  if (!node) return;
+  node.classList.toggle("profit", Number(value || 0) >= 0);
+  node.classList.toggle("loss", Number(value || 0) < 0);
+  node.classList.toggle("price-up", Number(value || 0) >= 0);
+  node.classList.toggle("price-down", Number(value || 0) < 0);
+}
+
+async function refreshVisibleDashboardPrices() {
+  const rows = [...document.querySelectorAll("[data-live-symbol]")];
+  if (!rows.length) return;
+
+  const symbols = [...new Set(rows.map((row) => row.dataset.liveSymbol).filter(Boolean))];
+  if (!symbols.length) return;
+
+  const feed = await api(`/stocks/feed?symbols=${encodeURIComponent(symbols.join(","))}`).catch(() => []);
+  const quoteMap = new Map(
+    (Array.isArray(feed) ? feed : []).map((quote) => [String(quote.symbol || "").toUpperCase(), quote])
+  );
+  const summaryRows = rows.filter((row) => row.dataset.liveSummary === "true");
+  let totalLiveValue = 0;
+  let totalBuyValue = 0;
+
+  rows.forEach((row) => {
+    const symbol = String(row.dataset.liveSymbol || "").toUpperCase();
+    const quote = quoteMap.get(symbol);
+    if (!quote) return;
+
+    const quantity = Number(row.dataset.quantity || 0);
+    const buyPrice = Number(row.dataset.buyPrice || 0);
+    const buyValue = buyPrice * quantity;
+    const livePrice = Number(quote.price || 0);
+    const liveValue = livePrice * quantity;
+    const pnl = liveValue - buyValue;
+    const returnPct = buyValue ? (pnl / buyValue) * 100 : 0;
+
+    row.dataset.currentPrice = String(livePrice);
+    row.dataset.value = String(liveValue);
+    if (summaryRows.length ? row.dataset.liveSummary === "true" : true) {
+      totalLiveValue += liveValue;
+      totalBuyValue += buyValue;
+    }
+
+    const livePriceCell = row.querySelector("[data-live-price-cell]");
+    const liveValueCell = row.querySelector("[data-live-value-cell]");
+    const pnlCell = row.querySelector("[data-pnl-cell]");
+    const returnCell = row.querySelector("[data-return-cell]");
+    const sellButton = row.querySelector("[data-delete-holding]");
+
+    if (livePriceCell) {
+      livePriceCell.textContent = currency(livePrice);
+      setPriceClass(livePriceCell, Number(quote.change_percent || 0));
+    }
+    if (liveValueCell) {
+      liveValueCell.textContent = currency(liveValue);
+      setPriceClass(liveValueCell, pnl);
+    }
+    if (pnlCell) {
+      pnlCell.textContent = currency(pnl);
+      setPriceClass(pnlCell, pnl);
+    }
+    if (returnCell) {
+      returnCell.textContent = percent(returnPct);
+      setPriceClass(returnCell, returnPct);
+    }
+    if (sellButton) sellButton.dataset.livePrice = String(livePrice);
+  });
+
+  const bookedPnl = Number(document.querySelector("[data-live-booked-pnl]")?.dataset.liveBookedPnl || 0);
+  const totalPnl = totalLiveValue - totalBuyValue + bookedPnl;
+  document.querySelectorAll("[data-live-total-value]").forEach((node) => {
+    node.textContent = currency(totalLiveValue);
+  });
+  document.querySelectorAll("[data-live-total-pnl]").forEach((node) => {
+    node.textContent = currency(totalPnl);
+    setPriceClass(node, totalPnl);
+  });
+  document.querySelectorAll("[data-live-total-return]").forEach((node) => {
+    node.textContent = percent(totalBuyValue ? (totalPnl / totalBuyValue) * 100 : 0);
+    setPriceClass(node, totalPnl);
+  });
+
+  const status = document.querySelector("[data-live-price-status]");
+  if (status) {
+    status.textContent = `Live prices updated ${new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`;
+  }
+}
+
+function startLiveDashboardPrices() {
+  stopLiveDashboardPrices();
+  refreshVisibleDashboardPrices().catch(() => {});
+  liveDashboardPriceTimer = window.setInterval(() => {
+    refreshVisibleDashboardPrices().catch(() => {});
+  }, 60000);
+}
+
+function stopLiveDashboardPrices() {
+  if (!liveDashboardPriceTimer) return;
+  window.clearInterval(liveDashboardPriceTimer);
+  liveDashboardPriceTimer = null;
+}
+
+function todayLabel() {
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  }).format(new Date());
+}
+
+async function setupHomeLiveNews() {
+  const mount = document.getElementById("homeLiveNews");
+  const dateBadge = document.getElementById("homeNewsDate");
+  if (!mount) return;
+
+  const today = todayLabel();
+  if (dateBadge) dateBadge.textContent = today;
+
+  const fallbackNews = [
+    { title: "NIFTY 50 and SENSEX remain the key market indicators to watch today.", source: "Market Desk" },
+    { title: "Banking and IT stocks are being tracked closely for portfolio movement.", source: "Live Watch" },
+    { title: "Client portfolio P/L updates as live prices move through the session.", source: "Portfolio Feed" },
+    { title: "Admins can review stock-wise client exposure directly from the dashboard.", source: "Dashboard Update" }
+  ];
+
+  const newsResponse = await api("/stocks/market/news").catch(() => []);
+  const liveNews = (Array.isArray(newsResponse) ? newsResponse : [])
+    .filter((article) => article?.title)
+    .slice(0, 6);
+  const news = liveNews.length ? liveNews : fallbackNews;
+  let index = 0;
+
+  const showNews = () => {
+    const item = news[index % news.length];
+    mount.innerHTML = `
+      <article class="home-news-item">
+        <span>${escapeHtml(item.source || "Market News")} · ${today}</span>
+        <strong>${escapeHtml(item.title)}</strong>
+        <small>${liveNews.length ? "Alpha Vantage news feed" : "Market brief while Alpha Vantage is rate-limited"}</small>
+      </article>
+    `;
+    index += 1;
+  };
+
+  showNews();
+  window.setInterval(showNews, 3200);
 }
 
 function setupDownloadButtons(userDashboards = []) {
@@ -1003,6 +1329,7 @@ function setupWebsiteControlButtons() {
 function setupAdminManagementButtons() {
   const statusMessage = document.getElementById("adminUserActionStatus");
   const searchInput = document.getElementById("adminUserSearch");
+  const scriptSearchInput = document.getElementById("adminScriptSearch");
   const statusFilter = document.getElementById("adminUserStatusFilter");
   const selectAll = document.getElementById("adminSelectAllUsers");
   const bulkActivate = document.getElementById("bulkActivateUsersBtn");
@@ -1011,9 +1338,19 @@ function setupAdminManagementButtons() {
 
   if (searchInput) {
     searchInput.value = adminUiState.search;
-    searchInput.addEventListener("input", async () => {
+    searchInput.addEventListener("input", () => {
       adminUiState.search = searchInput.value.trim();
-      await renderAdminPortal();
+      window.clearTimeout(adminSearchRenderTimer);
+      adminSearchRenderTimer = window.setTimeout(() => renderAdminPortal().catch(() => {}), 450);
+    });
+  }
+
+  if (scriptSearchInput) {
+    scriptSearchInput.value = adminUiState.scriptSearch;
+    scriptSearchInput.addEventListener("input", () => {
+      adminUiState.scriptSearch = scriptSearchInput.value.trim();
+      window.clearTimeout(adminSearchRenderTimer);
+      adminSearchRenderTimer = window.setTimeout(() => renderAdminPortal().catch(() => {}), 450);
     });
   }
 
@@ -1182,629 +1519,429 @@ function setupPortalActions() {
 }
 
 function buildAdminClientDetail(user) {
+  const holdings = Array.isArray(user.holdings) ? user.holdings : [];
+  const investedValue = holdings.reduce((sum, holding) => sum + Number(holding.buy_price || 0) * Number(holding.quantity || 0), 0);
+  const currentValue = holdings.reduce((sum, holding) => sum + Number(holding.value || 0), 0);
+  const openPnl = currentValue - investedValue;
+  const sales = Array.isArray(user.sales) ? user.sales : [];
+  const bookedPnl = sales.reduce((sum, sale) => sum + Number(sale.profit_loss || 0), 0);
+  const totalPnl = openPnl + bookedPnl;
+  const lifetimeReturn = investedValue ? (totalPnl / investedValue) * 100 : 0;
   return `
-    <article class="dashboard-card detail-card">
+    <article class="dashboard-card detail-card admin-simple-detail-card">
       <div class="panel-head">
         <div>
-          <p class="eyebrow">Client Detail</p>
-          <h3>${user.full_name}</h3>
-          <p class="detail-subtitle">${user.fixed_user_id || user.username}</p>
+          <p class="eyebrow">Client Portfolio</p>
+          <h3>${escapeHtml(user.full_name)}</h3>
+          <p class="detail-subtitle">${escapeHtml(user.fixed_user_id || user.username || "Client")}</p>
         </div>
-        <span class="badge ${user.total_profit_loss >= 0 ? "green" : "red"}">${currency(user.total_profit_loss)}</span>
+        <span class="badge ${totalPnl >= 0 ? "green" : "red"}">Lifetime ${currency(totalPnl)}</span>
       </div>
-      <div class="detail-stat-grid">
-        <article><strong>${user.total_holdings}</strong><span>Live Stocks</span></article>
-        <article><strong>${currency(user.total_portfolio_value)}</strong><span>Current Value</span></article>
-        <article><strong class="${user.total_profit_loss >= 0 ? "profit" : "loss"}">${percent((user.total_profit_loss / Math.max(user.total_portfolio_value - user.total_profit_loss, 1)) * 100)}</strong><span>Total Return</span></article>
+      <div class="detail-stat-grid admin-simple-stats">
+        <article><strong>${holdings.length}</strong><span>Stocks Holding</span></article>
+        <article><strong>${currency(investedValue)}</strong><span>Total Buy Value</span></article>
+        <article><strong>${currency(currentValue)}</strong><span>Live Value</span></article>
+        <article><strong class="${openPnl >= 0 ? "profit" : "loss"}">${currency(openPnl)}</strong><span>Open Profit / Loss</span></article>
+        <article><strong class="${bookedPnl >= 0 ? "profit" : "loss"}">${currency(bookedPnl)}</strong><span>Booked Profit / Loss</span></article>
+        <article><strong class="${totalPnl >= 0 ? "profit" : "loss"}">${currency(totalPnl)}</strong><span>Lifetime Profit / Loss</span></article>
+        <article><strong class="${lifetimeReturn >= 0 ? "profit" : "loss"}">${percent(lifetimeReturn)}</strong><span>Lifetime Return</span></article>
       </div>
-      <div class="dashboard-grid detail-grid">
-        <article class="table-card">
-          <div class="panel-head"><h3>Live Stock View</h3><span class="badge">Realtime</span></div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Live Price</th><th>P&amp;L</th></tr></thead>
-              <tbody>
-                ${user.holdings.map((holding) => `
-                  <tr>
-                    <td>${holding.symbol}<br /><small>${holding.sector || "Tracked holding"}</small></td>
-                    <td>${holding.quantity}</td>
-                    <td>${currency(holding.buy_price)}</td>
-                    <td>${currency(holding.current_price)}</td>
-                    <td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}</td>
-                  </tr>
-                `).join("")}
-              </tbody>
-            </table>
-          </div>
-        </article>
-        <article class="table-card">
-          <div class="panel-head"><h3>Old Stock History</h3><span class="badge green">Purchase Records</span></div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Date</th><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Status</th></tr></thead>
-              <tbody>
-                ${user.holdings.map((holding) => `
-                  <tr>
-                    <td>${formatDate(holding.created_at)}</td>
-                    <td>${holding.symbol}</td>
-                    <td>${holding.quantity}</td>
-                    <td>${currency(holding.buy_price)}</td>
-                    <td>${holding.current_price >= holding.buy_price ? "In Profit" : "Under Watch"}</td>
-                  </tr>
-                `).join("")}
-              </tbody>
-            </table>
-          </div>
-        </article>
-      </div>
-    </article>
-  `;
-}
-
-function buildAdminStockDetail(symbol, holdings) {
-  const totalQty = holdings.reduce((sum, holding) => sum + Number(holding.quantity || 0), 0);
-  const totalPnl = holdings.reduce((sum, holding) => sum + Number(holding.profit_loss || 0), 0);
-  return `
-    <article class="dashboard-card detail-card">
-      <div class="panel-head">
-        <div>
-          <p class="eyebrow">Stock Detail</p>
-          <h3>${symbol}</h3>
-          <p class="detail-subtitle">Clients currently holding this stock</p>
-        </div>
-        <span class="badge">${holdings.length} Holders</span>
-      </div>
-      <div class="detail-stat-grid">
-        <article><strong>${holdings.length}</strong><span>Total Clients</span></article>
-        <article><strong>${totalQty}</strong><span>Total Quantity</span></article>
-        <article><strong class="${totalPnl >= 0 ? "profit" : "loss"}">${currency(totalPnl)}</strong><span>Combined P&amp;L</span></article>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Customer</th><th>Client ID</th><th>Qty</th><th>Buy Price</th><th>Live Price</th><th>P&amp;L</th></tr></thead>
+      <div class="table-wrap admin-position-table-wrap">
+        <table class="compact-table admin-position-table">
+          <thead><tr><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Buy Value</th><th>Live Price</th><th>Live Value</th><th>Profit / Loss</th><th>Return</th></tr></thead>
           <tbody>
-            ${holdings.map((holding) => `
-              <tr>
-                <td>${holding.owner}</td>
-                <td>${holding.fixed_user_id || ""}</td>
-                <td>${holding.quantity}</td>
-                <td>${currency(holding.buy_price)}</td>
-                <td>${currency(holding.current_price)}</td>
-                <td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}</td>
-              </tr>
-            `).join("")}
+            ${holdings.length
+              ? holdings.map((holding) => {
+                  const buyValue = Number(holding.buy_price || 0) * Number(holding.quantity || 0);
+                  const liveValue = Number(holding.value || 0);
+                  const pnl = liveValue - buyValue;
+                  const returnPct = buyValue ? (pnl / buyValue) * 100 : 0;
+                  return `
+                    <tr data-live-symbol="${escapeHtml(holding.symbol)}" data-quantity="${Number(holding.quantity || 0)}" data-buy-price="${Number(holding.buy_price || 0)}" data-current-price="${Number(holding.current_price || 0)}" data-value="${Number(holding.value || 0)}">
+                      <td><button class="table-link" type="button" data-stock-detail="${escapeHtml(holding.symbol)}">${escapeHtml(holding.symbol)}</button><br /><small>${escapeHtml(holding.sector || "Tracked holding")}</small></td>
+                      <td>${Number(holding.quantity || 0).toLocaleString("en-IN")}</td>
+                      <td>${currency(holding.buy_price)}</td>
+                      <td>${currency(buyValue)}</td>
+                      <td><strong class="${pnl >= 0 ? "price-up" : "price-down"}" data-live-price-cell>${currency(holding.current_price)}</strong></td>
+                      <td><strong class="${pnl >= 0 ? "price-up" : "price-down"}" data-live-value-cell>${currency(liveValue)}</strong></td>
+                      <td class="${pnl >= 0 ? "profit" : "loss"}" data-pnl-cell>${currency(pnl)}</td>
+                      <td class="${returnPct >= 0 ? "profit" : "loss"}" data-return-cell>${percent(returnPct)}</td>
+                    </tr>
+                  `;
+                }).join("")
+              : `<tr><td colspan="8"><span class="helper-text">This client has not added stocks yet.</span></td></tr>`}
           </tbody>
         </table>
       </div>
     </article>
   `;
 }
-
-function setupAdminDrilldowns(userDashboards, allHoldings) {
+function buildAdminStockDetail(symbol, holdings) {
+  const safeHoldings = Array.isArray(holdings) ? holdings : [];
+  const totalQty = safeHoldings.reduce((sum, holding) => sum + Number(holding.quantity || 0), 0);
+  const investedValue = safeHoldings.reduce((sum, holding) => sum + Number(holding.buy_price || 0) * Number(holding.quantity || 0), 0);
+  const currentValue = safeHoldings.reduce((sum, holding) => sum + Number(holding.value || 0), 0);
+  const totalPnl = currentValue - investedValue;
+  const returnPct = investedValue ? (totalPnl / investedValue) * 100 : 0;
+  return `
+    <article class="dashboard-card detail-card admin-simple-detail-card">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Stock Holders</p>
+          <h3>${escapeHtml(symbol)}</h3>
+          <p class="detail-subtitle">Every client currently holding this stock</p>
+        </div>
+        <span class="badge ${totalPnl >= 0 ? "green" : "red"}">${safeHoldings.length} Client${safeHoldings.length === 1 ? "" : "s"}</span>
+      </div>
+      <div class="detail-stat-grid admin-simple-stats">
+        <article><strong>${safeHoldings.length}</strong><span>Users Holding</span></article>
+        <article><strong>${Number(totalQty || 0).toLocaleString("en-IN")}</strong><span>Total Quantity</span></article>
+        <article><strong>${currency(investedValue)}</strong><span>Total Buy Value</span></article>
+        <article><strong>${currency(currentValue)}</strong><span>Live Value</span></article>
+        <article><strong class="${totalPnl >= 0 ? "profit" : "loss"}">${currency(totalPnl)}</strong><span>Total Profit / Loss</span></article>
+        <article><strong class="${returnPct >= 0 ? "profit" : "loss"}">${percent(returnPct)}</strong><span>Total Return</span></article>
+      </div>
+      <div class="table-wrap admin-position-table-wrap">
+        <table class="compact-table admin-position-table">
+          <thead><tr><th>Client</th><th>Client ID</th><th>Qty</th><th>Buy Price</th><th>Live Price</th><th>Buy Value</th><th>Live Value</th><th>Profit / Loss</th><th>Return</th></tr></thead>
+          <tbody>
+            ${safeHoldings.length
+              ? safeHoldings.map((holding) => {
+                  const buyValue = Number(holding.buy_price || 0) * Number(holding.quantity || 0);
+                  const liveValue = Number(holding.value || 0);
+                  const pnl = liveValue - buyValue;
+                  const holdingReturn = buyValue ? (pnl / buyValue) * 100 : 0;
+                  return `
+                    <tr data-live-symbol="${escapeHtml(holding.symbol)}" data-quantity="${Number(holding.quantity || 0)}" data-buy-price="${Number(holding.buy_price || 0)}" data-current-price="${Number(holding.current_price || 0)}" data-value="${Number(holding.value || 0)}">
+                      <td><button class="table-link" type="button" data-user-detail="${holding.user_id}">${escapeHtml(holding.owner || "Client")}</button></td>
+                      <td>${escapeHtml(holding.fixed_user_id || "")}</td>
+                      <td>${Number(holding.quantity || 0).toLocaleString("en-IN")}</td>
+                      <td>${currency(holding.buy_price)}</td>
+                      <td><strong class="${pnl >= 0 ? "price-up" : "price-down"}" data-live-price-cell>${currency(holding.current_price)}</strong></td>
+                      <td>${currency(buyValue)}</td>
+                      <td><strong class="${pnl >= 0 ? "price-up" : "price-down"}" data-live-value-cell>${currency(liveValue)}</strong></td>
+                      <td class="${pnl >= 0 ? "profit" : "loss"}" data-pnl-cell>${currency(pnl)}</td>
+                      <td class="${holdingReturn >= 0 ? "profit" : "loss"}" data-return-cell>${percent(holdingReturn)}</td>
+                    </tr>
+                  `;
+                }).join("")
+              : `<tr><td colspan="9"><span class="helper-text">No clients currently hold this stock.</span></td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </article>
+  `;
+}
+function renderAdminSelectedDetail(userDashboards, allHoldings, shouldScroll = false) {
   const detailMount = document.getElementById("adminDetailMount");
-  if (!detailMount) return;
+  if (!detailMount || !adminUiState.detailType || !adminUiState.detailKey) return;
 
-  document.querySelectorAll("[data-user-detail]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const userId = Number(button.dataset.userDetail);
-      const user = userDashboards.find((entry) => Number(entry.user_id) === userId);
-      if (!user) return;
-      detailMount.innerHTML = buildAdminClientDetail(user);
-      detailMount.classList.remove("hidden");
-      detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  });
+  if (adminUiState.detailType === "user") {
+    const user = userDashboards.find((entry) => Number(entry.user_id) === Number(adminUiState.detailKey));
+    if (!user) return;
+    detailMount.innerHTML = buildAdminClientDetail(user);
+  }
 
-  document.querySelectorAll("[data-stock-detail]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const symbol = String(button.dataset.stockDetail || "").toUpperCase();
-      const holdings = allHoldings.filter((entry) => entry.symbol === symbol);
-      if (!holdings.length) return;
-      detailMount.innerHTML = buildAdminStockDetail(symbol, holdings);
-      detailMount.classList.remove("hidden");
-      detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  });
+  if (adminUiState.detailType === "stock") {
+    const symbol = String(adminUiState.detailKey || "").toUpperCase();
+    const holdings = allHoldings.filter((entry) => String(entry.symbol || "").toUpperCase() === symbol);
+    if (!holdings.length) return;
+    detailMount.innerHTML = buildAdminStockDetail(symbol, holdings);
+  }
+
+  detailMount.classList.remove("hidden");
+  if (shouldScroll) detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function setupAdminDrilldowns(userDashboards, allHoldings) {
+  const portal = document.getElementById("adminPortal");
+  const detailMount = document.getElementById("adminDetailMount");
+  if (!portal || !detailMount) return;
+
+  portal.__adminDrilldownData = { userDashboards, allHoldings };
+  if (portal.__adminDrilldownBound) return;
+  portal.__adminDrilldownBound = true;
+
+  portal.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-user-detail], [data-stock-detail]");
+    if (!button) return;
+    const data = portal.__adminDrilldownData || { userDashboards: [], allHoldings: [] };
+
+    if (button.dataset.userDetail) {
+      adminUiState.detailType = "user";
+      adminUiState.detailKey = String(button.dataset.userDetail || "");
+      renderAdminSelectedDetail(data.userDashboards, data.allHoldings, true);
+      return;
+    }
+
+    adminUiState.detailType = "stock";
+    adminUiState.detailKey = String(button.dataset.stockDetail || "").toUpperCase();
+    renderAdminSelectedDetail(data.userDashboards, data.allHoldings, true);
+  });
+}
 async function renderAdminPortal() {
   const mount = document.getElementById("adminPortal");
   if (!mount) return;
   try {
-    const [dashboard, users, auditLogs, authAttempts, systemStatus, reviews, operationsOverview] = await Promise.all([
-      api("/admin/dashboard"),
-      api("/admin/users"),
-      api("/admin/audit-logs?limit=8"),
-      api("/admin/auth-attempts?limit=8"),
-      api("/admin/system-status"),
-      api("/admin/reviews"),
-      api("/admin/operations-overview")
-    ]);
+    const { dashboard, users, systemStatus, userDashboards } = await loadAdminPortalData();
     const safeUsers = Array.isArray(users) ? users : [];
-    const safeAuditLogs = Array.isArray(auditLogs) ? auditLogs : [];
-    const safeAuthAttempts = Array.isArray(authAttempts) ? authAttempts : [];
-    const safeReviews = Array.isArray(reviews) ? reviews : [];
-    const userDashboards = await safeAdminUserDashboards(safeUsers);
     const baseHoldings = userDashboards.flatMap((user) =>
       (Array.isArray(user.holdings) ? user.holdings : []).map((holding) => ({
         ...holding,
         owner: user.full_name,
         fixed_user_id: user.fixed_user_id,
+        username: user.username,
         user_id: user.user_id
       }))
     );
-    const symbols = [...new Set(baseHoldings.map((holding) => holding.symbol))];
+    const symbols = [...new Set(baseHoldings.map((holding) => String(holding.symbol || "").toUpperCase()).filter(Boolean))];
     const feed = symbols.length
       ? await api(`/stocks/feed?symbols=${encodeURIComponent(symbols.join(","))}`).catch(() => [])
       : [];
     const safeFeed = Array.isArray(feed) ? feed : [];
-    const quoteMap = new Map(safeFeed.map((quote) => [quote.symbol, quote]));
+    const quoteMap = new Map(safeFeed.map((quote) => [String(quote.symbol || "").toUpperCase(), quote]));
     const allHoldings = baseHoldings.map((holding) => {
-      const quote = quoteMap.get(holding.symbol);
-      const currentPrice = Number(quote?.price ?? holding.current_price ?? holding.buy_price);
-      const changePercent = Number(quote?.change_percent ?? 0);
-      const previousClose = changePercent === -100 ? currentPrice : currentPrice / (1 + changePercent / 100 || 1);
-      const todayProfit = (currentPrice - previousClose) * Number(holding.quantity || 0);
+      const symbol = String(holding.symbol || "").toUpperCase();
+      const quantity = Number(holding.quantity || 0);
+      const buyPrice = Number(holding.buy_price || 0);
+      const quote = quoteMap.get(symbol);
+      const currentPrice = Number(quote?.price ?? holding.current_price ?? buyPrice);
+      const value = currentPrice * quantity;
+      const investedValue = buyPrice * quantity;
+      const profitLoss = value - investedValue;
+      const percentChange = investedValue ? (profitLoss / investedValue) * 100 : 0;
       return {
         ...holding,
+        symbol,
+        quantity,
+        buy_price: buyPrice,
         current_price: currentPrice,
-        percent_change: Number(holding.percent_change ?? ((currentPrice - holding.buy_price) / Math.max(holding.buy_price, 1)) * 100),
-        profit_loss: (currentPrice - Number(holding.buy_price || 0)) * Number(holding.quantity || 0),
-        today_profit: Number.isFinite(todayProfit) ? todayProfit : 0
+        value,
+        invested_value: investedValue,
+        profit_loss: profitLoss,
+        percent_change: percentChange,
+        quote_change_percent: Number(quote?.change_percent ?? 0),
+        sector: quote?.sector || holding.sector || "Tracked holding",
+        exchange: holding.exchange || quote?.exchange || "NSE"
       };
     });
-    const totalValue = userDashboards.reduce((sum, user) => sum + Number(user.total_portfolio_value), 0);
-    const totalPnl = userDashboards.reduce((sum, user) => sum + Number(user.total_profit_loss), 0);
-    const todayProfit = allHoldings.reduce((sum, holding) => sum + Number(holding.today_profit || 0), 0);
-    const inactiveUsers = safeUsers.filter((user) => !user.is_active).length;
-    const failedAttempts = safeAuthAttempts.filter((attempt) => !attempt.success).length;
-    const searchText = adminUiState.search.toLowerCase();
-    const filteredUsers = safeUsers.filter((user) => {
-      const matchesSearch =
-        !searchText ||
-        user.full_name.toLowerCase().includes(searchText) ||
-        String(user.fixed_user_id || user.username).toLowerCase().includes(searchText) ||
-        String(user.phone_number || "").toLowerCase().includes(searchText);
-      const matchesStatus =
-        adminUiState.status === "all" ||
-        (adminUiState.status === "active" && user.is_active) ||
-        (adminUiState.status === "inactive" && !user.is_active);
-      return matchesSearch && matchesStatus;
+    const holdingsByUser = allHoldings.reduce((map, holding) => {
+      const key = Number(holding.user_id);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(holding);
+      return map;
+    }, new Map());
+    const liveUserDashboards = userDashboards.map((user) => {
+      const holdings = holdingsByUser.get(Number(user.user_id)) || [];
+      const totalPortfolioValue = holdings.reduce((sum, holding) => sum + Number(holding.value || 0), 0);
+      const totalInvestedValue = holdings.reduce((sum, holding) => sum + Number(holding.invested_value || 0), 0);
+      const openProfitLoss = totalPortfolioValue - totalInvestedValue;
+      const bookedProfitLoss = Number(user.booked_profit_loss || 0);
+      const lifetimeProfitLoss = openProfitLoss + bookedProfitLoss;
+      return {
+        ...user,
+        holdings,
+        sales: Array.isArray(user.sales) ? user.sales : [],
+        total_portfolio_value: totalPortfolioValue,
+        total_invested_value: totalInvestedValue,
+        open_profit_loss: openProfitLoss,
+        booked_profit_loss: bookedProfitLoss,
+        total_profit_loss: lifetimeProfitLoss,
+        lifetime_profit_loss: lifetimeProfitLoss,
+        total_holdings: holdings.length
+      };
     });
-    const pendingModerationCount = safeReviews.filter((review) => !review.is_seeded).length;
-    const stockConcentration = Array.isArray(operationsOverview?.stock_concentration) ? operationsOverview.stock_concentration : [];
-    const recentUserActivity = Array.isArray(operationsOverview?.recent_user_activity) ? operationsOverview.recent_user_activity : [];
-    const loginIssueBreakdown = Array.isArray(operationsOverview?.login_issue_breakdown) ? operationsOverview.login_issue_breakdown : [];
-    const adminTickerMarkup = safeFeed
-      .map(
-        (quote) => `
-          <article>
-            <strong>${escapeHtml(quote.symbol)}</strong>
-            <small>${escapeHtml(quote.short_name || quote.symbol)}</small>
-            <small class="${Number(quote.change_percent || 0) >= 0 ? "profit" : "loss"}">${percent(Number(quote.change_percent || 0))}</small>
-          </article>
-        `
-      )
-      .join("");
+    const searchText = adminUiState.search.trim().toLowerCase();
+    const scriptSearchText = adminUiState.scriptSearch.trim().toLowerCase();
+    const totalInvested = allHoldings.reduce((sum, holding) => sum + Number(holding.invested_value || 0), 0);
+    const totalValue = allHoldings.reduce((sum, holding) => sum + Number(holding.value || 0), 0);
+    const totalPnl = totalValue - totalInvested;
+    const lifetimeReturn = totalInvested ? (totalPnl / totalInvested) * 100 : 0;
+    const profitableClients = liveUserDashboards.filter((user) => Number(user.total_profit_loss || 0) > 0).length;
+    const filteredPositionHoldings = allHoldings.filter((holding) => {
+      const matchesInvestor =
+        !searchText ||
+        String(holding.owner || "").toLowerCase().includes(searchText) ||
+        String(holding.fixed_user_id || holding.username || "").toLowerCase().includes(searchText);
+      const matchesScript =
+        !scriptSearchText ||
+        String(holding.symbol || "").toLowerCase().includes(scriptSearchText) ||
+        String(holding.sector || "").toLowerCase().includes(scriptSearchText) ||
+        String(holding.exchange || "").toLowerCase().includes(scriptSearchText);
+      return matchesInvestor && matchesScript;
+    });
+    const clientRows = liveUserDashboards
+      .slice()
+      .sort((a, b) => Number(b.total_portfolio_value || 0) - Number(a.total_portfolio_value || 0));
+    const stockRows = symbols
+      .map((symbol) => {
+        const holdings = allHoldings.filter((holding) => holding.symbol === symbol);
+        const invested = holdings.reduce((sum, holding) => sum + Number(holding.invested_value || 0), 0);
+        const value = holdings.reduce((sum, holding) => sum + Number(holding.value || 0), 0);
+        const pnl = value - invested;
+        return { symbol, holdings, invested, value, pnl };
+      })
+      .sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl));
 
     mount.innerHTML = `
-    <section class="user-shell admin-shell">
-      <aside class="user-sidebar">
-        <div class="brand">
-          <span class="brand-mark">ST</span>
-          <span>
-            <strong>Stock Trader Web</strong>
-            <small>Admin workspace</small>
-          </span>
-        </div>
-        <article class="user-balance-card">
-          <span class="user-sidebar-label">Platform Value</span>
-          <strong>${currency(totalValue)}</strong>
-          <span>Total tracked across client portfolios</span>
-        </article>
-        <div class="user-sidebar-section">
-          <span class="user-sidebar-label">Main</span>
-          <nav class="user-sidebar-nav">
-            <a class="user-nav-item active" href="#adminOverviewCard">Dashboard <span>${dashboard?.total_users ?? safeUsers.length}</span></a>
-            <a class="user-nav-item" href="#adminClientOpsCard">Operations <span>Live</span></a>
-            <a class="user-nav-item" href="#adminUsersCard">Users <span>${safeUsers.length}</span></a>
-            <a class="user-nav-item" href="#adminSecurityCard">Security <span>${failedAttempts}</span></a>
-          </nav>
-        </div>
-        <div class="user-sidebar-section">
-          <span class="user-sidebar-label">Controls</span>
-          <nav class="user-sidebar-nav">
-            <a class="user-nav-item" href="#adminControlsCard">Site <span>Manage</span></a>
-            <a class="user-nav-item" href="#adminModerationCard">Reviews <span>${pendingModerationCount}</span></a>
-            <a class="user-nav-item" href="#adminTickerCard">Markets <span>${symbols.length}</span></a>
-            <a class="user-nav-item" href="#adminDetailMount">Details <span>Drill</span></a>
-          </nav>
-        </div>
-        <article class="user-reward-card">
-          <strong>Export investor-ready reports</strong>
-          <span>Monitor portfolios, review activity, and download clean client snapshots from one place.</span>
-          <div class="actions-row" style="margin-top:14px;">
-            <button class="download-btn" type="button" data-refresh-admin="true">Refresh Data</button>
-          </div>
-        </article>
-        <article class="user-profile-card">
-          <strong>Admin View</strong>
-          <small>${systemStatus.backend_status} backend</small>
-          <small>${systemStatus.database_status} database</small>
-        </article>
-      </aside>
-
-      <div class="user-shell-main">
-        <header class="user-topbar">
-          <div>
-            <p class="eyebrow">Admin Workspace</p>
-            <h2>Client operations and portfolio oversight</h2>
-          </div>
-          <div class="user-topbar-actions">
-            <input class="user-search" id="adminUserSearch" type="text" placeholder="Search clients, IDs, or phone" />
-            <select class="user-search" id="adminUserStatusFilter" style="max-width:180px;">
-              <option value="all">All statuses</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-            <button class="assistant-btn" type="button" data-open-finance-chat="true">AI Assistant</button>
-            <button class="secondary-btn" type="button" data-refresh-admin="true">Refresh</button>
-            <button class="secondary-btn" type="button" data-logout="true">Logout</button>
-          </div>
-        </header>
-
-        <div class="user-ticker-strip" id="adminTickerCard">
-          ${adminTickerMarkup || `<article><strong>Market feed</strong><small>No tracked symbols yet</small><small>Client holdings will appear here</small></article>`}
-        </div>
-
-        <div id="adminOverviewCard">
-    <div class="metrics-grid">
-      <article class="metric-card"><strong>${dashboard?.total_users ?? safeUsers.length}</strong><span>Clients</span><small>Persisted registered users</small></article>
-      <article class="metric-card"><strong>${dashboard?.newly_registered_users ?? 0}</strong><span>New This Week</span><small>Non-demo client registrations</small></article>
-      <article class="metric-card"><strong>${dashboard?.total_holdings ?? baseHoldings.length}</strong><span>Total Holdings</span><small>Stocks stored in the database</small></article>
-      <article class="metric-card"><strong class="${todayProfit >= 0 ? "profit" : "loss"}">${currency(todayProfit)}</strong><span>Today Profit</span><small>Intraday movement across tracked holdings</small></article>
-      <article class="metric-card"><strong class="${totalPnl >= 0 ? "profit" : "loss"}">${currency(totalPnl)}</strong><span>Total Profit Till Now</span><small>Current tracked value ${currency(totalValue)}</small></article>
-    </div>
-    <div class="metrics-grid admin-status-grid">
-      <article class="metric-card"><strong>${systemStatus.backend_status}</strong><span>Backend</span><small>Environment ${systemStatus.environment}</small></article>
-      <article class="metric-card"><strong>${systemStatus.database_status}</strong><span>Database</span><small>Connection health</small></article>
-      <article class="metric-card"><strong>${systemStatus.redis_status}</strong><span>Redis</span><small>Cache and queue state</small></article>
-      <article class="metric-card"><strong class="${systemStatus.otp_debug_mode ? "loss" : "profit"}">${systemStatus.otp_debug_mode ? "On" : "Off"}</strong><span>OTP Debug</span><small>${systemStatus.environment === "production" ? "Must stay off in production" : "Development-only testing mode"}</small></article>
-      <article class="metric-card"><strong>${pendingModerationCount}</strong><span>Reviews To Moderate</span><small>Non-seeded public reviews</small></article>
-    </div>
-    <div class="dashboard-grid">
-      <article class="table-card">
-        <div class="panel-head"><h3>Customer Stock Purchases</h3><span class="badge">Admin View</span></div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Customer</th><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Live Price</th><th>P&amp;L</th></tr></thead>
-            <tbody>
-              ${allHoldings
-                .map(
-                  (holding) => `
-                    <tr>
-                      <td><button class="table-link" type="button" data-user-detail="${holding.user_id}">${holding.owner}</button><br /><small>${holding.fixed_user_id || ""}</small></td>
-                      <td><button class="table-link" type="button" data-stock-detail="${holding.symbol}">${holding.symbol}</button><br /><small>${holding.sector || "Tracked holding"}</small></td>
-                      <td>${holding.quantity}</td>
-                      <td>${currency(holding.buy_price)}</td>
-                      <td>${currency(holding.current_price)}</td>
-                      <td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
-                    </tr>
-                  `
-                )
-                .join("")}
-            </tbody>
-          </table>
-        </div>
-      </article>
-      <article class="dashboard-card" id="adminClientOpsCard">
-        <div class="panel-head"><h3>Client Downloads</h3><span class="badge green">Export</span></div>
-        <div class="stack-list">
-          ${userDashboards
-            .map(
-              (user) => `
-                <article class="stack-item">
-                  <div>
-                    <strong>${user.full_name}</strong>
-                    <small>${user.fixed_user_id || user.username}</small>
-                  </div>
-                  <div class="actions-row">
-                    <span class="${user.total_profit_loss >= 0 ? "profit" : "loss"}">${currency(user.total_profit_loss)}</span>
-                    <button class="download-btn" type="button" data-download-user-id="${user.user_id}">Download Dashboard</button>
-                  </div>
-                </article>
-              `
-            )
-            .join("")}
-        </div>
-      </article>
-    </div>
-    <div class="dashboard-grid">
-      <article class="dashboard-card">
-        <div class="panel-head"><h3>Backend Operations</h3><span class="badge">Owner View</span></div>
-        <div class="detail-stat-grid">
-          <article><strong>${operationsOverview.active_users}</strong><span>Active Users</span></article>
-          <article><strong>${operationsOverview.users_with_holdings}</strong><span>Users With Holdings</span></article>
-          <article><strong>${currency(operationsOverview.average_portfolio_value)}</strong><span>Avg Portfolio Value</span></article>
-        </div>
-        <div class="stack-list">
-          <article class="stack-item stack-item-compact">
+      <section class="user-shell admin-shell admin-simple-shell no-sidebar-shell">
+        <div class="user-shell-main admin-simple-main">
+          <header class="user-topbar admin-simple-topbar">
             <div>
-              <strong>Largest Client Portfolio</strong>
-              <small>Highest invested value across tracked users</small>
+              <p class="eyebrow">Admin Portfolio Dashboard</p>
+              <h2>Clients and stock positions</h2>
+              <p class="detail-subtitle">Click a user for full portfolio. Click a stock to see all clients holding it.</p>
             </div>
-            <div>
-              <strong>${currency(operationsOverview.largest_client_value)}</strong>
-              <small>Current backend snapshot</small>
+            <div class="user-topbar-actions">
+              <input class="user-search" id="adminUserSearch" type="text" placeholder="Search user or client ID" />
+              <input class="user-search" id="adminScriptSearch" type="text" placeholder="Search stock" />
+              <button class="secondary-btn" type="button" data-refresh-admin="true">Refresh</button>
+              <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
+            </div>
+          </header>
+
+          <div class="simple-summary-strip">
+            <span><strong>${safeUsers.length}</strong> Clients</span>
+            <span><strong>${allHoldings.length}</strong> Positions</span>
+            <span><strong data-live-total-value>${currency(totalValue)}</strong> Live value</span>
+            <span class="${totalPnl >= 0 ? "profit" : "loss"}"><strong data-live-total-pnl>${currency(totalPnl)}</strong> Lifetime P/L</span>
+          </div>
+
+          <div id="adminOverviewCard" class="metrics-grid admin-simple-metrics">
+            <article class="metric-card"><strong>${safeUsers.length}</strong><span>Clients</span><small>Total registered users</small></article>
+            <article class="metric-card"><strong>${allHoldings.length}</strong><span>Holdings</span><small>Open stock positions</small></article>
+            <article class="metric-card"><strong>${currency(totalInvested)}</strong><span>Buy Value</span><small>Quantity x buy price</small></article>
+            <article class="metric-card"><strong data-live-total-value>${currency(totalValue)}</strong><span>Live Value</span><small data-live-price-status>Auto-updates every minute</small></article>
+            <article class="metric-card"><strong class="${totalPnl >= 0 ? "profit" : "loss"}" data-live-total-pnl>${currency(totalPnl)}</strong><span>Lifetime P/L</span><small><span data-live-total-return>${percent(lifetimeReturn)}</span> overall return</small></article>
+            <article class="metric-card"><strong>${profitableClients}/${liveUserDashboards.length || 0}</strong><span>Clients In Profit</span><small>Based on lifetime P/L</small></article>
+          </div>
+
+          <div class="dashboard-grid admin-simple-grid">
+            <article class="dashboard-card admin-simple-list-card">
+              <div class="panel-head"><h3>Clients</h3><span class="badge">Click user</span></div>
+              <div class="stack-list admin-simple-list">
+                ${clientRows.length
+                  ? clientRows.map((user) => {
+                      const returnPct = Number(user.total_invested_value || 0) ? (Number(user.total_profit_loss || 0) / Number(user.total_invested_value || 0)) * 100 : 0;
+                      return `
+                        <article class="stack-item">
+                          <div>
+                            <button class="table-link admin-entity-link" type="button" data-user-detail="${user.user_id}">${escapeHtml(user.full_name)}</button>
+                            <small>${escapeHtml(user.fixed_user_id || user.username || "Client")} | ${user.total_holdings} stock(s)</small>
+                          </div>
+                          <div class="admin-list-values">
+                            <strong>${currency(user.total_portfolio_value)}</strong>
+                            <small class="${user.total_profit_loss >= 0 ? "profit" : "loss"}">${currency(user.total_profit_loss)} | ${percent(returnPct)}</small>
+                          </div>
+                        </article>
+                      `;
+                    }).join("")
+                  : `<article class="stack-item"><div><strong>No clients yet</strong><small>Registered users will appear here.</small></div></article>`}
+              </div>
+            </article>
+
+            <article class="dashboard-card admin-simple-list-card">
+              <div class="panel-head"><h3>Stocks</h3><span class="badge green">Click stock</span></div>
+              <div class="stack-list admin-simple-list">
+                ${stockRows.length
+                  ? stockRows.map((stock) => {
+                      const returnPct = stock.invested ? (stock.pnl / stock.invested) * 100 : 0;
+                      return `
+                        <article class="stack-item">
+                          <div>
+                            <button class="table-link admin-entity-link" type="button" data-stock-detail="${escapeHtml(stock.symbol)}">${escapeHtml(stock.symbol)}</button>
+                            <small>${stock.holdings.length} client(s) holding</small>
+                          </div>
+                          <div class="admin-list-values">
+                            <strong>${currency(stock.value)}</strong>
+                            <small class="${stock.pnl >= 0 ? "profit" : "loss"}">${currency(stock.pnl)} | ${percent(returnPct)}</small>
+                          </div>
+                        </article>
+                      `;
+                    }).join("")
+                  : `<article class="stack-item"><div><strong>No stocks yet</strong><small>Client holdings will appear here.</small></div></article>`}
+              </div>
+            </article>
+          </div>
+
+          <article class="table-card full-span-card admin-positions-card" id="adminPositionsCard">
+            <div class="panel-head">
+              <div>
+                <h3>All Client Positions</h3>
+                <p class="detail-subtitle">Click a user or stock name to open the detailed view below.</p>
+              </div>
+              <span class="badge">${filteredPositionHoldings.length} shown</span>
+            </div>
+            <div class="table-wrap admin-position-table-wrap">
+              <table class="compact-table admin-position-table">
+                <thead><tr><th>User</th><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Buy Value</th><th>Live Price</th><th>Live Value</th><th>Lifetime P/L</th><th>Return</th><th>Download</th></tr></thead>
+                <tbody>
+                  ${filteredPositionHoldings.length
+                    ? filteredPositionHoldings.map((holding) => {
+                        const pnl = Number(holding.profit_loss || 0);
+                        const returnPct = Number(holding.invested_value || 0) ? (pnl / Number(holding.invested_value || 0)) * 100 : 0;
+                        return `
+                          <tr data-live-summary="true" data-live-symbol="${escapeHtml(holding.symbol)}" data-quantity="${Number(holding.quantity || 0)}" data-buy-price="${Number(holding.buy_price || 0)}" data-current-price="${Number(holding.current_price || 0)}" data-value="${Number(holding.value || 0)}">
+                            <td><button class="table-link" type="button" data-user-detail="${holding.user_id}">${escapeHtml(holding.owner || "Client")}</button><br /><small>${escapeHtml(holding.fixed_user_id || "")}</small></td>
+                            <td><button class="table-link" type="button" data-stock-detail="${escapeHtml(holding.symbol)}">${escapeHtml(holding.symbol)}</button><br /><small>${escapeHtml(holding.sector || "Tracked holding")}</small></td>
+                            <td>${Number(holding.quantity || 0).toLocaleString("en-IN")}</td>
+                            <td>${currency(holding.buy_price)}</td>
+                            <td>${currency(holding.invested_value)}</td>
+                            <td><strong class="${pnl >= 0 ? "price-up" : "price-down"}" data-live-price-cell>${currency(holding.current_price)}</strong></td>
+                            <td><strong class="${pnl >= 0 ? "price-up" : "price-down"}" data-live-value-cell>${currency(holding.value)}</strong></td>
+                            <td class="${pnl >= 0 ? "profit" : "loss"}" data-pnl-cell>${currency(pnl)}</td>
+                            <td class="${returnPct >= 0 ? "profit" : "loss"}" data-return-cell>${percent(returnPct)}</td>
+                            <td><button class="secondary-btn compact-btn" type="button" data-download-user-id="${holding.user_id}">Download</button></td>
+                          </tr>
+                        `;
+                      }).join("")
+                    : `<tr><td colspan="10"><span class="helper-text">No positions match the search.</span></td></tr>`}
+                </tbody>
+              </table>
             </div>
           </article>
-          <article class="stack-item stack-item-compact">
-            <div>
-              <strong>Issue Hotspots</strong>
-              <small>${loginIssueBreakdown.length ? loginIssueBreakdown.map((item) => `${item.reason.replaceAll("_", " ")} (${item.count})`).join(", ") : "No recent login issues"}</small>
-            </div>
-          </article>
+
+          <section id="adminDetailMount" class="dashboard-section admin-detail-mount">
+            <article class="dashboard-card detail-card admin-simple-detail-card">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Details</p>
+                  <h3>Select a user or stock</h3>
+                  <p class="detail-subtitle">Click a user name to view their full portfolio. Click a stock name to view every client holding that stock.</p>
+                </div>
+              </div>
+            </article>
+          </section>
         </div>
-      </article>
-      <article class="dashboard-card" id="adminUsersCard">
-        <div class="panel-head"><h3>User Management</h3><span class="badge">Control</span></div>
-        <div class="admin-bulk-bar">
-          <label class="bulk-select-all"><input id="adminSelectAllUsers" type="checkbox" /> Select visible users</label>
-          <div class="table-actions">
-            <button class="secondary-btn compact-btn" type="button" id="bulkActivateUsersBtn">Bulk Activate</button>
-            <button class="secondary-btn compact-btn" type="button" id="bulkDisableUsersBtn">Bulk Disable</button>
-            <button class="secondary-btn danger-btn compact-btn" type="button" id="bulkDeleteUsersBtn">Bulk Delete</button>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th></th><th>Client</th><th>Status</th><th>Joined</th><th>Value</th><th>Actions</th></tr></thead>
-            <tbody>
-              ${filteredUsers.length
-                ? filteredUsers
-                .map(
-                  (user) => `
-                    <tr>
-                      <td><input type="checkbox" data-user-select value="${user.user_id}" /></td>
-                      <td><strong>${user.full_name}</strong><br /><small>${user.fixed_user_id || user.username}${user.is_demo ? " | Demo" : ""}</small></td>
-                      <td><span class="badge ${user.is_active ? "green" : "red"}">${user.is_active ? "Active" : "Inactive"}</span></td>
-                      <td>${formatDate(user.created_at)}</td>
-                      <td>${currency(user.portfolio_value)}</td>
-                      <td>
-                        <div class="table-actions">
-                          <button class="secondary-btn compact-btn" type="button" data-user-status-action="${user.user_id}" data-next-active="${(!user.is_active).toString()}">${user.is_active ? "Disable" : "Activate"}</button>
-                          <button class="secondary-btn danger-btn compact-btn" type="button" data-delete-user="${user.user_id}" data-user-name="${user.full_name}">Delete</button>
-                        </div>
-                      </td>
-                    </tr>
-                  `
-                )
-                .join("")
-                : `<tr><td colspan="6"><span class="helper-text">No users match the current search or filter.</span></td></tr>`}
-            </tbody>
-          </table>
-        </div>
-        <p class="helper-text" id="adminUserActionStatus">${inactiveUsers} non-demo user account(s) are currently inactive. Showing ${filteredUsers.length} result(s).</p>
-      </article>
-      <article class="dashboard-card" id="adminControlsCard">
-        <div class="panel-head"><h3>Website Controls</h3><span class="badge">Manage</span></div>
-        <div class="stack-list">
-          <article class="stack-item">
-            <div><strong>FAQ Insight Cards</strong><small>Show or hide the extra cards on the FAQ page.</small></div>
-            <button class="secondary-btn" type="button" id="toggleFaqInsightsBtn">Hide FAQ Cards</button>
-          </article>
-          <article class="stack-item">
-            <div><strong>Chatbot Popups</strong><small>Control the 5-second finance assistant popup prompts.</small></div>
-            <button class="secondary-btn" type="button" id="toggleChatNudgesBtn">Disable Chat Popups</button>
-          </article>
-          <article class="stack-item">
-            <div><strong>Delete User Reviews</strong><small>Remove all user-submitted reviews from website storage.</small></div>
-            <button class="secondary-btn danger-btn" type="button" id="clearCustomReviewsBtn">Delete Reviews</button>
-          </article>
-        </div>
-        <p class="helper-text" id="siteControlStatus">Website controls are available for admin actions.</p>
-      </article>
-    </div>
-    <div class="dashboard-grid">
-      <article class="dashboard-card" id="adminModerationCard">
-        <div class="panel-head"><h3>Month-on-Month P&amp;L</h3><span class="badge">Trend</span></div>
-        ${renderChart([
-          { label: "Nov", value: totalPnl * 0.48 },
-          { label: "Dec", value: totalPnl * 0.61 },
-          { label: "Jan", value: totalPnl * -0.12 },
-          { label: "Feb", value: totalPnl * 0.39 },
-          { label: "Mar", value: totalPnl * 0.57 },
-          { label: "Apr", value: totalPnl || totalValue * 0.05 }
-        ])}
-      </article>
-      <article class="dashboard-card" id="adminSecurityCard">
-        <div class="panel-head"><h3>Review Moderation</h3><span class="badge">${pendingModerationCount} Pending</span></div>
-        <div class="stack-list">
-          ${safeReviews.length
-            ? safeReviews
-                .slice(0, 8)
-                .map(
-                  (review) => `
-                    <article class="stack-item stack-item-compact">
-                      <div>
-                        <strong>${review.name}</strong>
-                        <small>${review.role} · ${"★".repeat(review.rating)}</small>
-                        <small>${review.message}</small>
-                      </div>
-                      <div class="table-actions">
-                        <span class="badge ${review.is_seeded ? "green" : ""}">${review.is_seeded ? "Seeded" : "Public"}</span>
-                        ${review.is_seeded
-                          ? `<span class="helper-chip">Protected</span>`
-                          : `<button class="secondary-btn danger-btn compact-btn" type="button" data-delete-review="${review.id}" data-review-name="${review.name}">Remove</button>`}
-                      </div>
-                    </article>
-                  `
-                )
-                .join("")
-            : `<article class="stack-item"><div><strong>No reviews available</strong><small>Submitted reviews will appear here.</small></div></article>`}
-        </div>
-      </article>
-    </div>
-    <div class="dashboard-grid">
-      <article class="dashboard-card">
-        <div class="panel-head"><h3>User Activity View</h3><span class="badge">Recent</span></div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>User</th><th>Status</th><th>Holdings</th><th>Last Holding</th><th>Last Auth</th></tr></thead>
-            <tbody>
-              ${recentUserActivity.length
-                ? recentUserActivity
-                    .map(
-                      (activity) => `
-                        <tr>
-                          <td><strong>${activity.full_name}</strong><br /><small>${activity.fixed_user_id || ""}</small></td>
-                          <td><span class="badge ${activity.is_active ? "green" : "red"}">${activity.is_active ? "Active" : "Inactive"}</span></td>
-                          <td>${activity.holding_count}</td>
-                          <td>${formatDate(activity.last_holding_at)}</td>
-                          <td>${formatDateTime(activity.last_auth_attempt_at)}</td>
-                        </tr>
-                      `
-                    )
-                    .join("")
-                : `<tr><td colspan="5"><span class="helper-text">No recent user activity to display.</span></td></tr>`}
-            </tbody>
-          </table>
-        </div>
-      </article>
-      <article class="dashboard-card">
-        <div class="panel-head"><h3>Stock Concentration</h3><span class="badge">Exposure</span></div>
-        <div class="stack-list">
-          ${stockConcentration.length
-            ? stockConcentration
-                .map(
-                  (item) => `
-                    <article class="stack-item stack-item-compact">
-                      <div>
-                        <strong>${item.symbol}</strong>
-                        <small>${item.client_count} client(s) holding this stock</small>
-                      </div>
-                      <div>
-                        <strong>${currency(item.invested_value)}</strong>
-                        <small>${item.total_quantity} shares</small>
-                      </div>
-                    </article>
-                  `
-                )
-                .join("")
-            : `<article class="stack-item"><div><strong>No concentration data</strong><small>Portfolio exposure will appear here.</small></div></article>`}
-        </div>
-      </article>
-    </div>
-    <div class="dashboard-grid">
-      <article class="dashboard-card">
-        <div class="panel-head"><h3>Security Activity</h3><span class="badge ${failedAttempts ? "red" : "green"}">${failedAttempts} Failed</span></div>
-        <div class="stack-list">
-          ${safeAuthAttempts.length
-            ? safeAuthAttempts
-                .map(
-                  (attempt) => `
-                    <article class="stack-item stack-item-compact">
-                      <div>
-                        <strong>${attempt.stage === "request_otp" ? "OTP Request" : "Login"} · ${attempt.identifier}</strong>
-                        <small>${attempt.role} ${attempt.failure_reason ? `· ${attempt.failure_reason.replaceAll("_", " ")}` : "· successful"}</small>
-                      </div>
-                      <div>
-                        <strong class="${attempt.success ? "profit" : "loss"}">${attempt.success ? "Success" : "Failed"}</strong>
-                        <small>${formatDateTime(attempt.created_at)}</small>
-                      </div>
-                    </article>
-                  `
-                )
-                .join("")
-            : `<article class="stack-item"><div><strong>No recent auth activity</strong><small>Login and OTP events will appear here.</small></div></article>`}
-        </div>
-      </article>
-      <article class="dashboard-card">
-        <div class="panel-head"><h3>Admin Audit Trail</h3><span class="badge">Tracked</span></div>
-        <div class="stack-list">
-          ${safeAuditLogs.length
-            ? safeAuditLogs
-                .map(
-                  (log) => `
-                    <article class="stack-item stack-item-compact">
-                      <div>
-                        <strong>${log.action.replaceAll("_", " ")}</strong>
-                        <small>${log.entity_type}${log.entity_id ? ` · ${log.entity_id}` : ""}</small>
-                      </div>
-                      <div>
-                        <strong>${log.ip_address || "local"}</strong>
-                        <small>${formatDateTime(log.created_at)}</small>
-                      </div>
-                    </article>
-                  `
-                )
-                .join("")
-            : `<article class="stack-item"><div><strong>No admin actions yet</strong><small>Management activity will appear here.</small></div></article>`}
-        </div>
-      </article>
-      <article class="dashboard-card">
-        <div class="panel-head"><h3>System Settings Overview</h3><span class="badge">Config</span></div>
-        <div class="stack-list">
-          <article class="stack-item stack-item-compact">
-            <div><strong>FAQ Insights</strong><small>Extra FAQ cards on public FAQ page</small></div>
-            <div><strong>${operationsOverview.settings_overview.show_faq_insights ? "Enabled" : "Disabled"}</strong></div>
-          </article>
-          <article class="stack-item stack-item-compact">
-            <div><strong>Chat Nudges</strong><small>Finance assistant popup prompts</small></div>
-            <div><strong>${operationsOverview.settings_overview.chat_nudges_enabled ? "Enabled" : "Disabled"}</strong></div>
-          </article>
-          <article class="stack-item stack-item-compact">
-            <div><strong>OTP Debug Mode</strong><small>Must be off in production</small></div>
-            <div><strong class="${operationsOverview.settings_overview.otp_debug_mode ? "loss" : "profit"}">${operationsOverview.settings_overview.otp_debug_mode ? "Enabled" : "Disabled"}</strong></div>
-          </article>
-          <article class="stack-item stack-item-compact">
-            <div><strong>Rate Limit Window</strong><small>Failed auth throttling window</small></div>
-            <div><strong>${operationsOverview.settings_overview.auth_rate_limit_window_minutes} min</strong></div>
-          </article>
-          <article class="stack-item stack-item-compact">
-            <div><strong>Max Failed Attempts</strong><small>Allowed before throttling</small></div>
-            <div><strong>${operationsOverview.settings_overview.auth_max_failed_attempts}</strong></div>
-          </article>
-        </div>
-      </article>
-    </div>
-    <section id="adminDetailMount" class="dashboard-section hidden"></section>
-    <div class="dashboard-grid">
-      <article class="dashboard-card full-span-card">
-        <div class="panel-head"><h3>Live Market Numbers</h3><span class="badge red">Moving</span></div>
-        <div class="ticker-list" id="adminTicker"></div>
-      </article>
-    </div>
-    </div>
-    </section>
-  `;
+      </section>
+    `;
 
     revealPortal(mount);
     activeRole = "admin";
     activeUserId = null;
-    setupDownloadButtons(userDashboards);
-    setupWebsiteControlButtons();
+    setupDownloadButtons(liveUserDashboards);
     setupAdminManagementButtons();
-    setupAdminDrilldowns(userDashboards, allHoldings);
+    setupAdminDrilldowns(liveUserDashboards, allHoldings);
+    renderAdminSelectedDetail(liveUserDashboards, allHoldings, false);
     setupPortalActions();
-    await renderTicker("adminTicker", symbols);
+    startLiveDashboardPrices();
   } catch (error) {
     renderPortalError(mount, "Admin Dashboard", `Login succeeded, but admin dashboard data could not load yet. ${formatError(error)}`);
     const retry = document.getElementById("retryPortalBtn");
-    if (retry) {
-      retry.addEventListener("click", () => renderAdminPortal());
-    }
+    if (retry) retry.addEventListener("click", () => renderAdminPortal());
   }
 }
-
 async function renderUserPortal() {
   const mount = document.getElementById("userPortal");
   if (!mount) return;
   try {
     const [profile, holdings, summary] = await Promise.all([api("/auth/me"), api("/portfolio"), api("/portfolio/summary")]);
     const performance = Array.isArray(summary.performance) ? summary.performance : [];
+    const sales = Array.isArray(summary.sales) ? summary.sales : [];
+    const totalBookedPnl = Number(summary.booked_profit_loss || 0);
+    const totalLifetimePnl = Number(summary.lifetime_profit_loss ?? (Number(summary.total_profit_loss || 0) + totalBookedPnl));
     const totalInvested = performance.reduce((sum, item) => sum + Number(item.buy_price || 0) * Number(item.quantity || 0), 0);
-    const overallPct = totalInvested ? (summary.total_profit_loss / totalInvested) * 100 : 0;
+    const overallPct = totalInvested ? (totalLifetimePnl / totalInvested) * 100 : 0;
     const symbols = [...new Set(performance.map((holding) => holding.symbol).filter(Boolean))];
     const liveFeed = symbols.length
       ? await api(`/stocks/feed?symbols=${encodeURIComponent(symbols.join(","))}`).catch(() => [])
@@ -1843,56 +1980,13 @@ async function renderUserPortal() {
     };
 
     mount.innerHTML = `
-    <section class="user-shell">
-      <aside class="user-sidebar">
-        <div class="brand">
-          <span class="brand-mark">ST</span>
-          <span>
-            <strong>Stock Trader Web</strong>
-            <small>Investor workspace</small>
-          </span>
-        </div>
-        <article class="user-balance-card">
-          <span class="user-sidebar-label">Balance</span>
-          <strong>${currency(summary.total_portfolio_value)}</strong>
-          <span>Latest portfolio value</span>
-        </article>
-        <div class="user-sidebar-section">
-          <span class="user-sidebar-label">Main</span>
-          <nav class="user-sidebar-nav">
-            <a class="user-nav-item active" href="#userPerformanceCard">Dashboard <span>${performance.length}</span></a>
-            <a class="user-nav-item" href="#userPortfolioCard">Portfolio <span>${filteredPerformance.length}</span></a>
-            <a class="user-nav-item" href="#userAllocationCard">Allocation <span>${sectorCount}</span></a>
-            <a class="user-nav-item" href="#userActivityCard">History <span>${performance.length ? "Live" : "New"}</span></a>
-          </nav>
-        </div>
-        <div class="user-sidebar-section">
-          <span class="user-sidebar-label">Explore</span>
-          <nav class="user-sidebar-nav">
-            <a class="user-nav-item" href="#userSignalsCard">Signals <span>${summary.risk_level || "Moderate"}</span></a>
-            <a class="user-nav-item" href="#userRecommendationsCard">Ideas <span>Live</span></a>
-            <a class="user-nav-item" href="#portfolioForm">Add Stock <span>Now</span></a>
-          </nav>
-        </div>
-        <article class="user-reward-card">
-          <strong>Get investor-ready reporting</strong>
-          <span>Download your dashboard and keep a clean portfolio snapshot for every review.</span>
-          <div class="actions-row" style="margin-top:14px;">
-            <button class="download-btn" type="button" id="userPrintBtn">Download Dashboard</button>
-          </div>
-        </article>
-        <article class="user-profile-card">
-          <strong>${profile.full_name}</strong>
-          <small>${profile.fixed_user_id || profile.username}</small>
-          <small>${profile.phone_number || "Client access"}</small>
-        </article>
-      </aside>
-
+    <section class="user-shell no-sidebar-shell">
       <div class="user-shell-main">
         <header class="user-topbar">
           <div>
             <p class="eyebrow">Welcome Back</p>
             <h2>${profile.full_name}</h2>
+            <p class="detail-subtitle">${profile.fixed_user_id || profile.username} | ${profile.phone_number || "Client access"}</p>
           </div>
           <div class="user-topbar-actions">
             <input class="user-search" id="userPortfolioSearch" type="text" placeholder="Search holdings or sectors" />
@@ -1903,10 +1997,18 @@ async function renderUserPortal() {
               <option value="flat">Flat</option>
             </select>
             <button class="assistant-btn" type="button" data-open-finance-chat="true">AI Assistant</button>
+            <button class="download-btn" type="button" id="userPrintBtn">Download</button>
             <button class="secondary-btn" type="button" data-refresh-user="true">Refresh</button>
-            <button class="secondary-btn" type="button" data-logout="true">Logout</button>
+            <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
           </div>
         </header>
+
+        <div class="simple-summary-strip">
+          <span><strong data-live-total-value>${currency(summary.total_portfolio_value)}</strong> Live value</span>
+          <span class="${totalLifetimePnl >= 0 ? "profit" : "loss"}"><strong data-live-total-pnl>${currency(totalLifetimePnl)}</strong> Lifetime P/L</span>
+          <span><strong>${performance.length}</strong> Holdings</span>
+          <span><strong>${currency(totalBookedPnl)}</strong> Booked P/L</span>
+        </div>
 
         <div class="user-ticker-strip">
           ${tickerMarkup || `<article><strong>Market feed</strong><small>No tracked symbols yet</small><small>Add a stock to begin</small></article>`}
@@ -1926,13 +2028,13 @@ async function renderUserPortal() {
             <div class="chart-card-main">
               <div class="chart-metric-panel">
                 <div class="chart-figure">
-                  <span>Your portfolio is <strong class="${summary.total_profit_loss >= 0 ? "profit" : "loss"}">${summary.total_profit_loss >= 0 ? "up" : "down"} ${Math.abs(overallPct).toFixed(1)}%</strong> overall</span>
-                  <strong class="chart-value">${currency(summary.total_portfolio_value)}</strong>
+                  <span>Your portfolio is <strong class="${totalLifetimePnl >= 0 ? "profit" : "loss"}">${totalLifetimePnl >= 0 ? "up" : "down"} ${Math.abs(overallPct).toFixed(1)}%</strong> overall</span>
+                  <strong class="chart-value" data-live-total-value>${currency(summary.total_portfolio_value)}</strong>
                   <small>Current investment value across tracked holdings</small>
                 </div>
                 <article class="mini-stat-box">
-                  <strong class="${summary.total_profit_loss >= 0 ? "profit" : "loss"}">${currency(summary.total_profit_loss)}</strong>
-                  <small>Total profit and loss</small>
+                  <strong class="${totalLifetimePnl >= 0 ? "profit" : "loss"}" data-live-total-pnl>${currency(totalLifetimePnl)}</strong>
+                  <small data-live-price-status>Live prices update every minute</small>
                 </article>
                 <div class="chart-inline-grid">
                   <article>
@@ -1940,12 +2042,16 @@ async function renderUserPortal() {
                     <small>Total invested</small>
                   </article>
                   <article>
-                    <strong>${currency(totalVisibleValue || summary.total_portfolio_value)}</strong>
+                    <strong data-live-total-value>${currency(totalVisibleValue || summary.total_portfolio_value)}</strong>
                     <small>Visible value</small>
                   </article>
                   <article>
                     <strong>${performance.length}</strong>
                     <small>Active positions</small>
+                  </article>
+                  <article>
+                    <strong class="${totalBookedPnl >= 0 ? "profit" : "loss"}">${currency(totalBookedPnl)}</strong>
+                    <small>Booked profit/loss</small>
                   </article>
                   <article>
                     <strong>${gainRate.toFixed(0)}%</strong>
@@ -2013,12 +2119,12 @@ async function renderUserPortal() {
                     ? performance
                         .map(
                           (holding) => `
-                            <tr data-symbol="${escapeHtml(holding.symbol)}" data-sector="${escapeHtml(holding.sector || "Tracked holding")}" data-state="${getHoldingState(holding)}" data-value="${Number(holding.value || 0)}">
+                            <tr data-live-summary="true" data-symbol="${escapeHtml(holding.symbol)}" data-live-symbol="${escapeHtml(holding.symbol)}" data-sector="${escapeHtml(holding.sector || "Tracked holding")}" data-state="${getHoldingState(holding)}" data-quantity="${Number(holding.quantity || 0)}" data-buy-price="${Number(holding.buy_price || 0)}" data-current-price="${Number(holding.current_price || 0)}" data-value="${Number(holding.value || 0)}">
                               <td>${holding.symbol}<br /><small>${holding.sector || "Tracked holding"}</small></td>
-                              <td>${currency(holding.buy_price * holding.quantity)}</td>
-                              <td>${currency(holding.value)}</td>
-                              <td><strong class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}</strong><br /><small>${percent(holding.percent_change)}</small></td>
-                              <td><button class="secondary-btn compact-btn" type="button" data-delete-holding="${holding.holding_id}" data-symbol="${holding.symbol}">Remove</button></td>
+                              <td><strong class="price-buy">${currency(holding.buy_price * holding.quantity)}</strong></td>
+                              <td><strong class="${holding.profit_loss >= 0 ? "price-up" : "price-down"}" data-live-value-cell>${currency(holding.value)}</strong><br /><small>Live <span data-live-price-cell>${currency(holding.current_price)}</span></small></td>
+                              <td><strong class="${holding.profit_loss >= 0 ? "profit" : "loss"}" data-pnl-cell>${currency(holding.profit_loss)}</strong><br /><small data-return-cell>${percent(holding.percent_change)}</small></td>
+                              <td><button class="sell-action-btn" type="button" data-delete-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-quantity="${holding.quantity}" data-live-price="${holding.current_price}">Sell</button></td>
                             </tr>
                           `
                         )
@@ -2036,9 +2142,34 @@ async function renderUserPortal() {
               <label class="portfolio-symbol-wrap"><span>Stock Symbol</span><input name="symbol" type="text" autocomplete="off" required /><div id="portfolioSymbolSuggestions" class="symbol-suggestion-list"></div></label>
               <label><span>Quantity</span><input name="quantity" type="number" min="1" required /></label>
               <label><span>Buy Price</span><input name="buyPrice" type="number" min="1" step="0.01" required /></label>
-              <label><span>Exchange</span><input name="exchange" type="text" value="NSE" required /></label>
+              <label><span>Exchange</span><input name="exchange" type="text" value="NSE" disabled /></label>
               <button class="primary-btn" type="submit">Add Stock</button>
             </form>
+          </article>
+        </div>
+
+        <div class="user-app-grid">
+          <article class="user-app-card full-span-card" id="userSoldHistoryCard">
+            <div class="panel-head"><h3>Sold History</h3><span class="badge">Booked P&amp;L</span></div>
+            <div class="table-wrap">
+              <table class="compact-table">
+                <thead><tr><th>Stock</th><th>Qty Sold</th><th>Buy Price</th><th>Sell Price</th><th>Booked P&amp;L</th><th>Sold Date</th></tr></thead>
+                <tbody>
+                  ${sales.length
+                    ? sales.map((sale) => `
+                      <tr>
+                        <td>${escapeHtml(sale.symbol)}<br /><small>${escapeHtml(sale.exchange || "NSE")}</small></td>
+                        <td>${Number(sale.quantity || 0).toLocaleString("en-IN")}</td>
+                        <td>${currency(sale.buy_price)}</td>
+                        <td>${currency(sale.sell_price)}</td>
+                        <td class="${Number(sale.profit_loss || 0) >= 0 ? "profit" : "loss"}">${currency(sale.profit_loss)}</td>
+                        <td>${formatDate(sale.sold_at)}</td>
+                      </tr>
+                    `).join("")
+                    : `<tr><td colspan="6"><span class="helper-text">No sold stocks yet. Sold stocks will appear here with booked profit/loss.</span></td></tr>`}
+                </tbody>
+              </table>
+            </div>
           </article>
         </div>
 
@@ -2056,12 +2187,12 @@ async function renderUserPortal() {
               <article class="note-card">
                 <strong>Best performer</strong>
                 <span>${topPerformer ? topPerformer.symbol : "Pending"}</span>
-                <small class="${topPerformer && topPerformer.profit_loss >= 0 ? "profit" : ""}">${topPerformer ? `${currency(topPerformer.profit_loss)} · ${percent(topPerformer.percent_change)}` : "No data yet"}</small>
+                <small class="${topPerformer && topPerformer.profit_loss >= 0 ? "profit" : ""}">${topPerformer ? `${currency(topPerformer.profit_loss)}  -  ${percent(topPerformer.percent_change)}` : "No data yet"}</small>
               </article>
               <article class="note-card">
                 <strong>Needs attention</strong>
                 <span>${laggard ? laggard.symbol : "Pending"}</span>
-                <small class="${laggard && laggard.profit_loss < 0 ? "loss" : ""}">${laggard ? `${currency(laggard.profit_loss)} · ${percent(laggard.percent_change)}` : "No data yet"}</small>
+                <small class="${laggard && laggard.profit_loss < 0 ? "loss" : ""}">${laggard ? `${currency(laggard.profit_loss)}  -  ${percent(laggard.percent_change)}` : "No data yet"}</small>
               </article>
               <article class="note-card">
                 <strong>Risk level</strong>
@@ -2088,6 +2219,8 @@ async function renderUserPortal() {
   `;
 
     revealPortal(mount);
+    mount.dataset.liveBookedPnl = String(totalBookedPnl);
+    mount.setAttribute("data-live-booked-pnl", String(totalBookedPnl));
     activeRole = "user";
     activeUserId = profile.id;
     document.getElementById("userPrintBtn").addEventListener("click", () => window.print());
@@ -2097,6 +2230,7 @@ async function renderUserPortal() {
     setupHoldingDeleteButtons();
     setupUserPortfolioFilters();
     setupPortalActions();
+    startLiveDashboardPrices();
   } catch (error) {
     renderPortalError(mount, "User Dashboard", `Login succeeded, but portfolio data could not load yet. ${formatError(error)}`);
     const retry = document.getElementById("retryPortalBtn");
@@ -2120,11 +2254,13 @@ function setupPortfolioForm() {
           symbol: String(data.get("symbol")).trim().toUpperCase(),
           quantity: Number(data.get("quantity")),
           buy_price: Number(data.get("buyPrice")),
-          exchange: String(data.get("exchange")).trim().toUpperCase()
+          exchange: "NSE"
         })
       });
       form.reset();
-      form.querySelector('[name="exchange"]').value = "NSE";
+      const exchangeInput = form.querySelector('[name="exchange"]');
+      if (exchangeInput) exchangeInput.value = "NSE";
+      notifyPortfolioChanged();
       const suggestions = document.getElementById("portfolioSymbolSuggestions");
       if (suggestions) suggestions.innerHTML = "";
       await renderUserPortal();
@@ -2434,6 +2570,7 @@ function setupLogin() {
   });
 
   if (isLoginPage()) {
+    stopLiveDashboardPrices();
     clearAuth();
     hidePortalMounts();
     hideAuthLoading();
@@ -2449,14 +2586,7 @@ function setupLogin() {
   updateAside("admin");
   checkBackendStatus();
 
-  liveTickerTimer = setInterval(async () => {
-    if (activeRole === "admin") {
-      await renderAdminPortal();
-    }
-    if (activeRole === "user" && activeUserId) {
-      await renderUserPortal();
-    }
-  }, 15000);
+  // Dashboard auto-refresh disabled to prevent flicker. Use Refresh or portfolio actions to update.
 }
 
 function setupDashboardPages() {
@@ -2494,16 +2624,7 @@ function setupDashboardPages() {
     });
   }
 
-  if ((isAdminDashboardPage() && adminPortal) || (isUserDashboardPage() && userPortal)) {
-    liveTickerTimer = setInterval(async () => {
-      if (isAdminDashboardPage() && activeRole === "admin") {
-        await renderAdminPortal();
-      }
-      if (isUserDashboardPage() && activeRole === "user" && activeUserId) {
-        await renderUserPortal();
-      }
-    }, 15000);
-  }
+  // Dashboard auto-refresh disabled to prevent flicker. Use Refresh or portfolio actions to update.
 }
 
 function isFinancialQuestion(message) {
@@ -2528,7 +2649,7 @@ function financeFallbackReply(message) {
     return "OTP is used as an added login verification step. Click Send OTP, use the displayed code in local testing, and then complete login.";
   }
   if (text.includes("admin") && text.includes("download")) {
-    return "Admins can open the admin dashboard and use Download Dashboard for a selected client portfolio snapshot.";
+    return "Admins can open the admin dashboard and use Download for a selected client portfolio snapshot.";
   }
   if (text.includes("faq") || text.includes("question") || text.includes("help")) {
     return "I can help with login steps, portfolio basics, admin dashboard actions, OTP flow, finance terms, and stock-related questions.";
@@ -2647,21 +2768,24 @@ function setupFinanceChatbot() {
     }, 2200);
   };
 
-  rotateNudge();
-  chatNudgeTimer = window.setInterval(rotateNudge, 5000);
+  // Automatic chatbot nudges disabled to prevent page flicker.
 }
 
 setupFaq();
 loadSiteControls().catch(() => {});
 setupReviewForm();
+window.addEventListener("storage", (event) => {
+  if (event.key !== "stock_trader_portfolio_updated") return;
+  if (isAdminDashboardPage() && activeRole === "admin") {
+    renderAdminPortal().catch(() => {});
+  }
+});
 setupPageTransitions();
+removeDeprecatedPublicNavigation();
+setupHomeLiveTicker().catch(() => {});
+setupHomeLiveNews().catch(() => {});
+setupSmartLoginLinks();
 setupLogin();
+setupDashboardLaunchReveal();
 setupDashboardPages();
 setupFinanceChatbot();
-
-
-
-
-
-
-
