@@ -1813,11 +1813,8 @@ async function renderAdminPortal() {
     });
     const searchText = adminUiState.search.trim().toLowerCase();
     const scriptSearchText = adminUiState.scriptSearch.trim().toLowerCase();
-    const totalInvested = allHoldings.reduce((sum, holding) => sum + Number(holding.invested_value || 0), 0);
     const totalValue = allHoldings.reduce((sum, holding) => sum + Number(holding.value || 0), 0);
-    const totalPnl = totalValue - totalInvested;
-    const lifetimeReturn = totalInvested ? (totalPnl / totalInvested) * 100 : 0;
-    const profitableClients = liveUserDashboards.filter((user) => Number(user.total_profit_loss || 0) > 0).length;
+    const totalPnl = allHoldings.reduce((sum, holding) => sum + Number(holding.profit_loss || 0), 0);
     const filteredPositionHoldings = allHoldings.filter((holding) => {
       const matchesInvestor =
         !searchText ||
@@ -1866,15 +1863,6 @@ async function renderAdminPortal() {
             <span><strong>${allHoldings.length}</strong> Positions</span>
             <span><strong data-live-total-value>${currency(totalValue)}</strong> Live value</span>
             <span class="${totalPnl >= 0 ? "profit" : "loss"}"><strong data-live-total-pnl>${currency(totalPnl)}</strong> Lifetime P/L</span>
-          </div>
-
-          <div id="adminOverviewCard" class="metrics-grid admin-simple-metrics">
-            <article class="metric-card"><strong>${safeUsers.length}</strong><span>Clients</span><small>Total registered users</small></article>
-            <article class="metric-card"><strong>${allHoldings.length}</strong><span>Holdings</span><small>Open stock positions</small></article>
-            <article class="metric-card"><strong>${currency(totalInvested)}</strong><span>Buy Value</span><small>Quantity x buy price</small></article>
-            <article class="metric-card"><strong data-live-total-value>${currency(totalValue)}</strong><span>Live Value</span><small data-live-price-status>Auto-updates every minute</small></article>
-            <article class="metric-card"><strong class="${totalPnl >= 0 ? "profit" : "loss"}" data-live-total-pnl>${currency(totalPnl)}</strong><span>Lifetime P/L</span><small><span data-live-total-return>${percent(lifetimeReturn)}</span> overall return</small></article>
-            <article class="metric-card"><strong>${profitableClients}/${liveUserDashboards.length || 0}</strong><span>Clients In Profit</span><small>Based on lifetime P/L</small></article>
           </div>
 
           <article class="dashboard-card full-span-card admin-deal-card" id="adminDealCard">
