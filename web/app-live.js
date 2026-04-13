@@ -1946,6 +1946,20 @@ async function renderUserPortal() {
     const liveFeed = symbols.length
       ? await api(`/stocks/feed?symbols=${encodeURIComponent(symbols.join(","))}`).catch(() => [])
       : [];
+    const liveQuoteMap = new Map(
+      (Array.isArray(liveFeed) ? liveFeed : []).map((quote) => [String(quote.symbol || "").toUpperCase(), quote])
+    );
+    const unrealisedPnl = Number(summary.total_profit_loss || 0);
+    const unrealisedPct = totalInvested ? (unrealisedPnl / totalInvested) * 100 : 0;
+    const todayPnl = performance.reduce((sum, holding) => {
+      const quote = liveQuoteMap.get(String(holding.symbol || "").toUpperCase());
+      const quantity = Number(holding.quantity || 0);
+      const livePrice = Number(quote?.price || holding.current_price || 0);
+      const changePct = Number(quote?.change_percent || 0);
+      const previousPrice = changePct ? livePrice / (1 + changePct / 100) : livePrice;
+      return sum + (livePrice - previousPrice) * quantity;
+    }, 0);
+    const todayPnlPct = Number(summary.total_portfolio_value || 0) ? (todayPnl / Number(summary.total_portfolio_value || 0)) * 100 : 0;
     const recommendationFeed = await api(`/stocks/feed?symbols=${encodeURIComponent(USER_RECOMMENDATION_SYMBOLS.join(","))}`).catch(() => []);
     const profitableCount = performance.filter((holding) => Number(holding.profit_loss || 0) > 0).length;
     const sectorCount = new Set(performance.map((holding) => holding.sector || "Tracked")).size;
@@ -2100,6 +2114,41 @@ async function renderUserPortal() {
                     )
                     .join("")
                 : `<article class="allocation-pill"><strong>No allocation data</strong><small>Add a stock to populate your sector mix.</small></article>`}
+            </div>
+          </article>
+        </div>
+
+        <div class="user-app-grid">
+          <article class="user-app-card full-span-card portfolio-ledger-card" id="portfolioLedgerCard">
+            <nav class="portfolio-ledger-tabs" aria-label="Portfolio sections">
+              <button type="button">Overview</button>
+              <button class="active" type="button">Equity</button>
+              <button type="button">Demat</button>
+              <button type="button">MTF</button>
+              <button type="button">Fixed Income</button>
+              <button type="button">Others</button>
+            </nav>
+            <div class="portfolio-ledger-metrics">
+              <article>
+                <span>Invested Value</span>
+                <strong>${currency(totalInvested)}</strong>
+              </article>
+              <article>
+                <span>Current Value</span>
+                <strong data-live-total-value>${currency(summary.total_portfolio_value)}</strong>
+              </article>
+              <article>
+                <span>Unrealised P&amp;L</span>
+                <strong class="${unrealisedPnl >= 0 ? "profit" : "loss"}">${currency(unrealisedPnl)} <small>${percent(unrealisedPct)}</small></strong>
+              </article>
+              <article>
+                <span>Today's P&amp;L</span>
+                <strong class="${todayPnl >= 0 ? "profit" : "loss"}">${currency(todayPnl)} <small>${percent(todayPnlPct)}</small></strong>
+              </article>
+              <article>
+                <span>Realised P&amp;L</span>
+                <strong class="${totalBookedPnl >= 0 ? "profit" : "loss"}">${currency(totalBookedPnl)}</strong>
+              </article>
             </div>
           </article>
         </div>
