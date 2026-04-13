@@ -1969,18 +1969,6 @@ async function renderUserPortal() {
       : null;
     const filteredPerformance = getFilteredUserPerformance(performance);
     const gainRate = performance.length ? (profitableCount / performance.length) * 100 : 0;
-    const tickerMarkup = (Array.isArray(liveFeed) ? liveFeed : [])
-      .map(
-        (quote) => `
-          <article>
-            <strong>${escapeHtml(quote.symbol)}</strong>
-            <small>${escapeHtml(quote.short_name || quote.symbol)}</small>
-            <small class="${quote.change_percent >= 0 ? "profit" : "loss"}">${percent(quote.change_percent)}</small>
-          </article>
-        `
-      )
-      .join("");
-
     userDashboardCache = {
       performance,
       recommendationFeed: Array.isArray(recommendationFeed) ? recommendationFeed : [],
@@ -2016,10 +2004,6 @@ async function renderUserPortal() {
           <span class="${totalLifetimePnl >= 0 ? "profit" : "loss"}"><strong data-live-total-pnl>${currency(totalLifetimePnl)}</strong> Lifetime P/L</span>
           <span><strong>${performance.length}</strong> Holdings</span>
           <span><strong>${currency(totalBookedPnl)}</strong> Booked P/L</span>
-        </div>
-
-        <div class="user-ticker-strip">
-          ${tickerMarkup || `<article><strong>Market feed</strong><small>No tracked symbols yet</small><small>Add a stock to begin</small></article>`}
         </div>
 
         <div class="user-app-grid">
