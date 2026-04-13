@@ -1959,20 +1959,11 @@ async function renderUserPortal() {
       return sum + (livePrice - previousPrice) * quantity;
     }, 0);
     const todayPnlPct = Number(summary.total_portfolio_value || 0) ? (todayPnl / Number(summary.total_portfolio_value || 0)) * 100 : 0;
-    const recommendationFeed = await api(`/stocks/feed?symbols=${encodeURIComponent(USER_RECOMMENDATION_SYMBOLS.join(","))}`).catch(() => []);
-    const profitableCount = performance.filter((holding) => Number(holding.profit_loss || 0) > 0).length;
-    const topPerformer = performance.length
-      ? performance.slice().sort((a, b) => Number(b.profit_loss || 0) - Number(a.profit_loss || 0))[0]
-      : null;
-    const laggard = performance.length
-      ? performance.slice().sort((a, b) => Number(a.profit_loss || 0) - Number(b.profit_loss || 0))[0]
-      : null;
     const filteredPerformance = getFilteredUserPerformance(performance);
-    const gainRate = performance.length ? (profitableCount / performance.length) * 100 : 0;
     userDashboardCache = {
       performance,
-      recommendationFeed: Array.isArray(recommendationFeed) ? recommendationFeed : [],
-      symbolCatalog: buildUserSymbolCatalog(performance, Array.isArray(recommendationFeed) ? recommendationFeed : [])
+      recommendationFeed: [],
+      symbolCatalog: buildUserSymbolCatalog(performance, [])
     };
 
     mount.innerHTML = `
@@ -2099,40 +2090,7 @@ async function renderUserPortal() {
         </div>
 
         <div class="user-app-grid">
-          <article class="user-app-card" id="userRecommendationsCard">
-            <div class="panel-head"><h3>Recommended To Add</h3><span class="badge">Refreshing Live</span></div>
-            <div class="recommendation-grid">
-              ${buildUserRecommendationsMarkup(userDashboardCache.recommendationFeed, performance)}
-            </div>
-          </article>
-
-          <article class="user-app-card" id="userSignalsCard">
-            <div class="panel-head"><h3>Performance Signals</h3><span class="badge">Insights</span></div>
-            <div class="performance-grid">
-              <article class="note-card">
-                <strong>Best performer</strong>
-                <span>${topPerformer ? topPerformer.symbol : "Pending"}</span>
-                <small class="${topPerformer && topPerformer.profit_loss >= 0 ? "profit" : ""}">${topPerformer ? `${currency(topPerformer.profit_loss)}  -  ${percent(topPerformer.percent_change)}` : "No data yet"}</small>
-              </article>
-              <article class="note-card">
-                <strong>Needs attention</strong>
-                <span>${laggard ? laggard.symbol : "Pending"}</span>
-                <small class="${laggard && laggard.profit_loss < 0 ? "loss" : ""}">${laggard ? `${currency(laggard.profit_loss)}  -  ${percent(laggard.percent_change)}` : "No data yet"}</small>
-              </article>
-              <article class="note-card">
-                <strong>Risk level</strong>
-                <span>${summary.risk_level || "Moderate"}</span>
-                <small>${summary.diversification_analysis || "Diversification insight will appear here."}</small>
-              </article>
-              <article class="note-card">
-                <strong>Winning positions</strong>
-                <span>${profitableCount}/${performance.length || 0}</span>
-                <small>${gainRate.toFixed(0)}% of tracked holdings are in profit.</small>
-              </article>
-            </div>
-          </article>
-
-          <article class="user-app-card" id="userActivityCard">
+          <article class="user-app-card full-span-card" id="userActivityCard">
             <div class="panel-head"><h3>Recent Activity</h3><span class="badge">Timeline</span></div>
             <div class="stack-list">
               ${buildRecentActivityMarkup(performance)}
@@ -2151,7 +2109,6 @@ async function renderUserPortal() {
     document.getElementById("userPrintBtn").addEventListener("click", () => window.print());
     setupPortfolioForm();
     setupPortfolioSymbolSuggestions();
-    setupUserRecommendationButtons();
     setupHoldingDeleteButtons();
     setupUserPortfolioFilters();
     setupPortalActions();
