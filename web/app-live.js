@@ -1941,7 +1941,6 @@ async function renderUserPortal() {
     const totalBookedPnl = Number(summary.booked_profit_loss || 0);
     const totalLifetimePnl = Number(summary.lifetime_profit_loss ?? (Number(summary.total_profit_loss || 0) + totalBookedPnl));
     const totalInvested = performance.reduce((sum, item) => sum + Number(item.buy_price || 0) * Number(item.quantity || 0), 0);
-    const overallPct = totalInvested ? (totalLifetimePnl / totalInvested) * 100 : 0;
     const symbols = [...new Set(performance.map((holding) => holding.symbol).filter(Boolean))];
     const liveFeed = symbols.length
       ? await api(`/stocks/feed?symbols=${encodeURIComponent(symbols.join(","))}`).catch(() => [])
@@ -1962,7 +1961,6 @@ async function renderUserPortal() {
     const todayPnlPct = Number(summary.total_portfolio_value || 0) ? (todayPnl / Number(summary.total_portfolio_value || 0)) * 100 : 0;
     const recommendationFeed = await api(`/stocks/feed?symbols=${encodeURIComponent(USER_RECOMMENDATION_SYMBOLS.join(","))}`).catch(() => []);
     const profitableCount = performance.filter((holding) => Number(holding.profit_loss || 0) > 0).length;
-    const sectorCount = new Set(performance.map((holding) => holding.sector || "Tracked")).size;
     const topPerformer = performance.length
       ? performance.slice().sort((a, b) => Number(b.profit_loss || 0) - Number(a.profit_loss || 0))[0]
       : null;
@@ -1970,11 +1968,7 @@ async function renderUserPortal() {
       ? performance.slice().sort((a, b) => Number(a.profit_loss || 0) - Number(b.profit_loss || 0))[0]
       : null;
     const filteredPerformance = getFilteredUserPerformance(performance);
-    const totalVisibleValue = filteredPerformance.reduce((sum, holding) => sum + Number(holding.value || 0), 0);
     const gainRate = performance.length ? (profitableCount / performance.length) * 100 : 0;
-    const exposureEntries = Object.entries(summary.sector_exposure || {})
-      .sort((a, b) => Number(b[1]) - Number(a[1]))
-      .slice(0, 5);
     const tickerMarkup = (Array.isArray(liveFeed) ? liveFeed : [])
       .map(
         (quote) => `
@@ -2026,96 +2020,6 @@ async function renderUserPortal() {
 
         <div class="user-ticker-strip">
           ${tickerMarkup || `<article><strong>Market feed</strong><small>No tracked symbols yet</small><small>Add a stock to begin</small></article>`}
-        </div>
-
-        <div class="user-app-grid">
-          <article class="user-app-card" id="userPerformanceCard">
-            <div class="panel-head">
-              <h3>Portfolio Performance</h3>
-              <div class="chart-range">
-                <span>1D</span>
-                <span>1M</span>
-                <span class="active">1Y</span>
-                <span>All</span>
-              </div>
-            </div>
-            <div class="chart-card-main">
-              <div class="chart-metric-panel">
-                <div class="chart-figure">
-                  <span>Your portfolio is <strong class="${totalLifetimePnl >= 0 ? "profit" : "loss"}">${totalLifetimePnl >= 0 ? "up" : "down"} ${Math.abs(overallPct).toFixed(1)}%</strong> overall</span>
-                  <strong class="chart-value" data-live-total-value>${currency(summary.total_portfolio_value)}</strong>
-                  <small>Current investment value across tracked holdings</small>
-                </div>
-                <article class="mini-stat-box">
-                  <strong class="${totalLifetimePnl >= 0 ? "profit" : "loss"}" data-live-total-pnl>${currency(totalLifetimePnl)}</strong>
-                  <small data-live-price-status>Live prices update every minute</small>
-                </article>
-                <div class="chart-inline-grid">
-                  <article>
-                    <strong>${currency(totalInvested)}</strong>
-                    <small>Total invested</small>
-                  </article>
-                  <article>
-                    <strong data-live-total-value>${currency(totalVisibleValue || summary.total_portfolio_value)}</strong>
-                    <small>Visible value</small>
-                  </article>
-                  <article>
-                    <strong>${performance.length}</strong>
-                    <small>Active positions</small>
-                  </article>
-                  <article>
-                    <strong class="${totalBookedPnl >= 0 ? "profit" : "loss"}">${currency(totalBookedPnl)}</strong>
-                    <small>Booked profit/loss</small>
-                  </article>
-                  <article>
-                    <strong>${gainRate.toFixed(0)}%</strong>
-                    <small>Positions in profit</small>
-                  </article>
-                </div>
-              </div>
-              <div class="chart-display">
-                <svg viewBox="0 0 700 360" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="userPerformanceFill" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stop-color="rgba(15,159,98,0.28)" />
-                      <stop offset="100%" stop-color="rgba(15,159,98,0.03)" />
-                    </linearGradient>
-                  </defs>
-                  <path d="M0,230 C40,210 70,240 110,214 C160,182 190,132 236,148 C278,162 312,82 362,96 C404,108 426,196 472,202 C520,208 540,120 584,116 C626,112 658,76 700,66 L700,360 L0,360 Z" fill="url(#userPerformanceFill)"></path>
-                  <path d="M0,230 C40,210 70,240 110,214 C160,182 190,132 236,148 C278,162 312,82 362,96 C404,108 426,196 472,202 C520,208 540,120 584,116 C626,112 658,76 700,66" fill="none" stroke="#22b573" stroke-width="4" stroke-linecap="round"></path>
-                </svg>
-                <div class="chart-tooltip">
-                  <small>${topPerformer ? escapeHtml(topPerformer.symbol) : "Portfolio View"}</small>
-                  <strong>${topPerformer ? currency(topPerformer.value) : currency(summary.total_portfolio_value)}</strong>
-                  <small>${topPerformer ? percent(topPerformer.percent_change) : percent(overallPct)}</small>
-                </div>
-              </div>
-            </div>
-          </article>
-
-          <article class="user-app-card" id="userAllocationCard">
-            <div class="panel-head"><h3>Portfolio Allocation</h3><span class="badge">Sector View</span></div>
-            <div class="allocation-summary-bar">
-              ${exposureEntries.length
-                ? exposureEntries.map(([, value]) => `<span style="width:${Math.max(Number(value), 8)}%"></span>`).join("")
-                : `<span style="width:100%"></span>`}
-            </div>
-            <div class="allocation-grid">
-              ${exposureEntries.length
-                ? exposureEntries
-                    .map(
-                      ([sector, value]) => `
-                        <article class="allocation-pill">
-                          <strong>${escapeHtml(sector)}</strong>
-                          <span>${Number(value).toFixed(0)}%</span>
-                          <small>Estimated portfolio exposure</small>
-                        </article>
-                      `
-                    )
-                    .join("")
-                : `<article class="allocation-pill"><strong>No allocation data</strong><small>Add a stock to populate your sector mix.</small></article>`}
-            </div>
-          </article>
         </div>
 
         <div class="user-app-grid">
