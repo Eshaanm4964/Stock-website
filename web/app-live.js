@@ -2025,12 +2025,7 @@ async function renderUserPortal() {
         <div class="user-app-grid">
           <article class="user-app-card full-span-card portfolio-ledger-card" id="portfolioLedgerCard">
             <nav class="portfolio-ledger-tabs" aria-label="Portfolio sections">
-              <button type="button">Overview</button>
               <button class="active" type="button">Equity</button>
-              <button type="button">Demat</button>
-              <button type="button">MTF</button>
-              <button type="button">Fixed Income</button>
-              <button type="button">Others</button>
             </nav>
             <div class="portfolio-ledger-metrics">
               <article>
