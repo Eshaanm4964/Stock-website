@@ -1593,6 +1593,49 @@ function buildAdminClientDetail(user) {
     </article>
   `;
 }
+
+function setupAdminDealForm() {
+  const form = document.getElementById("adminDealForm");
+  const statusMessage = document.getElementById("adminDealStatus");
+  if (!form) return;
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const submitButton = form.querySelector('button[type="submit"]');
+    const data = new FormData(form);
+    const userId = String(data.get("userId") || "").trim();
+    const symbol = String(data.get("symbol") || "").trim().toUpperCase();
+    const quantity = Number(data.get("quantity"));
+    const buyPrice = Number(data.get("buyPrice"));
+    const exchange = String(data.get("exchange") || "NSE").trim().toUpperCase() || "NSE";
+
+    if (!userId || !symbol || !quantity || !buyPrice) {
+      if (statusMessage) statusMessage.textContent = "Select customer and enter stock, quantity, and buy price.";
+      return;
+    }
+
+    const stopLoading = setButtonLoading(submitButton, "Adding...");
+    try {
+      await api(`/admin/users/${encodeURIComponent(userId)}/deals`, {
+        method: "POST",
+        body: JSON.stringify({
+          symbol,
+          quantity,
+          buy_price: buyPrice,
+          exchange
+        })
+      });
+      if (statusMessage) statusMessage.textContent = `${symbol} deal added successfully. Refreshing dashboard...`;
+      notifyPortfolioChanged();
+      await renderAdminPortal();
+    } catch (error) {
+      if (statusMessage) statusMessage.textContent = formatError(error);
+    } finally {
+      stopLoading();
+    }
+  });
+}
+
 function buildAdminStockDetail(symbol, holdings) {
   const safeHoldings = Array.isArray(holdings) ? holdings : [];
   const totalQty = safeHoldings.reduce((sum, holding) => sum + Number(holding.quantity || 0), 0);
@@ -1799,6 +1842,7 @@ async function renderAdminPortal() {
         return { symbol, holdings, invested, value, pnl };
       })
       .sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl));
+    const dealSymbolOptions = Array.from(new Set([...symbols, ...HOME_TICKER_SYMBOLS])).sort();
 
     mount.innerHTML = `
       <section class="user-shell admin-shell admin-simple-shell no-sidebar-shell">
@@ -1832,6 +1876,41 @@ async function renderAdminPortal() {
             <article class="metric-card"><strong class="${totalPnl >= 0 ? "profit" : "loss"}" data-live-total-pnl>${currency(totalPnl)}</strong><span>Lifetime P/L</span><small><span data-live-total-return>${percent(lifetimeReturn)}</span> overall return</small></article>
             <article class="metric-card"><strong>${profitableClients}/${liveUserDashboards.length || 0}</strong><span>Clients In Profit</span><small>Based on lifetime P/L</small></article>
           </div>
+
+          <article class="dashboard-card full-span-card admin-deal-card" id="adminDealCard">
+            <div class="panel-head">
+              <div>
+                <h3>Add Deal</h3>
+                <p class="detail-subtitle">Add a stock position directly to a customer portfolio.</p>
+              </div>
+              <span class="badge green">Admin Entry</span>
+            </div>
+            <form id="adminDealForm" class="portfolio-form admin-deal-form">
+              <label>
+                <span>Customer</span>
+                <select name="userId" required ${liveUserDashboards.length ? "" : "disabled"}>
+                  <option value="">Select customer</option>
+                  ${liveUserDashboards
+                    .slice()
+                    .sort((a, b) => String(a.full_name || "").localeCompare(String(b.full_name || "")))
+                    .map((user) => `<option value="${user.user_id}">${escapeHtml(user.full_name)} (${escapeHtml(user.fixed_user_id || user.username || "Client")})</option>`)
+                    .join("")}
+                </select>
+              </label>
+              <label>
+                <span>Stock Symbol</span>
+                <input name="symbol" type="text" list="adminDealSymbols" placeholder="INFY" autocomplete="off" required />
+                <datalist id="adminDealSymbols">
+                  ${dealSymbolOptions.map((symbol) => `<option value="${escapeHtml(symbol)}"></option>`).join("")}
+                </datalist>
+              </label>
+              <label><span>Quantity</span><input name="quantity" type="number" min="1" step="1" placeholder="100" required /></label>
+              <label><span>Buy Price</span><input name="buyPrice" type="number" min="1" step="0.01" placeholder="1500" required /></label>
+              <label><span>Exchange</span><input name="exchange" type="text" value="NSE" required /></label>
+              <button class="primary-btn" type="submit" ${liveUserDashboards.length ? "" : "disabled"}>Add Deal</button>
+              <p class="helper-text admin-deal-status" id="adminDealStatus">${liveUserDashboards.length ? "Choose customer, stock, quantity, and buy price." : "Create a customer first, then add a deal."}</p>
+            </form>
+          </article>
 
           <div class="dashboard-grid admin-simple-grid">
             <article class="dashboard-card admin-simple-list-card">
@@ -1938,6 +2017,7 @@ async function renderAdminPortal() {
     activeUserId = null;
     setupDownloadButtons(liveUserDashboards);
     setupAdminManagementButtons();
+    setupAdminDealForm();
     setupAdminDrilldowns(liveUserDashboards, allHoldings);
     renderAdminSelectedDetail(liveUserDashboards, allHoldings, false);
     setupPortalActions();

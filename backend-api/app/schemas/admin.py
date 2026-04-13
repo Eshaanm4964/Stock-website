@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class AdminDashboardResponse(BaseModel):
@@ -92,6 +92,13 @@ class AuthAttemptResponse(BaseModel):
 
 class AdminUserStatusUpdateRequest(BaseModel):
     is_active: bool
+
+
+class AdminDealCreateRequest(BaseModel):
+    symbol: str = Field(min_length=1, max_length=20)
+    quantity: float = Field(gt=0)
+    buy_price: float = Field(gt=0)
+    exchange: str = Field(default="NSE", min_length=2, max_length=10)
 
 
 class AdminBulkUserActionRequest(BaseModel):

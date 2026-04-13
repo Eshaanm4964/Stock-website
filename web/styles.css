@@ -2919,6 +2919,29 @@ th {
   grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
+.admin-deal-card {
+  border: 1px solid rgba(15, 118, 110, 0.16);
+  background:
+    radial-gradient(circle at top right, rgba(15, 118, 110, 0.08), transparent 30%),
+    #ffffff;
+}
+
+.admin-deal-form {
+  grid-template-columns: minmax(240px, 1.25fr) minmax(130px, 0.8fr) minmax(120px, 0.6fr) minmax(130px, 0.7fr) minmax(100px, 0.55fr) auto;
+  align-items: end;
+}
+
+.admin-deal-form button {
+  grid-column: auto;
+  min-height: 52px;
+  white-space: nowrap;
+}
+
+.admin-deal-status {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
 .admin-simple-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -3025,11 +3048,23 @@ th {
   .admin-simple-grid {
     grid-template-columns: 1fr;
   }
+
+  .admin-deal-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-deal-form button {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 720px) {
   .admin-simple-metrics,
   .admin-simple-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-deal-form {
     grid-template-columns: 1fr;
   }
 

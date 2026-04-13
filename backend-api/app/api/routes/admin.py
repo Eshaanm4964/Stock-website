@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from redis.asyncio import Redis
 from sqlalchemy import delete, distinct, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +20,7 @@ from app.schemas.admin import (
     AdminBulkUserActionRequest,
     AdminBulkUserActionResponse,
     AdminDashboardResponse,
+    AdminDealCreateRequest,
     AdminHoldingSnapshot,
     AdminSaleSnapshot,
     AdminLoginIssueItem,
@@ -34,9 +35,11 @@ from app.schemas.admin import (
     AdminUserSummary,
     AuthAttemptResponse,
 )
+from app.schemas.portfolio import HoldingResponse
 from app.schemas.review import ReviewResponse
 from app.services.portfolio_service import build_portfolio_summary
 from app.services.security_service import log_admin_action
+from app.services.stock_service import fetch_quote
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 settings = get_settings()
@@ -195,6 +198,61 @@ async def admin_user_dashboard(
             details={"fixed_user_id": user.fixed_user_id, "full_name": user.full_name},
         )
     return response
+
+
+@router.post("/users/{user_id}/deals", response_model=HoldingResponse, status_code=status.HTTP_201_CREATED)
+async def admin_add_deal(
+    user_id: int,
+    payload: AdminDealCreateRequest,
+    request: Request,
+    current_admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+    redis: Redis = Depends(get_redis),
+) -> HoldingResponse:
+    user = (
+        await db.execute(
+            select(User).where(
+                User.id == user_id,
+                User.role == UserRole.USER,
+            )
+        )
+    ).scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Cannot add a deal for an inactive customer")
+
+    symbol = payload.symbol.strip().upper()
+    exchange = payload.exchange.strip().upper() or "NSE"
+    quote = await fetch_quote(symbol, exchange, redis)
+    holding = PortfolioHolding(
+        user_id=user.id,
+        symbol=symbol,
+        exchange=exchange,
+        quantity=payload.quantity,
+        buy_price=payload.buy_price,
+        sector=quote.sector,
+    )
+    db.add(holding)
+    await db.commit()
+    await db.refresh(holding)
+    await log_admin_action(
+        db,
+        admin_user=current_admin,
+        action="add_deal",
+        entity_type="portfolio_holding",
+        entity_id=str(holding.id),
+        ip_address=request.client.host if request.client else None,
+        details={
+            "user_id": user.id,
+            "fixed_user_id": user.fixed_user_id,
+            "symbol": symbol,
+            "quantity": payload.quantity,
+            "buy_price": payload.buy_price,
+            "exchange": exchange,
+        },
+    )
+    return HoldingResponse.model_validate(holding)
 
 
 @router.get("/portfolio-overview", response_model=AdminPortfolioOverviewResponse)
