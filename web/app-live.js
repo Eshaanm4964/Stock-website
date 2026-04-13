@@ -1813,8 +1813,18 @@ async function renderAdminPortal() {
     });
     const searchText = adminUiState.search.trim().toLowerCase();
     const scriptSearchText = adminUiState.scriptSearch.trim().toLowerCase();
+    const totalInvested = allHoldings.reduce((sum, holding) => sum + Number(holding.invested_value || 0), 0);
     const totalValue = allHoldings.reduce((sum, holding) => sum + Number(holding.value || 0), 0);
     const totalPnl = allHoldings.reduce((sum, holding) => sum + Number(holding.profit_loss || 0), 0);
+    const totalBookedPnl = liveUserDashboards.reduce((sum, user) => sum + Number(user.booked_profit_loss || 0), 0);
+    const totalPnlPct = totalInvested ? (totalPnl / totalInvested) * 100 : 0;
+    const todayPnl = allHoldings.reduce((sum, holding) => {
+      const livePrice = Number(holding.current_price || holding.buy_price || 0);
+      const changePct = Number(holding.quote_change_percent || 0);
+      const previousPrice = changePct ? livePrice / (1 + changePct / 100) : livePrice;
+      return sum + (livePrice - previousPrice) * Number(holding.quantity || 0);
+    }, 0);
+    const todayPnlPct = totalValue ? (todayPnl / totalValue) * 100 : 0;
     const filteredPositionHoldings = allHoldings.filter((holding) => {
       const matchesInvestor =
         !searchText ||
@@ -1858,12 +1868,33 @@ async function renderAdminPortal() {
             </div>
           </header>
 
-          <div class="simple-summary-strip">
-            <span><strong>${safeUsers.length}</strong> Clients</span>
-            <span><strong>${allHoldings.length}</strong> Positions</span>
-            <span><strong data-live-total-value>${currency(totalValue)}</strong> Live value</span>
-            <span class="${totalPnl >= 0 ? "profit" : "loss"}"><strong data-live-total-pnl>${currency(totalPnl)}</strong> Lifetime P/L</span>
-          </div>
+          <article class="dashboard-card full-span-card portfolio-ledger-card admin-equity-ledger-card">
+            <nav class="portfolio-ledger-tabs" aria-label="Admin portfolio section">
+              <button class="active" type="button">Equity</button>
+            </nav>
+            <div class="portfolio-ledger-metrics">
+              <article>
+                <span>Invested Value</span>
+                <strong>${currency(totalInvested)}</strong>
+              </article>
+              <article>
+                <span>Current Value</span>
+                <strong data-live-total-value>${currency(totalValue)}</strong>
+              </article>
+              <article>
+                <span>Unrealised P&amp;L</span>
+                <strong class="${totalPnl >= 0 ? "profit" : "loss"}" data-live-total-pnl>${currency(totalPnl)} <small data-live-total-return>${percent(totalPnlPct)}</small></strong>
+              </article>
+              <article>
+                <span>Today's P&amp;L</span>
+                <strong class="${todayPnl >= 0 ? "profit" : "loss"}">${currency(todayPnl)} <small>${percent(todayPnlPct)}</small></strong>
+              </article>
+              <article>
+                <span>Realised P&amp;L</span>
+                <strong class="${totalBookedPnl >= 0 ? "profit" : "loss"}">${currency(totalBookedPnl)}</strong>
+              </article>
+            </div>
+          </article>
 
           <article class="dashboard-card full-span-card admin-deal-card" id="adminDealCard">
             <div class="panel-head">
