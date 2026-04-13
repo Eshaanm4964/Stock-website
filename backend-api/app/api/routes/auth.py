@@ -25,6 +25,7 @@ from app.schemas.auth import (
 )
 from app.schemas.user import UserUpdateRequest
 from app.services.security_service import enforce_rate_limit, log_auth_attempt
+from app.services.sms_service import SmsDeliveryError, send_login_otp
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
@@ -180,6 +181,26 @@ async def request_login_otp(
         )
     )
     await db.commit()
+    try:
+        await send_login_otp(payload.phone_number, code)
+    except SmsDeliveryError as exc:
+        await db.execute(delete(LoginOTP).where(LoginOTP.user_id == user.id, LoginOTP.purpose == "login"))
+        await db.commit()
+        await log_auth_attempt(
+            db,
+            stage="request_otp",
+            role=payload.role.value,
+            identifier=identifier,
+            user_id=user.id,
+            phone_number=payload.phone_number,
+            ip_address=client_ip,
+            success=False,
+            failure_reason="sms_delivery_failed",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"OTP could not be sent to this phone number. {exc}",
+        ) from exc
     await log_auth_attempt(
         db,
         stage="request_otp",

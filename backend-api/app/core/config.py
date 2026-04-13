@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     alert_poll_interval_seconds: int = 60
     otp_expire_minutes: int = 5
     otp_debug_mode: bool = Field(default=True, alias="OTP_DEBUG_MODE")
+    sms_provider: str = Field(default="", alias="SMS_PROVIDER")
+    sms_api_key: str = Field(default="", alias="SMS_API_KEY")
+    sms_sender_id: str = Field(default="ASTYNT", alias="SMS_SENDER_ID")
+    sms_timeout_seconds: float = Field(default=10.0, alias="SMS_TIMEOUT_SECONDS")
     auth_rate_limit_window_minutes: int = Field(default=15, alias="AUTH_RATE_LIMIT_WINDOW_MINUTES")
     auth_max_failed_attempts: int = Field(default=5, alias="AUTH_MAX_FAILED_ATTEMPTS")
 
