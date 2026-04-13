@@ -1328,14 +1328,15 @@ body.public-page .auth-gradient-card {
 /* Login page polish */
 body[data-page="login"] .public-auth-grid {
   grid-template-columns: minmax(0, 0.78fr) minmax(620px, 1.22fr);
-  align-items: stretch;
-  gap: 34px;
-  padding: 38px;
+  align-items: start;
+  gap: 30px;
+  padding: clamp(24px, 3vw, 34px);
 }
 
 body[data-page="login"] .public-auth-copy {
-  align-content: center;
-  gap: 18px;
+  align-content: start;
+  gap: 16px;
+  padding-top: 18px;
 }
 
 body[data-page="login"] .public-auth-copy h2 {
@@ -1404,7 +1405,7 @@ body[data-page="login"] .demo-credentials-card {
 }
 
 body[data-page="login"] .auth-workspace-shell {
-  padding: 26px;
+  padding: clamp(18px, 2.2vw, 24px);
   border: 1px solid rgba(17, 35, 63, 0.08);
   border-radius: 30px;
   background:
@@ -1417,12 +1418,12 @@ body[data-page="login"] .auth-workspace-shell {
 body[data-page="login"] .auth-switcher {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  padding: 8px;
-  border-radius: 24px;
+  padding: 7px;
+  border-radius: 22px;
 }
 
 body[data-page="login"] .role-toggle {
-  min-height: 50px;
+  min-height: 46px;
 }
 
 body[data-page="login"] .auth-showcase-premium {
@@ -1520,12 +1521,12 @@ body[data-page="login"] .public-main {
 }
 
 body[data-page="login"] .public-auth-grid {
-  min-height: calc(100vh - 190px);
+  min-height: auto;
 }
 
 body[data-page="login"] .auth-workspace-shell {
-  align-self: center;
-  gap: 16px;
+  align-self: start;
+  gap: 14px;
 }
 
 body[data-page="login"] .auth-stage-card {
