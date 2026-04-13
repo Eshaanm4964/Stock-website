@@ -1999,13 +1999,6 @@ async function renderUserPortal() {
           </div>
         </header>
 
-        <div class="simple-summary-strip">
-          <span><strong data-live-total-value>${currency(summary.total_portfolio_value)}</strong> Live value</span>
-          <span class="${totalLifetimePnl >= 0 ? "profit" : "loss"}"><strong data-live-total-pnl>${currency(totalLifetimePnl)}</strong> Lifetime P/L</span>
-          <span><strong>${performance.length}</strong> Holdings</span>
-          <span><strong>${currency(totalBookedPnl)}</strong> Booked P/L</span>
-        </div>
-
         <div class="user-app-grid">
           <article class="user-app-card full-span-card portfolio-ledger-card" id="portfolioLedgerCard">
             <nav class="portfolio-ledger-tabs" aria-label="Portfolio sections">
