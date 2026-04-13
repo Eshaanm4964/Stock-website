@@ -1021,62 +1021,136 @@ function buildUserDownloadHtml(dashboard) {
     (sum, holding) => sum + Number(holding.buy_price || 0) * Number(holding.quantity || 0),
     0
   );
-  const lifetimeReturn = investedValue ? (Number(dashboard.total_profit_loss || 0) / investedValue) * 100 : 0;
+  const holdings = Array.isArray(dashboard.holdings) ? dashboard.holdings : [];
+  const sales = Array.isArray(dashboard.sales) ? dashboard.sales : [];
+  const bookedPnl = Number(dashboard.booked_profit_loss || 0);
+  const lifetimePnl = Number(dashboard.lifetime_profit_loss ?? dashboard.total_profit_loss ?? 0);
+  const lifetimeReturn = investedValue ? (lifetimePnl / investedValue) * 100 : 0;
+  const generatedAt = new Date().toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Kolkata",
+    timeZoneName: "short"
+  });
   return `
     <!DOCTYPE html>
     <html lang="en">
       <head>
         <meta charset="UTF-8" />
-        <title>${dashboard.full_name} Client Dashboard</title>
+        <title>${escapeHtml(dashboard.full_name)} Profile PDF</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 28px; color: #11233f; background: #f7f9fd; }
-          h1, h2 { margin-bottom: 8px; }
-          .subtle { color: #667085; margin-top: 0; }
+          * { box-sizing: border-box; }
+          body { margin: 0; font-family: Arial, sans-serif; color: #0b172f; background: #eef5f1; }
+          .page { max-width: 1120px; margin: 0 auto; padding: 28px; }
+          .report { border: 1px solid #d9e5df; border-radius: 24px; padding: 26px; background: #ffffff; }
+          .header { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; border-bottom: 1px solid #e5ece8; padding-bottom: 18px; }
+          .brand { color: #0f766e; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+          h1, h2 { margin: 8px 0; }
+          h1 { font-size: 2rem; letter-spacing: -0.04em; }
+          h2 { margin-top: 24px; font-size: 1.15rem; }
+          .subtle { color: #53645e; margin: 0; line-height: 1.55; }
+          .pill { display: inline-flex; border: 1px solid #d9e5df; border-radius: 999px; padding: 8px 12px; color: #0f2f28; background: #f6fbf8; font-weight: 800; }
           .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0; }
-          .card { border: 1px solid #d9e3f2; border-radius: 16px; padding: 16px; background: #fff; }
-          .card div { margin-top: 8px; font-size: 1.35rem; font-weight: 800; }
-          table { width: 100%; border-collapse: collapse; margin-top: 12px; background: #fff; }
-          th, td { border-bottom: 1px solid #d9e3f2; padding: 10px 8px; text-align: left; }
-          th { color: #667085; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; }
+          .card { border: 1px solid #d9e5df; border-radius: 18px; padding: 16px; background: #fbfdfc; }
+          .card strong { display: block; color: #53645e; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; }
+          .card div { margin-top: 8px; font-size: 1.35rem; font-weight: 900; }
+          table { width: 100%; border-collapse: collapse; margin-top: 12px; background: #fff; font-size: 0.92rem; }
+          th, td { border-bottom: 1px solid #e5ece8; padding: 10px 8px; text-align: left; vertical-align: top; }
+          th { color: #53645e; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; background: #f3f8f5; }
           .profit { color: #0f9f62; font-weight: bold; }
           .loss { color: #d64045; font-weight: bold; }
-          .note { margin-top: 18px; color: #667085; font-size: 0.9rem; }
+          .note { margin-top: 18px; color: #53645e; font-size: 0.9rem; line-height: 1.55; }
+          .actions { margin: 18px 0; text-align: right; }
+          button { border: 0; border-radius: 999px; padding: 12px 18px; color: #fff; background: #0f766e; font-weight: 800; cursor: pointer; }
+          @media print {
+            body { background: #ffffff; }
+            .page { max-width: none; padding: 0; }
+            .report { border: 0; border-radius: 0; padding: 0; }
+            .actions { display: none; }
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+          }
         </style>
       </head>
       <body>
-        <h1>${dashboard.full_name} Client Dashboard</h1>
-        <p class="subtle">${dashboard.fixed_user_id || dashboard.username} | Generated from admin dashboard | Live prices where available</p>
-        <div class="grid">
-          <div class="card"><strong>Total Holdings</strong><div>${dashboard.total_holdings}</div></div>
-          <div class="card"><strong>Invested Value</strong><div>${currency(investedValue)}</div></div>
-          <div class="card"><strong>Current Value</strong><div>${currency(dashboard.total_portfolio_value)}</div></div>
-          <div class="card"><strong>Lifetime P&amp;L</strong><div class="${dashboard.total_profit_loss >= 0 ? "profit" : "loss"}">${currency(dashboard.total_profit_loss)} (${percent(lifetimeReturn)})</div></div>
+        <div class="page">
+          <div class="actions"><button type="button" onclick="window.print()">Save As PDF</button></div>
+          <section class="report">
+            <div class="header">
+              <div>
+                <div class="brand">AssetYantra</div>
+                <h1>${escapeHtml(dashboard.full_name)} Profile</h1>
+                <p class="subtle">${escapeHtml(dashboard.fixed_user_id || dashboard.username || "Client")} | ${escapeHtml(dashboard.phone_number || "Phone not available")}</p>
+              </div>
+              <div class="pill">Generated ${generatedAt}</div>
+            </div>
+            <div class="grid">
+              <div class="card"><strong>Total Holdings</strong><div>${Number(dashboard.total_holdings || holdings.length).toLocaleString("en-IN")}</div></div>
+              <div class="card"><strong>Invested Value</strong><div>${currency(investedValue)}</div></div>
+              <div class="card"><strong>Current Value</strong><div>${currency(dashboard.total_portfolio_value)}</div></div>
+              <div class="card"><strong>Lifetime P&amp;L</strong><div class="${lifetimePnl >= 0 ? "profit" : "loss"}">${currency(lifetimePnl)} (${percent(lifetimeReturn)})</div></div>
+            </div>
+            <h2>Current Equity Holdings</h2>
+            <table>
+              <thead><tr><th>Script</th><th>Exchange</th><th>Quantity</th><th>Buy Price</th><th>Buy Value</th><th>Live Price</th><th>Live Value</th><th>Unrealised P&amp;L</th><th>Return</th></tr></thead>
+              <tbody>
+                ${holdings.length
+                  ? holdings
+                      .map((holding) => {
+                        const buyValue = Number(holding.buy_price || 0) * Number(holding.quantity || 0);
+                        const returnPct = buyValue ? (Number(holding.profit_loss || 0) / buyValue) * 100 : 0;
+                        return `<tr><td>${escapeHtml(holding.symbol)}</td><td>${escapeHtml(holding.exchange || "NSE")}</td><td>${Number(holding.quantity || 0).toLocaleString("en-IN")}</td><td>${currency(holding.buy_price)}</td><td>${currency(buyValue)}</td><td>${currency(holding.current_price)}</td><td>${currency(holding.value)}</td><td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}</td><td class="${returnPct >= 0 ? "profit" : "loss"}">${percent(returnPct)}</td></tr>`;
+                      })
+                      .join("")
+                  : `<tr><td colspan="9">No current holdings.</td></tr>`}
+              </tbody>
+            </table>
+            <h2>Sold / Booked Deals</h2>
+            <table>
+              <thead><tr><th>Script</th><th>Qty Sold</th><th>Buy Price</th><th>Sell Price</th><th>Booked P&amp;L</th><th>Sold Time</th></tr></thead>
+              <tbody>
+                ${sales.length
+                  ? sales
+                      .map((sale) => `<tr><td>${escapeHtml(sale.symbol)}</td><td>${Number(sale.quantity || 0).toLocaleString("en-IN")}</td><td>${currency(sale.buy_price)}</td><td>${currency(sale.sell_price)}</td><td class="${Number(sale.profit_loss || 0) >= 0 ? "profit" : "loss"}">${currency(sale.profit_loss)}</td><td>${formatIndianSoldDateTime(sale.sold_at)}</td></tr>`)
+                      .join("")
+                  : `<tr><td colspan="6">No sold deals recorded yet.</td></tr>`}
+              </tbody>
+            </table>
+            <p class="note">This profile is generated from the admin dashboard. Live values depend on the latest market quote available to AssetYantra at the time of generation. Booked P&amp;L shown: ${currency(bookedPnl)}.</p>
+          </section>
         </div>
-        <h2>Investor Trade Positions</h2>
-        <table>
-          <thead><tr><th>Script</th><th>Deal Type</th><th>Buy Qty</th><th>Pending Qty</th><th>Buy Price</th><th>Live Price</th><th>Running P&amp;L</th><th>Booked P&amp;L</th><th>Lifetime P&amp;L</th></tr></thead>
-          <tbody>
-            ${(dashboard.holdings || [])
-              .map(
-                (holding) =>
-                  `<tr><td>${holding.symbol}</td><td>${holding.exchange || "NSE"}</td><td>${holding.quantity}</td><td>${holding.quantity}</td><td>${currency(holding.buy_price)}</td><td>${currency(holding.current_price)}</td><td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}</td><td>${currency(0)}</td><td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}</td></tr>`
-              )
-              .join("")}
-          </tbody>
-        </table>
-        <p class="note">Booked profit is shown as zero in the demo because sell/exit transactions are not yet recorded separately.</p>
       </body>
     </html>
   `;
 }
 
-function downloadHtmlFile(filename, html) {
-  const blob = new Blob([html], { type: "text/html" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(link.href);
+function safeFilename(value) {
+  return String(value || "client-profile")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "client-profile";
+}
+
+function openUserProfilePdf(dashboard) {
+  const reportWindow = window.open("", "_blank");
+  if (!reportWindow) {
+    alert("Allow popups to open the PDF profile.");
+    return;
+  }
+  const html = buildUserDownloadHtml(dashboard);
+  const filename = `${safeFilename(dashboard.fixed_user_id || dashboard.username || dashboard.full_name)}-profile-pdf`;
+  reportWindow.document.open();
+  reportWindow.document.write(html);
+  reportWindow.document.close();
+  reportWindow.document.title = filename;
+  window.setTimeout(() => {
+    reportWindow.focus();
+    reportWindow.print();
+  }, 350);
 }
 
 function logoutAndResetPortals() {
@@ -1292,7 +1366,7 @@ function setupDownloadButtons(userDashboards = []) {
     button.addEventListener("click", () => {
       const dashboard = dashboardMap.get(String(button.dataset.downloadUserId));
       if (!dashboard) return;
-      downloadHtmlFile(`${(dashboard.fixed_user_id || dashboard.username).toLowerCase()}-dashboard.html`, buildUserDownloadHtml(dashboard));
+      openUserProfilePdf(dashboard);
     });
   });
 }
@@ -1958,7 +2032,7 @@ async function renderAdminPortal() {
                             <td><strong class="${pnl >= 0 ? "price-up" : "price-down"}" data-live-value-cell>${currency(holding.value)}</strong></td>
                             <td class="${pnl >= 0 ? "profit" : "loss"}" data-pnl-cell>${currency(pnl)}</td>
                             <td class="${returnPct >= 0 ? "profit" : "loss"}" data-return-cell>${percent(returnPct)}</td>
-                            <td><button class="secondary-btn compact-btn" type="button" data-download-user-id="${holding.user_id}">Download</button></td>
+                            <td><button class="secondary-btn compact-btn" type="button" data-download-user-id="${holding.user_id}">Profile PDF</button></td>
                           </tr>
                         `;
                       }).join("")
