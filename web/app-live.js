@@ -2477,7 +2477,7 @@ function setupLogin() {
             password: String(adminForm.querySelector('[name="password"]').value),
             phone_number: String(adminForm.querySelector('[name="phone"]').value).trim()
           };
-          const response = await api("/auth/request-otp", { method: "POST", body: JSON.stringify(payload) });
+          const response = await api("/auth/request-otp", { method: "POST", body: JSON.stringify(payload), timeout_ms: 60000 });
           document.getElementById("adminOtpHint").textContent = response.otp_preview ? `Testing OTP: ${response.otp_preview}` : response.message;
           document.getElementById("adminError").textContent = "";
         } else {
@@ -2492,7 +2492,7 @@ function setupLogin() {
             password: String(userForm.querySelector('[name="password"]').value),
             phone_number: String(userForm.querySelector('[name="phone"]').value).trim()
           };
-          const response = await api("/auth/request-otp", { method: "POST", body: JSON.stringify(payload) });
+          const response = await api("/auth/request-otp", { method: "POST", body: JSON.stringify(payload), timeout_ms: 60000 });
           document.getElementById("userOtpHint").textContent = response.otp_preview ? `Testing code: ${response.otp_preview}` : response.message;
           document.getElementById("userError").textContent = "";
         }
@@ -2522,6 +2522,7 @@ function setupLogin() {
       showAuthLoading("Opening admin dashboard...", "Verifying credentials, loading client data, and preparing admin controls.");
       const response = await api("/auth/login", {
         method: "POST",
+        timeout_ms: 60000,
         body: JSON.stringify({
           role: "admin",
           identifier: String(data.get("username")).trim(),
@@ -2556,6 +2557,7 @@ function setupLogin() {
       showAuthLoading("Opening user dashboard...", "Loading your holdings, returns, and portfolio summary.");
       const response = await api("/auth/login", {
         method: "POST",
+        timeout_ms: 60000,
         body: JSON.stringify({
           role: "user",
           identifier: String(data.get("userId")).trim().toUpperCase(),
@@ -2590,6 +2592,7 @@ function setupLogin() {
       showAuthLoading("Creating secure account...", "Saving user details and preparing the first portfolio workspace.");
       const response = await api("/auth/signup", {
         method: "POST",
+        timeout_ms: 60000,
         body: JSON.stringify({
           full_name: String(data.get("full_name")).trim(),
           email: String(data.get("email")).trim(),
