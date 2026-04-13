@@ -83,7 +83,24 @@ const formatDateTime = (value) => {
     month: "short",
     year: "numeric",
     hour: "2-digit",
-    minute: "2-digit"
+    minute: "2-digit",
+    timeZone: "Asia/Kolkata"
+  });
+};
+const formatIndianSoldDateTime = (value) => {
+  if (!value) return "No sale time";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "No sale time";
+  return parsed.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Kolkata",
+    timeZoneName: "short"
   });
 };
 
@@ -2069,7 +2086,7 @@ async function renderUserPortal() {
             <div class="panel-head"><h3>Sold History</h3><span class="badge">Booked P&amp;L</span></div>
             <div class="table-wrap">
               <table class="compact-table">
-                <thead><tr><th>Stock</th><th>Qty Sold</th><th>Buy Price</th><th>Sell Price</th><th>Booked P&amp;L</th><th>Sold Date</th></tr></thead>
+                <thead><tr><th>Stock</th><th>Qty Sold</th><th>Buy Price</th><th>Sell Price</th><th>Booked P&amp;L</th><th>Sold Date &amp; Time</th></tr></thead>
                 <tbody>
                   ${sales.length
                     ? sales.map((sale) => `
@@ -2079,7 +2096,7 @@ async function renderUserPortal() {
                         <td>${currency(sale.buy_price)}</td>
                         <td>${currency(sale.sell_price)}</td>
                         <td class="${Number(sale.profit_loss || 0) >= 0 ? "profit" : "loss"}">${currency(sale.profit_loss)}</td>
-                        <td>${formatDate(sale.sold_at)}</td>
+                        <td>${formatIndianSoldDateTime(sale.sold_at)}</td>
                       </tr>
                     `).join("")
                     : `<tr><td colspan="6"><span class="helper-text">No sold stocks yet. Sold stocks will appear here with booked profit/loss.</span></td></tr>`}
