@@ -1931,6 +1931,43 @@ async function renderAdminPortal() {
             </form>
           </article>
 
+          <article class="table-card full-span-card admin-positions-card" id="adminPositionsCard">
+            <div class="panel-head">
+              <div>
+                <h3>All Client Positions</h3>
+                <p class="detail-subtitle">Click a user or stock name to open the detailed view below.</p>
+              </div>
+              <span class="badge">${filteredPositionHoldings.length} shown</span>
+            </div>
+            <div class="table-wrap admin-position-table-wrap">
+              <table class="compact-table admin-position-table">
+                <thead><tr><th>User</th><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Buy Value</th><th>Live Price</th><th>Live Value</th><th>Lifetime P/L</th><th>Return</th><th>Download</th></tr></thead>
+                <tbody>
+                  ${filteredPositionHoldings.length
+                    ? filteredPositionHoldings.map((holding) => {
+                        const pnl = Number(holding.profit_loss || 0);
+                        const returnPct = Number(holding.invested_value || 0) ? (pnl / Number(holding.invested_value || 0)) * 100 : 0;
+                        return `
+                          <tr data-live-summary="true" data-live-symbol="${escapeHtml(holding.symbol)}" data-quantity="${Number(holding.quantity || 0)}" data-buy-price="${Number(holding.buy_price || 0)}" data-current-price="${Number(holding.current_price || 0)}" data-value="${Number(holding.value || 0)}">
+                            <td><button class="table-link" type="button" data-user-detail="${holding.user_id}">${escapeHtml(holding.owner || "Client")}</button><br /><small>${escapeHtml(holding.fixed_user_id || "")}</small></td>
+                            <td><button class="table-link" type="button" data-stock-detail="${escapeHtml(holding.symbol)}">${escapeHtml(holding.symbol)}</button><br /><small>${escapeHtml(holding.sector || "Tracked holding")}</small></td>
+                            <td>${Number(holding.quantity || 0).toLocaleString("en-IN")}</td>
+                            <td>${currency(holding.buy_price)}</td>
+                            <td>${currency(holding.invested_value)}</td>
+                            <td><strong class="${pnl >= 0 ? "price-up" : "price-down"}" data-live-price-cell>${currency(holding.current_price)}</strong></td>
+                            <td><strong class="${pnl >= 0 ? "price-up" : "price-down"}" data-live-value-cell>${currency(holding.value)}</strong></td>
+                            <td class="${pnl >= 0 ? "profit" : "loss"}" data-pnl-cell>${currency(pnl)}</td>
+                            <td class="${returnPct >= 0 ? "profit" : "loss"}" data-return-cell>${percent(returnPct)}</td>
+                            <td><button class="secondary-btn compact-btn" type="button" data-download-user-id="${holding.user_id}">Download</button></td>
+                          </tr>
+                        `;
+                      }).join("")
+                    : `<tr><td colspan="10"><span class="helper-text">No positions match the search.</span></td></tr>`}
+                </tbody>
+              </table>
+            </div>
+          </article>
+
           <div class="dashboard-grid admin-simple-grid">
             <article class="dashboard-card admin-simple-list-card">
               <div class="panel-head"><h3>Clients</h3><span class="badge">Click user</span></div>
@@ -1978,43 +2015,6 @@ async function renderAdminPortal() {
               </div>
             </article>
           </div>
-
-          <article class="table-card full-span-card admin-positions-card" id="adminPositionsCard">
-            <div class="panel-head">
-              <div>
-                <h3>All Client Positions</h3>
-                <p class="detail-subtitle">Click a user or stock name to open the detailed view below.</p>
-              </div>
-              <span class="badge">${filteredPositionHoldings.length} shown</span>
-            </div>
-            <div class="table-wrap admin-position-table-wrap">
-              <table class="compact-table admin-position-table">
-                <thead><tr><th>User</th><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Buy Value</th><th>Live Price</th><th>Live Value</th><th>Lifetime P/L</th><th>Return</th><th>Download</th></tr></thead>
-                <tbody>
-                  ${filteredPositionHoldings.length
-                    ? filteredPositionHoldings.map((holding) => {
-                        const pnl = Number(holding.profit_loss || 0);
-                        const returnPct = Number(holding.invested_value || 0) ? (pnl / Number(holding.invested_value || 0)) * 100 : 0;
-                        return `
-                          <tr data-live-summary="true" data-live-symbol="${escapeHtml(holding.symbol)}" data-quantity="${Number(holding.quantity || 0)}" data-buy-price="${Number(holding.buy_price || 0)}" data-current-price="${Number(holding.current_price || 0)}" data-value="${Number(holding.value || 0)}">
-                            <td><button class="table-link" type="button" data-user-detail="${holding.user_id}">${escapeHtml(holding.owner || "Client")}</button><br /><small>${escapeHtml(holding.fixed_user_id || "")}</small></td>
-                            <td><button class="table-link" type="button" data-stock-detail="${escapeHtml(holding.symbol)}">${escapeHtml(holding.symbol)}</button><br /><small>${escapeHtml(holding.sector || "Tracked holding")}</small></td>
-                            <td>${Number(holding.quantity || 0).toLocaleString("en-IN")}</td>
-                            <td>${currency(holding.buy_price)}</td>
-                            <td>${currency(holding.invested_value)}</td>
-                            <td><strong class="${pnl >= 0 ? "price-up" : "price-down"}" data-live-price-cell>${currency(holding.current_price)}</strong></td>
-                            <td><strong class="${pnl >= 0 ? "price-up" : "price-down"}" data-live-value-cell>${currency(holding.value)}</strong></td>
-                            <td class="${pnl >= 0 ? "profit" : "loss"}" data-pnl-cell>${currency(pnl)}</td>
-                            <td class="${returnPct >= 0 ? "profit" : "loss"}" data-return-cell>${percent(returnPct)}</td>
-                            <td><button class="secondary-btn compact-btn" type="button" data-download-user-id="${holding.user_id}">Download</button></td>
-                          </tr>
-                        `;
-                      }).join("")
-                    : `<tr><td colspan="10"><span class="helper-text">No positions match the search.</span></td></tr>`}
-                </tbody>
-              </table>
-            </div>
-          </article>
 
           <section id="adminDetailMount" class="dashboard-section admin-detail-mount">
             <article class="dashboard-card detail-card admin-simple-detail-card">
