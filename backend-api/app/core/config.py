@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_name: str = "Quantavia"
+    app_name: str = "AssetYantra"
     app_env: str = Field(default="development", alias="APP_ENV")
     demo_mode: bool = Field(default=True, alias="DEMO_MODE")
     api_v1_prefix: str = "/api/v1"

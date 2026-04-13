@@ -1770,7 +1770,7 @@ select {
   width: 54px;
   height: 54px;
   border-radius: 18px;
-  animation: yantraLogoRotate 2.4s ease-in-out infinite;
+  animation: assetYantraLogoRotate 2.4s ease-in-out infinite;
 }
 
 .auth-loading-progress {
@@ -1830,7 +1830,7 @@ select {
   }
 }
 
-@keyframes yantraLogoRotate {
+@keyframes assetYantraLogoRotate {
   0%, 100% {
     transform: rotate(0deg) scale(1);
   }

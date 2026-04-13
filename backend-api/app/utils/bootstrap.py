@@ -13,8 +13,8 @@ async def ensure_admin_user(db: AsyncSession) -> None:
     admin = existing.scalar_one_or_none()
     if admin:
         admin.username = "admin_dev"
-        admin.email = "admin@quantavia.local"
-        admin.full_name = "Quantavia Admin"
+        admin.email = "admin@assetyantra.local"
+        admin.full_name = "AssetYantra Admin"
         admin.phone_number = "9876543210"
         admin.hashed_password = get_password_hash("Admin@123")
         admin.is_active = True
@@ -24,8 +24,8 @@ async def ensure_admin_user(db: AsyncSession) -> None:
     db.add(
         User(
             username="admin_dev",
-            email="admin@quantavia.local",
-            full_name="Quantavia Admin",
+            email="admin@assetyantra.local",
+            full_name="AssetYantra Admin",
             phone_number="9876543210",
             hashed_password=get_password_hash("Admin@123"),
             role=UserRole.ADMIN,

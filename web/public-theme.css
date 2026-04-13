@@ -1622,7 +1622,7 @@ body[data-page="login"] .credential-line code {
   width: 58px;
   height: 58px;
   border-radius: 20px;
-  animation: yantraLogoSpin 1.35s linear infinite;
+  animation: assetYantraLogoSpin 1.35s linear infinite;
   box-shadow: 0 16px 35px rgba(16, 37, 29, 0.14);
 }
 
@@ -1634,7 +1634,7 @@ body[data-page="login"] .credential-line code {
     rgba(255, 255, 255, 0.96);
 }
 
-@keyframes yantraLogoSpin {
+@keyframes assetYantraLogoSpin {
   to {
     transform: rotate(360deg);
   }
