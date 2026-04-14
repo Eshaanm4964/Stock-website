@@ -1091,15 +1091,32 @@ body[data-page="faq"] .faq-answer p {
 body[data-page="about"] .about-hero-card,
 body[data-page="reviews"] .reviews-hero-card {
   grid-template-columns: minmax(0, 0.95fr) minmax(390px, 1.05fr);
-  align-items: stretch;
   gap: 34px;
   padding: 38px;
 }
 
+body[data-page="about"] .about-hero-card {
+  align-items: start;
+  gap: 28px;
+  padding: clamp(24px, 3vw, 32px);
+}
+
+body[data-page="reviews"] .reviews-hero-card {
+  align-items: stretch;
+}
+
 body[data-page="about"] .about-hero-copy,
 body[data-page="reviews"] .reviews-hero-copy {
-  align-content: center;
   gap: 18px;
+}
+
+body[data-page="about"] .about-hero-copy {
+  align-content: start;
+  padding-top: 6px;
+}
+
+body[data-page="reviews"] .reviews-hero-copy {
+  align-content: center;
 }
 
 body[data-page="about"] .about-hero-copy h1,
@@ -1107,6 +1124,11 @@ body[data-page="reviews"] .reviews-hero-copy h1 {
   max-width: 13ch;
   font-size: clamp(3rem, 5.1vw, 5.35rem);
   letter-spacing: -0.07em;
+}
+
+body[data-page="about"] .about-hero-copy h1 {
+  max-width: 14ch;
+  font-size: clamp(2.75rem, 4.5vw, 4.85rem);
 }
 
 body[data-page="about"] .about-hero-copy .public-lead,
@@ -1150,9 +1172,7 @@ body[data-page="reviews"] .public-mini-ticker small {
 
 .about-summary-card,
 .reviews-summary-card {
-  min-height: 100%;
   display: grid;
-  align-content: space-between;
   gap: 22px;
   padding: 30px;
   border-radius: 30px;
@@ -1163,6 +1183,18 @@ body[data-page="reviews"] .public-mini-ticker small {
   box-shadow: 0 26px 65px rgba(16, 37, 29, 0.08);
 }
 
+.about-summary-card {
+  min-height: auto;
+  align-content: start;
+  gap: 18px;
+  padding: 26px;
+}
+
+.reviews-summary-card {
+  min-height: 100%;
+  align-content: space-between;
+}
+
 .about-summary-card > strong,
 .reviews-summary-card > strong {
   max-width: 13ch;
@@ -1171,6 +1203,11 @@ body[data-page="reviews"] .public-mini-ticker small {
   font-size: clamp(2rem, 3.1vw, 3rem);
   line-height: 1.04;
   letter-spacing: -0.05em;
+}
+
+body[data-page="about"] .about-summary-card > strong {
+  max-width: 15ch;
+  font-size: clamp(1.85rem, 2.7vw, 2.65rem);
 }
 
 .about-summary-card > p:not(.eyebrow),
