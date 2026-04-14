@@ -3124,7 +3124,6 @@ th {
   width: min(320px, 100%);
   height: auto;
   display: block;
-  mix-blend-mode: multiply;
 }
 
 .admin-market-empty-art span {

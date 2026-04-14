@@ -432,7 +432,6 @@ body.public-page .role-toggle.active {
   width: min(100%, 420px);
   height: auto;
   display: block;
-  mix-blend-mode: multiply;
 }
 
 .market-line,
@@ -506,12 +505,12 @@ body.public-page .role-toggle.active {
 .faq-market-icon {
   position: relative;
   flex: 0 0 auto;
-  width: 42px;
-  height: 34px;
+  width: 52px;
+  height: 40px;
   border: 1px solid rgba(15, 138, 85, 0.14);
   border-radius: 14px;
   background:
-    #ffffff url("./assets/bull-bear-market.svg") center / 88% auto no-repeat;
+    #ffffff url("./assets/bull-bear-market.svg?v=3") center / 92% auto no-repeat;
   box-shadow: 0 8px 18px rgba(15, 24, 48, 0.05);
 }
 
@@ -1167,6 +1166,23 @@ body[data-page="reviews"] .public-mini-ticker small {
 .reviews-summary-card {
   min-height: 100%;
   align-content: space-between;
+}
+
+.reviews-market-image {
+  display: grid;
+  place-items: center;
+  min-height: 150px;
+  padding: 14px;
+  border: 1px solid rgba(15, 138, 85, 0.12);
+  border-radius: 24px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.reviews-market-image img {
+  width: min(100%, 290px);
+  height: auto;
+  display: block;
 }
 
 .about-summary-card > strong,

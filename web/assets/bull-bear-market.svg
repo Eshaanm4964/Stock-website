@@ -1,20 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 280" role="img" aria-label="Bull and bear stock market illustration">
-  <rect width="420" height="280" fill="#ffffff"/>
-  <path d="M34 152 L118 82 L160 114 L238 42" fill="none" stroke="#0b1736" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M221 44 L240 40 L236 60" fill="none" stroke="#0b1736" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M30 218 C50 175 86 150 132 151 C170 151 199 170 221 205 C181 207 156 216 129 226 C92 239 59 236 30 218 Z" fill="#173d72"/>
-  <path d="M70 156 C86 123 126 111 159 129 C177 113 197 107 220 113 C203 132 198 151 202 178 C171 171 143 171 117 180 C91 189 62 180 70 156 Z" fill="#1e518d"/>
-  <path d="M61 170 C39 162 25 149 20 132 C42 139 58 151 70 164" fill="#173d72"/>
-  <path d="M153 131 C165 101 191 84 221 82 C199 99 186 120 182 144" fill="#173d72"/>
-  <path d="M48 221 C76 224 103 219 128 205" fill="none" stroke="#0d244d" stroke-width="5" stroke-linecap="round"/>
-  <circle cx="171" cy="155" r="5" fill="#071329"/>
-  <path d="M198 162 C222 151 242 154 259 171" fill="none" stroke="#173d72" stroke-width="8" stroke-linecap="round"/>
-  <path d="M261 207 C279 160 314 136 354 142 C384 148 405 170 410 209 C389 206 367 207 344 219 C315 234 287 231 261 207 Z" fill="#b81f35"/>
-  <path d="M290 146 C299 115 331 99 364 110 C351 126 345 145 347 169 C330 157 311 153 290 146 Z" fill="#c9273f"/>
-  <path d="M296 122 C291 102 302 87 322 82 C323 101 314 115 296 122 Z" fill="#b81f35"/>
-  <path d="M355 112 C369 91 392 86 414 96 C395 105 379 119 367 137" fill="#b81f35"/>
-  <circle cx="333" cy="133" r="5" fill="#4a0b18"/>
-  <path d="M266 207 C294 213 322 207 350 192" fill="none" stroke="#8f1427" stroke-width="5" stroke-linecap="round"/>
-  <path d="M321 83 C308 76 300 68 297 57" fill="none" stroke="#b81f35" stroke-width="6" stroke-linecap="round"/>
-  <path d="M251 214 L403 84" fill="none" stroke="#8f1427" stroke-width="5" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" role="img" aria-label="Bull and bear stock market illustration">
+  <rect width="480" height="300" fill="#ffffff"/>
+  <path d="M42 152 L142 74 L207 128 L311 39" fill="none" stroke="#070c27" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M286 39 L313 38 L309 65" fill="none" stroke="#070c27" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M49 220 C83 160 139 134 207 146 C244 153 278 175 305 216 C245 211 204 220 166 237 C119 258 77 252 49 220 Z" fill="#1f5b96"/>
+  <path d="M99 168 C112 125 156 100 207 124 C233 98 265 88 310 96 C276 117 258 145 258 179 C210 165 157 165 104 186 C82 176 59 159 41 137 C69 143 88 153 99 168 Z" fill="#245f9d"/>
+  <path d="M179 186 C127 209 84 214 44 207" fill="none" stroke="#092954" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="211" cy="166" r="7" fill="#071126"/>
+  <path d="M253 166 C282 152 316 158 337 182" fill="none" stroke="#1f5b96" stroke-width="10" stroke-linecap="round"/>
+  <path d="M70 223 L63 262 M137 228 L129 265 M228 213 L237 265 M285 216 L297 265" fill="none" stroke="#1f5b96" stroke-width="10" stroke-linecap="round"/>
+  <path d="M320 216 C337 162 373 127 422 132 C459 136 483 169 472 220 C440 214 416 222 389 236 C360 251 335 244 320 216 Z" fill="#bd1736"/>
+  <path d="M349 137 C365 98 402 80 446 95 C421 113 408 139 408 173 C390 153 370 142 349 137 Z" fill="#c91d3b"/>
+  <path d="M360 96 C355 77 370 63 392 61 C389 81 379 94 360 96 Z" fill="#bd1736"/>
+  <path d="M436 95 C456 72 488 70 509 82 C483 93 464 111 450 137" fill="#bd1736"/>
+  <circle cx="407" cy="146" r="7" fill="#430914"/>
+  <path d="M325 216 C361 226 397 215 428 195" fill="none" stroke="#8b1328" stroke-width="8" stroke-linecap="round"/>
+  <path d="M342 218 L335 263 M390 236 L386 266 M442 215 L449 263" fill="none" stroke="#bd1736" stroke-width="10" stroke-linecap="round"/>
+  <path d="M306 226 L463 70" fill="none" stroke="#8b1328" stroke-width="8" stroke-linecap="round"/>
 </svg>

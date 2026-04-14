@@ -1050,7 +1050,7 @@ function buildUserDownloadHtml(dashboard) {
           .header { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; border-bottom: 1px solid #e5ece8; padding-bottom: 18px; }
           .header-copy { position: relative; z-index: 1; }
           .brand { color: #0f766e; font-family: Poppins, Arial, sans-serif; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
-          .pdf-market-mark { width: 142px; height: 82px; display: block; object-fit: contain; opacity: 0.88; }
+          .pdf-market-mark { width: 142px; height: 82px; display: block; object-fit: contain; opacity: 0.95; }
           h1, h2 { margin: 8px 0; }
           h1 { font-size: 2rem; letter-spacing: -0.04em; }
           h2 { margin-top: 24px; font-size: 1.15rem; }
@@ -1089,7 +1089,7 @@ function buildUserDownloadHtml(dashboard) {
                 <p class="subtle">${escapeHtml(dashboard.fixed_user_id || dashboard.username || "Client")} | ${escapeHtml(dashboard.phone_number || "Phone not available")}</p>
               </div>
               <div>
-                <img class="pdf-market-mark" src="./assets/bull-bear-market.svg" alt="" />
+                <img class="pdf-market-mark" src="./assets/bull-bear-market.svg?v=3" alt="" />
                 <div class="pill">Generated ${generatedAt}</div>
               </div>
             </div>
@@ -2106,7 +2106,7 @@ async function renderAdminPortal() {
                 </div>
               </div>
               <div class="admin-market-empty-art" aria-hidden="true">
-                <img src="./assets/bull-bear-market.svg" alt="" />
+                <img src="./assets/bull-bear-market.svg?v=3" alt="" />
                 <span>Market movement appears here once you choose a client or stock.</span>
               </div>
             </article>
