@@ -1047,7 +1047,7 @@ function buildUserDownloadHtml(dashboard) {
           .page { max-width: 1120px; margin: 0 auto; padding: 28px; }
           .report { border: 1px solid #d9e5df; border-radius: 24px; padding: 26px; background: #ffffff; }
           .header { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; border-bottom: 1px solid #e5ece8; padding-bottom: 18px; }
-          .brand { color: #0f766e; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+          .brand { color: #0f766e; font-family: Poppins, Arial, sans-serif; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
           h1, h2 { margin: 8px 0; }
           h1 { font-size: 2rem; letter-spacing: -0.04em; }
           h2 { margin-top: 24px; font-size: 1.15rem; }

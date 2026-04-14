@@ -129,6 +129,13 @@ textarea {
   display: block;
 }
 
+.brand strong,
+.public-footer-brand strong,
+.auth-loading-brand {
+  font-family: "Poppins", "Manrope", sans-serif;
+  letter-spacing: -0.02em;
+}
+
 .brand small,
 .helper-text,
 .site-footer p,
