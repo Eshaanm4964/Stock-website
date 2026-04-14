@@ -428,6 +428,13 @@ body.public-page .role-toggle.active {
   max-width: 420px;
 }
 
+.market-animal-visual img {
+  width: min(100%, 420px);
+  height: auto;
+  display: block;
+  mix-blend-mode: multiply;
+}
+
 .market-line,
 .animal-line {
   fill: none;
@@ -499,37 +506,13 @@ body.public-page .role-toggle.active {
 .faq-market-icon {
   position: relative;
   flex: 0 0 auto;
-  width: 34px;
+  width: 42px;
   height: 34px;
+  border: 1px solid rgba(15, 138, 85, 0.14);
   border-radius: 14px;
-  background: rgba(15, 138, 85, 0.1);
-}
-
-.faq-market-icon::before,
-.faq-market-icon::after {
-  content: "";
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  border-radius: 999px;
-}
-
-.faq-market-icon::before {
-  top: 18px;
-  height: 3px;
-  background: currentColor;
-  transform: rotate(-32deg);
-}
-
-.faq-market-icon::after {
-  top: 10px;
-  right: 7px;
-  left: auto;
-  width: 9px;
-  height: 9px;
-  border-top: 3px solid currentColor;
-  border-right: 3px solid currentColor;
-  transform: rotate(14deg);
+  background:
+    #ffffff url("./assets/bull-bear-market.svg") center / 88% auto no-repeat;
+  box-shadow: 0 8px 18px rgba(15, 24, 48, 0.05);
 }
 
 .faq-market-icon.bull {
@@ -538,16 +521,7 @@ body.public-page .role-toggle.active {
 
 .faq-market-icon.bear {
   color: #c62828;
-  background: rgba(198, 40, 40, 0.1);
-}
-
-.faq-market-icon.bear::before {
-  transform: rotate(32deg);
-}
-
-.faq-market-icon.bear::after {
-  top: 17px;
-  transform: rotate(104deg);
+  border-color: rgba(198, 40, 40, 0.16);
 }
 
 .public-avatar {

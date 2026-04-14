@@ -3120,34 +3120,11 @@ th {
     #f8fbf9;
 }
 
-.admin-market-empty-art svg {
-  width: min(360px, 100%);
-}
-
-.admin-market-path,
-.admin-animal-line {
-  fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.admin-market-path {
-  stroke-width: 6;
-}
-
-.admin-market-path.bull {
-  stroke: #0f766e;
-}
-
-.admin-market-path.bear {
-  stroke: #c2413a;
-  opacity: 0.72;
-}
-
-.admin-animal-line {
-  stroke: #17362d;
-  stroke-width: 5;
-  opacity: 0.78;
+.admin-market-empty-art img {
+  width: min(320px, 100%);
+  height: auto;
+  display: block;
+  mix-blend-mode: multiply;
 }
 
 .admin-market-empty-art span {

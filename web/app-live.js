@@ -1040,6 +1040,7 @@ function buildUserDownloadHtml(dashboard) {
     <html lang="en">
       <head>
         <meta charset="UTF-8" />
+        <base href="${window.location.href.replace(/[^/]*$/, "")}" />
         <title>${escapeHtml(dashboard.full_name)} Profile PDF</title>
         <style>
           * { box-sizing: border-box; }
@@ -1049,10 +1050,7 @@ function buildUserDownloadHtml(dashboard) {
           .header { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; border-bottom: 1px solid #e5ece8; padding-bottom: 18px; }
           .header-copy { position: relative; z-index: 1; }
           .brand { color: #0f766e; font-family: Poppins, Arial, sans-serif; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
-          .pdf-market-mark { width: 132px; height: 70px; opacity: 0.78; }
-          .pdf-market-mark path { fill: none; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
-          .pdf-market-mark .bull { stroke: #0f766e; }
-          .pdf-market-mark .bear { stroke: #c2413a; }
+          .pdf-market-mark { width: 142px; height: 82px; display: block; object-fit: contain; opacity: 0.88; }
           h1, h2 { margin: 8px 0; }
           h1 { font-size: 2rem; letter-spacing: -0.04em; }
           h2 { margin-top: 24px; font-size: 1.15rem; }
@@ -1091,10 +1089,7 @@ function buildUserDownloadHtml(dashboard) {
                 <p class="subtle">${escapeHtml(dashboard.fixed_user_id || dashboard.username || "Client")} | ${escapeHtml(dashboard.phone_number || "Phone not available")}</p>
               </div>
               <div>
-                <svg class="pdf-market-mark" viewBox="0 0 180 96" aria-hidden="true">
-                  <path class="bull" d="M15 60 C35 28, 58 27, 76 50 C90 68, 111 63, 131 36 C143 21, 157 19, 169 28" />
-                  <path class="bear" d="M20 30 C42 53, 67 61, 92 52 C121 42, 146 51, 166 76" />
-                </svg>
+                <img class="pdf-market-mark" src="./assets/bull-bear-market.svg" alt="" />
                 <div class="pill">Generated ${generatedAt}</div>
               </div>
             </div>
@@ -2111,12 +2106,7 @@ async function renderAdminPortal() {
                 </div>
               </div>
               <div class="admin-market-empty-art" aria-hidden="true">
-                <svg viewBox="0 0 360 150">
-                  <path class="admin-market-path bull" d="M28 96 C54 58, 84 54, 110 80 C134 104, 158 100, 184 66 C210 33, 245 32, 271 56 C291 74, 315 72, 335 45" />
-                  <path class="admin-market-path bear" d="M38 48 C68 76, 96 88, 128 76 C158 65, 184 73, 212 102 C238 130, 282 132, 332 106" />
-                  <path class="admin-animal-line" d="M68 103 C86 78, 124 74, 147 95 C157 87, 170 81, 183 82 C172 95, 168 108, 171 124 C137 134, 91 130, 68 103 Z" />
-                  <path class="admin-animal-line" d="M214 103 C230 82, 269 78, 294 94 C309 104, 326 105, 342 98 C333 122, 306 134, 266 132 C238 131, 218 121, 214 103 Z" />
-                </svg>
+                <img src="./assets/bull-bear-market.svg" alt="" />
                 <span>Market movement appears here once you choose a client or stock.</span>
               </div>
             </article>
