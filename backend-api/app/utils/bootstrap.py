@@ -8,6 +8,9 @@ from app.models.review import Review
 from app.models.user import User, UserRole
 
 
+DEMO_FIXED_USER_IDS = ("CLIENT-1001", "CLIENT-2002", "CLIENT-3003")
+
+
 async def ensure_admin_user(db: AsyncSession) -> None:
     existing = await db.execute(select(User).where(User.role == UserRole.ADMIN))
     admin = existing.scalar_one_or_none()
@@ -122,6 +125,23 @@ async def ensure_demo_users(db: AsyncSession) -> None:
                 )
             )
     await db.commit()
+
+
+async def remove_demo_users(db: AsyncSession) -> None:
+    demo_users = list(
+        (
+            await db.execute(
+                select(User).where(
+                    User.role == UserRole.USER,
+                    (User.is_demo.is_(True)) | (User.fixed_user_id.in_(DEMO_FIXED_USER_IDS)),
+                )
+            )
+        ).scalars().all()
+    )
+    for user in demo_users:
+        await db.delete(user)
+    if demo_users:
+        await db.commit()
 
 
 async def ensure_site_settings(db: AsyncSession) -> None:

@@ -14,6 +14,7 @@ from app.models.auth_attempt import AuthAttempt
 from app.models.notification import Notification
 from app.models.portfolio import PortfolioHolding, PortfolioSale
 from app.models.review import Review
+from app.models.signup_otp import SignupOTP
 from app.models.user import User, UserRole
 from app.schemas.admin import (
     AdminAuditLogResponse,
@@ -137,6 +138,48 @@ async def admin_users(
                     total_holdings=0,
                 )
             )
+    return summaries
+
+
+@router.get("/users/archived", response_model=list[AdminUserSummary])
+async def archived_admin_users(
+    _: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+    redis: Redis = Depends(get_redis),
+) -> list[AdminUserSummary]:
+    users = list(
+        (
+            await db.execute(
+                select(User).where(User.role == UserRole.USER, User.is_archived.is_(True))
+            )
+        ).scalars().all()
+    )
+    summaries: list[AdminUserSummary] = []
+    for user in users:
+        holdings = list(
+            (await db.execute(select(PortfolioHolding).where(PortfolioHolding.user_id == user.id))).scalars().all()
+        )
+        sales = list(
+            (await db.execute(select(PortfolioSale).where(PortfolioSale.user_id == user.id))).scalars().all()
+        )
+        portfolio = await build_portfolio_summary(holdings, redis, sales)
+        summaries.append(
+            AdminUserSummary(
+                user_id=user.id,
+                username=user.username,
+                fixed_user_id=user.fixed_user_id,
+                full_name=user.full_name,
+                phone_number=user.phone_number,
+                role=user.role.value,
+                is_active=user.is_active,
+                is_demo=user.is_demo,
+                is_archived=user.is_archived,
+                archived_at=user.archived_at,
+                created_at=user.created_at,
+                portfolio_value=portfolio.total_portfolio_value,
+                total_holdings=len(holdings),
+            )
+        )
     return summaries
 
 
@@ -566,6 +609,39 @@ async def delete_admin_user(
         ip_address=request.client.host if request.client else None,
         details={"fixed_user_id": fixed_user_id, "full_name": full_name, "via": "delete_endpoint"},
     )
+
+
+@router.delete("/users/{user_id}/permanent", status_code=204)
+async def permanently_delete_archived_user(
+    user_id: int,
+    request: Request,
+    current_admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    user = (await db.execute(select(User).where(User.id == user_id, User.role == UserRole.USER))).scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not user.is_archived:
+        raise HTTPException(status_code=400, detail="Only archived clients can be permanently deleted")
+
+    fixed_user_id = user.fixed_user_id
+    full_name = user.full_name
+    email = user.email
+    phone_number = user.phone_number
+    await log_admin_action(
+        db,
+        admin_user=current_admin,
+        action="permanent_delete_archived_user",
+        entity_type="user",
+        entity_id=str(user_id),
+        ip_address=request.client.host if request.client else None,
+        details={"fixed_user_id": fixed_user_id, "full_name": full_name, "email": email},
+    )
+    await db.execute(
+        delete(SignupOTP).where(SignupOTP.email == email, SignupOTP.phone_number == phone_number)
+    )
+    await db.delete(user)
+    await db.commit()
 
 
 @router.get("/audit-logs", response_model=list[AdminAuditLogResponse])

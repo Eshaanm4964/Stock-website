@@ -6,6 +6,7 @@ from app.models.login_otp import LoginOTP
 from app.models.notification import Notification
 from app.models.portfolio import PortfolioHolding, PortfolioSale
 from app.models.review import Review
+from app.models.signup_otp import SignupOTP
 from app.models.user import User
 from app.models.watchlist import WatchlistItem
 
@@ -19,6 +20,7 @@ __all__ = [
     "PortfolioHolding",
     "PortfolioSale",
     "Review",
+    "SignupOTP",
     "User",
     "WatchlistItem",
 ]

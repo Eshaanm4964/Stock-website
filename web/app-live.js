@@ -1274,23 +1274,29 @@ async function safeAdminUserDashboards(users) {
 
 async function loadAdminPortalData() {
   try {
-    const overview = await api("/admin/portfolio-overview");
+    const [overview, archivedUsers] = await Promise.all([
+      api("/admin/portfolio-overview"),
+      api("/admin/users/archived").catch(() => [])
+    ]);
     return {
       dashboard: overview.dashboard || {},
       users: Array.isArray(overview.users) ? overview.users : [],
+      archivedUsers: Array.isArray(archivedUsers) ? archivedUsers : [],
       systemStatus: overview.system_status || {},
       userDashboards: Array.isArray(overview.user_dashboards) ? overview.user_dashboards : []
     };
   } catch {
-    const [dashboard, users, systemStatus] = await Promise.all([
+    const [dashboard, users, archivedUsers, systemStatus] = await Promise.all([
       api("/admin/dashboard"),
       api("/admin/users"),
+      api("/admin/users/archived").catch(() => []),
       api("/admin/system-status")
     ]);
     const safeUsers = Array.isArray(users) ? users : [];
     return {
       dashboard,
       users: safeUsers,
+      archivedUsers: Array.isArray(archivedUsers) ? archivedUsers : [],
       systemStatus,
       userDashboards: await safeAdminUserDashboards(safeUsers)
     };
@@ -1883,6 +1889,29 @@ function setupAdminManagementButtons() {
     });
   });
 
+  document.querySelectorAll("[data-permanent-delete-user]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const userId = button.dataset.permanentDeleteUser;
+      const userName = button.dataset.userName || "this archived client";
+      const confirmed = window.confirm(`Permanently delete ${userName}? This is only allowed for archived clients and will remove their portfolio records forever.`);
+      if (!confirmed) return;
+      const stopLoading = setButtonLoading(button, "Deleting...");
+      try {
+        await api(`/admin/users/${userId}/permanent`, { method: "DELETE" });
+        if (statusMessage) {
+          statusMessage.textContent = `${userName} was permanently deleted.`;
+        }
+        await renderAdminPortal();
+      } catch (error) {
+        if (statusMessage) {
+          statusMessage.textContent = formatError(error);
+        }
+      } finally {
+        stopLoading();
+      }
+    });
+  });
+
   document.querySelectorAll("[data-delete-review]").forEach((button) => {
     button.addEventListener("click", async () => {
       const reviewId = button.dataset.deleteReview;
@@ -2154,8 +2183,9 @@ async function renderAdminPortal() {
   const mount = document.getElementById("adminPortal");
   if (!mount) return;
   try {
-    const { dashboard, users, systemStatus, userDashboards } = await loadAdminPortalData();
+    const { dashboard, users, archivedUsers, systemStatus, userDashboards } = await loadAdminPortalData();
     const safeUsers = Array.isArray(users) ? users : [];
+    const safeArchivedUsers = Array.isArray(archivedUsers) ? archivedUsers : [];
     const baseHoldings = userDashboards.flatMap((user) =>
       (Array.isArray(user.holdings) ? user.holdings : []).map((holding) => ({
         ...holding,
@@ -2425,6 +2455,23 @@ async function renderAdminPortal() {
                       `;
                     }).join("")
                   : `<article class="stack-item"><div><strong>No stocks yet</strong><small>Client holdings will appear here.</small></div></article>`}
+              </div>
+            </article>
+
+            <article class="dashboard-card admin-simple-list-card">
+              <div class="panel-head"><h3>Archived Clients</h3><span class="badge red">Permanent delete</span></div>
+              <div class="stack-list admin-simple-list">
+                ${safeArchivedUsers.length
+                  ? safeArchivedUsers.map((user) => `
+                    <article class="stack-item archived-client-item">
+                      <div>
+                        <strong>${escapeHtml(user.full_name)}</strong>
+                        <small>${escapeHtml(user.fixed_user_id || user.username || "Client")} | archived client</small>
+                      </div>
+                      <button class="secondary-btn compact-btn danger-btn" type="button" data-permanent-delete-user="${user.user_id}" data-user-name="${escapeHtml(user.full_name)}">Delete permanently</button>
+                    </article>
+                  `).join("")
+                  : `<article class="stack-item"><div><strong>No archived clients</strong><small>Permanent delete appears here only after a client is archived.</small></div></article>`}
               </div>
             </article>
           </div>

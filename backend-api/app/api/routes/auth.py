@@ -13,6 +13,7 @@ from app.core.security import (
     verify_password,
 )
 from app.models.login_otp import LoginOTP
+from app.models.signup_otp import SignupOTP
 from app.db.session import get_db
 from app.models.user import User, UserRole
 from app.schemas.auth import (
@@ -31,7 +32,6 @@ from app.services.sms_service import SmsDeliveryError, send_login_otp
 router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
 DEMO_OTP_CODE = "123456"
-REGISTER_OTP_CACHE: dict[str, dict[str, datetime | str]] = {}
 
 
 def _utc_now() -> datetime:
@@ -47,29 +47,51 @@ def _build_fixed_user_id(full_name: str, phone_number: str) -> str:
     return f"{base}-{phone_number[-4:]}"
 
 
-def _signup_otp_key(email: str, phone_number: str) -> str:
-    return f"{email.strip().lower()}:{phone_number.strip()}"
+async def _store_signup_otp(email: str, phone_number: str, code: str, db: AsyncSession) -> None:
+    normalized_email = email.strip().lower()
+    normalized_phone = phone_number.strip()
+    await db.execute(
+        delete(SignupOTP).where(
+            SignupOTP.email == normalized_email,
+            SignupOTP.phone_number == normalized_phone,
+            SignupOTP.consumed_at.is_(None),
+        )
+    )
+    db.add(
+        SignupOTP(
+            email=normalized_email,
+            phone_number=normalized_phone,
+            otp_hash=get_password_hash(code),
+            expires_at=_utc_now() + timedelta(minutes=settings.otp_expire_minutes),
+        )
+    )
+    await db.commit()
 
 
-def _store_signup_otp(email: str, phone_number: str, code: str) -> None:
-    REGISTER_OTP_CACHE[_signup_otp_key(email, phone_number)] = {
-        "otp_hash": get_password_hash(code),
-        "expires_at": _utc_now() + timedelta(minutes=settings.otp_expire_minutes),
-    }
-
-
-def _verify_signup_otp(email: str, phone_number: str, otp: str) -> None:
-    key = _signup_otp_key(email, phone_number)
-    record = REGISTER_OTP_CACHE.get(key)
+async def _verify_signup_otp(email: str, phone_number: str, otp: str, db: AsyncSession) -> None:
+    normalized_email = email.strip().lower()
+    normalized_phone = phone_number.strip()
+    record = (
+        await db.execute(
+            select(SignupOTP)
+            .where(
+                SignupOTP.email == normalized_email,
+                SignupOTP.phone_number == normalized_phone,
+                SignupOTP.consumed_at.is_(None),
+            )
+            .order_by(SignupOTP.created_at.desc())
+        )
+    ).scalar_one_or_none()
     if not record:
         raise HTTPException(status_code=400, detail="Please send and verify the registration OTP first")
-    expires_at = record.get("expires_at")
-    if not isinstance(expires_at, datetime) or _normalize_datetime(expires_at) <= _utc_now():
-        REGISTER_OTP_CACHE.pop(key, None)
+    if _normalize_datetime(record.expires_at) <= _utc_now():
+        record.consumed_at = _utc_now()
+        await db.commit()
         raise HTTPException(status_code=400, detail="Registration OTP expired. Send a new code")
-    if not verify_password(otp, str(record.get("otp_hash") or "")):
+    if not verify_password(otp, record.otp_hash):
         raise HTTPException(status_code=400, detail="Invalid registration OTP")
-    REGISTER_OTP_CACHE.pop(key, None)
+    record.consumed_at = _utc_now()
+    await db.commit()
 
 
 async def _find_user_for_login(
@@ -90,7 +112,7 @@ async def signup(payload: SignupRequest, db: AsyncSession = Depends(get_db)) -> 
     )
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Email or phone number already exists")
-    _verify_signup_otp(payload.email, payload.phone_number, payload.otp)
+    await _verify_signup_otp(payload.email, payload.phone_number, payload.otp, db)
 
     fixed_user_id = _build_fixed_user_id(payload.full_name, payload.phone_number)
     while (
@@ -126,14 +148,21 @@ async def request_signup_otp(payload: SignupOtpRequest, db: AsyncSession = Depen
         raise HTTPException(status_code=400, detail="Email or phone number already exists")
 
     code = DEMO_OTP_CODE if settings.demo_mode else generate_otp_code()
-    _store_signup_otp(payload.email, payload.phone_number, code)
+    await _store_signup_otp(payload.email, payload.phone_number, code, db)
     if settings.demo_mode:
         return OtpResponse(message="Demo registration OTP is ready", otp_preview=code)
 
     try:
         await send_login_otp(payload.phone_number, code)
     except SmsDeliveryError as exc:
-        REGISTER_OTP_CACHE.pop(_signup_otp_key(payload.email, payload.phone_number), None)
+        await db.execute(
+            delete(SignupOTP).where(
+                SignupOTP.email == payload.email.strip().lower(),
+                SignupOTP.phone_number == payload.phone_number.strip(),
+                SignupOTP.consumed_at.is_(None),
+            )
+        )
+        await db.commit()
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"Registration OTP could not be sent. {exc}",

@@ -3230,6 +3230,22 @@ th {
   background: #fff8f8;
 }
 
+.archived-client-item {
+  border-color: rgba(198, 40, 40, 0.14);
+  background: linear-gradient(180deg, #fffafa 0%, #ffffff 100%);
+}
+
+.danger-btn {
+  border-color: rgba(198, 40, 40, 0.28);
+  color: #8f1d1d;
+  background: #fff4f4;
+}
+
+.danger-btn:hover {
+  border-color: rgba(198, 40, 40, 0.42);
+  background: #ffe8e8;
+}
+
 .admin-detail-mount {
   margin-top: 22px;
 }
