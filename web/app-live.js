@@ -2,6 +2,53 @@ const STORAGE_KEY = "stock_trader_auth";
 const SITE_CONTROL_KEY = "stock_trader_site_controls";
 const REVIEW_STORAGE_KEY = "stock_trader_reviews";
 const USER_RECOMMENDATION_SYMBOLS = ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN", "LT", "ITC", "AXISBANK", "KOTAKBANK", "BHARTIARTL", "ASIANPAINT"];
+const STOCK_SEARCH_CATALOG = [
+  { symbol: "RELIANCE", name: "Reliance Industries Ltd", sector: "Energy" },
+  { symbol: "TCS", name: "Tata Consultancy Services Ltd", sector: "Technology" },
+  { symbol: "INFY", name: "Infosys Ltd", sector: "Technology" },
+  { symbol: "HDFCBANK", name: "HDFC Bank Ltd", sector: "Financial Services" },
+  { symbol: "ICICIBANK", name: "ICICI Bank Ltd", sector: "Financial Services" },
+  { symbol: "SBIN", name: "State Bank of India", sector: "Financial Services" },
+  { symbol: "LT", name: "Larsen & Toubro Ltd", sector: "Industrials" },
+  { symbol: "ITC", name: "ITC Ltd", sector: "Consumer Defensive" },
+  { symbol: "AXISBANK", name: "Axis Bank Ltd", sector: "Financial Services" },
+  { symbol: "KOTAKBANK", name: "Kotak Mahindra Bank Ltd", sector: "Financial Services" },
+  { symbol: "BHARTIARTL", name: "Bharti Airtel Ltd", sector: "Telecom" },
+  { symbol: "ASIANPAINT", name: "Asian Paints Ltd", sector: "Consumer Cyclical" },
+  { symbol: "TATAMOTORS", name: "Tata Motors Ltd", sector: "Automotive" },
+  { symbol: "SUNPHARMA", name: "Sun Pharmaceutical Industries Ltd", sector: "Healthcare" },
+  { symbol: "MARUTI", name: "Maruti Suzuki India Ltd", sector: "Automotive" },
+  { symbol: "HINDUNILVR", name: "Hindustan Unilever Ltd", sector: "Consumer Defensive" },
+  { symbol: "BAJFINANCE", name: "Bajaj Finance Ltd", sector: "Financial Services" },
+  { symbol: "HCLTECH", name: "HCL Technologies Ltd", sector: "Technology" },
+  { symbol: "WIPRO", name: "Wipro Ltd", sector: "Technology" },
+  { symbol: "TECHM", name: "Tech Mahindra Ltd", sector: "Technology" },
+  { symbol: "ADANIENT", name: "Adani Enterprises Ltd", sector: "Industrials" },
+  { symbol: "ADANIPORTS", name: "Adani Ports and SEZ Ltd", sector: "Industrials" },
+  { symbol: "ULTRACEMCO", name: "UltraTech Cement Ltd", sector: "Materials" },
+  { symbol: "TITAN", name: "Titan Company Ltd", sector: "Consumer Cyclical" },
+  { symbol: "POWERGRID", name: "Power Grid Corporation of India Ltd", sector: "Utilities" },
+  { symbol: "NTPC", name: "NTPC Ltd", sector: "Utilities" },
+  { symbol: "ONGC", name: "Oil and Natural Gas Corporation Ltd", sector: "Energy" },
+  { symbol: "COALINDIA", name: "Coal India Ltd", sector: "Energy" },
+  { symbol: "JSWSTEEL", name: "JSW Steel Ltd", sector: "Materials" },
+  { symbol: "TATASTEEL", name: "Tata Steel Ltd", sector: "Materials" },
+  { symbol: "HINDALCO", name: "Hindalco Industries Ltd", sector: "Materials" },
+  { symbol: "NESTLEIND", name: "Nestle India Ltd", sector: "Consumer Defensive" },
+  { symbol: "BRITANNIA", name: "Britannia Industries Ltd", sector: "Consumer Defensive" },
+  { symbol: "CIPLA", name: "Cipla Ltd", sector: "Healthcare" },
+  { symbol: "DRREDDY", name: "Dr Reddy's Laboratories Ltd", sector: "Healthcare" },
+  { symbol: "APOLLOHOSP", name: "Apollo Hospitals Enterprise Ltd", sector: "Healthcare" },
+  { symbol: "GRASIM", name: "Grasim Industries Ltd", sector: "Materials" },
+  { symbol: "M&M", name: "Mahindra & Mahindra Ltd", sector: "Automotive" },
+  { symbol: "EICHERMOT", name: "Eicher Motors Ltd", sector: "Automotive" },
+  { symbol: "HEROMOTOCO", name: "Hero MotoCorp Ltd", sector: "Automotive" },
+  { symbol: "BAJAJ-AUTO", name: "Bajaj Auto Ltd", sector: "Automotive" },
+  { symbol: "SHRIRAMFIN", name: "Shriram Finance Ltd", sector: "Financial Services" },
+  { symbol: "SBILIFE", name: "SBI Life Insurance Company Ltd", sector: "Financial Services" },
+  { symbol: "HDFCLIFE", name: "HDFC Life Insurance Company Ltd", sector: "Financial Services" },
+  { symbol: "BAJAJFINSV", name: "Bajaj Finserv Ltd", sector: "Financial Services" }
+];
 const HOME_TICKER_SYMBOLS = ["NIFTY50", "SENSEX", "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN", "LT", "TATAMOTORS", "SUNPHARMA"];
 const HOME_TICKER_FALLBACK = {
   NIFTY50: { symbol: "NIFTY 50", price: 22580.35, change_percent: 0.42, is_fallback: true },
@@ -483,38 +530,70 @@ function normalizeSearchText(value) {
 
 function buildUserSymbolCatalog(performance = [], recommendationFeed = []) {
   const map = new Map();
-  const pushCandidate = (symbol, label, sector, price) => {
+  const pushCandidate = (symbol, label, sector, price, name = "") => {
     const safeSymbol = String(symbol || "").trim().toUpperCase();
-    if (!safeSymbol || map.has(safeSymbol)) return;
+    if (!safeSymbol) return;
+    if (map.has(safeSymbol)) {
+      const existing = map.get(safeSymbol);
+      map.set(safeSymbol, {
+        ...existing,
+        label: label || existing.label,
+        name: name || existing.name,
+        sector: sector || existing.sector,
+        price: Number(price || 0) || existing.price
+      });
+      return;
+    }
     map.set(safeSymbol, {
       symbol: safeSymbol,
-      label: label || safeSymbol,
+      label: label || name || safeSymbol,
+      name: name || label || safeSymbol,
       sector: sector || "Suggested",
       price: Number(price || 0)
     });
   };
 
+  STOCK_SEARCH_CATALOG.forEach((stock) => {
+    pushCandidate(stock.symbol, stock.name, stock.sector, 0, stock.name);
+  });
   performance.forEach((holding) => {
     pushCandidate(
       holding.symbol,
-      `${holding.symbol}  -  ${holding.sector || "Tracked holding"}`,
+      holding.symbol,
       holding.sector || "Tracked holding",
-      holding.current_price || holding.buy_price
+      holding.current_price || holding.buy_price,
+      holding.name || `${holding.symbol} holding`
     );
   });
   recommendationFeed.forEach((quote) => {
     pushCandidate(
       quote.symbol,
-      `${quote.symbol}  -  ${quote.short_name || "Suggested stock"}`,
       quote.short_name || "Suggested stock",
-      quote.price
+      quote.short_name || "Suggested stock",
+      quote.price,
+      quote.short_name || quote.symbol
     );
   });
   USER_RECOMMENDATION_SYMBOLS.forEach((symbol) => {
-    pushCandidate(symbol, `${symbol}  -  Suggested stock`, "Suggested stock", 0);
+    pushCandidate(symbol, "Suggested stock", "Suggested stock", 0, symbol);
   });
 
   return [...map.values()];
+}
+
+function getLooseSearchScore(query, value) {
+  const normalizedQuery = normalizeSearchText(query).replace(/[^a-z0-9]/g, "");
+  const normalizedValue = normalizeSearchText(value).replace(/[^a-z0-9]/g, "");
+  if (!normalizedQuery || !normalizedValue) return 0;
+  let score = 0;
+  let cursor = 0;
+  for (const char of normalizedQuery) {
+    const foundAt = normalizedValue.indexOf(char, cursor);
+    if (foundAt === -1) continue;
+    score += Math.max(1, 12 - (foundAt - cursor));
+    cursor = foundAt + 1;
+  }
+  return score >= normalizedQuery.length ? score : 0;
 }
 
 function getClosestSymbolMatches(query, candidates, limit = 6) {
@@ -527,18 +606,21 @@ function getClosestSymbolMatches(query, candidates, limit = 6) {
     .map((candidate) => {
       const symbol = normalizeSearchText(candidate.symbol);
       const label = normalizeSearchText(candidate.label);
+      const name = normalizeSearchText(candidate.name);
       const sector = normalizeSearchText(candidate.sector);
       let score = 0;
 
       if (symbol === normalizedQuery) score += 120;
       if (symbol.startsWith(normalizedQuery)) score += 95;
       if (label.startsWith(normalizedQuery)) score += 80;
+      if (name.startsWith(normalizedQuery)) score += 84;
       if (symbol.includes(normalizedQuery)) score += 64 - symbol.indexOf(normalizedQuery);
       if (label.includes(normalizedQuery)) score += 52 - label.indexOf(normalizedQuery);
+      if (name.includes(normalizedQuery)) score += 58 - name.indexOf(normalizedQuery);
       if (sector.includes(normalizedQuery)) score += 26;
 
-      const overlap = [...normalizedQuery].filter((char) => symbol.includes(char)).length;
-      score += overlap;
+      score += getLooseSearchScore(normalizedQuery, candidate.symbol);
+      score += Math.round(getLooseSearchScore(normalizedQuery, candidate.name) * 0.7);
 
       return { candidate, score };
     })
@@ -659,6 +741,7 @@ function setupPortfolioSymbolSuggestions() {
   const livePriceMeta = document.getElementById("portfolioLivePriceMeta");
   if (!input || !suggestions) return;
   let quoteLookupTimer;
+  let activeSuggestionIndex = -1;
 
   const setLivePricePreview = (message, state = "idle", meta = "") => {
     if (livePriceBox) livePriceBox.dataset.state = state;
@@ -699,44 +782,99 @@ function setupPortfolioSymbolSuggestions() {
     quoteLookupTimer = window.setTimeout(() => fetchAndApplyQuote(input.value), 450);
   };
 
+  const getSuggestionButtons = () => [...suggestions.querySelectorAll("[data-symbol-suggestion]")];
+
+  const setActiveSuggestion = (index) => {
+    const buttons = getSuggestionButtons();
+    if (!buttons.length) {
+      activeSuggestionIndex = -1;
+      return;
+    }
+    activeSuggestionIndex = (index + buttons.length) % buttons.length;
+    buttons.forEach((button, buttonIndex) => {
+      button.classList.toggle("is-active", buttonIndex === activeSuggestionIndex);
+      button.setAttribute("aria-selected", buttonIndex === activeSuggestionIndex ? "true" : "false");
+    });
+    buttons[activeSuggestionIndex]?.scrollIntoView({ block: "nearest" });
+  };
+
+  const selectSymbol = (symbol, price = 0, source = "suggested price") => {
+    input.value = String(symbol || "").toUpperCase();
+    if (Number(price || 0) > 0) {
+      applyQuotePrice(input.value, Number(price), source);
+    }
+    fetchAndApplyQuote(input.value);
+    suggestions.innerHTML = "";
+    activeSuggestionIndex = -1;
+    buyPriceInput?.focus();
+  };
+
   const renderSuggestions = () => {
     const matches = getClosestSymbolMatches(input.value, userDashboardCache.symbolCatalog, 6);
+    activeSuggestionIndex = -1;
     suggestions.innerHTML = matches.length
       ? matches
           .map(
             (candidate) => `
               <button class="symbol-suggestion-btn" type="button" data-symbol-suggestion="${escapeHtml(candidate.symbol)}" data-symbol-price="${Number(candidate.price || 0).toFixed(2)}">
-                <strong>${escapeHtml(candidate.symbol)}</strong>
-                <small>${escapeHtml(candidate.sector)}${Number(candidate.price || 0) > 0 ? ` | ${currency(candidate.price)}` : ""}</small>
+                <span class="symbol-suggestion-main">
+                  <strong>${escapeHtml(candidate.symbol)}</strong>
+                  <small>${escapeHtml(candidate.name || candidate.label || "NSE equity")}</small>
+                </span>
+                <span class="symbol-suggestion-meta">
+                  <small>${escapeHtml(candidate.sector || "NSE equity")}</small>
+                  <strong>${Number(candidate.price || 0) > 0 ? currency(candidate.price) : "Check live"}</strong>
+                </span>
               </button>
             `
           )
           .join("")
-      : `<span class="search-empty">Keep typing to find the nearest stock symbol.</span>`;
+      : `<span class="search-empty">No close match yet. Try company name like Tata, bank, ITC, Infosys.</span>`;
   };
+
+  input.setAttribute("placeholder", "Search stock or company name");
+  input.setAttribute("role", "combobox");
+  input.setAttribute("aria-autocomplete", "list");
+  input.setAttribute("aria-expanded", "false");
 
   input.addEventListener("focus", renderSuggestions);
   input.addEventListener("input", () => {
     input.value = input.value.toUpperCase();
     renderSuggestions();
+    input.setAttribute("aria-expanded", suggestions.innerHTML ? "true" : "false");
     scheduleQuoteLookup();
+  });
+  input.addEventListener("keydown", (event) => {
+    const buttons = getSuggestionButtons();
+    if (!buttons.length) return;
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveSuggestion(activeSuggestionIndex + 1);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveSuggestion(activeSuggestionIndex - 1);
+    } else if (event.key === "Enter" && activeSuggestionIndex >= 0) {
+      event.preventDefault();
+      const button = buttons[activeSuggestionIndex];
+      selectSymbol(button.dataset.symbolSuggestion, Number(button.dataset.symbolPrice || 0));
+    } else if (event.key === "Escape") {
+      suggestions.innerHTML = "";
+      activeSuggestionIndex = -1;
+      input.setAttribute("aria-expanded", "false");
+    }
   });
 
   suggestions.addEventListener("click", (event) => {
     const button = event.target.closest("[data-symbol-suggestion]");
     if (!button) return;
-    input.value = button.dataset.symbolSuggestion || "";
-    if (Number(button.dataset.symbolPrice || 0) > 0) {
-      applyQuotePrice(input.value, Number(button.dataset.symbolPrice), "suggested price");
-    }
-    fetchAndApplyQuote(input.value);
-    suggestions.innerHTML = "";
-    buyPriceInput?.focus();
+    selectSymbol(button.dataset.symbolSuggestion, Number(button.dataset.symbolPrice || 0));
   });
 
   document.addEventListener("click", (event) => {
     if (event.target === input || suggestions.contains(event.target)) return;
     suggestions.innerHTML = "";
+    activeSuggestionIndex = -1;
+    input.setAttribute("aria-expanded", "false");
   });
 
   renderSuggestions();
