@@ -2498,6 +2498,7 @@ async function renderUserPortal() {
       recommendationFeed: [],
       symbolCatalog: buildUserSymbolCatalog(performance, [])
     };
+    const newClientId = sessionStorage.getItem("stock_trader_new_client_id");
 
     mount.innerHTML = `
     <section class="user-shell no-sidebar-shell">
@@ -2523,6 +2524,11 @@ async function renderUserPortal() {
             <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
           </div>
         </header>
+        ${
+          newClientId
+            ? `<div class="client-id-confirmation"><span>Account created</span><strong>Your Client ID: ${escapeHtml(newClientId)}</strong><small>Use this ID with your password and phone number when logging in as User.</small></div>`
+            : ""
+        }
 
         <div class="user-app-grid">
           <article class="user-app-card full-span-card portfolio-ledger-card" id="portfolioLedgerCard">
@@ -2836,7 +2842,7 @@ function setupLogin() {
 
   document.querySelectorAll("[data-send-otp]").forEach((button) => {
     button.addEventListener("click", async () => {
-      const stopLoading = setButtonLoading(button, button.dataset.sendOtp === "admin" ? "Sending..." : "Sending...");
+      const stopLoading = setButtonLoading(button, "Sending...");
       try {
         if (button.dataset.sendOtp === "admin") {
           if (!hasRequiredFields(adminForm, ["username", "password", "phone"])) {
@@ -2853,7 +2859,7 @@ function setupLogin() {
           const response = await api("/auth/request-otp", { method: "POST", body: JSON.stringify(payload), timeout_ms: 60000 });
           document.getElementById("adminOtpHint").textContent = response.otp_preview ? `Testing OTP: ${response.otp_preview}` : response.message;
           document.getElementById("adminError").textContent = "";
-        } else {
+        } else if (button.dataset.sendOtp === "user") {
           if (!hasRequiredFields(userForm, ["userId", "password", "phone"])) {
             document.getElementById("userError").textContent = "Fill user ID, password, and phone number before requesting verification code.";
             return;
@@ -2868,12 +2874,32 @@ function setupLogin() {
           const response = await api("/auth/request-otp", { method: "POST", body: JSON.stringify(payload), timeout_ms: 60000 });
           document.getElementById("userOtpHint").textContent = response.otp_preview ? `Testing code: ${response.otp_preview}` : response.message;
           document.getElementById("userError").textContent = "";
+        } else {
+          if (!hasRequiredFields(registerForm, ["email", "phone_number", "password"])) {
+            document.getElementById("registerError").textContent = "Fill email, phone number, and password before requesting registration OTP.";
+            return;
+          }
+          const password = String(registerForm.querySelector('[name="password"]').value || "");
+          if (password.length < 8) {
+            document.getElementById("registerError").textContent = "Password must be at least 8 characters.";
+            return;
+          }
+          hidePortalMounts();
+          const payload = {
+            email: String(registerForm.querySelector('[name="email"]').value).trim(),
+            phone_number: String(registerForm.querySelector('[name="phone_number"]').value).trim()
+          };
+          const response = await api("/auth/signup/request-otp", { method: "POST", body: JSON.stringify(payload), timeout_ms: 60000 });
+          document.getElementById("registerOtpHint").textContent = response.otp_preview ? `Testing registration OTP: ${response.otp_preview}` : response.message;
+          document.getElementById("registerError").textContent = "";
         }
       } catch (error) {
         if (button.dataset.sendOtp === "admin") {
           document.getElementById("adminError").textContent = formatError(error);
-        } else {
+        } else if (button.dataset.sendOtp === "user") {
           document.getElementById("userError").textContent = formatError(error);
+        } else {
+          document.getElementById("registerError").textContent = formatError(error);
         }
       } finally {
         stopLoading();
@@ -2956,8 +2982,8 @@ function setupLogin() {
     const submitButton = registerForm.querySelector('button[type="submit"]');
     const stopLoading = setButtonLoading(submitButton, "Creating Account...");
     try {
-      if (!hasRequiredFields(registerForm, ["full_name", "email", "phone_number", "password"])) {
-        document.getElementById("registerError").textContent = "Complete all registration fields before creating the account.";
+      if (!hasRequiredFields(registerForm, ["full_name", "email", "phone_number", "password", "otp"])) {
+        document.getElementById("registerError").textContent = "Complete all registration fields and phone OTP before creating the account.";
         return;
       }
       const data = new FormData(registerForm);
@@ -2974,7 +3000,8 @@ function setupLogin() {
           full_name: String(data.get("full_name")).trim(),
           email: String(data.get("email")).trim(),
           phone_number: String(data.get("phone_number")).trim(),
-          password: String(data.get("password"))
+          password: String(data.get("password")),
+          otp: String(data.get("otp")).trim()
         })
       });
       setAuth({ token: response.access_token, role: response.role });
@@ -2985,9 +3012,13 @@ function setupLogin() {
         profile = null;
       }
       document.getElementById("registerError").textContent = "";
-      document.getElementById("registerHint").textContent = profile?.fixed_user_id
-        ? `Account created successfully. Your fixed user ID is ${profile.fixed_user_id}.`
+      const fixedClientId = response.fixed_user_id || profile?.fixed_user_id;
+      document.getElementById("registerHint").textContent = fixedClientId
+        ? `Account created successfully. Your client ID is ${fixedClientId}. Use this ID to login as User.`
         : "Account created successfully. Your fixed user ID is available once the profile loads.";
+      if (fixedClientId) {
+        sessionStorage.setItem("stock_trader_new_client_id", fixedClientId);
+      }
       goToDashboard("user");
     } catch (error) {
       document.getElementById("registerError").textContent = formatError(error);

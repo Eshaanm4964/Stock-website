@@ -17,6 +17,12 @@ class SignupRequest(BaseModel):
     full_name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)]
     phone_number: PhoneStr
     password: PasswordStr
+    otp: OtpStr
+
+
+class SignupOtpRequest(BaseModel):
+    email: EmailStr
+    phone_number: PhoneStr
 
 
 class OtpRequest(BaseModel):
@@ -43,6 +49,7 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     role: UserRole
+    fixed_user_id: str | None = None
 
 
 class UserResponse(BaseModel):

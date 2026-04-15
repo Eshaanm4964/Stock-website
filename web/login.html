@@ -118,7 +118,12 @@
                 <label><span>Email</span><input name="email" type="email" placeholder="email address" autocomplete="email" required /></label>
                 <label><span>Phone Number</span><input name="phone_number" type="tel" placeholder="phone number" autocomplete="tel" required /></label>
                 <label><span>Password</span><input name="password" type="password" placeholder="create password" autocomplete="new-password" required /></label>
-                <p class="helper-text" id="registerHint">A fixed client ID will be generated and stored in the database.</p>
+                <div class="split-row">
+                  <label><span>Phone OTP</span><input name="otp" type="text" placeholder="6 digit code" required /></label>
+                  <button class="secondary-btn" type="button" data-send-otp="register">Send Code</button>
+                </div>
+                <p class="helper-text" id="registerOtpHint">Send code to verify the phone number before creating the account.</p>
+                <p class="helper-text" id="registerHint">A fixed client ID will be generated and shown after registration.</p>
                 <p class="error-text" id="registerError"></p>
                 <button class="primary-btn" type="submit">Create Account</button>
               </form>
