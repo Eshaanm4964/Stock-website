@@ -490,11 +490,11 @@ function buildRecentActivityMarkup(performance) {
       (holding) => `
         <article class="activity-row">
           <div class="activity-icon ${getHoldingState(holding)}">${escapeHtml(String(holding.symbol || "?").slice(0, 2))}</div>
-          <div>
+          <div class="activity-copy">
             <strong>${escapeHtml(holding.symbol)}</strong>
-            <small>${holding.quantity} shares added on ${formatDate(holding.created_at)}</small>
+            <small>${Number(holding.quantity || 0).toLocaleString("en-IN")} shares added on ${formatDate(holding.created_at)}</small>
           </div>
-          <span class="badge ${holding.profit_loss >= 0 ? "green" : "red"}">${currency(holding.profit_loss)}</span>
+          <span class="activity-pnl ${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}</span>
         </article>
       `
     )

@@ -2327,6 +2327,23 @@ th {
   background: linear-gradient(180deg, #fff 0%, #f7faff 100%);
 }
 
+.activity-row {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+  gap: 18px;
+  min-height: 78px;
+  padding: 16px 18px;
+  border-color: rgba(17, 35, 63, 0.07);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(247, 250, 253, 0.98) 100%);
+  box-shadow: 0 10px 24px rgba(17, 35, 63, 0.035);
+}
+
+.activity-row:hover {
+  border-color: rgba(15, 138, 85, 0.18);
+  box-shadow: 0 16px 32px rgba(17, 35, 63, 0.06);
+}
+
 .live-holding-card strong,
 .live-holding-card small,
 .activity-row strong,
@@ -2403,12 +2420,52 @@ th {
 .activity-icon {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  font-weight: 800;
+  width: 52px;
+  height: 52px;
+  border-radius: 17px;
+  font-weight: 900;
+  letter-spacing: 0.03em;
   color: var(--blue-dark);
   background: rgba(31, 99, 255, 0.1);
+}
+
+.activity-copy {
+  min-width: 0;
+}
+
+.activity-copy strong {
+  margin-bottom: 4px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+}
+
+.activity-copy small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.activity-pnl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.activity-pnl.profit {
+  background: rgba(15, 138, 85, 0.1);
+  color: #057142;
+}
+
+.activity-pnl.loss {
+  background: rgba(198, 40, 40, 0.1);
+  color: #b71c1c;
 }
 
 .activity-icon.profit {
@@ -2760,6 +2817,20 @@ th {
   .activity-row {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .activity-row {
+    grid-template-columns: 46px minmax(0, 1fr);
+  }
+
+  .activity-icon {
+    width: 46px;
+    height: 46px;
+  }
+
+  .activity-pnl {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 
   .allocation-meter {
