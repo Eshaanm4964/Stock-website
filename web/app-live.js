@@ -339,6 +339,31 @@ function formatError(error) {
   return error.message || "Something went wrong.";
 }
 
+function humanizeApiField(value) {
+  return String(value || "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function normalizeApiErrorDetail(detail) {
+  if (!detail) return "Request failed";
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail
+      .map((item) => {
+        if (typeof item === "string") return item;
+        const field = Array.isArray(item?.loc) ? item.loc[item.loc.length - 1] : "";
+        const message = item?.msg || "Invalid value";
+        return field ? `${humanizeApiField(field)}: ${message}` : message;
+      })
+      .join(" ");
+  }
+  if (typeof detail === "object") {
+    return detail.msg || detail.message || JSON.stringify(detail);
+  }
+  return String(detail);
+}
+
 function updateBackendStatus(message, state = "neutral") {
   const statusText = document.getElementById("backendStatusText");
   const statusPill = document.getElementById("backendStatusPill");
@@ -384,7 +409,7 @@ async function api(path, options = {}) {
   }
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error(data.detail || "Request failed");
+    throw new Error(normalizeApiErrorDetail(data.detail));
   }
   if (response.status === 204) {
     return null;
@@ -2936,6 +2961,10 @@ function setupLogin() {
         return;
       }
       const data = new FormData(registerForm);
+      if (String(data.get("password") || "").length < 8) {
+        document.getElementById("registerError").textContent = "Password must be at least 8 characters.";
+        return;
+      }
       hidePortalMounts();
       showAuthLoading("Creating secure account...", "Saving user details and preparing the first portfolio workspace.");
       const response = await api("/auth/signup", {
