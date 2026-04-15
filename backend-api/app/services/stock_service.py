@@ -10,7 +10,7 @@ import yfinance as yf
 from redis.asyncio import Redis
 
 from app.core.config import get_settings
-from app.schemas.stock import NewsArticle, StockQuote, TechnicalIndicators
+from app.schemas.stock import NewsArticle, StockQuote, StockSearchResult, TechnicalIndicators
 from app.services.cache_service import get_cached_json, set_cached_json
 
 settings = get_settings()
@@ -30,12 +30,82 @@ FALLBACK_QUOTES: dict[str, dict[str, Any]] = {
     "TCS": {"price": 3660.0, "shortName": "TCS", "marketCap": 13.2e12, "sector": "Technology"},
     "SUNPHARMA": {"price": 1710.0, "shortName": "Sun Pharma", "marketCap": 4.2e12, "sector": "Healthcare"},
 }
+MARKET_SYMBOL_CATALOG: list[dict[str, Any]] = [
+    {"symbol": "RELIANCE", "name": "Reliance Industries Ltd", "sector": "Energy"},
+    {"symbol": "TCS", "name": "Tata Consultancy Services Ltd", "sector": "Technology"},
+    {"symbol": "INFY", "name": "Infosys Ltd", "sector": "Technology"},
+    {"symbol": "HDFCBANK", "name": "HDFC Bank Ltd", "sector": "Financial Services"},
+    {"symbol": "ICICIBANK", "name": "ICICI Bank Ltd", "sector": "Financial Services"},
+    {"symbol": "SBIN", "name": "State Bank of India", "sector": "Financial Services"},
+    {"symbol": "LT", "name": "Larsen & Toubro Ltd", "sector": "Industrials"},
+    {"symbol": "ITC", "name": "ITC Ltd", "sector": "Consumer Defensive"},
+    {"symbol": "AXISBANK", "name": "Axis Bank Ltd", "sector": "Financial Services"},
+    {"symbol": "KOTAKBANK", "name": "Kotak Mahindra Bank Ltd", "sector": "Financial Services"},
+    {"symbol": "BHARTIARTL", "name": "Bharti Airtel Ltd", "sector": "Telecom"},
+    {"symbol": "ASIANPAINT", "name": "Asian Paints Ltd", "sector": "Consumer Cyclical"},
+    {"symbol": "TATAMOTORS", "name": "Tata Motors Ltd", "sector": "Automotive"},
+    {"symbol": "SUNPHARMA", "name": "Sun Pharmaceutical Industries Ltd", "sector": "Healthcare"},
+    {"symbol": "MARUTI", "name": "Maruti Suzuki India Ltd", "sector": "Automotive"},
+    {"symbol": "HINDUNILVR", "name": "Hindustan Unilever Ltd", "sector": "Consumer Defensive"},
+    {"symbol": "BAJFINANCE", "name": "Bajaj Finance Ltd", "sector": "Financial Services"},
+    {"symbol": "HCLTECH", "name": "HCL Technologies Ltd", "sector": "Technology"},
+    {"symbol": "WIPRO", "name": "Wipro Ltd", "sector": "Technology"},
+    {"symbol": "TECHM", "name": "Tech Mahindra Ltd", "sector": "Technology"},
+    {"symbol": "ADANIENT", "name": "Adani Enterprises Ltd", "sector": "Industrials"},
+    {"symbol": "ADANIPORTS", "name": "Adani Ports and SEZ Ltd", "sector": "Industrials"},
+    {"symbol": "ULTRACEMCO", "name": "UltraTech Cement Ltd", "sector": "Materials"},
+    {"symbol": "TITAN", "name": "Titan Company Ltd", "sector": "Consumer Cyclical"},
+    {"symbol": "POWERGRID", "name": "Power Grid Corporation of India Ltd", "sector": "Utilities"},
+    {"symbol": "NTPC", "name": "NTPC Ltd", "sector": "Utilities"},
+    {"symbol": "ONGC", "name": "Oil and Natural Gas Corporation Ltd", "sector": "Energy"},
+    {"symbol": "COALINDIA", "name": "Coal India Ltd", "sector": "Energy"},
+    {"symbol": "JSWSTEEL", "name": "JSW Steel Ltd", "sector": "Materials"},
+    {"symbol": "TATASTEEL", "name": "Tata Steel Ltd", "sector": "Materials"},
+    {"symbol": "HINDALCO", "name": "Hindalco Industries Ltd", "sector": "Materials"},
+    {"symbol": "NESTLEIND", "name": "Nestle India Ltd", "sector": "Consumer Defensive"},
+    {"symbol": "BRITANNIA", "name": "Britannia Industries Ltd", "sector": "Consumer Defensive"},
+    {"symbol": "CIPLA", "name": "Cipla Ltd", "sector": "Healthcare"},
+    {"symbol": "DRREDDY", "name": "Dr Reddy's Laboratories Ltd", "sector": "Healthcare"},
+    {"symbol": "APOLLOHOSP", "name": "Apollo Hospitals Enterprise Ltd", "sector": "Healthcare"},
+    {"symbol": "GRASIM", "name": "Grasim Industries Ltd", "sector": "Materials"},
+    {"symbol": "M&M", "name": "Mahindra & Mahindra Ltd", "sector": "Automotive"},
+    {"symbol": "EICHERMOT", "name": "Eicher Motors Ltd", "sector": "Automotive"},
+    {"symbol": "HEROMOTOCO", "name": "Hero MotoCorp Ltd", "sector": "Automotive"},
+    {"symbol": "BAJAJ-AUTO", "name": "Bajaj Auto Ltd", "sector": "Automotive"},
+    {"symbol": "SHRIRAMFIN", "name": "Shriram Finance Ltd", "sector": "Financial Services"},
+    {"symbol": "SBILIFE", "name": "SBI Life Insurance Company Ltd", "sector": "Financial Services"},
+    {"symbol": "HDFCLIFE", "name": "HDFC Life Insurance Company Ltd", "sector": "Financial Services"},
+    {"symbol": "BAJAJFINSV", "name": "Bajaj Finserv Ltd", "sector": "Financial Services"},
+    {"symbol": "DMART", "name": "Avenue Supermarts Ltd", "sector": "Consumer Defensive"},
+    {"symbol": "PIDILITIND", "name": "Pidilite Industries Ltd", "sector": "Materials"},
+    {"symbol": "DABUR", "name": "Dabur India Ltd", "sector": "Consumer Defensive"},
+    {"symbol": "GODREJCP", "name": "Godrej Consumer Products Ltd", "sector": "Consumer Defensive"},
+    {"symbol": "BANKBARODA", "name": "Bank of Baroda", "sector": "Financial Services"},
+    {"symbol": "PNB", "name": "Punjab National Bank", "sector": "Financial Services"},
+    {"symbol": "CANBK", "name": "Canara Bank", "sector": "Financial Services"},
+    {"symbol": "IDFCFIRSTB", "name": "IDFC First Bank Ltd", "sector": "Financial Services"},
+    {"symbol": "INDUSINDBK", "name": "IndusInd Bank Ltd", "sector": "Financial Services"},
+    {"symbol": "FEDERALBNK", "name": "Federal Bank Ltd", "sector": "Financial Services"},
+    {"symbol": "YESBANK", "name": "Yes Bank Ltd", "sector": "Financial Services"},
+    {"symbol": "VEDL", "name": "Vedanta Ltd", "sector": "Materials"},
+    {"symbol": "SAIL", "name": "Steel Authority of India Ltd", "sector": "Materials"},
+    {"symbol": "IRCTC", "name": "Indian Railway Catering and Tourism Corporation Ltd", "sector": "Consumer Cyclical"},
+    {"symbol": "IRFC", "name": "Indian Railway Finance Corporation Ltd", "sector": "Financial Services"},
+    {"symbol": "ZOMATO", "name": "Zomato Ltd", "sector": "Consumer Cyclical"},
+    {"symbol": "PAYTM", "name": "One 97 Communications Ltd", "sector": "Technology"},
+    {"symbol": "NYKAA", "name": "FSN E-Commerce Ventures Ltd", "sector": "Consumer Cyclical"},
+    {"symbol": "POLYCAB", "name": "Polycab India Ltd", "sector": "Industrials"},
+    {"symbol": "TRENT", "name": "Trent Ltd", "sector": "Consumer Cyclical"},
+    {"symbol": "ABB", "name": "ABB India Ltd", "sector": "Industrials"},
+    {"symbol": "SIEMENS", "name": "Siemens Ltd", "sector": "Industrials"},
+]
 
 ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query"
 ALPHA_SYMBOL_OVERRIDES: dict[str, str] = {
     "NIFTY50": "NIFTY50",
     "SENSEX": "BSESN",
 }
+YAHOO_SEARCH_URL = "https://query2.finance.yahoo.com/v1/finance/search"
 
 
 def _normalize_symbol(symbol: str, exchange: str = "NSE") -> str:
@@ -60,6 +130,163 @@ def _alpha_symbol_candidates(symbol: str) -> list[str]:
     if "." in upper or ":" in upper:
         return [upper]
     return [f"NSE:{upper}", f"{upper}.NSE", upper]
+
+
+def _clean_search_value(value: str) -> str:
+    return "".join(char for char in value.lower() if char.isalnum())
+
+
+def _search_score(query: str, symbol: str, name: str, sector: str | None = None) -> int:
+    cleaned_query = _clean_search_value(query)
+    cleaned_symbol = _clean_search_value(symbol)
+    cleaned_name = _clean_search_value(name)
+    cleaned_sector = _clean_search_value(sector or "")
+    if not cleaned_query:
+        return 0
+
+    has_direct_match = (
+        cleaned_query in cleaned_symbol
+        or cleaned_query in cleaned_name
+        or cleaned_query in cleaned_sector
+    )
+    if len(cleaned_query) >= 3 and not has_direct_match:
+        return 0
+
+    score = 0
+    if cleaned_symbol == cleaned_query:
+        score += 1000
+    if cleaned_symbol.startswith(cleaned_query):
+        score += 800
+    if cleaned_name.startswith(cleaned_query):
+        score += 680
+    if cleaned_symbol.find(cleaned_query) >= 0:
+        score += 520 - cleaned_symbol.find(cleaned_query)
+    if cleaned_name.find(cleaned_query) >= 0:
+        score += 420 - cleaned_name.find(cleaned_query)
+    if cleaned_sector.find(cleaned_query) >= 0:
+        score += 120
+
+    if len(cleaned_query) <= 2:
+        cursor = 0
+        loose_score = 0
+        for char in cleaned_query:
+            found_at = cleaned_symbol.find(char, cursor)
+            if found_at == -1:
+                found_at = cleaned_name.find(char, cursor)
+            if found_at == -1:
+                continue
+            loose_score += max(1, 8 - (found_at - cursor))
+            cursor = found_at + 1
+        if loose_score >= len(cleaned_query):
+            score += loose_score
+    return score
+
+
+def _catalog_search(query: str, limit: int) -> list[StockSearchResult]:
+    ranked = []
+    fallback_rows = [
+        {"symbol": symbol, "name": data.get("shortName") or symbol, "sector": data.get("sector")}
+        for symbol, data in FALLBACK_QUOTES.items()
+        if not symbol.startswith("^") and symbol not in {"NIFTY50", "SENSEX"}
+    ]
+    rows = MARKET_SYMBOL_CATALOG + fallback_rows
+    seen: set[str] = set()
+    for row in rows:
+        symbol = str(row.get("symbol") or "").upper()
+        if not symbol or symbol in seen:
+            continue
+        seen.add(symbol)
+        name = str(row.get("name") or symbol)
+        sector = row.get("sector")
+        score = _search_score(query, symbol, name, sector)
+        if score > 0:
+            ranked.append((score, row))
+
+    ranked.sort(key=lambda item: (-item[0], str(item[1].get("symbol") or "")))
+    return [
+        StockSearchResult(
+            symbol=str(row.get("symbol") or "").upper(),
+            name=str(row.get("name") or row.get("symbol") or "").strip(),
+            exchange="NSE",
+            sector=row.get("sector"),
+            source="catalog",
+        )
+        for _, row in ranked[:limit]
+    ]
+
+
+def _strip_yahoo_symbol(symbol: str) -> str:
+    upper = symbol.upper().strip()
+    return upper[:-3] if upper.endswith(".NS") else upper
+
+
+async def _search_yahoo_symbols(query: str, limit: int) -> list[StockSearchResult]:
+    async with httpx.AsyncClient(timeout=8) as client:
+        response = await client.get(
+            YAHOO_SEARCH_URL,
+            params={
+                "q": query,
+                "quotesCount": max(limit * 3, 20),
+                "newsCount": 0,
+                "listsCount": 0,
+            },
+            headers={"User-Agent": "AssetYantra/1.0"},
+        )
+        response.raise_for_status()
+        payload = response.json()
+
+    results: list[StockSearchResult] = []
+    seen: set[str] = set()
+    for quote in payload.get("quotes", []):
+        yahoo_symbol = str(quote.get("symbol") or "").upper()
+        exchange = str(quote.get("exchange") or quote.get("exchDisp") or "").upper()
+        if not yahoo_symbol.endswith(".NS") and "NSE" not in exchange and exchange not in {"NSI", "NS"}:
+            continue
+        symbol = _strip_yahoo_symbol(yahoo_symbol)
+        if not symbol or symbol in seen or symbol.startswith("^"):
+            continue
+        seen.add(symbol)
+        name = quote.get("shortname") or quote.get("longname") or quote.get("name") or symbol
+        results.append(
+            StockSearchResult(
+                symbol=symbol,
+                name=str(name),
+                exchange="NSE",
+                sector=quote.get("sector") or "NSE equity",
+                source="market_search",
+            )
+        )
+        if len(results) >= limit:
+            break
+    return results
+
+
+async def search_stock_symbols(query: str, exchange: str = "NSE", limit: int = 10) -> list[StockSearchResult]:
+    cleaned_query = query.strip()
+    if len(cleaned_query) < 1:
+        return []
+    safe_limit = max(1, min(limit, 20))
+    results: list[StockSearchResult] = []
+    seen: set[str] = set()
+
+    try:
+        for item in await _search_yahoo_symbols(cleaned_query, safe_limit):
+            score = _search_score(cleaned_query, item.symbol, item.name, item.sector)
+            if score <= 0:
+                continue
+            results.append(item)
+            seen.add(item.symbol)
+    except Exception:
+        pass
+
+    for item in _catalog_search(cleaned_query, safe_limit):
+        if item.symbol in seen:
+            continue
+        results.append(item)
+        seen.add(item.symbol)
+
+    results.sort(key=lambda item: (-_search_score(cleaned_query, item.symbol, item.name, item.sector), item.symbol))
+    return results[:safe_limit]
 
 
 def classify_market_cap(market_cap: float | None) -> str:

@@ -17,6 +17,15 @@ class StockQuote(BaseModel):
     is_fallback: bool = False
 
 
+class StockSearchResult(BaseModel):
+    symbol: str
+    name: str
+    exchange: str = "NSE"
+    sector: str | None = None
+    price: float | None = None
+    source: str = "catalog"
+
+
 class NewsArticle(BaseModel):
     title: str
     description: str | None

@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, Query
 from redis.asyncio import Redis
 
 from app.db.session import get_redis
-from app.schemas.stock import StockDetailResponse, StockQuote
+from app.schemas.stock import StockDetailResponse, StockQuote, StockSearchResult
 from app.services.news_service import fetch_market_news, fetch_news
-from app.services.stock_service import fetch_indicator_bundle, fetch_market_feed, fetch_quote
+from app.services.stock_service import fetch_indicator_bundle, fetch_market_feed, fetch_quote, search_stock_symbols
 
 router = APIRouter(prefix="/stocks", tags=["stocks"])
 DEFAULT_SYMBOLS = ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN"]
@@ -23,6 +23,15 @@ async def market_feed(
 @router.get("/market/news")
 async def market_news(redis: Redis = Depends(get_redis)):
     return await fetch_market_news(redis)
+
+
+@router.get("/search", response_model=list[StockSearchResult])
+async def stock_search(
+    q: str = Query(default="", min_length=1),
+    exchange: str = Query(default="NSE"),
+    limit: int = Query(default=10, ge=1, le=20),
+) -> list[StockSearchResult]:
+    return await search_stock_symbols(q, exchange, limit)
 
 
 @router.get("/{symbol}", response_model=StockDetailResponse)

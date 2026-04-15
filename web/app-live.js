@@ -69,6 +69,7 @@ let liveTickerTimer = null;
 let chatNudgeTimer = null;
 let adminSearchRenderTimer = null;
 let liveDashboardPriceTimer = null;
+const marketSymbolSearchCache = new Map();
 let adminUiState = {
   search: "",
   scriptSearch: "",
@@ -596,6 +597,29 @@ function getLooseSearchScore(query, value) {
   return score >= normalizedQuery.length ? score : 0;
 }
 
+function getAlphabetSearchScore(query, candidate) {
+  const normalizedQuery = normalizeSearchText(query).replace(/[^a-z0-9]/g, "");
+  const symbol = normalizeSearchText(candidate.symbol).replace(/[^a-z0-9]/g, "");
+  const name = normalizeSearchText(candidate.name || candidate.label).replace(/[^a-z0-9]/g, "");
+  const sector = normalizeSearchText(candidate.sector).replace(/[^a-z0-9]/g, "");
+  if (!normalizedQuery) return 0;
+  const hasDirectMatch = symbol.includes(normalizedQuery) || name.includes(normalizedQuery) || sector.includes(normalizedQuery);
+  if (normalizedQuery.length >= 3 && !hasDirectMatch) return 0;
+
+  let score = 0;
+  if (symbol === normalizedQuery) score += 1000;
+  if (symbol.startsWith(normalizedQuery)) score += 840;
+  if (name.startsWith(normalizedQuery)) score += 720;
+  if (symbol.includes(normalizedQuery)) score += 560 - symbol.indexOf(normalizedQuery);
+  if (name.includes(normalizedQuery)) score += 460 - name.indexOf(normalizedQuery);
+  if (sector.includes(normalizedQuery)) score += 140;
+  if (normalizedQuery.length <= 2) {
+    score += getLooseSearchScore(normalizedQuery, candidate.symbol);
+    score += Math.round(getLooseSearchScore(normalizedQuery, candidate.name || candidate.label) * 0.6);
+  }
+  return score;
+}
+
 function getClosestSymbolMatches(query, candidates, limit = 6) {
   const normalizedQuery = normalizeSearchText(query);
   if (!normalizedQuery) {
@@ -604,30 +628,31 @@ function getClosestSymbolMatches(query, candidates, limit = 6) {
 
   return candidates
     .map((candidate) => {
-      const symbol = normalizeSearchText(candidate.symbol);
-      const label = normalizeSearchText(candidate.label);
-      const name = normalizeSearchText(candidate.name);
-      const sector = normalizeSearchText(candidate.sector);
-      let score = 0;
-
-      if (symbol === normalizedQuery) score += 120;
-      if (symbol.startsWith(normalizedQuery)) score += 95;
-      if (label.startsWith(normalizedQuery)) score += 80;
-      if (name.startsWith(normalizedQuery)) score += 84;
-      if (symbol.includes(normalizedQuery)) score += 64 - symbol.indexOf(normalizedQuery);
-      if (label.includes(normalizedQuery)) score += 52 - label.indexOf(normalizedQuery);
-      if (name.includes(normalizedQuery)) score += 58 - name.indexOf(normalizedQuery);
-      if (sector.includes(normalizedQuery)) score += 26;
-
-      score += getLooseSearchScore(normalizedQuery, candidate.symbol);
-      score += Math.round(getLooseSearchScore(normalizedQuery, candidate.name) * 0.7);
-
-      return { candidate, score };
+      return { candidate, score: getAlphabetSearchScore(normalizedQuery, candidate) };
     })
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score || a.candidate.symbol.localeCompare(b.candidate.symbol))
     .slice(0, limit)
     .map((entry) => entry.candidate);
+}
+
+function mergeSymbolCandidates(...candidateGroups) {
+  const map = new Map();
+  candidateGroups.flat().forEach((candidate) => {
+    const symbol = String(candidate?.symbol || "").trim().toUpperCase();
+    if (!symbol) return;
+    const current = map.get(symbol);
+    map.set(symbol, {
+      ...current,
+      ...candidate,
+      symbol,
+      label: candidate.label || candidate.name || current?.label || symbol,
+      name: candidate.name || candidate.label || current?.name || symbol,
+      sector: candidate.sector || current?.sector || "NSE equity",
+      price: Number(candidate.price || 0) || Number(current?.price || 0)
+    });
+  });
+  return [...map.values()];
 }
 
 function buildUserRecommendationsMarkup(feed, performance) {
@@ -741,7 +766,9 @@ function setupPortfolioSymbolSuggestions() {
   const livePriceMeta = document.getElementById("portfolioLivePriceMeta");
   if (!input || !suggestions) return;
   let quoteLookupTimer;
+  let marketSearchTimer;
   let activeSuggestionIndex = -1;
+  let remoteSearchResults = [];
 
   const setLivePricePreview = (message, state = "idle", meta = "") => {
     if (livePriceBox) livePriceBox.dataset.state = state;
@@ -782,6 +809,42 @@ function setupPortfolioSymbolSuggestions() {
     quoteLookupTimer = window.setTimeout(() => fetchAndApplyQuote(input.value), 450);
   };
 
+  const searchMarketSymbols = async (query) => {
+    const safeQuery = String(query || "").trim();
+    if (!safeQuery) {
+      remoteSearchResults = [];
+      return;
+    }
+    const cacheKey = safeQuery.toLowerCase();
+    if (marketSymbolSearchCache.has(cacheKey)) {
+      remoteSearchResults = marketSymbolSearchCache.get(cacheKey);
+      renderSuggestions();
+      return;
+    }
+    try {
+      const results = await api(`/stocks/search?q=${encodeURIComponent(safeQuery)}&exchange=NSE&limit=12`);
+      remoteSearchResults = Array.isArray(results)
+        ? results.map((item) => ({
+            symbol: item.symbol,
+            label: item.name || item.symbol,
+            name: item.name || item.symbol,
+            sector: item.sector || item.exchange || "NSE equity",
+            price: Number(item.price || 0),
+            source: item.source || "market_search"
+          }))
+        : [];
+      marketSymbolSearchCache.set(cacheKey, remoteSearchResults);
+      renderSuggestions();
+    } catch {
+      remoteSearchResults = [];
+    }
+  };
+
+  const scheduleMarketSearch = () => {
+    window.clearTimeout(marketSearchTimer);
+    marketSearchTimer = window.setTimeout(() => searchMarketSymbols(input.value), 220);
+  };
+
   const getSuggestionButtons = () => [...suggestions.querySelectorAll("[data-symbol-suggestion]")];
 
   const setActiveSuggestion = (index) => {
@@ -810,7 +873,8 @@ function setupPortfolioSymbolSuggestions() {
   };
 
   const renderSuggestions = () => {
-    const matches = getClosestSymbolMatches(input.value, userDashboardCache.symbolCatalog, 6);
+    const combinedCandidates = mergeSymbolCandidates(remoteSearchResults, userDashboardCache.symbolCatalog);
+    const matches = getClosestSymbolMatches(input.value, combinedCandidates, 8);
     activeSuggestionIndex = -1;
     suggestions.innerHTML = matches.length
       ? matches
@@ -822,7 +886,7 @@ function setupPortfolioSymbolSuggestions() {
                   <small>${escapeHtml(candidate.name || candidate.label || "NSE equity")}</small>
                 </span>
                 <span class="symbol-suggestion-meta">
-                  <small>${escapeHtml(candidate.sector || "NSE equity")}</small>
+                  <small>${escapeHtml(candidate.source === "market_search" ? "Active market match" : candidate.sector || "NSE equity")}</small>
                   <strong>${Number(candidate.price || 0) > 0 ? currency(candidate.price) : "Check live"}</strong>
                 </span>
               </button>
@@ -842,6 +906,7 @@ function setupPortfolioSymbolSuggestions() {
     input.value = input.value.toUpperCase();
     renderSuggestions();
     input.setAttribute("aria-expanded", suggestions.innerHTML ? "true" : "false");
+    scheduleMarketSearch();
     scheduleQuoteLookup();
   });
   input.addEventListener("keydown", (event) => {
