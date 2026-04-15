@@ -2537,7 +2537,7 @@ async function renderUserPortal() {
             </div>
             <div class="table-wrap">
               <table class="compact-table">
-                <thead><tr><th>Asset</th><th>Invested</th><th>Live Value</th><th>P&amp;L</th><th>Action</th></tr></thead>
+                <thead><tr><th>Asset</th><th>Qty</th><th>Invested</th><th>Live Value</th><th>P&amp;L</th><th>Action</th></tr></thead>
                 <tbody id="userHoldingsTableBody">
                   ${performance.length
                     ? performance
@@ -2545,7 +2545,8 @@ async function renderUserPortal() {
                           (holding) => `
                             <tr data-live-summary="true" data-symbol="${escapeHtml(holding.symbol)}" data-live-symbol="${escapeHtml(holding.symbol)}" data-sector="${escapeHtml(holding.sector || "Tracked holding")}" data-state="${getHoldingState(holding)}" data-quantity="${Number(holding.quantity || 0)}" data-buy-price="${Number(holding.buy_price || 0)}" data-current-price="${Number(holding.current_price || 0)}" data-value="${Number(holding.value || 0)}">
                               <td>${holding.symbol}<br /><small>${holding.sector || "Tracked holding"}</small></td>
-                              <td><strong class="price-buy">${currency(holding.buy_price * holding.quantity)}</strong></td>
+                              <td><strong>${Number(holding.quantity || 0).toLocaleString("en-IN")}</strong><br /><small>shares</small></td>
+                              <td><strong class="price-buy">${currency(holding.buy_price * holding.quantity)}</strong><br /><small>Avg ${currency(holding.buy_price)}</small></td>
                               <td><strong class="${holding.profit_loss >= 0 ? "price-up" : "price-down"}" data-live-value-cell>${currency(holding.value)}</strong><br /><small>Live <span data-live-price-cell>${currency(holding.current_price)}</span></small></td>
                               <td><strong class="${holding.profit_loss >= 0 ? "profit" : "loss"}" data-pnl-cell>${currency(holding.profit_loss)}</strong><br /><small data-return-cell>${percent(holding.percent_change)}</small></td>
                               <td><button class="sell-action-btn" type="button" data-delete-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-quantity="${holding.quantity}" data-live-price="${holding.current_price}">Sell</button></td>
@@ -2554,7 +2555,7 @@ async function renderUserPortal() {
                         )
                         .join("")
                     : ""}
-                  <tr id="userHoldingsEmptyRow" ${performance.length ? "hidden" : ""}><td colspan="5"><span class="helper-text">${performance.length ? "No holdings match the active filters." : "No stocks added yet. Use the form to build the portfolio."}</span></td></tr>
+                  <tr id="userHoldingsEmptyRow" ${performance.length ? "hidden" : ""}><td colspan="6"><span class="helper-text">${performance.length ? "No holdings match the active filters." : "No stocks added yet. Use the form to build the portfolio."}</span></td></tr>
                 </tbody>
               </table>
             </div>
