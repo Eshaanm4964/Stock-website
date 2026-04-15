@@ -2439,6 +2439,44 @@ th {
   grid-column: 1 / -1;
 }
 
+.portfolio-live-price-preview {
+  display: grid;
+  gap: 6px;
+  align-content: center;
+  min-height: 74px;
+  padding: 14px 16px;
+  border: 1px solid rgba(15, 118, 110, 0.14);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(15, 138, 85, 0.08), rgba(255, 255, 255, 0.96));
+}
+
+.portfolio-live-price-preview span {
+  color: #53645e;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.portfolio-live-price-preview strong {
+  color: #10251d;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.45rem;
+}
+
+.portfolio-live-price-preview small {
+  color: #66728a;
+  font-weight: 700;
+}
+
+.portfolio-live-price-preview[data-state="ready"] strong {
+  color: #0f8a55;
+}
+
+.portfolio-live-price-preview[data-state="error"] strong {
+  color: #c62828;
+}
+
 .faq-question {
   width: 100%;
   padding: 0;

@@ -654,7 +654,50 @@ function setupPortfolioSymbolSuggestions() {
   const input = document.querySelector('#portfolioForm [name="symbol"]');
   const suggestions = document.getElementById("portfolioSymbolSuggestions");
   const buyPriceInput = document.querySelector('#portfolioForm [name="buyPrice"]');
+  const livePriceBox = document.getElementById("portfolioLivePricePreview");
+  const livePriceValue = document.getElementById("portfolioLivePriceValue");
+  const livePriceMeta = document.getElementById("portfolioLivePriceMeta");
   if (!input || !suggestions) return;
+  let quoteLookupTimer;
+
+  const setLivePricePreview = (message, state = "idle", meta = "") => {
+    if (livePriceBox) livePriceBox.dataset.state = state;
+    if (livePriceValue) livePriceValue.textContent = message;
+    if (livePriceMeta) livePriceMeta.textContent = meta;
+  };
+
+  const applyQuotePrice = (symbol, price, source = "live market") => {
+    const livePrice = Number(price || 0);
+    if (!livePrice) return;
+    setLivePricePreview(currency(livePrice), "ready", `${symbol.toUpperCase()} ${source}`);
+    if (buyPriceInput) buyPriceInput.value = livePrice.toFixed(2);
+  };
+
+  const fetchAndApplyQuote = async (symbol) => {
+    const safeSymbol = String(symbol || "").trim().toUpperCase();
+    if (safeSymbol.length < 2) {
+      setLivePricePreview("Select a stock", "idle", "Live price will appear here.");
+      return;
+    }
+    setLivePricePreview("Fetching...", "loading", `Checking ${safeSymbol}`);
+    try {
+      const quote = await api(`/stocks/${encodeURIComponent(safeSymbol)}?exchange=NSE`);
+      const price = Number(quote?.quote?.price ?? quote?.price ?? 0);
+      applyQuotePrice(safeSymbol, price, quote?.quote?.data_source ? `${quote.quote.data_source} price` : "live price");
+    } catch {
+      const cached = getClosestSymbolMatches(safeSymbol, userDashboardCache.symbolCatalog, 1)[0];
+      if (cached?.price) {
+        applyQuotePrice(safeSymbol, cached.price, "cached price");
+      } else {
+        setLivePricePreview("Price unavailable", "error", "Enter buy price manually.");
+      }
+    }
+  };
+
+  const scheduleQuoteLookup = () => {
+    window.clearTimeout(quoteLookupTimer);
+    quoteLookupTimer = window.setTimeout(() => fetchAndApplyQuote(input.value), 450);
+  };
 
   const renderSuggestions = () => {
     const matches = getClosestSymbolMatches(input.value, userDashboardCache.symbolCatalog, 6);
@@ -664,7 +707,7 @@ function setupPortfolioSymbolSuggestions() {
             (candidate) => `
               <button class="symbol-suggestion-btn" type="button" data-symbol-suggestion="${escapeHtml(candidate.symbol)}" data-symbol-price="${Number(candidate.price || 0).toFixed(2)}">
                 <strong>${escapeHtml(candidate.symbol)}</strong>
-                <small>${escapeHtml(candidate.sector)}</small>
+                <small>${escapeHtml(candidate.sector)}${Number(candidate.price || 0) > 0 ? ` | ${currency(candidate.price)}` : ""}</small>
               </button>
             `
           )
@@ -676,15 +719,17 @@ function setupPortfolioSymbolSuggestions() {
   input.addEventListener("input", () => {
     input.value = input.value.toUpperCase();
     renderSuggestions();
+    scheduleQuoteLookup();
   });
 
   suggestions.addEventListener("click", (event) => {
     const button = event.target.closest("[data-symbol-suggestion]");
     if (!button) return;
     input.value = button.dataset.symbolSuggestion || "";
-    if (buyPriceInput && !String(buyPriceInput.value || "").trim() && Number(button.dataset.symbolPrice || 0) > 0) {
-      buyPriceInput.value = Number(button.dataset.symbolPrice).toFixed(2);
+    if (Number(button.dataset.symbolPrice || 0) > 0) {
+      applyQuotePrice(input.value, Number(button.dataset.symbolPrice), "suggested price");
     }
+    fetchAndApplyQuote(input.value);
     suggestions.innerHTML = "";
     buyPriceInput?.focus();
   });
@@ -695,6 +740,7 @@ function setupPortfolioSymbolSuggestions() {
   });
 
   renderSuggestions();
+  setLivePricePreview("Select a stock", "idle", "Live price will appear here.");
 }
 
 function setupUserRecommendationButtons() {
@@ -703,10 +749,17 @@ function setupUserRecommendationButtons() {
       const form = document.getElementById("portfolioForm");
       const symbolInput = form?.querySelector('[name="symbol"]');
       const buyPriceInput = form?.querySelector('[name="buyPrice"]');
+      const livePriceValue = document.getElementById("portfolioLivePriceValue");
+      const livePriceMeta = document.getElementById("portfolioLivePriceMeta");
+      const livePriceBox = document.getElementById("portfolioLivePricePreview");
       if (!form || !symbolInput) return;
       symbolInput.value = String(button.dataset.recommendSymbol || "").toUpperCase();
-      if (buyPriceInput && !String(buyPriceInput.value || "").trim() && Number(button.dataset.recommendPrice || 0) > 0) {
-        buyPriceInput.value = Number(button.dataset.recommendPrice).toFixed(2);
+      if (buyPriceInput && Number(button.dataset.recommendPrice || 0) > 0) {
+        const price = Number(button.dataset.recommendPrice);
+        buyPriceInput.value = price.toFixed(2);
+        if (livePriceBox) livePriceBox.dataset.state = "ready";
+        if (livePriceValue) livePriceValue.textContent = currency(price);
+        if (livePriceMeta) livePriceMeta.textContent = `${symbolInput.value} suggested price`;
       }
       form.scrollIntoView({ behavior: "smooth", block: "center" });
       symbolInput.focus();
@@ -2291,10 +2344,15 @@ async function renderUserPortal() {
           </article>
 
           <article class="user-app-card">
-            <div class="panel-head"><h3>Add To Portfolio</h3><span class="badge">Smart Assist</span></div>
+            <div class="panel-head"><h3>Add To Portfolio</h3></div>
             <form id="portfolioForm" class="portfolio-form">
               <label class="portfolio-symbol-wrap"><span>Stock Symbol</span><input name="symbol" type="text" autocomplete="off" required /><div id="portfolioSymbolSuggestions" class="symbol-suggestion-list"></div></label>
               <label><span>Quantity</span><input name="quantity" type="number" min="1" required /></label>
+              <div class="portfolio-live-price-preview" id="portfolioLivePricePreview" data-state="idle">
+                <span>Live Price</span>
+                <strong id="portfolioLivePriceValue">Select a stock</strong>
+                <small id="portfolioLivePriceMeta">Live price will appear here.</small>
+              </div>
               <label><span>Buy Price</span><input name="buyPrice" type="number" min="1" step="0.01" required /></label>
               <label><span>Exchange</span><input name="exchange" type="text" value="NSE" disabled /></label>
               <button class="primary-btn" type="submit">Add Stock</button>
