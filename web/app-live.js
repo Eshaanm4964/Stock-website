@@ -1558,6 +1558,7 @@ async function refreshVisibleDashboardPrices() {
   const totalPnl = totalLiveValue - totalBuyValue + bookedPnl;
   document.querySelectorAll("[data-live-total-value]").forEach((node) => {
     node.textContent = currency(totalLiveValue);
+    setPriceClass(node, totalLiveValue - totalBuyValue);
   });
   document.querySelectorAll("[data-live-total-pnl]").forEach((node) => {
     node.textContent = currency(totalPnl);
@@ -2266,7 +2267,7 @@ async function renderAdminPortal() {
               </article>
               <article>
                 <span>Current Value</span>
-                <strong data-live-total-value>${currency(totalValue)}</strong>
+                <strong class="${totalValue >= totalInvested ? "profit" : "loss"}" data-live-total-value>${currency(totalValue)}</strong>
               </article>
               <article>
                 <span>Unrealised P&amp;L</span>
@@ -2510,7 +2511,7 @@ async function renderUserPortal() {
               </article>
               <article>
                 <span>Current Value</span>
-                <strong data-live-total-value>${currency(summary.total_portfolio_value)}</strong>
+                <strong class="${summary.total_portfolio_value >= totalInvested ? "profit" : "loss"}" data-live-total-value>${currency(summary.total_portfolio_value)}</strong>
               </article>
               <article>
                 <span>Unrealised P&amp;L</span>
