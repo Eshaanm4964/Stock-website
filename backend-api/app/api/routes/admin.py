@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from redis.asyncio import Redis
-from sqlalchemy import delete, distinct, func, select, text
+from sqlalchemy import delete, distinct, false, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_admin_user
@@ -51,13 +51,20 @@ async def admin_dashboard(
 ) -> AdminDashboardResponse:
     seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
     total_users = (
-        await db.execute(select(func.count(User.id)).where(User.role == UserRole.USER, User.is_demo.is_(False)))
+        await db.execute(
+            select(func.count(User.id)).where(
+                User.role == UserRole.USER,
+                User.is_demo.is_(False),
+                User.is_archived.is_(False),
+            )
+        )
     ).scalar_one()
     new_users = (
         await db.execute(
             select(func.count(User.id)).where(
                 User.role == UserRole.USER,
                 User.is_demo.is_(False),
+                User.is_archived.is_(False),
                 User.created_at >= seven_days_ago,
             )
         )
@@ -78,7 +85,13 @@ async def admin_users(
     db: AsyncSession = Depends(get_db),
     redis: Redis = Depends(get_redis),
 ) -> list[AdminUserSummary]:
-    users = list((await db.execute(select(User).where(User.role == UserRole.USER))).scalars().all())
+    users = list(
+        (
+            await db.execute(
+                select(User).where(User.role == UserRole.USER, User.is_archived.is_(False))
+            )
+        ).scalars().all()
+    )
     summaries: list[AdminUserSummary] = []
     for user in users:
         try:
@@ -99,6 +112,8 @@ async def admin_users(
                     role=user.role.value,
                     is_active=user.is_active,
                     is_demo=user.is_demo,
+                    is_archived=user.is_archived,
+                    archived_at=user.archived_at,
                     created_at=user.created_at,
                     portfolio_value=portfolio.total_portfolio_value,
                     total_holdings=len(holdings),
@@ -115,6 +130,8 @@ async def admin_users(
                     role=user.role.value,
                     is_active=user.is_active,
                     is_demo=user.is_demo,
+                    is_archived=user.is_archived,
+                    archived_at=user.archived_at,
                     created_at=user.created_at,
                     portfolio_value=0.0,
                     total_holdings=0,
@@ -219,6 +236,8 @@ async def admin_add_deal(
     ).scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="Customer not found")
+    if user.is_archived:
+        raise HTTPException(status_code=400, detail="Cannot add a deal for an archived customer")
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Cannot add a deal for an inactive customer")
 
@@ -262,9 +281,34 @@ async def admin_portfolio_overview(
     redis: Redis = Depends(get_redis),
 ) -> AdminPortfolioOverviewResponse:
     seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
-    users = list((await db.execute(select(User).where(User.role == UserRole.USER))).scalars().all())
-    holdings = list((await db.execute(select(PortfolioHolding))).scalars().all())
-    sales = list((await db.execute(select(PortfolioSale).order_by(PortfolioSale.sold_at.desc()))).scalars().all())
+    users = list(
+        (
+            await db.execute(
+                select(User).where(User.role == UserRole.USER, User.is_archived.is_(False))
+            )
+        ).scalars().all()
+    )
+    active_user_ids = {user.id for user in users}
+    holdings = list(
+        (
+            await db.execute(
+                select(PortfolioHolding).where(PortfolioHolding.user_id.in_(active_user_ids))
+                if active_user_ids
+                else select(PortfolioHolding).where(false())
+            )
+        ).scalars().all()
+    )
+    sales = list(
+        (
+            await db.execute(
+                select(PortfolioSale)
+                .where(PortfolioSale.user_id.in_(active_user_ids))
+                .order_by(PortfolioSale.sold_at.desc())
+                if active_user_ids
+                else select(PortfolioSale).where(false())
+            )
+        ).scalars().all()
+    )
 
     holdings_by_user: dict[int, list[PortfolioHolding]] = {}
     for holding in holdings:
@@ -336,6 +380,8 @@ async def admin_portfolio_overview(
                 role=user.role.value,
                 is_active=user.is_active,
                 is_demo=user.is_demo,
+                is_archived=user.is_archived,
+                archived_at=user.archived_at,
                 created_at=user.created_at,
                 portfolio_value=portfolio.total_portfolio_value,
                 total_holdings=len(user_holdings),
@@ -343,13 +389,20 @@ async def admin_portfolio_overview(
         )
 
     total_users = (
-        await db.execute(select(func.count(User.id)).where(User.role == UserRole.USER, User.is_demo.is_(False)))
+        await db.execute(
+            select(func.count(User.id)).where(
+                User.role == UserRole.USER,
+                User.is_demo.is_(False),
+                User.is_archived.is_(False),
+            )
+        )
     ).scalar_one()
     new_users = (
         await db.execute(
             select(func.count(User.id)).where(
                 User.role == UserRole.USER,
                 User.is_demo.is_(False),
+                User.is_archived.is_(False),
                 User.created_at >= seven_days_ago,
             )
         )
@@ -396,6 +449,8 @@ async def update_admin_user_status(
     user = (await db.execute(select(User).where(User.id == user_id, User.role == UserRole.USER))).scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if user.is_archived and payload.is_active:
+        raise HTTPException(status_code=400, detail="Restore archived customer before activating")
 
     user.is_active = payload.is_active
     await db.commit()
@@ -426,6 +481,59 @@ async def update_admin_user_status(
         role=user.role.value,
         is_active=user.is_active,
         is_demo=user.is_demo,
+        is_archived=user.is_archived,
+        archived_at=user.archived_at,
+        created_at=user.created_at,
+        portfolio_value=portfolio.total_portfolio_value,
+        total_holdings=len(holdings),
+    )
+
+
+@router.patch("/users/{user_id}/archive", response_model=AdminUserSummary)
+async def archive_admin_user(
+    user_id: int,
+    request: Request,
+    current_admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+    redis: Redis = Depends(get_redis),
+) -> AdminUserSummary:
+    user = (await db.execute(select(User).where(User.id == user_id, User.role == UserRole.USER))).scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.is_active = False
+    user.is_archived = True
+    user.archived_at = datetime.now(timezone.utc)
+    await db.commit()
+    await db.refresh(user)
+
+    holdings = list(
+        (await db.execute(select(PortfolioHolding).where(PortfolioHolding.user_id == user.id))).scalars().all()
+    )
+    sales = list(
+        (await db.execute(select(PortfolioSale).where(PortfolioSale.user_id == user.id).order_by(PortfolioSale.sold_at.desc()))).scalars().all()
+    )
+    portfolio = await build_portfolio_summary(holdings, redis, sales)
+    await log_admin_action(
+        db,
+        admin_user=current_admin,
+        action="archive_user",
+        entity_type="user",
+        entity_id=str(user.id),
+        ip_address=request.client.host if request.client else None,
+        details={"fixed_user_id": user.fixed_user_id, "full_name": user.full_name},
+    )
+    return AdminUserSummary(
+        user_id=user.id,
+        username=user.username,
+        fixed_user_id=user.fixed_user_id,
+        full_name=user.full_name,
+        phone_number=user.phone_number,
+        role=user.role.value,
+        is_active=user.is_active,
+        is_demo=user.is_demo,
+        is_archived=user.is_archived,
+        archived_at=user.archived_at,
         created_at=user.created_at,
         portfolio_value=portfolio.total_portfolio_value,
         total_holdings=len(holdings),
@@ -445,16 +553,18 @@ async def delete_admin_user(
 
     fixed_user_id = user.fixed_user_id
     full_name = user.full_name
-    await db.delete(user)
+    user.is_active = False
+    user.is_archived = True
+    user.archived_at = datetime.now(timezone.utc)
     await db.commit()
     await log_admin_action(
         db,
         admin_user=current_admin,
-        action="delete_user",
+        action="archive_user",
         entity_type="user",
         entity_id=str(user_id),
         ip_address=request.client.host if request.client else None,
-        details={"fixed_user_id": fixed_user_id, "full_name": full_name},
+        details={"fixed_user_id": fixed_user_id, "full_name": full_name, "via": "delete_endpoint"},
     )
 
 
@@ -524,7 +634,7 @@ async def admin_bulk_user_action(
     current_admin: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ) -> AdminBulkUserActionResponse:
-    allowed_actions = {"activate", "disable", "delete"}
+    allowed_actions = {"activate", "disable", "archive", "delete"}
     action = payload.action.strip().lower()
     if action not in allowed_actions:
         raise HTTPException(status_code=400, detail="Unsupported bulk action")
@@ -541,13 +651,17 @@ async def admin_bulk_user_action(
     found_ids = {user.id for user in users}
     processed_ids: list[int] = []
 
-    if action == "delete":
+    if action in {"archive", "delete"}:
         for user in users:
             processed_ids.append(user.id)
-            await db.delete(user)
+            user.is_active = False
+            user.is_archived = True
+            user.archived_at = datetime.now(timezone.utc)
     else:
         next_active = action == "activate"
         for user in users:
+            if action == "activate" and user.is_archived:
+                continue
             user.is_active = next_active
             processed_ids.append(user.id)
 
@@ -564,7 +678,7 @@ async def admin_bulk_user_action(
     return AdminBulkUserActionResponse(
         action=action,
         processed_count=len(processed_ids),
-        skipped_count=len(payload.user_ids) - len(found_ids),
+        skipped_count=len(payload.user_ids) - len(processed_ids),
         user_ids=processed_ids,
     )
 
@@ -641,8 +755,23 @@ async def admin_operations_overview(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_admin_user),
 ) -> AdminOperationsOverviewResponse:
-    users = list((await db.execute(select(User).where(User.role == UserRole.USER))).scalars().all())
-    holdings = list((await db.execute(select(PortfolioHolding))).scalars().all())
+    users = list(
+        (
+            await db.execute(
+                select(User).where(User.role == UserRole.USER, User.is_archived.is_(False))
+            )
+        ).scalars().all()
+    )
+    visible_user_ids = {user.id for user in users}
+    holdings = list(
+        (
+            await db.execute(
+                select(PortfolioHolding).where(PortfolioHolding.user_id.in_(visible_user_ids))
+                if visible_user_ids
+                else select(PortfolioHolding).where(false())
+            )
+        ).scalars().all()
+    )
     auth_attempts = list(
         (await db.execute(select(AuthAttempt).order_by(AuthAttempt.created_at.desc()).limit(200))).scalars().all()
     )
@@ -702,6 +831,7 @@ async def admin_operations_overview(
                 full_name=user.full_name,
                 fixed_user_id=user.fixed_user_id,
                 is_active=user.is_active,
+                is_archived=user.is_archived,
                 holding_count=sum(1 for holding in holdings if holding.user_id == user.id),
                 last_holding_at=last_holding_map.get(user.id),
                 last_auth_attempt_at=last_auth_attempt_map.get(user.id),

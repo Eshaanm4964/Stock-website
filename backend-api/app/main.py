@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from jose import jwt
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from app.api.router import api_router
 from app.core.config import get_settings
@@ -19,6 +19,22 @@ from app.utils.bootstrap import ensure_admin_user, ensure_demo_users, ensure_see
 from app.websocket.manager import manager
 
 settings = get_settings()
+
+
+async def ensure_user_archive_columns(conn) -> None:
+    if conn.dialect.name == "sqlite":
+        columns = {
+            row[1]
+            for row in (await conn.execute(text("PRAGMA table_info(users)"))).fetchall()
+        }
+        if "is_archived" not in columns:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN is_archived BOOLEAN NOT NULL DEFAULT 0"))
+        if "archived_at" not in columns:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN archived_at DATETIME"))
+        return
+
+    await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_archived BOOLEAN NOT NULL DEFAULT FALSE"))
+    await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS archived_at TIMESTAMP WITH TIME ZONE"))
 
 
 def _extract_user_id_from_token(token: str) -> str | None:
@@ -83,6 +99,7 @@ async def stock_broadcast() -> None:
 async def lifespan(_: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await ensure_user_archive_columns(conn)
     async with AsyncSessionLocal() as session:
         await ensure_admin_user(session)
         await ensure_demo_users(session)

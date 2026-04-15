@@ -12,6 +12,8 @@ CREATE TABLE users (
     bio TEXT,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     is_demo BOOLEAN NOT NULL DEFAULT FALSE,
+    is_archived BOOLEAN NOT NULL DEFAULT FALSE,
+    archived_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

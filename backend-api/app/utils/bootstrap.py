@@ -19,6 +19,8 @@ async def ensure_admin_user(db: AsyncSession) -> None:
         admin.hashed_password = get_password_hash("Admin@123")
         admin.is_active = True
         admin.is_demo = False
+        admin.is_archived = False
+        admin.archived_at = None
         await db.commit()
         return
     db.add(
@@ -72,6 +74,8 @@ async def ensure_demo_users(db: AsyncSession) -> None:
             user.role = UserRole.USER
             user.is_active = True
             user.is_demo = True
+            user.is_archived = False
+            user.archived_at = None
         else:
             user = User(
                 username=payload["username"],

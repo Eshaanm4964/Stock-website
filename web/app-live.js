@@ -1432,6 +1432,7 @@ function setupAdminManagementButtons() {
   const bulkActivate = document.getElementById("bulkActivateUsersBtn");
   const bulkDisable = document.getElementById("bulkDisableUsersBtn");
   const bulkDelete = document.getElementById("bulkDeleteUsersBtn");
+  const bulkArchive = document.getElementById("bulkArchiveUsersBtn");
 
   if (searchInput) {
     searchInput.value = adminUiState.search;
@@ -1504,7 +1505,13 @@ function setupAdminManagementButtons() {
 
   if (bulkDelete) {
     bulkDelete.addEventListener("click", async () =>
-      runBulkAction("delete", bulkDelete, "Delete all selected users and their portfolio data?")
+      runBulkAction("archive", bulkDelete, "Archive all selected clients? Their data will be kept, but they will be hidden from active views.")
+    );
+  }
+
+  if (bulkArchive) {
+    bulkArchive.addEventListener("click", async () =>
+      runBulkAction("archive", bulkArchive, "Archive all selected clients? Their data will be kept, but they will be hidden from active views.")
     );
   }
 
@@ -1536,13 +1543,40 @@ function setupAdminManagementButtons() {
     button.addEventListener("click", async () => {
       const userId = button.dataset.deleteUser;
       const userName = button.dataset.userName || "this user";
-      const confirmed = window.confirm(`Delete ${userName} and all linked portfolio data? This cannot be undone.`);
+      const confirmed = window.confirm(`Archive ${userName}? Their login will be disabled and portfolio data will be kept.`);
       if (!confirmed) return;
-      const stopLoading = setButtonLoading(button, "Deleting...");
+      const stopLoading = setButtonLoading(button, "Archiving...");
       try {
         await api(`/admin/users/${userId}`, { method: "DELETE" });
         if (statusMessage) {
-          statusMessage.textContent = `${userName} was deleted successfully.`;
+          statusMessage.textContent = `${userName} was archived successfully.`;
+        }
+        await renderAdminPortal();
+      } catch (error) {
+        if (statusMessage) {
+          statusMessage.textContent = formatError(error);
+        }
+      } finally {
+        stopLoading();
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-archive-user]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const userId = button.dataset.archiveUser;
+      const userName = button.dataset.userName || "this client";
+      const confirmed = window.confirm(`Archive ${userName}? Their login will be disabled and they will be hidden from active admin views, but portfolio data will be kept.`);
+      if (!confirmed) return;
+      const stopLoading = setButtonLoading(button, "Archiving...");
+      try {
+        const archived = await api(`/admin/users/${userId}/archive`, { method: "PATCH" });
+        if (statusMessage) {
+          statusMessage.textContent = `${archived.full_name} was archived. Portfolio records are still stored.`;
+        }
+        if (Number(adminUiState.detailKey) === Number(userId)) {
+          adminUiState.detailType = null;
+          adminUiState.detailKey = null;
         }
         await renderAdminPortal();
       } catch (error) {
@@ -1632,7 +1666,10 @@ function buildAdminClientDetail(user) {
           <h3>${escapeHtml(user.full_name)}</h3>
           <p class="detail-subtitle">${escapeHtml(user.fixed_user_id || user.username || "Client")}</p>
         </div>
-        <span class="badge ${totalPnl >= 0 ? "green" : "red"}">Lifetime ${currency(totalPnl)}</span>
+        <div class="admin-detail-actions">
+          <span class="badge ${totalPnl >= 0 ? "green" : "red"}">Lifetime ${currency(totalPnl)}</span>
+          <button class="secondary-btn compact-btn archive-client-btn" type="button" data-archive-user="${user.user_id}" data-user-name="${escapeHtml(user.full_name)}">Archive Client</button>
+        </div>
       </div>
       <div class="detail-stat-grid admin-simple-stats">
         <article><strong>${holdings.length}</strong><span>Stocks Holding</span></article>
@@ -1946,6 +1983,7 @@ async function renderAdminPortal() {
               <button class="secondary-btn" type="button" data-refresh-admin="true">Refresh</button>
               <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
             </div>
+            <p class="helper-text admin-action-status" id="adminUserActionStatus">Archive keeps client records safe while removing the client from active views.</p>
           </header>
 
           <article class="dashboard-card full-span-card portfolio-ledger-card admin-equity-ledger-card">

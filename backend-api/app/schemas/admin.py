@@ -19,6 +19,8 @@ class AdminUserSummary(BaseModel):
     role: str
     is_active: bool
     is_demo: bool
+    is_archived: bool = False
+    archived_at: datetime | None = None
     created_at: datetime
     portfolio_value: float
     total_holdings: int
@@ -147,6 +149,7 @@ class AdminUserActivityItem(BaseModel):
     full_name: str
     fixed_user_id: str | None
     is_active: bool
+    is_archived: bool = False
     holding_count: int
     last_holding_at: datetime | None
     last_auth_attempt_at: datetime | None

@@ -2990,6 +2990,25 @@ th {
   display: block;
 }
 
+.admin-action-status {
+  flex: 1 1 100%;
+  margin: 0;
+}
+
+.admin-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+.archive-client-btn {
+  border-color: rgba(198, 40, 40, 0.18);
+  color: #8f1d2c;
+  background: #fff8f8;
+}
+
 .admin-detail-mount {
   margin-top: 22px;
 }
