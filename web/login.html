@@ -29,106 +29,107 @@
         <span class="login-link active">Login</span>
       </header>
 
-      <main class="public-main">
-        <section class="public-hero-card public-auth-grid">
-          <div class="public-auth-copy">
-            <p class="eyebrow">Secure Access</p>
-            <div class="public-mini-ticker">
-              <span>Admin review <small>client oversight</small></span>
-              <span>User workspace <small>holdings and performance</small></span>
-              <span>Verified entry <small>OTP-backed access</small></span>
+      <main class="public-main login-split-main">
+        <section class="login-split-card">
+          <aside class="login-visual-panel">
+            <div class="login-visual-brand">
+              <span class="brand-mark brand-logo"><img src="./assets/assetyantra-logo.svg" alt="" /></span>
+              <strong>AssetYantra</strong>
             </div>
-            <h2 id="authHeroTitle">Enter the platform with confidence.</h2>
-            <p id="authHeroText" class="public-lead">
-              Public pages build trust. Login moves users into a portfolio workspace designed for client servicing,
-              faster review calls, and cleaner day-to-day visibility.
-            </p>
-            <div class="public-side-stack">
-              <article class="public-auth-note"><strong>Secure</strong><p>OTP verification flow</p></article>
-              <article class="public-auth-note"><strong>Live</strong><p>Portfolio-linked market data</p></article>
-              <article class="public-auth-note"><strong>Export</strong><p>Admin dashboard downloads</p></article>
-              <article class="public-auth-note demo-credentials-card">
-                <strong>Demo Credentials</strong>
-                <p class="credential-line"><b>Admin</b><code>admin_dev</code><code>Admin@123</code><code>9876543210</code><code>OTP 123456</code></p>
-                <p class="credential-line"><b>User</b><code>CLIENT-1001</code><code>User@123</code><code>9123456780</code><code>OTP 123456</code></p>
+            <div class="login-finance-art" aria-hidden="true">
+              <article class="float-card balance-card">
+                <span class="mini-icon">₹</span>
+                <small>Current Value</small>
+                <strong>₹3,29,477</strong>
+              </article>
+              <article class="float-card donut-card">
+                <div class="donut-ring"><span>34%</span></div>
+                <small>Equity</small>
+              </article>
+              <article class="float-card transaction-card">
+                <button type="button">+</button>
+                <strong>New deal</strong>
+                <small>add stock position</small>
               </article>
             </div>
-          </div>
-          <div class="auth-workspace-shell">
+            <div class="login-visual-copy">
+              <p class="eyebrow" id="authAsideEyebrow">Admin View</p>
+              <h2 id="authHeroTitle">Login as admin.</h2>
+              <p id="authHeroText">Review clients, portfolio performance, and export-ready dashboards.</p>
+              <div class="login-slider-dots" aria-hidden="true"><span></span><span></span><span class="active"></span></div>
+            </div>
+            <div class="login-hidden-dynamic" aria-hidden="true">
+              <article id="authDynamicCard">
+                <h3 id="authAsideTitle">Control client portfolios and exports.</h3>
+                <div id="authAsideMetrics"></div>
+              </article>
+              <article id="authDynamicListCard">
+                <p id="authAsideListEyebrow">Admin Tools</p>
+                <ul id="authAsideList"></ul>
+              </article>
+            </div>
+          </aside>
+
+          <section class="login-form-panel">
             <div class="login-switcher auth-switcher">
               <button class="role-toggle active" data-role-tab="admin">Login as Admin</button>
               <button class="role-toggle" data-role-tab="user">Login as User</button>
               <button class="role-toggle" data-role-tab="register">Register User</button>
             </div>
 
-            <section class="auth-showcase auth-showcase-premium">
-              <div class="auth-stage auth-stage-card">
-                <form id="adminForm" class="feature-card auth-card auth-form-card" novalidate>
-                  <p class="eyebrow">Admin Login</p>
-                  <h2>Developer / admin access</h2>
-                  <label><span>Username</span><input name="username" type="text" placeholder="Enter admin username" autocomplete="username" required /></label>
-                  <label><span>Password</span><input name="password" type="password" placeholder="Enter password" autocomplete="current-password" required /></label>
-                  <label><span>Phone Number</span><input name="phone" type="tel" placeholder="Enter registered number" autocomplete="tel" required /></label>
-                  <div class="split-row">
-                    <label><span>OTP</span><input name="otp" type="text" required /></label>
-                    <button class="secondary-btn" type="button" data-send-otp="admin">Send OTP</button>
-                  </div>
-                  <p class="helper-text" id="adminOtpHint">OTP status will appear here after request.</p>
-                  <p class="error-text" id="adminError"></p>
-                  <button class="primary-btn" type="submit">Open Admin Dashboard</button>
-                </form>
+            <div class="login-form-shell auth-stage-card">
+              <form id="adminForm" class="feature-card auth-card auth-form-card" novalidate>
+                <p class="eyebrow">Secure Access</p>
+                <h2>Welcome back!</h2>
+                <p class="form-subtitle">Enter admin credentials and OTP to manage client portfolios.</p>
+                <label><span>Username</span><input name="username" type="text" placeholder="admin username" autocomplete="username" required /></label>
+                <label><span>Password</span><input name="password" type="password" placeholder="password" autocomplete="current-password" required /></label>
+                <label><span>Phone Number</span><input name="phone" type="tel" placeholder="registered phone number" autocomplete="tel" required /></label>
+                <div class="split-row">
+                  <label><span>OTP</span><input name="otp" type="text" placeholder="6 digit code" required /></label>
+                  <button class="secondary-btn" type="button" data-send-otp="admin">Send OTP</button>
+                </div>
+                <p class="helper-text" id="adminOtpHint">OTP status will appear here after request.</p>
+                <p class="error-text" id="adminError"></p>
+                <button class="primary-btn" type="submit">Login</button>
+              </form>
 
-                <form id="userForm" class="feature-card auth-card auth-form-card hidden" novalidate>
-                  <p class="eyebrow">User Login</p>
-                  <h2>Client access</h2>
-                  <label><span>Fixed User ID</span><input name="userId" type="text" placeholder="Enter client ID" autocomplete="username" required /></label>
-                  <label><span>Password</span><input name="password" type="password" placeholder="Enter password" autocomplete="current-password" required /></label>
-                  <label><span>Phone Number</span><input name="phone" type="tel" placeholder="Enter registered number" autocomplete="tel" required /></label>
-                  <div class="split-row">
-                    <label><span>Verification Code</span><input name="otp" type="text" required /></label>
-                    <button class="secondary-btn" type="button" data-send-otp="user">Send Code</button>
-                  </div>
-                  <p class="helper-text" id="userOtpHint">Verification status will appear here after request.</p>
-                  <p class="error-text" id="userError"></p>
-                  <button class="primary-btn" type="submit">Open User Dashboard</button>
-                </form>
+              <form id="userForm" class="feature-card auth-card auth-form-card hidden" novalidate>
+                <p class="eyebrow">Client Workspace</p>
+                <h2>Welcome back!</h2>
+                <p class="form-subtitle">Enter your client ID, password, phone number and OTP.</p>
+                <label><span>Fixed User ID</span><input name="userId" type="text" placeholder="CLIENT-1001" autocomplete="username" required /></label>
+                <label><span>Password</span><input name="password" type="password" placeholder="password" autocomplete="current-password" required /></label>
+                <label><span>Phone Number</span><input name="phone" type="tel" placeholder="registered phone number" autocomplete="tel" required /></label>
+                <div class="split-row">
+                  <label><span>Verification Code</span><input name="otp" type="text" placeholder="6 digit code" required /></label>
+                  <button class="secondary-btn" type="button" data-send-otp="user">Send Code</button>
+                </div>
+                <p class="helper-text" id="userOtpHint">Verification status will appear here after request.</p>
+                <p class="error-text" id="userError"></p>
+                <button class="primary-btn" type="submit">Login</button>
+              </form>
 
-                <form id="registerForm" class="feature-card auth-card auth-form-card hidden" novalidate>
-                  <p class="eyebrow">New User</p>
-                  <h2>Create a secure client account</h2>
-                  <label><span>Full Name</span><input name="full_name" type="text" placeholder="Enter full name" autocomplete="name" required /></label>
-                  <label><span>Email</span><input name="email" type="email" placeholder="Enter email address" autocomplete="email" required /></label>
-                  <label><span>Phone Number</span><input name="phone_number" type="tel" placeholder="Enter phone number" autocomplete="tel" required /></label>
-                  <label><span>Password</span><input name="password" type="password" placeholder="Create password" autocomplete="new-password" required /></label>
-                  <p class="helper-text" id="registerHint">A fixed client ID will be generated and stored in the database.</p>
-                  <p class="error-text" id="registerError"></p>
-                  <button class="primary-btn" type="submit">Create User Account</button>
-                </form>
-              </div>
+              <form id="registerForm" class="feature-card auth-card auth-form-card hidden" novalidate>
+                <p class="eyebrow">New Client</p>
+                <h2>Create account</h2>
+                <p class="form-subtitle">Register a client profile and generate a fixed client ID.</p>
+                <label><span>Full Name</span><input name="full_name" type="text" placeholder="full name" autocomplete="name" required /></label>
+                <label><span>Email</span><input name="email" type="email" placeholder="email address" autocomplete="email" required /></label>
+                <label><span>Phone Number</span><input name="phone_number" type="tel" placeholder="phone number" autocomplete="tel" required /></label>
+                <label><span>Password</span><input name="password" type="password" placeholder="create password" autocomplete="new-password" required /></label>
+                <p class="helper-text" id="registerHint">A fixed client ID will be generated and stored in the database.</p>
+                <p class="error-text" id="registerError"></p>
+                <button class="primary-btn" type="submit">Create Account</button>
+              </form>
+            </div>
 
-              <aside class="auth-aside auth-side-stack">
-                <article class="auth-aside-card auth-gradient-card" id="authDynamicCard">
-                  <p class="eyebrow" id="authAsideEyebrow">Platform Snapshot</p>
-                  <h3 id="authAsideTitle">Everything important, in one place.</h3>
-                  <div class="mini-metrics" id="authAsideMetrics">
-                    <div><strong>Admin</strong><span>Client oversight</span></div>
-                    <div><strong>User</strong><span>Portfolio tracking</span></div>
-                    <div><strong>AI</strong><span>Finance support</span></div>
-                  </div>
-                </article>
-
-                <article class="auth-aside-card" id="authDynamicListCard">
-                  <p class="eyebrow" id="authAsideListEyebrow">What You Get</p>
-                  <ul class="clean-list" id="authAsideList">
-                    <li>Secure login with OTP verification</li>
-                    <li>Persistent portfolio records</li>
-                    <li>Admin dashboard exports</li>
-                    <li>Finance-only AI assistant</li>
-                  </ul>
-                </article>
-              </aside>
-            </section>
-          </div>
+            <div class="login-demo-strip">
+              <strong>Demo credentials</strong>
+              <span>Admin: <code>admin_dev</code> / <code>Admin@123</code> / <code>9876543210</code></span>
+              <span>User: <code>CLIENT-1001</code> / <code>User@123</code> / <code>9123456780</code></span>
+            </div>
+          </section>
         </section>
       </main>
 
