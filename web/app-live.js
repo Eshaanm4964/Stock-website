@@ -1252,23 +1252,35 @@ async function setupHomeLiveTicker() {
   const mount = document.getElementById("homeLiveTicker");
   if (!mount) return;
 
-  const fallbackFeed = HOME_TICKER_SYMBOLS.map((symbol) => HOME_TICKER_FALLBACK[symbol]);
-  const feed = await api(`/stocks/feed?symbols=${encodeURIComponent(HOME_TICKER_SYMBOLS.join(","))}`).catch(() => fallbackFeed);
-  const quotes = Array.isArray(feed) && feed.length ? feed : fallbackFeed;
-  const tickerItems = quotes
-    .map((quote) => {
-    const change = Number(quote.change_percent || 0);
-      const symbol = quote.symbol === "NIFTY50" ? "NIFTY 50" : quote.symbol;
-      return `
-        <article class="home-ticker-item ${change >= 0 ? "is-up" : "is-down"}">
-          <span class="ticker-dot"></span>
-          <strong>${escapeHtml(symbol)} <em>${currency(quote.price)}</em></strong>
-          <small>${percent(change)} ${quote.is_fallback ? "Backup" : "Live"}</small>
-        </article>
+  const renderHomeTicker = async () => {
+    const fallbackFeed = HOME_TICKER_SYMBOLS.map((symbol) => HOME_TICKER_FALLBACK[symbol]);
+    const feed = await api(`/stocks/feed?symbols=${encodeURIComponent(HOME_TICKER_SYMBOLS.join(","))}`).catch(() => fallbackFeed);
+    const quotes = Array.isArray(feed) && feed.length ? feed : fallbackFeed;
+    const latestFetch = quotes.find((quote) => quote.fetched_at)?.fetched_at;
+    const tickerItems = quotes
+      .map((quote) => {
+        const change = Number(quote.change_percent || 0);
+        const symbol = quote.symbol === "NIFTY50" ? "NIFTY 50" : quote.symbol;
+        return `
+          <article class="home-ticker-item ${change >= 0 ? "is-up" : "is-down"}">
+            <span class="ticker-dot"></span>
+            <strong>${escapeHtml(symbol)} <em>${currency(quote.price)}</em></strong>
+            <small>${percent(change)} ${quote.is_fallback ? "Backup" : "Live"}</small>
+          </article>
+      `;
+      })
+      .join("");
+    mount.innerHTML = `
+      <div class="home-ticker-track">${tickerItems}${tickerItems}</div>
+      <span class="home-live-status">Updated ${latestFetch ? formatDateTime(latestFetch) : new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
     `;
-    })
-    .join("");
-  mount.innerHTML = `<div class="home-ticker-track">${tickerItems}${tickerItems}</div>`;
+  };
+
+  window.clearInterval(liveTickerTimer);
+  await renderHomeTicker();
+  liveTickerTimer = window.setInterval(() => {
+    renderHomeTicker().catch(() => {});
+  }, 30000);
 }
 
 function setPriceClass(node, value) {
@@ -1364,7 +1376,7 @@ function startLiveDashboardPrices() {
   refreshVisibleDashboardPrices().catch(() => {});
   liveDashboardPriceTimer = window.setInterval(() => {
     refreshVisibleDashboardPrices().catch(() => {});
-  }, 60000);
+  }, 20000);
 }
 
 function stopLiveDashboardPrices() {
@@ -2029,6 +2041,7 @@ async function renderAdminPortal() {
               <p class="eyebrow">Admin Portfolio Dashboard</p>
               <h2>Clients and stock positions</h2>
               <p class="detail-subtitle">Click a user for full portfolio. Click a stock to see all clients holding it.</p>
+              <p class="live-price-status" data-live-price-status>Live prices updating...</p>
             </div>
             <div class="user-topbar-actions">
               <input class="user-search" id="adminUserSearch" type="text" placeholder="Search user or client ID" />
@@ -2265,6 +2278,7 @@ async function renderUserPortal() {
             <p class="eyebrow">Welcome Back</p>
             <h2>${profile.full_name}</h2>
             <p class="detail-subtitle">${profile.fixed_user_id || profile.username} | ${profile.phone_number || "Client access"}</p>
+            <p class="live-price-status" data-live-price-status>Live prices updating...</p>
           </div>
           <div class="user-topbar-actions">
             <input class="user-search" id="userPortfolioSearch" type="text" placeholder="Search holdings or sectors" />

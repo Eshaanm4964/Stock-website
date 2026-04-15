@@ -33,7 +33,7 @@ class Settings(BaseSettings):
         default="http://localhost:5500,http://127.0.0.1:5500,http://localhost:8000,http://127.0.0.1:8000",
         alias="ALLOWED_ORIGINS",
     )
-    cache_ttl_seconds: int = 30
+    cache_ttl_seconds: int = 10
     alert_poll_interval_seconds: int = 60
     otp_expire_minutes: int = 5
     otp_debug_mode: bool = Field(default=True, alias="OTP_DEBUG_MODE")

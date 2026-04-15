@@ -799,16 +799,26 @@ body.public-page .role-toggle.active {
 }
 
 .home-live-ticker {
+  position: relative;
   width: 100%;
   max-width: none;
   min-height: 58px;
   overflow: hidden;
-  padding: 10px 0;
+  padding: 10px 0 30px;
   border: 1px solid rgba(15, 138, 85, 0.18);
   border-radius: 18px;
   background: #ffffff;
   box-shadow: 0 16px 38px rgba(16, 37, 29, 0.08);
   justify-self: stretch;
+}
+
+.home-live-status {
+  position: absolute;
+  right: 14px;
+  bottom: 7px;
+  color: #0f6f46;
+  font-size: 0.72rem;
+  font-weight: 900;
 }
 
 .home-ticker-track {
