@@ -19,4 +19,4 @@ services:
       - key: ALLOWED_ORIGINS
         value: https://web-ruddy-eight-73.vercel.app
       - key: DATABASE_URL
-        value: sqlite+aiosqlite:///./stock_trader.db
+        sync: false
