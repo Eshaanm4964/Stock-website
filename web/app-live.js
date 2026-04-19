@@ -1227,44 +1227,6 @@ function renderPortalError(target, title, message) {
   revealPortal(target);
 }
 
-function setupHoldingDeleteButtons() {
-  document.querySelectorAll("[data-delete-holding]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const holdingId = button.dataset.deleteHolding;
-      const symbol = button.dataset.symbol || "this stock";
-      const maxQuantity = Number(button.dataset.quantity || 0);
-      const livePrice = Number(button.dataset.livePrice || 0);
-      const quantityInput = window.prompt(`How many shares of ${symbol} do you want to sell?`, String(maxQuantity || 1));
-      if (quantityInput === null) return;
-      const sellQuantity = Number(quantityInput);
-      if (!sellQuantity || sellQuantity <= 0 || sellQuantity > maxQuantity) {
-        alert(`Enter a sell quantity between 1 and ${maxQuantity}.`);
-        return;
-      }
-      const priceInput = window.prompt(`Sell price for ${symbol}`, livePrice ? String(livePrice.toFixed(2)) : "");
-      if (priceInput === null) return;
-      const sellPrice = Number(priceInput);
-      if (!sellPrice || sellPrice <= 0) {
-        alert("Enter a valid sell price.");
-        return;
-      }
-      const stopLoading = setButtonLoading(button, "Selling...");
-      try {
-        await api(`/portfolio/${holdingId}/sell`, {
-          method: "POST",
-          body: JSON.stringify({ quantity: sellQuantity, sell_price: sellPrice })
-        });
-        notifyPortfolioChanged();
-        await renderUserPortal();
-      } catch (error) {
-        alert(formatError(error));
-      } finally {
-        stopLoading();
-      }
-    });
-  });
-}
-
 async function safeAdminUserDashboards(users) {
   const settled = await Promise.allSettled(users.map((user) => api(`/admin/users/${user.user_id}/dashboard?audit=false`)));
   return settled
@@ -1564,7 +1526,7 @@ async function refreshVisibleDashboardPrices() {
     const liveValueCell = row.querySelector("[data-live-value-cell]");
     const pnlCell = row.querySelector("[data-pnl-cell]");
     const returnCell = row.querySelector("[data-return-cell]");
-    const sellButton = row.querySelector("[data-delete-holding], [data-admin-sell-holding]");
+    const sellButton = row.querySelector("[data-admin-sell-holding]");
 
     if (livePriceCell) {
       livePriceCell.textContent = currency(livePrice);
@@ -2886,12 +2848,16 @@ async function renderUserPortal() {
                 <strong class="${unrealisedPnl >= 0 ? "profit" : "loss"}">${currency(unrealisedPnl)} <small>${percent(unrealisedPct)}</small></strong>
               </article>
               <article>
+                <span>Lifetime P&amp;L</span>
+                <strong class="${totalLifetimePnl >= 0 ? "profit" : "loss"}" data-live-total-pnl>${currency(totalLifetimePnl)} <small data-live-total-return>${percent(totalInvested ? (totalLifetimePnl / totalInvested) * 100 : 0)}</small></strong>
+              </article>
+              <article>
                 <span>Today's P&amp;L</span>
                 <strong class="${todayPnl >= 0 ? "profit" : "loss"}">${currency(todayPnl)} <small>${percent(todayPnlPct)}</small></strong>
               </article>
               <article>
                 <span>Realised P&amp;L</span>
-                <strong class="${totalBookedPnl >= 0 ? "profit" : "loss"}">${currency(totalBookedPnl)}</strong>
+                <strong class="${totalBookedPnl >= 0 ? "profit" : "loss"}" data-live-booked-pnl="${Number(totalBookedPnl || 0)}">${currency(totalBookedPnl)}</strong>
               </article>
             </div>
           </article>
@@ -2906,7 +2872,7 @@ async function renderUserPortal() {
             </div>
             <div class="table-wrap">
               <table class="compact-table">
-                <thead><tr><th>Asset</th><th>Qty</th><th>Invested</th><th>Live Value</th><th>P&amp;L</th><th>Action</th></tr></thead>
+                <thead><tr><th>Asset</th><th>Qty</th><th>Invested</th><th>Live Value</th><th>P&amp;L</th></tr></thead>
                 <tbody id="userHoldingsTableBody">
                   ${performance.length
                     ? performance
@@ -2918,13 +2884,12 @@ async function renderUserPortal() {
                               <td><strong class="price-buy">${currency(holding.buy_price * holding.quantity)}</strong><br /><small>Avg ${currency(holding.buy_price)}</small></td>
                               <td><strong class="${holding.profit_loss >= 0 ? "price-up" : "price-down"}" data-live-value-cell>${currency(holding.value)}</strong><br /><small>Live <span data-live-price-cell>${currency(holding.current_price)}</span></small></td>
                               <td><strong class="${holding.profit_loss >= 0 ? "profit" : "loss"}" data-pnl-cell>${currency(holding.profit_loss)}</strong><br /><small data-return-cell>${percent(holding.percent_change)}</small></td>
-                              <td><button class="sell-action-btn" type="button" data-delete-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-quantity="${holding.quantity}" data-live-price="${holding.current_price}">Sell</button></td>
                             </tr>
                           `
                         )
                         .join("")
                     : ""}
-                  <tr id="userHoldingsEmptyRow" ${performance.length ? "hidden" : ""}><td colspan="6"><span class="helper-text">${performance.length ? "No holdings match the active filters." : "No stocks added yet. Use the form to build the portfolio."}</span></td></tr>
+                  <tr id="userHoldingsEmptyRow" ${performance.length ? "hidden" : ""}><td colspan="5"><span class="helper-text">${performance.length ? "No holdings match the active filters." : "No stocks added yet. Use the form to build the portfolio."}</span></td></tr>
                 </tbody>
               </table>
             </div>
@@ -2992,7 +2957,6 @@ async function renderUserPortal() {
     document.getElementById("userPrintBtn").addEventListener("click", () => window.print());
     setupPortfolioForm();
     setupPortfolioSymbolSuggestions();
-    setupHoldingDeleteButtons();
     setupUserPortfolioFilters();
     setupPortalActions();
     startLiveDashboardPrices();

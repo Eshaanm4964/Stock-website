@@ -1628,7 +1628,7 @@ body[data-page="login"] .auth-workspace-shell {
 
 body[data-page="login"] .auth-switcher {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   padding: 7px;
   border-radius: 22px;
 }
@@ -2066,11 +2066,11 @@ body[data-page="login"] .login-split-main {
 }
 
 body[data-page="login"] .login-form-panel .auth-switcher {
-  width: min(100%, 470px);
+  width: min(100%, 380px);
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
-  margin: 0 0 28px;
+  margin: 0 auto 28px;
   padding: 6px;
   border: 1px solid rgba(17, 35, 63, 0.08);
   border-radius: 999px;
@@ -2079,7 +2079,7 @@ body[data-page="login"] .login-form-panel .auth-switcher {
 
 body[data-page="login"] .login-form-panel .role-toggle {
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 10px 16px;
   border: 0;
   border-radius: 999px;
   background: transparent;
