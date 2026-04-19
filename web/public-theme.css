@@ -65,8 +65,7 @@ body.public-page .legal-link {
 }
 
 body.public-page a[href*="products.html"],
-body.public-page a[href*="trust-safety.html"],
-body.public-page a[href*="legal.html"] {
+body.public-page a[href*="trust-safety.html"] {
   display: none !important;
 }
 
