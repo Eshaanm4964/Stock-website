@@ -594,14 +594,14 @@ function buildUserSymbolCatalog(performance = [], recommendationFeed = []) {
   recommendationFeed.forEach((quote) => {
     pushCandidate(
       quote.symbol,
-      quote.short_name || "Suggested stock",
-      quote.short_name || "Suggested stock",
+      quote.short_name || quote.symbol,
+      quote.short_name || quote.symbol,
       quote.price,
       quote.short_name || quote.symbol
     );
   });
   USER_RECOMMENDATION_SYMBOLS.forEach((symbol) => {
-    pushCandidate(symbol, "Suggested stock", "Suggested stock", 0, symbol);
+    pushCandidate(symbol, symbol, "NSE", 0, symbol);
   });
 
   return [...map.values()];
@@ -697,7 +697,7 @@ function buildUserRecommendationsMarkup(feed, performance) {
         <button class="recommendation-card" type="button" data-recommend-symbol="${escapeHtml(quote.symbol)}" data-recommend-price="${Number(quote.price || 0).toFixed(2)}">
           <div>
             <strong>${escapeHtml(quote.symbol)}</strong>
-            <small>${escapeHtml(quote.short_name || "Suggested stock")}</small>
+            <small>${escapeHtml(quote.short_name || quote.symbol)}</small>
           </div>
           <div class="recommendation-metrics">
             <span>${currency(quote.price)}</span>
