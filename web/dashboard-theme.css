@@ -100,7 +100,7 @@ body.dashboard-page {
   left: 0;
   right: 0;
   z-index: 40;
-  max-height: 250px;
+  max-height: 220px;
   overflow-y: auto;
   margin-top: 0;
   padding: 8px;
@@ -120,7 +120,8 @@ body.dashboard-page {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  min-height: 68px;
+  min-height: 58px;
+  padding: 12px 14px;
   background: linear-gradient(135deg, #ffffff 0%, #f7fbf9 100%);
 }
 
@@ -132,6 +133,7 @@ body.dashboard-page {
 
 .symbol-suggestion-main strong {
   letter-spacing: 0.06em;
+  font-size: 0.95rem;
 }
 
 .symbol-suggestion-main small,
@@ -141,9 +143,14 @@ body.dashboard-page {
   white-space: nowrap;
 }
 
+.symbol-suggestion-main small {
+  max-width: 190px;
+  color: #58667e;
+}
+
 .symbol-suggestion-meta {
   justify-items: end;
-  min-width: 96px;
+  min-width: 76px;
 }
 
 .symbol-suggestion-meta strong {

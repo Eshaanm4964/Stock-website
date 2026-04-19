@@ -908,12 +908,9 @@ function setupPortfolioSymbolSuggestions() {
               <button class="symbol-suggestion-btn" type="button" data-symbol-suggestion="${escapeHtml(candidate.symbol)}" data-symbol-price="${Number(candidate.price || 0).toFixed(2)}">
                 <span class="symbol-suggestion-main">
                   <strong>${escapeHtml(candidate.symbol)}</strong>
-                  <small>${escapeHtml(candidate.name || candidate.label || "NSE equity")}</small>
+                  <small>${escapeHtml(candidate.name || candidate.label || "")}</small>
                 </span>
-                <span class="symbol-suggestion-meta">
-                  <small>${escapeHtml(candidate.source === "market_search" ? "Active market match" : candidate.sector || "NSE equity")}</small>
-                  <strong>${Number(candidate.price || 0) > 0 ? currency(candidate.price) : "Check live"}</strong>
-                </span>
+                ${Number(candidate.price || 0) > 0 ? `<span class="symbol-suggestion-meta"><strong>${currency(candidate.price)}</strong></span>` : ""}
               </button>
             `
           )
@@ -2193,12 +2190,9 @@ function setupAdminDealSymbolSuggestions() {
             <button class="symbol-suggestion-btn" type="button" data-symbol-suggestion="${escapeHtml(candidate.symbol)}" data-symbol-price="${Number(candidate.price || 0).toFixed(2)}">
               <span class="symbol-suggestion-main">
                 <strong>${escapeHtml(candidate.symbol)}</strong>
-                <small>${escapeHtml(candidate.name || candidate.label || "Market equity")}</small>
+                <small>${escapeHtml(candidate.name || candidate.label || "")}</small>
               </span>
-              <span class="symbol-suggestion-meta">
-                <small>${escapeHtml(candidate.source === "market_search" ? "Market match" : candidate.sector || "Equity")}</small>
-                <strong>${Number(candidate.price || 0) > 0 ? currency(candidate.price) : "Load price"}</strong>
-              </span>
+              ${Number(candidate.price || 0) > 0 ? `<span class="symbol-suggestion-meta"><strong>${currency(candidate.price)}</strong></span>` : ""}
             </button>
           `)
           .join("")
