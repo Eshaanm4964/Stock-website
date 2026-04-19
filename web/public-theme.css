@@ -45,8 +45,8 @@ body.public-page .brand small {
 }
 
 body.public-page .site-nav {
-  gap: 8px;
-  font-size: 0.93rem;
+  gap: 6px;
+  font-size: 0.9rem;
 }
 
 body.public-page .site-nav a,
@@ -61,7 +61,7 @@ body.public-page .secondary-btn {
 body.public-page .site-nav a,
 body.public-page .login-link,
 body.public-page .legal-link {
-  padding: 10px 14px;
+  padding: 10px 12px;
 }
 
 body.public-page a[href*="products.html"],
