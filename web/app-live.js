@@ -1564,7 +1564,7 @@ async function refreshVisibleDashboardPrices() {
     const liveValueCell = row.querySelector("[data-live-value-cell]");
     const pnlCell = row.querySelector("[data-pnl-cell]");
     const returnCell = row.querySelector("[data-return-cell]");
-    const sellButton = row.querySelector("[data-delete-holding]");
+    const sellButton = row.querySelector("[data-delete-holding], [data-admin-sell-holding]");
 
     if (livePriceCell) {
       livePriceCell.textContent = currency(livePrice);
@@ -2005,7 +2005,7 @@ function buildAdminClientDetail(user) {
       </div>
       <div class="table-wrap admin-position-table-wrap">
         <table class="compact-table admin-position-table">
-          <thead><tr><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Buy Value</th><th>Live Price</th><th>Live Value</th><th>Profit / Loss</th><th>Return</th></tr></thead>
+          <thead><tr><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Buy Value</th><th>Live Price</th><th>Live Value</th><th>Profit / Loss</th><th>Return</th><th>Action</th></tr></thead>
           <tbody>
             ${holdings.length
               ? holdings.map((holding) => {
@@ -2023,10 +2023,11 @@ function buildAdminClientDetail(user) {
                       <td><strong class="${pnl >= 0 ? "price-up" : "price-down"}" data-live-value-cell>${currency(liveValue)}</strong></td>
                       <td class="${pnl >= 0 ? "profit" : "loss"}" data-pnl-cell>${currency(pnl)}</td>
                       <td class="${returnPct >= 0 ? "profit" : "loss"}" data-return-cell>${percent(returnPct)}</td>
+                      <td><button class="sell-action-btn compact-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${escapeHtml(holding.symbol)}" data-quantity="${Number(holding.quantity || 0)}" data-live-price="${Number(holding.current_price || 0)}">Sell</button></td>
                     </tr>
                   `;
                 }).join("")
-              : `<tr><td colspan="8"><span class="helper-text">This client has not added stocks yet.</span></td></tr>`}
+              : `<tr><td colspan="9"><span class="helper-text">This client has not added stocks yet.</span></td></tr>`}
           </tbody>
         </table>
       </div>
@@ -2073,6 +2074,265 @@ function setupAdminDealForm() {
     } finally {
       stopLoading();
     }
+  });
+}
+
+function setupAdminCustomerForm() {
+  const form = document.getElementById("adminCustomerForm");
+  const statusMessage = document.getElementById("adminCustomerStatus");
+  if (!form) return;
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const submitButton = form.querySelector('button[type="submit"]');
+    const data = new FormData(form);
+    const payload = {
+      full_name: String(data.get("full_name") || "").trim(),
+      email: String(data.get("email") || "").trim(),
+      phone_number: String(data.get("phone_number") || "").trim(),
+      password: String(data.get("password") || "")
+    };
+    if (!payload.full_name || !payload.email || !payload.phone_number || payload.password.length < 8) {
+      if (statusMessage) statusMessage.textContent = "Enter name, email, phone, and a password with at least 8 characters.";
+      return;
+    }
+    const stopLoading = setButtonLoading(submitButton, "Creating...");
+    try {
+      const created = await api("/admin/users", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+      if (statusMessage) {
+        statusMessage.textContent = `${created.full_name} created. Client ID: ${created.fixed_user_id}. Share this ID for user login.`;
+      }
+      sessionStorage.setItem(
+        "assetyantra_admin_customer_status",
+        `${created.full_name} created. Client ID: ${created.fixed_user_id}. Share this ID for user login.`
+      );
+      form.reset();
+      await renderAdminPortal();
+    } catch (error) {
+      if (statusMessage) statusMessage.textContent = formatError(error);
+    } finally {
+      stopLoading();
+    }
+  });
+}
+
+function setupAdminDealSymbolSuggestions() {
+  const form = document.getElementById("adminDealForm");
+  const input = form?.querySelector('[name="symbol"]');
+  const suggestions = document.getElementById("adminDealSymbolSuggestions");
+  const buyPriceInput = form?.querySelector('[name="buyPrice"]');
+  const exchangeInput = form?.querySelector('[name="exchange"]');
+  const statusMessage = document.getElementById("adminDealStatus");
+  if (!form || !input || !suggestions) return;
+
+  let marketSearchTimer;
+  let quoteLookupTimer;
+  let activeSuggestionIndex = -1;
+  let remoteSearchResults = [];
+
+  const safeExchange = () => String(exchangeInput?.value || "NSE").trim().toUpperCase() || "NSE";
+
+  const setDealStatus = (message) => {
+    if (statusMessage) statusMessage.textContent = message;
+  };
+
+  const fetchAndApplyQuote = async (symbol) => {
+    const safeSymbol = String(symbol || "").trim().toUpperCase();
+    if (safeSymbol.length < 2) return;
+    try {
+      setDealStatus(`Fetching live price for ${safeSymbol}...`);
+      const quote = await api(`/stocks/${encodeURIComponent(safeSymbol)}?exchange=${encodeURIComponent(safeExchange())}`);
+      const price = Number(quote?.quote?.price ?? quote?.price ?? 0);
+      if (price > 0 && buyPriceInput) {
+        buyPriceInput.value = price.toFixed(2);
+        setDealStatus(`${safeSymbol} live price loaded: ${currency(price)}.`);
+      }
+    } catch {
+      setDealStatus("Live price unavailable right now. Enter buy price manually.");
+    }
+  };
+
+  const searchMarketSymbols = async (query) => {
+    const safeQuery = String(query || "").trim();
+    if (safeQuery.length < 3) {
+      remoteSearchResults = [];
+      renderSuggestions();
+      return;
+    }
+    const cacheKey = `admin:${safeExchange()}:${safeQuery.toLowerCase()}`;
+    if (marketSymbolSearchCache.has(cacheKey)) {
+      remoteSearchResults = marketSymbolSearchCache.get(cacheKey);
+      renderSuggestions();
+      return;
+    }
+    try {
+      const results = await api(`/stocks/search?q=${encodeURIComponent(safeQuery)}&exchange=${encodeURIComponent(safeExchange())}&limit=15`);
+      remoteSearchResults = Array.isArray(results)
+        ? results.map((item) => ({
+            symbol: item.symbol,
+            label: item.name || item.symbol,
+            name: item.name || item.symbol,
+            sector: item.sector || item.exchange || `${safeExchange()} equity`,
+            price: Number(item.price || 0),
+            source: item.source || "market_search"
+          }))
+        : [];
+      marketSymbolSearchCache.set(cacheKey, remoteSearchResults);
+      renderSuggestions();
+    } catch {
+      remoteSearchResults = [];
+      renderSuggestions();
+    }
+  };
+
+  const scheduleMarketSearch = () => {
+    window.clearTimeout(marketSearchTimer);
+    marketSearchTimer = window.setTimeout(() => searchMarketSymbols(input.value), 240);
+  };
+
+  const scheduleQuoteLookup = () => {
+    window.clearTimeout(quoteLookupTimer);
+    quoteLookupTimer = window.setTimeout(() => fetchAndApplyQuote(input.value), 500);
+  };
+
+  const getSuggestionButtons = () => [...suggestions.querySelectorAll("[data-symbol-suggestion]")];
+
+  const setActiveSuggestion = (index) => {
+    const buttons = getSuggestionButtons();
+    if (!buttons.length) {
+      activeSuggestionIndex = -1;
+      return;
+    }
+    activeSuggestionIndex = (index + buttons.length) % buttons.length;
+    buttons.forEach((button, buttonIndex) => {
+      button.classList.toggle("is-active", buttonIndex === activeSuggestionIndex);
+      button.setAttribute("aria-selected", buttonIndex === activeSuggestionIndex ? "true" : "false");
+    });
+  };
+
+  const selectSymbol = (symbol, price = 0) => {
+    input.value = String(symbol || "").toUpperCase();
+    if (Number(price || 0) > 0 && buyPriceInput) buyPriceInput.value = Number(price).toFixed(2);
+    suggestions.innerHTML = "";
+    activeSuggestionIndex = -1;
+    fetchAndApplyQuote(input.value);
+    buyPriceInput?.focus();
+  };
+
+  function renderSuggestions() {
+    const localCandidates = mergeSymbolCandidates(userDashboardCache.symbolCatalog, HOME_TICKER_SYMBOLS.map((symbol) => ({ symbol, name: symbol, sector: "NSE equity" })));
+    const matches = getClosestSymbolMatches(input.value, mergeSymbolCandidates(remoteSearchResults, localCandidates), 8);
+    suggestions.innerHTML = matches.length
+      ? matches
+          .map((candidate) => `
+            <button class="symbol-suggestion-btn" type="button" data-symbol-suggestion="${escapeHtml(candidate.symbol)}" data-symbol-price="${Number(candidate.price || 0).toFixed(2)}">
+              <span class="symbol-suggestion-main">
+                <strong>${escapeHtml(candidate.symbol)}</strong>
+                <small>${escapeHtml(candidate.name || candidate.label || "Market equity")}</small>
+              </span>
+              <span class="symbol-suggestion-meta">
+                <small>${escapeHtml(candidate.source === "market_search" ? "Market match" : candidate.sector || "Equity")}</small>
+                <strong>${Number(candidate.price || 0) > 0 ? currency(candidate.price) : "Load price"}</strong>
+              </span>
+            </button>
+          `)
+          .join("")
+      : `<span class="search-empty">Type at least 3 letters, for example ITC, Tata, Reliance, bank.</span>`;
+  }
+
+  input.setAttribute("placeholder", "Type 3 letters of stock or company");
+  input.setAttribute("role", "combobox");
+  input.setAttribute("aria-autocomplete", "list");
+
+  input.addEventListener("focus", renderSuggestions);
+  input.addEventListener("input", () => {
+    input.value = input.value.toUpperCase();
+    renderSuggestions();
+    scheduleMarketSearch();
+    scheduleQuoteLookup();
+  });
+  input.addEventListener("keydown", (event) => {
+    const buttons = getSuggestionButtons();
+    if (!buttons.length) return;
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveSuggestion(activeSuggestionIndex + 1);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveSuggestion(activeSuggestionIndex - 1);
+    } else if (event.key === "Enter" && activeSuggestionIndex >= 0) {
+      event.preventDefault();
+      const button = buttons[activeSuggestionIndex];
+      selectSymbol(button.dataset.symbolSuggestion, Number(button.dataset.symbolPrice || 0));
+    } else if (event.key === "Escape") {
+      suggestions.innerHTML = "";
+      activeSuggestionIndex = -1;
+    }
+  });
+
+  suggestions.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-symbol-suggestion]");
+    if (!button) return;
+    selectSymbol(button.dataset.symbolSuggestion, Number(button.dataset.symbolPrice || 0));
+  });
+
+  exchangeInput?.addEventListener("change", () => {
+    suggestions.innerHTML = "";
+    scheduleMarketSearch();
+    scheduleQuoteLookup();
+  });
+
+  document.addEventListener("click", (event) => {
+    if (event.target === input || suggestions.contains(event.target)) return;
+    suggestions.innerHTML = "";
+    activeSuggestionIndex = -1;
+  });
+}
+
+function setupAdminSellButtons() {
+  const statusMessage = document.getElementById("adminUserActionStatus");
+  document.querySelectorAll("[data-admin-sell-holding]").forEach((button) => {
+    if (button.dataset.adminSellBound === "true") return;
+    button.dataset.adminSellBound = "true";
+    button.addEventListener("click", async () => {
+      const holdingId = button.dataset.adminSellHolding;
+      const symbol = button.dataset.symbol || "this stock";
+      const maxQuantity = Number(button.dataset.quantity || 0);
+      const livePrice = Number(button.dataset.livePrice || 0);
+      const quantityInput = window.prompt(`How many shares of ${symbol} should admin sell?`, String(maxQuantity || 1));
+      if (quantityInput === null) return;
+      const sellQuantity = Number(quantityInput);
+      if (!sellQuantity || sellQuantity <= 0 || sellQuantity > maxQuantity) {
+        alert(`Enter a sell quantity between 1 and ${maxQuantity}.`);
+        return;
+      }
+      const priceInput = window.prompt(`Sell price for ${symbol}`, livePrice ? String(livePrice.toFixed(2)) : "");
+      if (priceInput === null) return;
+      const sellPrice = Number(priceInput);
+      if (!sellPrice || sellPrice <= 0) {
+        alert("Enter a valid sell price.");
+        return;
+      }
+      const stopLoading = setButtonLoading(button, "Selling...");
+      try {
+        const sale = await api(`/admin/holdings/${encodeURIComponent(holdingId)}/sell`, {
+          method: "POST",
+          body: JSON.stringify({ quantity: sellQuantity, sell_price: sellPrice })
+        });
+        if (statusMessage) {
+          statusMessage.textContent = `${symbol} sold. Booked P/L: ${currency(sale.profit_loss)}.`;
+        }
+        notifyPortfolioChanged();
+        await renderAdminPortal();
+      } catch (error) {
+        if (statusMessage) statusMessage.textContent = formatError(error);
+      } finally {
+        stopLoading();
+      }
+    });
   });
 }
 
@@ -2150,6 +2410,7 @@ function renderAdminSelectedDetail(userDashboards, allHoldings, shouldScroll = f
   }
 
   detailMount.classList.remove("hidden");
+  setupAdminSellButtons();
   if (shouldScroll) detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -2290,16 +2551,17 @@ async function renderAdminPortal() {
         return { symbol, holdings, invested, value, pnl };
       })
       .sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl));
-    const dealSymbolOptions = Array.from(new Set([...symbols, ...HOME_TICKER_SYMBOLS])).sort();
-
+    const adminCustomerStatus =
+      sessionStorage.getItem("assetyantra_admin_customer_status") ||
+      "Client ID will be generated like ABC123 and shown here.";
     mount.innerHTML = `
       <section class="user-shell admin-shell admin-simple-shell no-sidebar-shell">
         <div class="user-shell-main admin-simple-main">
           <header class="user-topbar admin-simple-topbar">
             <div>
               <p class="eyebrow">Admin Portfolio Dashboard</p>
-              <h2>Clients and stock positions</h2>
-              <p class="detail-subtitle">Click a user for full portfolio. Click a stock to see all clients holding it.</p>
+              <h2>Admin Dashboard</h2>
+              <p class="detail-subtitle">Manage customers, deals, portfolio views, and booked sell records.</p>
               <p class="live-price-status" data-live-price-status>Live prices updating...</p>
             </div>
             <div class="user-topbar-actions">
@@ -2339,13 +2601,31 @@ async function renderAdminPortal() {
             </div>
           </article>
 
+          <article class="dashboard-card full-span-card admin-deal-card admin-customer-card" id="adminCustomerCard">
+            <div class="panel-head">
+              <div>
+                <h3>Add Customer</h3>
+                <p class="detail-subtitle">Create customer access from admin only. The generated client ID is used for user login.</p>
+              </div>
+              <span class="badge green">Admin Only</span>
+            </div>
+            <form id="adminCustomerForm" class="portfolio-form admin-customer-form">
+              <label><span>Customer Name</span><input name="full_name" type="text" placeholder="Customer full name" autocomplete="name" required /></label>
+              <label><span>Email</span><input name="email" type="email" placeholder="client@email.com" autocomplete="email" required /></label>
+              <label><span>Phone</span><input name="phone_number" type="tel" placeholder="Phone number" autocomplete="tel" required /></label>
+              <label><span>Password</span><input name="password" type="password" placeholder="Minimum 8 characters" autocomplete="new-password" required /></label>
+              <button class="primary-btn" type="submit">Create Customer</button>
+              <p class="helper-text admin-deal-status" id="adminCustomerStatus">${escapeHtml(adminCustomerStatus)}</p>
+            </form>
+          </article>
+
           <article class="dashboard-card full-span-card admin-deal-card" id="adminDealCard">
             <div class="panel-head">
               <div>
                 <h3>Add Deal</h3>
                 <p class="detail-subtitle">Add a stock position directly to a customer portfolio.</p>
               </div>
-              <span class="badge green">Admin Entry</span>
+              <span class="badge green">Deal Entry</span>
             </div>
             <form id="adminDealForm" class="portfolio-form admin-deal-form">
               <label>
@@ -2359,16 +2639,20 @@ async function renderAdminPortal() {
                     .join("")}
                 </select>
               </label>
-              <label>
-                <span>Stock Symbol</span>
-                <input name="symbol" type="text" list="adminDealSymbols" placeholder="INFY" autocomplete="off" required />
-                <datalist id="adminDealSymbols">
-                  ${dealSymbolOptions.map((symbol) => `<option value="${escapeHtml(symbol)}"></option>`).join("")}
-                </datalist>
+              <label class="portfolio-symbol-wrap">
+                <span>Stock Name / Symbol</span>
+                <input name="symbol" type="text" placeholder="Type 3 letters" autocomplete="off" required />
+                <div id="adminDealSymbolSuggestions" class="symbol-suggestion-list"></div>
               </label>
               <label><span>Quantity</span><input name="quantity" type="number" min="1" step="1" placeholder="100" required /></label>
               <label><span>Buy Price</span><input name="buyPrice" type="number" min="1" step="0.01" placeholder="1500" required /></label>
-              <label><span>Exchange</span><input name="exchange" type="text" value="NSE" required /></label>
+              <label>
+                <span>Exchange</span>
+                <select name="exchange" required>
+                  <option value="NSE" selected>NSE</option>
+                  <option value="BSE">BSE</option>
+                </select>
+              </label>
               <button class="primary-btn" type="submit" ${liveUserDashboards.length ? "" : "disabled"}>Add Deal</button>
               <p class="helper-text admin-deal-status" id="adminDealStatus">${liveUserDashboards.length ? "Choose customer, stock, quantity, and buy price." : "Create a customer first, then add a deal."}</p>
             </form>
@@ -2384,7 +2668,7 @@ async function renderAdminPortal() {
             </div>
             <div class="table-wrap admin-position-table-wrap">
               <table class="compact-table admin-position-table">
-                <thead><tr><th>User</th><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Buy Value</th><th>Live Price</th><th>Live Value</th><th>Lifetime P/L</th><th>Return</th><th>Download</th></tr></thead>
+                <thead><tr><th>User</th><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Buy Value</th><th>Live Price</th><th>Live Value</th><th>Lifetime P/L</th><th>Return</th><th>Actions</th></tr></thead>
                 <tbody>
                   ${filteredPositionHoldings.length
                     ? filteredPositionHoldings.map((holding) => {
@@ -2401,7 +2685,10 @@ async function renderAdminPortal() {
                             <td><strong class="${pnl >= 0 ? "price-up" : "price-down"}" data-live-value-cell>${currency(holding.value)}</strong></td>
                             <td class="${pnl >= 0 ? "profit" : "loss"}" data-pnl-cell>${currency(pnl)}</td>
                             <td class="${returnPct >= 0 ? "profit" : "loss"}" data-return-cell>${percent(returnPct)}</td>
-                            <td><button class="secondary-btn compact-btn" type="button" data-download-user-id="${holding.user_id}">Profile PDF</button></td>
+                            <td class="admin-row-actions">
+                              <button class="sell-action-btn compact-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${escapeHtml(holding.symbol)}" data-quantity="${Number(holding.quantity || 0)}" data-live-price="${Number(holding.current_price || 0)}">Sell</button>
+                              <button class="secondary-btn compact-btn" type="button" data-download-user-id="${holding.user_id}">PDF</button>
+                            </td>
                           </tr>
                         `;
                       }).join("")
@@ -2500,7 +2787,10 @@ async function renderAdminPortal() {
     activeUserId = null;
     setupDownloadButtons(liveUserDashboards);
     setupAdminManagementButtons();
+    setupAdminCustomerForm();
     setupAdminDealForm();
+    setupAdminDealSymbolSuggestions();
+    setupAdminSellButtons();
     setupAdminDrilldowns(liveUserDashboards, allHoldings);
     renderAdminSelectedDetail(liveUserDashboards, allHoldings, false);
     setupPortalActions();
@@ -2748,8 +3038,7 @@ function setupPortfolioForm() {
 function setupLogin() {
   const adminForm = document.getElementById("adminForm");
   const userForm = document.getElementById("userForm");
-  const registerForm = document.getElementById("registerForm");
-  if (!adminForm || !userForm || !registerForm) return;
+  if (!adminForm || !userForm) return;
 
   const toggles = document.querySelectorAll(".role-toggle");
   const adminPortal = document.getElementById("adminPortal");
@@ -2804,24 +3093,7 @@ function setupLogin() {
         "Simple performance tracking"
       ]
     },
-    register: {
-      heroTitle: "Create a new account.",
-      heroText: "Register once, receive a fixed user ID, and start building a tracked portfolio.",
-      eyebrow: "New Account",
-      title: "Create a client profile in minutes.",
-      metrics: [
-        ["Secure", "Stored in the backend DB"],
-        ["ID", "Fixed user ID generated"],
-        ["Ready", "Portfolio can be added after signup"]
-      ],
-      listEyebrow: "Signup Flow",
-      items: [
-        "Full name and contact details",
-        "Password-based secure access",
-        "Backend persistence",
-        "Immediate platform entry"
-      ]
-    }
+    register: null
   };
 
   const updateAside = (role) => {
@@ -2878,7 +3150,6 @@ function setupLogin() {
       toggles.forEach((entry) => entry.classList.toggle("active", entry === toggle));
       adminForm.classList.toggle("hidden", role !== "admin");
       userForm.classList.toggle("hidden", role !== "user");
-      registerForm.classList.toggle("hidden", role !== "register");
       hidePortalMounts();
       hideAuthLoading();
       activeRole = null;
@@ -2921,32 +3192,12 @@ function setupLogin() {
           const response = await api("/auth/request-otp", { method: "POST", body: JSON.stringify(payload), timeout_ms: 60000 });
           document.getElementById("userOtpHint").textContent = response.otp_preview ? `Testing code: ${response.otp_preview}` : response.message;
           document.getElementById("userError").textContent = "";
-        } else {
-          if (!hasRequiredFields(registerForm, ["email", "phone_number", "password"])) {
-            document.getElementById("registerError").textContent = "Fill email, phone number, and password before requesting registration OTP.";
-            return;
-          }
-          const password = String(registerForm.querySelector('[name="password"]').value || "");
-          if (password.length < 8) {
-            document.getElementById("registerError").textContent = "Password must be at least 8 characters.";
-            return;
-          }
-          hidePortalMounts();
-          const payload = {
-            email: String(registerForm.querySelector('[name="email"]').value).trim(),
-            phone_number: String(registerForm.querySelector('[name="phone_number"]').value).trim()
-          };
-          const response = await api("/auth/signup/request-otp", { method: "POST", body: JSON.stringify(payload), timeout_ms: 60000 });
-          document.getElementById("registerOtpHint").textContent = response.otp_preview ? `Testing registration OTP: ${response.otp_preview}` : response.message;
-          document.getElementById("registerError").textContent = "";
         }
       } catch (error) {
         if (button.dataset.sendOtp === "admin") {
           document.getElementById("adminError").textContent = formatError(error);
         } else if (button.dataset.sendOtp === "user") {
           document.getElementById("userError").textContent = formatError(error);
-        } else {
-          document.getElementById("registerError").textContent = formatError(error);
         }
       } finally {
         stopLoading();
@@ -3017,58 +3268,6 @@ function setupLogin() {
       goToDashboard("user");
     } catch (error) {
       document.getElementById("userError").textContent = formatError(error);
-      hidePortalMounts();
-      hideAuthLoading();
-    } finally {
-      stopLoading();
-    }
-  });
-
-  registerForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const submitButton = registerForm.querySelector('button[type="submit"]');
-    const stopLoading = setButtonLoading(submitButton, "Creating Account...");
-    try {
-      if (!hasRequiredFields(registerForm, ["full_name", "email", "phone_number", "password", "otp"])) {
-        document.getElementById("registerError").textContent = "Complete all registration fields and phone OTP before creating the account.";
-        return;
-      }
-      const data = new FormData(registerForm);
-      if (String(data.get("password") || "").length < 8) {
-        document.getElementById("registerError").textContent = "Password must be at least 8 characters.";
-        return;
-      }
-      hidePortalMounts();
-      showAuthLoading("Creating secure account...", "Saving user details and preparing the first portfolio workspace.");
-      const response = await api("/auth/signup", {
-        method: "POST",
-        timeout_ms: 60000,
-        body: JSON.stringify({
-          full_name: String(data.get("full_name")).trim(),
-          email: String(data.get("email")).trim(),
-          phone_number: String(data.get("phone_number")).trim(),
-          password: String(data.get("password")),
-          otp: String(data.get("otp")).trim()
-        })
-      });
-      setAuth({ token: response.access_token, role: response.role });
-      let profile = null;
-      try {
-        profile = await api("/auth/me");
-      } catch {
-        profile = null;
-      }
-      document.getElementById("registerError").textContent = "";
-      const fixedClientId = response.fixed_user_id || profile?.fixed_user_id;
-      document.getElementById("registerHint").textContent = fixedClientId
-        ? `Account created successfully. Your client ID is ${fixedClientId}. Use this ID to login as User.`
-        : "Account created successfully. Your fixed user ID is available once the profile loads.";
-      if (fixedClientId) {
-        sessionStorage.setItem("stock_trader_new_client_id", fixedClientId);
-      }
-      goToDashboard("user");
-    } catch (error) {
-      document.getElementById("registerError").textContent = formatError(error);
       hidePortalMounts();
       hideAuthLoading();
     } finally {
@@ -3150,7 +3349,7 @@ function financeFallbackReply(message) {
     return "Choose Admin or User login, enter your credentials, request the OTP, then submit the code to open the dashboard.";
   }
   if (text.includes("register") || text.includes("new user") || text.includes("create account")) {
-    return "Use the Register User option on the login page. A fixed client ID is generated after signup and your details are saved in the backend database.";
+    return "New customers are created by the admin inside the admin dashboard. The system generates a client ID like ABC123, which the customer uses to login as User.";
   }
   if (text.includes("otp")) {
     return "OTP is used as an added login verification step. Click Send OTP, use the displayed code in local testing, and then complete login.";

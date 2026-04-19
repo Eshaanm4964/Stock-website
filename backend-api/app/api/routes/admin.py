@@ -2,11 +2,12 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from redis.asyncio import Redis
-from sqlalchemy import delete, distinct, false, func, select, text
+from sqlalchemy import delete, distinct, false, func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_admin_user
 from app.core.config import get_settings
+from app.core.security import get_password_hash
 from app.db.session import get_db, get_redis
 from app.models.admin_setting import AdminSetting
 from app.models.admin_audit_log import AdminAuditLog
@@ -30,17 +31,19 @@ from app.schemas.admin import (
     AdminSettingsOverview,
     AdminStockConcentrationItem,
     AdminSystemStatusResponse,
+    AdminUserCreateRequest,
     AdminUserActivityItem,
     AdminUserDashboardResponse,
     AdminUserStatusUpdateRequest,
     AdminUserSummary,
     AuthAttemptResponse,
 )
-from app.schemas.portfolio import HoldingResponse
+from app.schemas.portfolio import HoldingResponse, HoldingSellRequest, SaleResponse
 from app.schemas.review import ReviewResponse
 from app.services.portfolio_service import build_portfolio_summary
 from app.services.security_service import log_admin_action
 from app.services.stock_service import fetch_quote
+from app.utils.client_ids import generate_unique_client_id
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 settings = get_settings()
@@ -139,6 +142,67 @@ async def admin_users(
                 )
             )
     return summaries
+
+
+@router.post("/users", response_model=AdminUserSummary, status_code=status.HTTP_201_CREATED)
+async def create_admin_user(
+    payload: AdminUserCreateRequest,
+    request: Request,
+    current_admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+    redis: Redis = Depends(get_redis),
+) -> AdminUserSummary:
+    email = payload.email.strip().lower()
+    phone_number = payload.phone_number.strip()
+    existing = (
+        await db.execute(
+            select(User).where(or_(User.email == email, User.phone_number == phone_number))
+        )
+    ).scalar_one_or_none()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email or phone number already exists")
+
+    fixed_user_id = await generate_unique_client_id(db)
+    user = User(
+        username=fixed_user_id.lower(),
+        email=email,
+        fixed_user_id=fixed_user_id,
+        full_name=payload.full_name.strip(),
+        phone_number=phone_number,
+        hashed_password=get_password_hash(payload.password),
+        role=UserRole.USER,
+        is_demo=False,
+        is_active=True,
+        is_archived=False,
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    await log_admin_action(
+        db,
+        admin_user=current_admin,
+        action="create_customer",
+        entity_type="user",
+        entity_id=str(user.id),
+        ip_address=request.client.host if request.client else None,
+        details={"fixed_user_id": user.fixed_user_id, "full_name": user.full_name, "email": user.email},
+    )
+    portfolio = await build_portfolio_summary([], redis, [])
+    return AdminUserSummary(
+        user_id=user.id,
+        username=user.username,
+        fixed_user_id=user.fixed_user_id,
+        full_name=user.full_name,
+        phone_number=user.phone_number,
+        role=user.role.value,
+        is_active=user.is_active,
+        is_demo=user.is_demo,
+        is_archived=user.is_archived,
+        archived_at=user.archived_at,
+        created_at=user.created_at,
+        portfolio_value=portfolio.total_portfolio_value,
+        total_holdings=0,
+    )
 
 
 @router.get("/users/archived", response_model=list[AdminUserSummary])
@@ -315,6 +379,78 @@ async def admin_add_deal(
         },
     )
     return HoldingResponse.model_validate(holding)
+
+
+@router.post("/holdings/{holding_id}/sell", response_model=SaleResponse)
+async def admin_sell_holding(
+    holding_id: int,
+    payload: HoldingSellRequest,
+    request: Request,
+    current_admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+    redis: Redis = Depends(get_redis),
+) -> SaleResponse:
+    holding = (
+        await db.execute(
+            select(PortfolioHolding)
+            .join(User, User.id == PortfolioHolding.user_id)
+            .where(
+                PortfolioHolding.id == holding_id,
+                User.role == UserRole.USER,
+                User.is_archived.is_(False),
+            )
+        )
+    ).scalar_one_or_none()
+    if not holding:
+        raise HTTPException(status_code=404, detail="Holding not found")
+
+    current_quantity = float(holding.quantity)
+    sell_quantity = float(payload.quantity)
+    if sell_quantity > current_quantity:
+        raise HTTPException(status_code=400, detail="Sell quantity cannot be more than holding quantity")
+
+    exchange = (holding.exchange or "NSE").upper()
+    quote = await fetch_quote(holding.symbol, exchange, redis)
+    sell_price = float(payload.sell_price or quote.price)
+    buy_price = float(holding.buy_price)
+    profit_loss = (sell_price - buy_price) * sell_quantity
+    sale = PortfolioSale(
+        user_id=holding.user_id,
+        symbol=holding.symbol,
+        exchange=exchange,
+        quantity=sell_quantity,
+        buy_price=buy_price,
+        sell_price=sell_price,
+        profit_loss=round(profit_loss, 2),
+        sector=holding.sector or quote.sector,
+    )
+    db.add(sale)
+
+    remaining_quantity = round(current_quantity - sell_quantity, 2)
+    if remaining_quantity <= 0:
+        await db.delete(holding)
+    else:
+        holding.quantity = remaining_quantity
+
+    await db.commit()
+    await db.refresh(sale)
+    await log_admin_action(
+        db,
+        admin_user=current_admin,
+        action="sell_holding",
+        entity_type="portfolio_sale",
+        entity_id=str(sale.id),
+        ip_address=request.client.host if request.client else None,
+        details={
+            "holding_id": holding_id,
+            "user_id": sale.user_id,
+            "symbol": sale.symbol,
+            "quantity": sell_quantity,
+            "sell_price": sell_price,
+            "profit_loss": sale.profit_loss,
+        },
+    )
+    return SaleResponse.model_validate(sale)
 
 
 @router.get("/portfolio-overview", response_model=AdminPortfolioOverviewResponse)

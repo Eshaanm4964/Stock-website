@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy import delete, or_, select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
@@ -13,7 +13,6 @@ from app.core.security import (
     verify_password,
 )
 from app.models.login_otp import LoginOTP
-from app.models.signup_otp import SignupOTP
 from app.db.session import get_db
 from app.models.user import User, UserRole
 from app.schemas.auth import (
@@ -42,58 +41,6 @@ def _normalize_datetime(value: datetime) -> datetime:
     return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
 
 
-def _build_fixed_user_id(full_name: str, phone_number: str) -> str:
-    base = "".join(char for char in full_name.upper() if char.isalpha())[:3] or "CLI"
-    return f"{base}-{phone_number[-4:]}"
-
-
-async def _store_signup_otp(email: str, phone_number: str, code: str, db: AsyncSession) -> None:
-    normalized_email = email.strip().lower()
-    normalized_phone = phone_number.strip()
-    await db.execute(
-        delete(SignupOTP).where(
-            SignupOTP.email == normalized_email,
-            SignupOTP.phone_number == normalized_phone,
-            SignupOTP.consumed_at.is_(None),
-        )
-    )
-    db.add(
-        SignupOTP(
-            email=normalized_email,
-            phone_number=normalized_phone,
-            otp_hash=get_password_hash(code),
-            expires_at=_utc_now() + timedelta(minutes=settings.otp_expire_minutes),
-        )
-    )
-    await db.commit()
-
-
-async def _verify_signup_otp(email: str, phone_number: str, otp: str, db: AsyncSession) -> None:
-    normalized_email = email.strip().lower()
-    normalized_phone = phone_number.strip()
-    record = (
-        await db.execute(
-            select(SignupOTP)
-            .where(
-                SignupOTP.email == normalized_email,
-                SignupOTP.phone_number == normalized_phone,
-                SignupOTP.consumed_at.is_(None),
-            )
-            .order_by(SignupOTP.created_at.desc())
-        )
-    ).scalar_one_or_none()
-    if not record:
-        raise HTTPException(status_code=400, detail="Please send and verify the registration OTP first")
-    if _normalize_datetime(record.expires_at) <= _utc_now():
-        record.consumed_at = _utc_now()
-        await db.commit()
-        raise HTTPException(status_code=400, detail="Registration OTP expired. Send a new code")
-    if not verify_password(otp, record.otp_hash):
-        raise HTTPException(status_code=400, detail="Invalid registration OTP")
-    record.consumed_at = _utc_now()
-    await db.commit()
-
-
 async def _find_user_for_login(
     role: UserRole, identifier: str, db: AsyncSession
 ) -> User | None:
@@ -107,70 +54,12 @@ async def _find_user_for_login(
 
 @router.post("/signup", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def signup(payload: SignupRequest, db: AsyncSession = Depends(get_db)) -> TokenResponse:
-    existing = await db.execute(
-        select(User).where(or_(User.email == payload.email, User.phone_number == payload.phone_number))
-    )
-    if existing.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Email or phone number already exists")
-    await _verify_signup_otp(payload.email, payload.phone_number, payload.otp, db)
-
-    fixed_user_id = _build_fixed_user_id(payload.full_name, payload.phone_number)
-    while (
-        await db.execute(select(User).where(User.fixed_user_id == fixed_user_id))
-    ).scalar_one_or_none():
-        fixed_user_id = f"{fixed_user_id}-{generate_otp_code()[:2]}"
-    user = User(
-        username=fixed_user_id.lower(),
-        email=payload.email,
-        fixed_user_id=fixed_user_id,
-        full_name=payload.full_name,
-        phone_number=payload.phone_number,
-        hashed_password=get_password_hash(payload.password),
-        role=UserRole.USER,
-        is_demo=False,
-    )
-    db.add(user)
-    await db.commit()
-    await db.refresh(user)
-    return TokenResponse(
-        access_token=create_access_token(str(user.id), user.role.value, user.username),
-        role=user.role,
-        fixed_user_id=user.fixed_user_id,
-    )
+    raise HTTPException(status_code=403, detail="Public registration is disabled. Please ask admin to create the customer.")
 
 
 @router.post("/signup/request-otp", response_model=OtpResponse)
 async def request_signup_otp(payload: SignupOtpRequest, db: AsyncSession = Depends(get_db)) -> OtpResponse:
-    existing = await db.execute(
-        select(User).where(or_(User.email == payload.email, User.phone_number == payload.phone_number))
-    )
-    if existing.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Email or phone number already exists")
-
-    code = DEMO_OTP_CODE if settings.demo_mode else generate_otp_code()
-    await _store_signup_otp(payload.email, payload.phone_number, code, db)
-    if settings.demo_mode:
-        return OtpResponse(message="Demo registration OTP is ready", otp_preview=code)
-
-    try:
-        await send_login_otp(payload.phone_number, code)
-    except SmsDeliveryError as exc:
-        await db.execute(
-            delete(SignupOTP).where(
-                SignupOTP.email == payload.email.strip().lower(),
-                SignupOTP.phone_number == payload.phone_number.strip(),
-                SignupOTP.consumed_at.is_(None),
-            )
-        )
-        await db.commit()
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Registration OTP could not be sent. {exc}",
-        ) from exc
-    return OtpResponse(
-        message="Registration OTP sent successfully",
-        otp_preview=code if settings.otp_debug_mode else None,
-    )
+    raise HTTPException(status_code=403, detail="Public registration is disabled. Please ask admin to create the customer.")
 
 
 @router.post("/request-otp", response_model=OtpResponse)

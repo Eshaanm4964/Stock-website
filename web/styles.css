@@ -3167,10 +3167,28 @@ th {
   align-items: end;
 }
 
+.admin-customer-form {
+  grid-template-columns: minmax(220px, 1.2fr) minmax(220px, 1.2fr) minmax(160px, 0.8fr) minmax(180px, 0.9fr) auto;
+  align-items: end;
+}
+
 .admin-deal-form button {
   grid-column: auto;
   min-height: 52px;
   white-space: nowrap;
+}
+
+.admin-customer-form button {
+  grid-column: auto;
+  min-height: 52px;
+  white-space: nowrap;
+}
+
+.admin-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .admin-deal-status {
@@ -3324,11 +3342,19 @@ th {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .admin-customer-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .admin-equity-ledger-card .portfolio-ledger-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .admin-deal-form button {
+    grid-column: 1 / -1;
+  }
+
+  .admin-customer-form button {
     grid-column: 1 / -1;
   }
 }
@@ -3340,6 +3366,10 @@ th {
   }
 
   .admin-deal-form {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-customer-form {
     grid-template-columns: 1fr;
   }
 

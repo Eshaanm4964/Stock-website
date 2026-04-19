@@ -74,7 +74,6 @@
             <div class="login-switcher auth-switcher">
               <button class="role-toggle active" data-role-tab="admin">Login as Admin</button>
               <button class="role-toggle" data-role-tab="user">Login as User</button>
-              <button class="role-toggle" data-role-tab="register">Register User</button>
             </div>
 
             <div class="login-form-shell auth-stage-card">
@@ -109,29 +108,11 @@
                 <p class="error-text" id="userError"></p>
                 <button class="primary-btn" type="submit">Login</button>
               </form>
-
-              <form id="registerForm" class="feature-card auth-card auth-form-card hidden" novalidate>
-                <p class="eyebrow">New Client</p>
-                <h2>Create account</h2>
-                <p class="form-subtitle">Register a client profile and generate a fixed client ID.</p>
-                <label><span>Full Name</span><input name="full_name" type="text" placeholder="full name" autocomplete="name" required /></label>
-                <label><span>Email</span><input name="email" type="email" placeholder="email address" autocomplete="email" required /></label>
-                <label><span>Phone Number</span><input name="phone_number" type="tel" placeholder="phone number" autocomplete="tel" required /></label>
-                <label><span>Password</span><input name="password" type="password" placeholder="create password" autocomplete="new-password" required /></label>
-                <div class="split-row">
-                  <label><span>Phone OTP</span><input name="otp" type="text" placeholder="6 digit code" required /></label>
-                  <button class="secondary-btn" type="button" data-send-otp="register">Send Code</button>
-                </div>
-                <p class="helper-text" id="registerOtpHint">Send code to verify the phone number before creating the account.</p>
-                <p class="helper-text" id="registerHint">A fixed client ID will be generated and shown after registration.</p>
-                <p class="error-text" id="registerError"></p>
-                <button class="primary-btn" type="submit">Create Account</button>
-              </form>
             </div>
 
             <div class="login-demo-strip">
               <strong>Client-ready access</strong>
-              <span>Use the registered client ID shown after signup to login as User.</span>
+              <span>New customers are created by the admin from the dashboard.</span>
               <span>Admin access is shared privately with the owner only.</span>
             </div>
           </section>

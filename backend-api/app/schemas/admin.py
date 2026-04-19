@@ -96,6 +96,13 @@ class AdminUserStatusUpdateRequest(BaseModel):
     is_active: bool
 
 
+class AdminUserCreateRequest(BaseModel):
+    full_name: str = Field(min_length=2, max_length=120)
+    email: str = Field(min_length=5, max_length=255)
+    phone_number: str = Field(min_length=8, max_length=20)
+    password: str = Field(min_length=8, max_length=128)
+
+
 class AdminDealCreateRequest(BaseModel):
     symbol: str = Field(min_length=1, max_length=20)
     quantity: float = Field(gt=0)

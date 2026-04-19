@@ -116,9 +116,9 @@ def _normalize_symbol(symbol: str, exchange: str = "NSE") -> str:
         return "^NSEI"
     if upper == "SENSEX":
         return "^BSESN"
-    if upper.endswith(".NS"):
+    if upper.endswith(".NS") or upper.endswith(".BO"):
         return upper
-    return f"{upper}.NS"
+    return f"{upper}.BO" if exchange.upper() == "BSE" else f"{upper}.NS"
 
 
 def _alpha_symbol_candidates(symbol: str) -> list[str]:
@@ -182,7 +182,7 @@ def _search_score(query: str, symbol: str, name: str, sector: str | None = None)
     return score
 
 
-def _catalog_search(query: str, limit: int) -> list[StockSearchResult]:
+def _catalog_search(query: str, limit: int, exchange: str = "NSE") -> list[StockSearchResult]:
     ranked = []
     fallback_rows = [
         {"symbol": symbol, "name": data.get("shortName") or symbol, "sector": data.get("sector")}
@@ -207,7 +207,7 @@ def _catalog_search(query: str, limit: int) -> list[StockSearchResult]:
         StockSearchResult(
             symbol=str(row.get("symbol") or "").upper(),
             name=str(row.get("name") or row.get("symbol") or "").strip(),
-            exchange="NSE",
+            exchange=exchange.upper(),
             sector=row.get("sector"),
             source="catalog",
         )
@@ -217,10 +217,12 @@ def _catalog_search(query: str, limit: int) -> list[StockSearchResult]:
 
 def _strip_yahoo_symbol(symbol: str) -> str:
     upper = symbol.upper().strip()
-    return upper[:-3] if upper.endswith(".NS") else upper
+    if upper.endswith(".NS") or upper.endswith(".BO"):
+        return upper[:-3]
+    return upper
 
 
-async def _search_yahoo_symbols(query: str, limit: int) -> list[StockSearchResult]:
+async def _search_yahoo_symbols(query: str, limit: int, exchange_filter: str = "NSE") -> list[StockSearchResult]:
     async with httpx.AsyncClient(timeout=8) as client:
         response = await client.get(
             YAHOO_SEARCH_URL,
@@ -237,10 +239,13 @@ async def _search_yahoo_symbols(query: str, limit: int) -> list[StockSearchResul
 
     results: list[StockSearchResult] = []
     seen: set[str] = set()
+    target_exchange = exchange_filter.upper()
+    target_suffix = ".BO" if target_exchange == "BSE" else ".NS"
+    exchange_aliases = {"BSE", "BO", "BOM"} if target_exchange == "BSE" else {"NSE", "NSI", "NS"}
     for quote in payload.get("quotes", []):
         yahoo_symbol = str(quote.get("symbol") or "").upper()
         exchange = str(quote.get("exchange") or quote.get("exchDisp") or "").upper()
-        if not yahoo_symbol.endswith(".NS") and "NSE" not in exchange and exchange not in {"NSI", "NS"}:
+        if not yahoo_symbol.endswith(target_suffix) and target_exchange not in exchange and exchange not in exchange_aliases:
             continue
         symbol = _strip_yahoo_symbol(yahoo_symbol)
         if not symbol or symbol in seen or symbol.startswith("^"):
@@ -251,8 +256,8 @@ async def _search_yahoo_symbols(query: str, limit: int) -> list[StockSearchResul
             StockSearchResult(
                 symbol=symbol,
                 name=str(name),
-                exchange="NSE",
-                sector=quote.get("sector") or "NSE equity",
+                exchange=target_exchange,
+                sector=quote.get("sector") or f"{target_exchange} equity",
                 source="market_search",
             )
         )
@@ -269,8 +274,9 @@ async def search_stock_symbols(query: str, exchange: str = "NSE", limit: int = 1
     results: list[StockSearchResult] = []
     seen: set[str] = set()
 
+    safe_exchange = (exchange or "NSE").upper()
     try:
-        for item in await _search_yahoo_symbols(cleaned_query, safe_limit):
+        for item in await _search_yahoo_symbols(cleaned_query, safe_limit, safe_exchange):
             score = _search_score(cleaned_query, item.symbol, item.name, item.sector)
             if score <= 0:
                 continue
@@ -279,7 +285,7 @@ async def search_stock_symbols(query: str, exchange: str = "NSE", limit: int = 1
     except Exception:
         pass
 
-    for item in _catalog_search(cleaned_query, safe_limit):
+    for item in _catalog_search(cleaned_query, safe_limit, safe_exchange):
         if item.symbol in seen:
             continue
         results.append(item)
