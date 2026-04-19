@@ -51,6 +51,7 @@ body.public-page .site-nav {
 
 body.public-page .site-nav a,
 body.public-page .login-link,
+body.public-page .legal-link,
 body.public-page .role-toggle,
 body.public-page .primary-btn,
 body.public-page .secondary-btn {
@@ -58,7 +59,8 @@ body.public-page .secondary-btn {
 }
 
 body.public-page .site-nav a,
-body.public-page .login-link {
+body.public-page .login-link,
+body.public-page .legal-link {
   padding: 10px 14px;
 }
 
@@ -69,7 +71,9 @@ body.public-page a[href*="legal.html"] {
 }
 
 body.public-page .site-nav a:hover,
-body.public-page .site-nav a.active {
+body.public-page .site-nav a.active,
+body.public-page .legal-link:hover,
+body.public-page .legal-link.active {
   background: rgba(15, 138, 85, 0.1);
   color: #0f6f46;
 }

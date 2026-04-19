@@ -152,16 +152,33 @@ textarea {
 }
 
 .site-nav a,
-.login-link {
+.login-link,
+.legal-link {
   padding: 10px 12px;
   border-radius: 12px;
 }
 
 .site-nav a.active,
 .site-nav a:hover,
-.login-link.active {
+.login-link.active,
+.legal-link.active,
+.legal-link:hover {
   color: var(--navy);
   background: rgba(77, 107, 255, 0.08);
+}
+
+.header-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+.legal-link {
+  font-weight: 800;
+  color: var(--navy);
+  border: 1px solid rgba(15, 138, 85, 0.16);
+  background: rgba(15, 138, 85, 0.08);
 }
 
 .login-link {
