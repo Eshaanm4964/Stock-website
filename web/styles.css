@@ -3218,13 +3218,22 @@ th {
 }
 
 .admin-simple-list-card {
-  min-height: 340px;
+  min-height: 220px;
 }
 
 .admin-simple-list {
   max-height: 360px;
   overflow: auto;
   padding-right: 4px;
+}
+
+.archived-clients-card {
+  min-height: 180px;
+}
+
+.archived-empty-item div {
+  display: grid;
+  gap: 6px;
 }
 
 .admin-simple-list .stack-item {

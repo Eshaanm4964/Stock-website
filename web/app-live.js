@@ -2655,31 +2655,8 @@ async function renderAdminPortal() {
           </article>
 
           <div class="dashboard-grid admin-simple-grid">
-            <article class="dashboard-card admin-simple-list-card">
-              <div class="panel-head"><h3>Clients</h3><span class="badge">Click user</span></div>
-              <div class="stack-list admin-simple-list">
-                ${clientRows.length
-                  ? clientRows.map((user) => {
-                      const returnPct = Number(user.total_invested_value || 0) ? (Number(user.total_profit_loss || 0) / Number(user.total_invested_value || 0)) * 100 : 0;
-                      return `
-                        <article class="stack-item">
-                          <div>
-                            <button class="table-link admin-entity-link" type="button" data-user-detail="${user.user_id}">${escapeHtml(user.full_name)}</button>
-                            <small>${escapeHtml(user.fixed_user_id || user.username || "Client")} | ${user.total_holdings} stock(s)</small>
-                          </div>
-                          <div class="admin-list-values">
-                            <strong>${currency(user.total_portfolio_value)}</strong>
-                            <small class="${user.total_profit_loss >= 0 ? "profit" : "loss"}">${currency(user.total_profit_loss)} | ${percent(returnPct)}</small>
-                          </div>
-                        </article>
-                      `;
-                    }).join("")
-                  : `<article class="stack-item"><div><strong>No clients yet</strong><small>Registered users will appear here.</small></div></article>`}
-              </div>
-            </article>
-
-            <article class="dashboard-card admin-simple-list-card">
-              <div class="panel-head"><h3>Stocks</h3><span class="badge green">Click stock</span></div>
+            <article class="dashboard-card admin-simple-list-card full-span-card">
+              <div class="panel-head"><h3>Stock Holders</h3><span class="badge green">Click stock</span></div>
               <div class="stack-list admin-simple-list">
                 ${stockRows.length
                   ? stockRows.map((stock) => {
@@ -2701,7 +2678,7 @@ async function renderAdminPortal() {
               </div>
             </article>
 
-            <article class="dashboard-card admin-simple-list-card">
+            <article class="dashboard-card admin-simple-list-card full-span-card archived-clients-card">
               <div class="panel-head"><h3>Archived Clients</h3><span class="badge red">Permanent delete</span></div>
               <div class="stack-list admin-simple-list">
                 ${safeArchivedUsers.length
@@ -2714,7 +2691,7 @@ async function renderAdminPortal() {
                       <button class="secondary-btn compact-btn danger-btn" type="button" data-permanent-delete-user="${user.user_id}" data-user-name="${escapeHtml(user.full_name)}">Delete permanently</button>
                     </article>
                   `).join("")
-                  : `<article class="stack-item"><div><strong>No archived clients</strong><small>Permanent delete appears here only after a client is archived.</small></div></article>`}
+                  : `<article class="stack-item archived-empty-item"><div><strong>No archived clients</strong><small>Permanent delete appears here only after a client is archived.</small></div></article>`}
               </div>
             </article>
           </div>
