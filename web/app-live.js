@@ -2655,29 +2655,6 @@ async function renderAdminPortal() {
           </article>
 
           <div class="dashboard-grid admin-simple-grid">
-            <article class="dashboard-card admin-simple-list-card full-span-card">
-              <div class="panel-head"><h3>Stock Holders</h3><span class="badge green">Click stock</span></div>
-              <div class="stack-list admin-simple-list">
-                ${stockRows.length
-                  ? stockRows.map((stock) => {
-                      const returnPct = stock.invested ? (stock.pnl / stock.invested) * 100 : 0;
-                      return `
-                        <article class="stack-item">
-                          <div>
-                            <button class="table-link admin-entity-link" type="button" data-stock-detail="${escapeHtml(stock.symbol)}">${escapeHtml(stock.symbol)}</button>
-                            <small>${stock.holdings.length} client(s) holding</small>
-                          </div>
-                          <div class="admin-list-values">
-                            <strong>${currency(stock.value)}</strong>
-                            <small class="${stock.pnl >= 0 ? "profit" : "loss"}">${currency(stock.pnl)} | ${percent(returnPct)}</small>
-                          </div>
-                        </article>
-                      `;
-                    }).join("")
-                  : `<article class="stack-item"><div><strong>No stocks yet</strong><small>Client holdings will appear here.</small></div></article>`}
-              </div>
-            </article>
-
             <article class="dashboard-card admin-simple-list-card full-span-card archived-clients-card">
               <div class="panel-head"><h3>Archived Clients</h3><span class="badge red">Permanent delete</span></div>
               <div class="stack-list admin-simple-list">
