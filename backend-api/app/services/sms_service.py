@@ -1,4 +1,5 @@
 import re
+from urllib.parse import quote
 
 import httpx
 
@@ -25,14 +26,45 @@ async def send_login_otp(phone_number: str, otp_code: str) -> None:
     provider = settings.sms_provider.strip().lower()
     if not provider or provider in {"debug", "none"}:
         raise SmsDeliveryError("Live SMS provider is not configured.")
-    if provider != "fast2sms":
+    if provider not in {"fast2sms", "2factor", "twofactor"}:
         raise SmsDeliveryError(f"Unsupported SMS provider: {settings.sms_provider}")
     if not settings.sms_api_key:
-        raise SmsDeliveryError("Fast2SMS API key is missing.")
+        raise SmsDeliveryError(f"{settings.sms_provider} API key is missing.")
 
     mobile = normalize_indian_mobile(phone_number)
+    if provider in {"2factor", "twofactor"}:
+        await _send_2factor_otp(settings.sms_api_key, mobile, otp_code, settings.sms_timeout_seconds)
+        return
+
+    await _send_fast2sms_otp(settings.sms_api_key, mobile, otp_code, settings.sms_timeout_seconds)
+
+
+async def _send_2factor_otp(api_key: str, mobile: str, otp_code: str, timeout_seconds: float) -> None:
+    # 2Factor OTP API uses a generated OTP from our app and returns Status=Success on delivery request acceptance.
+    encoded_key = quote(api_key.strip(), safe="")
+    encoded_mobile = quote(mobile, safe="")
+    encoded_otp = quote(otp_code, safe="")
+    url = f"https://2factor.in/API/V1/{encoded_key}/SMS/{encoded_mobile}/{encoded_otp}"
+
+    try:
+        async with httpx.AsyncClient(timeout=timeout_seconds) as client:
+            response = await client.post(url)
+    except httpx.HTTPError as exc:
+        raise SmsDeliveryError("Could not connect to the SMS provider.") from exc
+
+    try:
+        body = response.json()
+    except ValueError as exc:
+        raise SmsDeliveryError("SMS provider returned an invalid response.") from exc
+
+    if response.status_code >= 400 or str(body.get("Status", "")).lower() != "success":
+        detail = body.get("Details") or body.get("ErrorMessage") or body.get("Message")
+        raise SmsDeliveryError(str(detail or "2Factor could not send the OTP."))
+
+
+async def _send_fast2sms_otp(api_key: str, mobile: str, otp_code: str, timeout_seconds: float) -> None:
     payload = {
-        "authorization": settings.sms_api_key,
+        "authorization": api_key,
         "route": "otp",
         "variables_values": otp_code,
         "flash": "0",
@@ -41,7 +73,7 @@ async def send_login_otp(phone_number: str, otp_code: str) -> None:
     headers = {"cache-control": "no-cache"}
 
     try:
-        async with httpx.AsyncClient(timeout=settings.sms_timeout_seconds) as client:
+        async with httpx.AsyncClient(timeout=timeout_seconds) as client:
             response = await client.get("https://www.fast2sms.com/dev/bulkV2", params=payload, headers=headers)
     except httpx.HTTPError as exc:
         raise SmsDeliveryError("Could not connect to the SMS provider.") from exc

@@ -29,7 +29,7 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: SMS_PROVIDER
-        value: fast2sms
+        value: 2factor
       - key: SMS_API_KEY
         sync: false
       - key: SMS_SENDER_ID
