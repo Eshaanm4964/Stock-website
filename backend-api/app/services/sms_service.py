@@ -32,15 +32,13 @@ async def send_login_otp(phone_number: str, otp_code: str) -> None:
 
     mobile = normalize_indian_mobile(phone_number)
     payload = {
+        "authorization": settings.sms_api_key,
         "route": "otp",
         "variables_values": otp_code,
         "flash": "0",
         "numbers": mobile,
     }
-    headers = {
-        "authorization": settings.sms_api_key,
-        "Content-Type": "application/json",
-    }
+    headers = {"cache-control": "no-cache"}
 
     try:
         async with httpx.AsyncClient(timeout=settings.sms_timeout_seconds) as client:
@@ -48,13 +46,16 @@ async def send_login_otp(phone_number: str, otp_code: str) -> None:
     except httpx.HTTPError as exc:
         raise SmsDeliveryError("Could not connect to the SMS provider.") from exc
 
-    if response.status_code >= 400:
-        raise SmsDeliveryError("SMS provider rejected the OTP request.")
-
     try:
         body = response.json()
     except ValueError as exc:
         raise SmsDeliveryError("SMS provider returned an invalid response.") from exc
+
+    if response.status_code >= 400:
+        message = body.get("message") or body.get("error") or body.get("authorization")
+        if isinstance(message, list):
+            message = " ".join(str(item) for item in message)
+        raise SmsDeliveryError(str(message or "SMS provider rejected the OTP request."))
 
     if body.get("return") is not True:
         message = body.get("message") or body.get("authorization") or "SMS provider could not send the OTP."
