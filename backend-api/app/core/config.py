@@ -43,6 +43,11 @@ class Settings(BaseSettings):
     sms_timeout_seconds: float = Field(default=10.0, alias="SMS_TIMEOUT_SECONDS")
     auth_rate_limit_window_minutes: int = Field(default=15, alias="AUTH_RATE_LIMIT_WINDOW_MINUTES")
     auth_max_failed_attempts: int = Field(default=5, alias="AUTH_MAX_FAILED_ATTEMPTS")
+    admin_username: str = Field(default="admin_dev", alias="ADMIN_USERNAME")
+    admin_email: str = Field(default="admin@assetyantra.local", alias="ADMIN_EMAIL")
+    admin_full_name: str = Field(default="AssetYantra Admin", alias="ADMIN_FULL_NAME")
+    admin_phone_number: str = Field(default="9392970534", alias="ADMIN_PHONE_NUMBER")
+    admin_password: str = Field(default="Admin@123", alias="ADMIN_PASSWORD")
 
     model_config = SettingsConfigDict(
         env_file=".env",

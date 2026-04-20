@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.security import get_password_hash
 from app.models.admin_setting import AdminSetting
 from app.models.portfolio import PortfolioHolding
@@ -12,14 +13,15 @@ DEMO_FIXED_USER_IDS = ("CLIENT-1001", "CLIENT-2002", "CLIENT-3003")
 
 
 async def ensure_admin_user(db: AsyncSession) -> None:
+    settings = get_settings()
     existing = await db.execute(select(User).where(User.role == UserRole.ADMIN))
     admin = existing.scalar_one_or_none()
     if admin:
-        admin.username = "admin_dev"
-        admin.email = "admin@assetyantra.local"
-        admin.full_name = "AssetYantra Admin"
-        admin.phone_number = "9876543210"
-        admin.hashed_password = get_password_hash("Admin@123")
+        admin.username = settings.admin_username
+        admin.email = settings.admin_email
+        admin.full_name = settings.admin_full_name
+        admin.phone_number = settings.admin_phone_number
+        admin.hashed_password = get_password_hash(settings.admin_password)
         admin.is_active = True
         admin.is_demo = False
         admin.is_archived = False
@@ -28,11 +30,11 @@ async def ensure_admin_user(db: AsyncSession) -> None:
         return
     db.add(
         User(
-            username="admin_dev",
-            email="admin@assetyantra.local",
-            full_name="AssetYantra Admin",
-            phone_number="9876543210",
-            hashed_password=get_password_hash("Admin@123"),
+            username=settings.admin_username,
+            email=settings.admin_email,
+            full_name=settings.admin_full_name,
+            phone_number=settings.admin_phone_number,
+            hashed_password=get_password_hash(settings.admin_password),
             role=UserRole.ADMIN,
             is_demo=False,
         )

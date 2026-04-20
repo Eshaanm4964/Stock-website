@@ -14,6 +14,14 @@ services:
         value: false
       - key: SECRET_KEY
         generateValue: true
+      - key: ADMIN_USERNAME
+        value: admin_dev
+      - key: ADMIN_EMAIL
+        value: admin@assetyantra.local
+      - key: ADMIN_FULL_NAME
+        value: AssetYantra Admin
+      - key: ADMIN_PHONE_NUMBER
+        value: 9392970534
       - key: FRONTEND_URL
         value: https://web-ruddy-eight-73.vercel.app
       - key: ALLOWED_ORIGINS
