@@ -52,6 +52,24 @@ async def _find_user_for_login(
     return (await db.execute(statement)).scalar_one_or_none()
 
 
+def _normalize_phone_or_raw(phone_number: str) -> str:
+    try:
+        return normalize_indian_mobile(phone_number)
+    except SmsDeliveryError:
+        return phone_number.strip()
+
+
+def _phone_allowed_for_login(role: UserRole, user: User, entered_phone: str) -> bool:
+    if role == UserRole.ADMIN:
+        allowed_phones = {
+            _normalize_phone_or_raw(phone)
+            for phone in [user.phone_number, *settings.admin_allowed_phone_numbers]
+            if phone
+        }
+        return entered_phone in allowed_phones
+    return _normalize_phone_or_raw(user.phone_number) == entered_phone
+
+
 @router.post("/signup", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def signup(payload: SignupRequest, db: AsyncSession = Depends(get_db)) -> TokenResponse:
     raise HTTPException(status_code=403, detail="Public registration is disabled. Please ask admin to create the customer.")
@@ -91,13 +109,8 @@ async def request_login_otp(
             failure_reason="invalid_credentials",
         )
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    try:
-        saved_phone = normalize_indian_mobile(user.phone_number)
-        entered_phone = normalize_indian_mobile(payload.phone_number)
-    except SmsDeliveryError:
-        saved_phone = user.phone_number.strip()
-        entered_phone = payload.phone_number.strip()
-    if saved_phone != entered_phone:
+    entered_phone = _normalize_phone_or_raw(payload.phone_number)
+    if not _phone_allowed_for_login(payload.role, user, entered_phone):
         await log_auth_attempt(
             db,
             stage="request_otp",
@@ -230,13 +243,8 @@ async def login(
             failure_reason="invalid_credentials",
         )
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    try:
-        saved_phone = normalize_indian_mobile(user.phone_number)
-        entered_phone = normalize_indian_mobile(payload.phone_number)
-    except SmsDeliveryError:
-        saved_phone = user.phone_number.strip()
-        entered_phone = payload.phone_number.strip()
-    if saved_phone != entered_phone:
+    entered_phone = _normalize_phone_or_raw(payload.phone_number)
+    if not _phone_allowed_for_login(payload.role, user, entered_phone):
         await log_auth_attempt(
             db,
             stage="login",

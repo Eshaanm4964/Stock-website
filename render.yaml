@@ -22,6 +22,8 @@ services:
         value: AssetYantra Admin
       - key: ADMIN_PHONE_NUMBER
         value: 9392970534
+      - key: ADMIN_ALLOWED_PHONE_NUMBERS
+        value: 9392970534,9623143374,9885800073,7893744128
       - key: FRONTEND_URL
         value: https://web-ruddy-eight-73.vercel.app
       - key: ALLOWED_ORIGINS

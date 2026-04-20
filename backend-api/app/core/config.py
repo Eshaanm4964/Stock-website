@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     admin_email: str = Field(default="admin@assetyantra.local", alias="ADMIN_EMAIL")
     admin_full_name: str = Field(default="AssetYantra Admin", alias="ADMIN_FULL_NAME")
     admin_phone_number: str = Field(default="9392970534", alias="ADMIN_PHONE_NUMBER")
+    admin_allowed_phone_numbers_raw: str = Field(
+        default="9392970534,9623143374,9885800073,7893744128",
+        alias="ADMIN_ALLOWED_PHONE_NUMBERS",
+    )
     admin_password: str = Field(default="Admin@123", alias="ADMIN_PASSWORD")
 
     model_config = SettingsConfigDict(
@@ -60,6 +64,11 @@ class Settings(BaseSettings):
     @property
     def allowed_origins(self) -> list[str]:
         return [entry.strip() for entry in self.allowed_origins_raw.split(",") if entry.strip()]
+
+    @computed_field
+    @property
+    def admin_allowed_phone_numbers(self) -> list[str]:
+        return [entry.strip() for entry in self.admin_allowed_phone_numbers_raw.split(",") if entry.strip()]
 
     @model_validator(mode="after")
     def validate_production_security(self) -> "Settings":
