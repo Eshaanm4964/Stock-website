@@ -26,7 +26,7 @@ from app.schemas.auth import (
 )
 from app.schemas.user import UserUpdateRequest
 from app.services.security_service import enforce_rate_limit, log_auth_attempt
-from app.services.sms_service import SmsDeliveryError, send_login_otp
+from app.services.sms_service import SmsDeliveryError, normalize_indian_mobile, send_login_otp
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
@@ -91,7 +91,13 @@ async def request_login_otp(
             failure_reason="invalid_credentials",
         )
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    if user.phone_number != payload.phone_number:
+    try:
+        saved_phone = normalize_indian_mobile(user.phone_number)
+        entered_phone = normalize_indian_mobile(payload.phone_number)
+    except SmsDeliveryError:
+        saved_phone = user.phone_number.strip()
+        entered_phone = payload.phone_number.strip()
+    if saved_phone != entered_phone:
         await log_auth_attempt(
             db,
             stage="request_otp",
@@ -156,7 +162,7 @@ async def request_login_otp(
     )
     await db.commit()
     try:
-        await send_login_otp(payload.phone_number, code)
+        await send_login_otp(entered_phone, code)
     except SmsDeliveryError as exc:
         await db.execute(delete(LoginOTP).where(LoginOTP.user_id == user.id, LoginOTP.purpose == "login"))
         await db.commit()
@@ -220,7 +226,13 @@ async def login(
             failure_reason="invalid_credentials",
         )
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    if user.phone_number != payload.phone_number:
+    try:
+        saved_phone = normalize_indian_mobile(user.phone_number)
+        entered_phone = normalize_indian_mobile(payload.phone_number)
+    except SmsDeliveryError:
+        saved_phone = user.phone_number.strip()
+        entered_phone = payload.phone_number.strip()
+    if saved_phone != entered_phone:
         await log_auth_attempt(
             db,
             stage="login",

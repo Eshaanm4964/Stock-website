@@ -42,6 +42,7 @@ from app.schemas.portfolio import HoldingResponse, HoldingSellRequest, SaleRespo
 from app.schemas.review import ReviewResponse
 from app.services.portfolio_service import build_portfolio_summary
 from app.services.security_service import log_admin_action
+from app.services.sms_service import SmsDeliveryError, normalize_indian_mobile
 from app.services.stock_service import fetch_quote
 from app.utils.client_ids import generate_unique_client_id
 
@@ -153,10 +154,19 @@ async def create_admin_user(
     redis: Redis = Depends(get_redis),
 ) -> AdminUserSummary:
     email = payload.email.strip().lower()
-    phone_number = payload.phone_number.strip()
+    try:
+        phone_number = normalize_indian_mobile(payload.phone_number)
+    except SmsDeliveryError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     existing = (
         await db.execute(
-            select(User).where(or_(User.email == email, User.phone_number == phone_number))
+            select(User).where(
+                or_(
+                    User.email == email,
+                    User.phone_number == phone_number,
+                    User.phone_number == payload.phone_number.strip(),
+                )
+            )
         )
     ).scalar_one_or_none()
     if existing:

@@ -9,7 +9,7 @@ class SmsDeliveryError(RuntimeError):
     pass
 
 
-def _normalize_indian_mobile(phone_number: str) -> str:
+def normalize_indian_mobile(phone_number: str) -> str:
     digits = re.sub(r"\D", "", phone_number or "")
     if len(digits) == 12 and digits.startswith("91"):
         digits = digits[2:]
@@ -30,7 +30,7 @@ async def send_login_otp(phone_number: str, otp_code: str) -> None:
     if not settings.sms_api_key:
         raise SmsDeliveryError("Fast2SMS API key is missing.")
 
-    mobile = _normalize_indian_mobile(phone_number)
+    mobile = normalize_indian_mobile(phone_number)
     payload = {
         "route": "otp",
         "variables_values": otp_code,
