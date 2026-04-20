@@ -21,7 +21,7 @@ def normalize_indian_mobile(phone_number: str) -> str:
     return digits
 
 
-async def send_login_otp(phone_number: str, otp_code: str) -> None:
+async def send_login_otp(phone_number: str, otp_code: str) -> str | None:
     settings = get_settings()
     provider = settings.sms_provider.strip().lower()
     if not provider or provider in {"debug", "none"}:
@@ -33,13 +33,12 @@ async def send_login_otp(phone_number: str, otp_code: str) -> None:
 
     mobile = normalize_indian_mobile(phone_number)
     if provider in {"2factor", "twofactor"}:
-        await _send_2factor_otp(settings.sms_api_key, mobile, otp_code, settings.sms_timeout_seconds)
-        return
+        return await _send_2factor_otp(settings.sms_api_key, mobile, otp_code, settings.sms_timeout_seconds)
 
-    await _send_fast2sms_otp(settings.sms_api_key, mobile, otp_code, settings.sms_timeout_seconds)
+    return await _send_fast2sms_otp(settings.sms_api_key, mobile, otp_code, settings.sms_timeout_seconds)
 
 
-async def _send_2factor_otp(api_key: str, mobile: str, otp_code: str, timeout_seconds: float) -> None:
+async def _send_2factor_otp(api_key: str, mobile: str, otp_code: str, timeout_seconds: float) -> str | None:
     # 2Factor OTP API uses a generated OTP from our app and returns Status=Success on delivery request acceptance.
     encoded_key = quote(api_key.strip(), safe="")
     encoded_mobile = quote(mobile, safe="")
@@ -60,9 +59,11 @@ async def _send_2factor_otp(api_key: str, mobile: str, otp_code: str, timeout_se
     if response.status_code >= 400 or str(body.get("Status", "")).lower() != "success":
         detail = body.get("Details") or body.get("ErrorMessage") or body.get("Message")
         raise SmsDeliveryError(str(detail or "2Factor could not send the OTP."))
+    detail = body.get("Details")
+    return str(detail) if detail else None
 
 
-async def _send_fast2sms_otp(api_key: str, mobile: str, otp_code: str, timeout_seconds: float) -> None:
+async def _send_fast2sms_otp(api_key: str, mobile: str, otp_code: str, timeout_seconds: float) -> str | None:
     payload = {
         "authorization": api_key,
         "route": "otp",
@@ -94,3 +95,5 @@ async def _send_fast2sms_otp(api_key: str, mobile: str, otp_code: str, timeout_s
         if isinstance(message, list):
             message = " ".join(str(item) for item in message)
         raise SmsDeliveryError(str(message))
+    request_id = body.get("request_id")
+    return str(request_id) if request_id else None

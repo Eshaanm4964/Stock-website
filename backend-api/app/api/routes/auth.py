@@ -162,7 +162,7 @@ async def request_login_otp(
     )
     await db.commit()
     try:
-        await send_login_otp(entered_phone, code)
+        provider_reference = await send_login_otp(entered_phone, code)
     except SmsDeliveryError as exc:
         await db.execute(delete(LoginOTP).where(LoginOTP.user_id == user.id, LoginOTP.purpose == "login"))
         await db.commit()
@@ -192,7 +192,11 @@ async def request_login_otp(
         success=True,
     )
     return OtpResponse(
-        message="OTP generated successfully",
+        message=(
+            f"OTP generated successfully. Provider reference: {provider_reference}"
+            if provider_reference
+            else "OTP generated successfully"
+        ),
         otp_preview=code if settings.otp_debug_mode else None,
     )
 
