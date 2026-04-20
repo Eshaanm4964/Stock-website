@@ -9,9 +9,9 @@ services:
       - key: APP_ENV
         value: development
       - key: DEMO_MODE
-        value: true
+        value: false
       - key: OTP_DEBUG_MODE
-        value: true
+        value: false
       - key: SECRET_KEY
         generateValue: true
       - key: FRONTEND_URL
@@ -20,3 +20,11 @@ services:
         value: https://web-ruddy-eight-73.vercel.app
       - key: DATABASE_URL
         sync: false
+      - key: SMS_PROVIDER
+        value: fast2sms
+      - key: SMS_API_KEY
+        sync: false
+      - key: SMS_SENDER_ID
+        value: ASTYNT
+      - key: SMS_TIMEOUT_SECONDS
+        value: 10
