@@ -3432,7 +3432,12 @@ function setupHomeHeroCarousel() {
 
   const showSlide = (nextIndex) => {
     activeIndex = (nextIndex + slides.length) % slides.length;
-    slides.forEach((slide, index) => slide.classList.toggle("is-active", index === activeIndex));
+    slides.forEach((slide, index) => {
+      const isActive = index === activeIndex;
+      slide.classList.toggle("is-active", isActive);
+      slide.hidden = !isActive;
+      slide.setAttribute("aria-hidden", isActive ? "false" : "true");
+    });
     dots.forEach((dot, index) => dot.classList.toggle("is-active", index === activeIndex));
   };
 

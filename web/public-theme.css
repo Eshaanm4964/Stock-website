@@ -242,6 +242,7 @@ body.public-page .site-shell {
   min-height: 42px;
   padding: 0 18px;
   border: 1px solid transparent;
+  border-radius: 999px;
   background: linear-gradient(135deg, var(--brand-accent), #62dcaa 72%, #a9d5ff 100%);
   color: #103022;
   font-weight: 800;
@@ -392,23 +393,15 @@ body.public-page .site-shell {
 }
 
 .hero-carousel-slide {
-  position: absolute;
-  inset: 0;
   display: grid;
   grid-template-columns: minmax(420px, 0.98fr) minmax(380px, 1.02fr);
   align-items: center;
   gap: 46px;
   padding: 42px 88px 58px;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(28px);
-  transition: opacity 420ms ease, transform 420ms ease;
 }
 
-.hero-carousel-slide.is-active {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateX(0);
+.hero-carousel-slide[hidden] {
+  display: none;
 }
 
 .hero-carousel-image {
@@ -431,6 +424,7 @@ body.public-page .site-shell {
 
 .hero-carousel-copy {
   max-width: 620px;
+  align-self: center;
 }
 
 .hero-carousel-copy h1 {
