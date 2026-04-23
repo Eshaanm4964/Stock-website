@@ -393,15 +393,15 @@ body.public-page .site-shell {
 }
 
 .hero-carousel-slide {
-  display: grid;
+  display: none;
   grid-template-columns: minmax(420px, 0.98fr) minmax(380px, 1.02fr);
   align-items: center;
   gap: 46px;
   padding: 42px 88px 58px;
 }
 
-.hero-carousel-slide[hidden] {
-  display: none;
+.hero-carousel-slide.is-active {
+  display: grid;
 }
 
 .hero-carousel-image {

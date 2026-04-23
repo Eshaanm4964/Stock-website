@@ -3429,31 +3429,42 @@ function setupHomeHeroCarousel() {
   if (!slides.length) return;
 
   let activeIndex = Math.max(slides.findIndex((slide) => slide.classList.contains("is-active")), 0);
+  let autoTimer = null;
 
   const showSlide = (nextIndex) => {
     activeIndex = (nextIndex + slides.length) % slides.length;
     slides.forEach((slide, index) => {
       const isActive = index === activeIndex;
       slide.classList.toggle("is-active", isActive);
-      slide.hidden = !isActive;
       slide.setAttribute("aria-hidden", isActive ? "false" : "true");
     });
     dots.forEach((dot, index) => dot.classList.toggle("is-active", index === activeIndex));
   };
 
+  const startAuto = () => {
+    window.clearInterval(autoTimer);
+    autoTimer = window.setInterval(() => {
+      showSlide(activeIndex + 1);
+    }, 5000);
+  };
+
   prevButton?.addEventListener("click", () => {
     showSlide(activeIndex - 1);
+    startAuto();
   });
   nextButton?.addEventListener("click", () => {
     showSlide(activeIndex + 1);
+    startAuto();
   });
   dots.forEach((dot) => {
     dot.addEventListener("click", () => {
       showSlide(Number(dot.dataset.heroDot || 0));
+      startAuto();
     });
   });
 
   showSlide(activeIndex);
+  startAuto();
 }
 
 setupFaq();
