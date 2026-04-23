@@ -3412,7 +3412,7 @@ function setupFloatingWhatsAppButton() {
     </span>
     <span class="floating-whatsapp-copy">
       <strong>WhatsApp</strong>
-      <small>090890 80505</small>
+      <small>Chat now</small>
     </span>
   `;
   document.body.appendChild(button);
