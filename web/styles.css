@@ -1,4 +1,17 @@
 :root {
+  --brand-bg: #0A1A0F;
+  --brand-bg-secondary: #0F2318;
+  --brand-panel: #132B1A;
+  --brand-accent: #00C853;
+  --brand-accent-strong: #00E676;
+  --brand-accent-soft: #69F0AE;
+  --brand-accent-pale: #B9F6CA;
+  --brand-text: #FFFFFF;
+  --brand-text-secondary: #A5D6A7;
+  --brand-text-muted: #66BB6A;
+  --brand-border: #1B5E20;
+  --brand-success: #69F0AE;
+  --brand-error: #FF6E40;
   --bg: #f7f8fc;
   --surface: #ffffff;
   --surface-alt: #f1f4f9;

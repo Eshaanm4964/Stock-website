@@ -216,13 +216,7 @@ function setupSmartLoginLinks() {
 }
 
 function removeDeprecatedPublicNavigation() {
-  const blockedTargets = ["products.html", "trust-safety.html", "legal.html"];
-  document.querySelectorAll("a[href]").forEach((link) => {
-    const href = String(link.getAttribute("href") || "").toLowerCase();
-    if (blockedTargets.some((target) => href.includes(target))) {
-      link.remove();
-    }
-  });
+  return;
 }
 
 function setButtonLoading(button, loadingText) {
@@ -1465,7 +1459,6 @@ async function setupHomeLiveTicker() {
       .join("");
     mount.innerHTML = `
       <div class="home-ticker-track">${tickerItems}${tickerItems}</div>
-      <span class="home-live-status">Updated ${latestFetch ? formatDateTime(latestFetch) : new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
     `;
   };
 
@@ -2765,7 +2758,6 @@ async function renderUserPortal() {
               <option value="loss">In loss</option>
               <option value="flat">Flat</option>
             </select>
-            <button class="assistant-btn" type="button" data-open-finance-chat="true">AI Assistant</button>
             <button class="download-btn" type="button" id="userPrintBtn">Download</button>
             <button class="secondary-btn" type="button" data-refresh-user="true">Refresh</button>
             <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
@@ -3056,19 +3048,33 @@ function setupLogin() {
     });
   }
 
+  const applyRoleState = (role, syncUrl = true) => {
+    toggles.forEach((entry) => entry.classList.toggle("active", entry.dataset.roleTab === role));
+    adminForm.classList.toggle("hidden", role !== "admin");
+    userForm.classList.toggle("hidden", role !== "user");
+    hidePortalMounts();
+    hideAuthLoading();
+    activeRole = null;
+    activeUserId = null;
+    updateAside(role);
+    document.querySelectorAll("[data-login-role-link]").forEach((link) => {
+      link.classList.toggle("is-active", link.dataset.loginRoleLink === role);
+    });
+    if (syncUrl) {
+      const nextUrl = new URL(window.location.href);
+      nextUrl.searchParams.set("role", role);
+      window.history.replaceState({}, "", nextUrl);
+    }
+  };
+
   toggles.forEach((toggle) => {
     toggle.addEventListener("click", () => {
-      const role = toggle.dataset.roleTab;
-      toggles.forEach((entry) => entry.classList.toggle("active", entry === toggle));
-      adminForm.classList.toggle("hidden", role !== "admin");
-      userForm.classList.toggle("hidden", role !== "user");
-      hidePortalMounts();
-      hideAuthLoading();
-      activeRole = null;
-      activeUserId = null;
-      updateAside(role);
+      applyRoleState(toggle.dataset.roleTab || "admin");
     });
   });
+
+  const requestedRole = new URLSearchParams(window.location.search).get("role");
+  applyRoleState(requestedRole === "user" ? "user" : "admin", false);
 
   document.querySelectorAll("[data-send-otp]").forEach((button) => {
     button.addEventListener("click", async () => {
@@ -3294,99 +3300,165 @@ function financeFallbackReply(message) {
 }
 
 function setupFinanceChatbot() {
-  const wrapper = document.createElement("div");
-  wrapper.className = "finance-chat";
-  wrapper.innerHTML = `
-    <div class="chat-nudge" id="financeChatNudge">How may I help you?</div>
-    <div class="chat-panel hidden" id="financeChatPanel">
-      <div class="chat-head">
-        <div>
-          <h3>Finance Assistant</h3>
-          <p>Ask finance questions, customer FAQs, or platform queries.</p>
-        </div>
-        <button class="chat-close" type="button" id="chatCloseBtn">x</button>
-      </div>
-      <div class="chat-log" id="financeChatLog">
-        <div class="chat-msg bot">Ask me about stocks, portfolio metrics, login steps, OTP flow, admin downloads, FAQs, diversification, valuation, or investing basics.</div>
-      </div>
-      <form class="chat-form" id="financeChatForm">
-        <input id="financeChatInput" type="text" placeholder="Ask a finance or platform question" />
-        <button class="primary-btn" type="submit">Send</button>
-      </form>
-    </div>
-    <button class="chat-launcher" id="chatLauncher" type="button">AI</button>
-  `;
-  document.body.appendChild(wrapper);
+  document.querySelectorAll("[data-open-finance-chat]").forEach((button) => button.remove());
+}
 
-  const panel = document.getElementById("financeChatPanel");
-  const launcher = document.getElementById("chatLauncher");
-  const closeBtn = document.getElementById("chatCloseBtn");
-  const nudge = document.getElementById("financeChatNudge");
-  const form = document.getElementById("financeChatForm");
-  const input = document.getElementById("financeChatInput");
-  const log = document.getElementById("financeChatLog");
+function setupPublicChrome() {
+  if (!document.body?.classList.contains("public-page")) return;
 
-  const appendMessage = (type, message) => {
-    const node = document.createElement("div");
-    node.className = `chat-msg ${type}`;
-    node.textContent = message;
-    log.appendChild(node);
-    log.scrollTop = log.scrollHeight;
+  const header = document.querySelector(".public-navbar");
+  const progress = document.getElementById("pageProgress");
+  const navToggle = document.querySelector("[data-nav-toggle='true']");
+
+  if (navToggle && header) {
+    navToggle.addEventListener("click", () => {
+      header.classList.toggle("nav-open");
+    });
+  }
+
+  const loginDropdown = document.querySelector("[data-login-dropdown='true']");
+  if (loginDropdown) {
+    const toggle = loginDropdown.querySelector("[data-login-dropdown-toggle='true']");
+    if (toggle) {
+      toggle.addEventListener("click", () => {
+        loginDropdown.classList.toggle("open");
+      });
+      document.addEventListener("click", (event) => {
+        if (loginDropdown.contains(event.target)) return;
+        loginDropdown.classList.remove("open");
+      });
+    }
+  }
+
+  const updateScrollUi = () => {
+    const maxScroll = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+    const ratio = Math.min(window.scrollY / maxScroll, 1);
+    if (progress) progress.style.width = `${ratio * 100}%`;
+    if (header) header.classList.toggle("is-scrolled", window.scrollY > 12);
   };
 
-  launcher.addEventListener("click", () => {
-    panel.classList.toggle("hidden");
-    if (nudge) nudge.classList.add("hidden");
-    if (!panel.classList.contains("hidden")) {
-      input.focus();
-    }
-  });
+  updateScrollUi();
+  window.addEventListener("scroll", updateScrollUi, { passive: true });
 
-  closeBtn.addEventListener("click", () => panel.classList.add("hidden"));
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("in-view");
+        observer.unobserve(entry.target);
+      });
+    },
+    { threshold: 0.16 }
+  );
 
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const message = input.value.trim();
-    if (!message) return;
+  document.querySelectorAll(".fade-up").forEach((node) => observer.observe(node));
 
-    appendMessage("user", message);
-    input.value = "";
+  const statObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const node = entry.target;
+        const target = Number(node.dataset.countup || 0);
+        const prefix = node.dataset.prefix || "";
+        const suffix = node.dataset.suffix || "";
+        const duration = 1100;
+        const start = performance.now();
+        const tick = (now) => {
+          const progressRatio = Math.min((now - start) / duration, 1);
+          const current = Math.round(target * progressRatio);
+          node.textContent = `${prefix}${current}${suffix}`;
+          if (progressRatio < 1) {
+            requestAnimationFrame(tick);
+          }
+        };
+        requestAnimationFrame(tick);
+        statObserver.unobserve(node);
+      });
+    },
+    { threshold: 0.45 }
+  );
+  document.querySelectorAll("[data-countup]").forEach((node) => statObserver.observe(node));
 
-    const auth = getAuth();
-    if (auth?.token && isFinancialQuestion(message)) {
-      try {
-        const symbolMatch = message.match(/\b[A-Z]{2,15}\b/);
-        const response = await api("/ai/chat", {
-          method: "POST",
-          body: JSON.stringify({
-            message,
-            symbol: symbolMatch ? symbolMatch[0] : null
-          })
-        });
-        appendMessage("bot", response.answer);
-        return;
-      } catch {
-        appendMessage("bot", financeFallbackReply(message));
-        return;
+  const contactForm = document.getElementById("contactForm");
+  if (contactForm) {
+    contactForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const status = document.getElementById("contactStatus");
+      if (status) {
+        status.textContent = "Thank you. Your message has been prepared for the AssetYantra team.";
       }
-    }
+      contactForm.reset();
+    });
+  }
+}
 
-    appendMessage("bot", financeFallbackReply(message));
-  });
+function setupFloatingWhatsAppButton() {
+  const allowedPages = new Set(["home", "about", "products", "contact", "trust-safety", "legal"]);
+  const currentPage = document.body?.dataset?.page || "";
+  if (!allowedPages.has(currentPage)) return;
+  if (document.querySelector(".floating-whatsapp")) return;
 
-  const rotateNudge = () => {
-    if (!nudge || !panel.classList.contains("hidden") || !getSiteControls().chatNudgesEnabled) {
-      if (nudge) nudge.classList.add("hidden");
-      return;
-    }
-    nudge.classList.remove("hidden");
-    nudge.textContent = "How may I help you?";
-    window.setTimeout(() => {
-      nudge.classList.add("hidden");
-    }, 2200);
+  const button = document.createElement("a");
+  button.className = "floating-whatsapp";
+  button.href = "https://wa.me/919089080505";
+  button.target = "_blank";
+  button.rel = "noreferrer";
+  button.setAttribute("aria-label", "Chat with AssetYantra on WhatsApp");
+  button.innerHTML = `
+    <span class="floating-whatsapp-icon" aria-hidden="true">
+      <svg viewBox="0 0 32 32" focusable="false">
+        <path d="M16.01 4.5c-6.28 0-11.38 5.02-11.38 11.2 0 2.12.61 4.12 1.69 5.79L4.5 27.5l6.24-1.77a11.54 11.54 0 0 0 5.27 1.27c6.28 0 11.38-5.02 11.38-11.2S22.29 4.5 16.01 4.5Zm0 20.58c-1.74 0-3.36-.47-4.77-1.29l-.34-.2-3.67 1.04 1.06-3.48-.23-.36a9.15 9.15 0 0 1-1.5-5.09c0-5.12 4.24-9.28 9.45-9.28s9.45 4.16 9.45 9.28-4.24 9.38-9.45 9.38Zm5.18-6.95c-.28-.14-1.67-.81-1.93-.9-.26-.1-.45-.14-.64.14-.19.28-.73.9-.9 1.09-.17.19-.33.21-.61.07-.28-.14-1.18-.43-2.25-1.37-.83-.73-1.39-1.64-1.55-1.92-.16-.28-.02-.43.12-.57.13-.13.28-.33.42-.49.14-.16.19-.28.28-.47.09-.19.05-.35-.02-.49-.07-.14-.64-1.52-.88-2.08-.23-.54-.47-.47-.64-.48h-.55c-.19 0-.49.07-.75.35-.26.28-.99.95-.99 2.32s1.02 2.69 1.16 2.88c.14.19 2.01 3.02 4.88 4.23.68.29 1.21.46 1.63.59.68.21 1.31.18 1.8.11.55-.08 1.67-.67 1.91-1.32.24-.65.24-1.2.17-1.32-.07-.12-.26-.19-.54-.33Z" />
+      </svg>
+    </span>
+    <span class="floating-whatsapp-copy">
+      <strong>WhatsApp</strong>
+      <small>090890 80505</small>
+    </span>
+  `;
+  document.body.appendChild(button);
+}
+
+function setupHomeHeroCarousel() {
+  const carousel = document.querySelector("[data-home-hero-carousel='true']");
+  if (!carousel) return;
+
+  const slides = [...carousel.querySelectorAll("[data-hero-slide='true']")];
+  const dots = [...carousel.querySelectorAll("[data-hero-dot]")];
+  const prevButton = carousel.querySelector("[data-hero-prev='true']");
+  const nextButton = carousel.querySelector("[data-hero-next='true']");
+  if (!slides.length) return;
+
+  let activeIndex = Math.max(slides.findIndex((slide) => slide.classList.contains("is-active")), 0);
+  let autoTimer = null;
+
+  const showSlide = (nextIndex) => {
+    activeIndex = (nextIndex + slides.length) % slides.length;
+    slides.forEach((slide, index) => slide.classList.toggle("is-active", index === activeIndex));
+    dots.forEach((dot, index) => dot.classList.toggle("is-active", index === activeIndex));
   };
 
-  // Automatic chatbot nudges disabled to prevent page flicker.
+  const startAuto = () => {
+    window.clearInterval(autoTimer);
+    autoTimer = window.setInterval(() => showSlide(activeIndex + 1), 6500);
+  };
+
+  prevButton?.addEventListener("click", () => {
+    showSlide(activeIndex - 1);
+    startAuto();
+  });
+  nextButton?.addEventListener("click", () => {
+    showSlide(activeIndex + 1);
+    startAuto();
+  });
+  dots.forEach((dot) => {
+    dot.addEventListener("click", () => {
+      showSlide(Number(dot.dataset.heroDot || 0));
+      startAuto();
+    });
+  });
+
+  showSlide(activeIndex);
+  startAuto();
 }
 
 setupFaq();
@@ -3400,10 +3472,13 @@ window.addEventListener("storage", (event) => {
 });
 setupPageTransitions();
 removeDeprecatedPublicNavigation();
+setupPublicChrome();
+setupHomeHeroCarousel();
 setupHomeLiveTicker().catch(() => {});
 setupHomeLiveNews().catch(() => {});
 setupSmartLoginLinks();
 setupLogin();
 setupDashboardLaunchReveal();
 setupDashboardPages();
+setupFloatingWhatsAppButton();
 setupFinanceChatbot();

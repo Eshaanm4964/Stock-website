@@ -7,112 +7,93 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;500;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=Space+Mono:wght@700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
     <link rel="stylesheet" href="./public-theme.css" />
   </head>
   <body data-page="legal" class="public-page">
+    <div class="page-progress" id="pageProgress" aria-hidden="true"></div>
     <div class="site-shell">
-      <header class="site-header">
-        <a class="brand" href="./index.html">
-          <span class="brand-mark brand-logo"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
-          <span><strong>AssetYantra</strong><small>Price is what you pay. Value is what you get</small></span>
+      <header class="site-header public-navbar">
+        <a class="brand public-brand" href="./index.html">
+          <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
+          <span class="public-brand-copy"><strong class="brand-wordmark">AssetYantra</strong><small class="brand-tagline">Grow. Protect. Automate.</small></span>
         </a>
-        <nav class="site-nav">
+        <button class="nav-toggle" type="button" data-nav-toggle="true" aria-label="Open navigation"><span></span><span></span><span></span></button>
+        <nav class="site-nav public-nav">
           <a href="./index.html">Home</a>
           <a href="./about.html">About</a>
-          <a href="./faq.html">FAQ</a>
-          <a href="./reviews.html">Reviews</a>
+          <a href="./products.html">Products</a>
+          <a href="./contact.html">Contact</a>
+          <a href="./trust-safety.html">Trust &amp; Safety</a>
           <a class="active" href="./legal.html">Legal</a>
         </nav>
-        <div class="header-actions">
-          <a class="login-link" href="./login.html">Login</a>
-        </div>
+        <div class="header-actions public-actions"><a class="nav-cta" href="./login.html">Login</a></div>
       </header>
 
       <main class="public-main">
-        <section class="public-hero-card">
-          <div class="public-hero-copy">
-            <p class="eyebrow">Legal Information</p>
-            <h1>Clear terms for a private portfolio tracking demo.</h1>
-            <p class="public-lead">
-              AssetYantra is a portfolio tracking and reporting platform. This page explains the basic legal, privacy,
-              and usage expectations for demo and client review purposes.
-            </p>
+        <section class="section-card page-hero fade-up">
+          <div class="page-hero-copy">
+            <p class="section-kicker">Legal</p>
+            <h1>Terms, privacy expectations, and market participation disclosures</h1>
+            <p class="section-intro">This page outlines the general legal and privacy posture of the AssetYantra demo and platform experience.</p>
           </div>
-          <div class="public-hero-panel">
-            <article class="public-side-card">
-              <p class="eyebrow">Important Note</p>
-              <strong>Not financial advice.</strong>
-              <p>
-                Stock prices, reports, and profit/loss views are shown for portfolio tracking and demonstration. Users
-                should verify data before making investment decisions.
-              </p>
+          <div class="page-hero-panel safety-visual" aria-hidden="true"></div>
+        </section>
+
+        <section class="section-card fade-up">
+          <div class="legal-grid">
+            <article class="legal-card">
+              <p class="section-kicker">Terms of Use</p>
+              <h3>Platform access</h3>
+              <p class="contact-copy">Access to the AssetYantra dashboard is intended for authorized admins and registered users only. Credentials and OTPs should not be shared.</p>
+            </article>
+            <article class="legal-card">
+              <p class="section-kicker">Privacy Policy</p>
+              <h3>Data handling</h3>
+              <p class="contact-copy">Client information, holdings, and reports are used only for operating the product experience, portfolio reviews, and dashboard functionality.</p>
+            </article>
+            <article class="legal-card">
+              <p class="section-kicker">Market Data</p>
+              <h3>Reference and live feeds</h3>
+              <p class="contact-copy">Displayed market data may include live quotes, delayed quotes, or fallback display values depending on source availability.</p>
             </article>
           </div>
         </section>
 
-        <section class="public-section public-grid-two">
-          <article class="public-side-card">
-            <p class="eyebrow">Terms Of Use</p>
-            <strong>Use the platform responsibly.</strong>
-            <p>
-              The dashboard is intended for registered admins and clients only. Login credentials, OTPs, and client IDs
-              should not be shared publicly.
-            </p>
-          </article>
-          <article class="public-side-card">
-            <p class="eyebrow">Privacy</p>
-            <strong>Client data stays inside the secured workspace.</strong>
-            <p>
-              Customer details, holdings, booked profit/loss, and reports are stored for dashboard functionality and
-              admin review. Archived clients are hidden from active views.
-            </p>
-          </article>
-          <article class="public-side-card">
-            <p class="eyebrow">Market Data</p>
-            <strong>Live prices depend on provider availability.</strong>
-            <p>
-              Market prices may come from third-party sources and can be delayed, cached, unavailable, or different from
-              broker/exchange execution prices.
-            </p>
-          </article>
-          <article class="public-side-card">
-            <p class="eyebrow">Reports</p>
-            <strong>Downloaded reports are for review meetings.</strong>
-            <p>
-              PDF/profile exports summarize portfolio values at the time of generation and should be checked against the
-              latest market and account records.
-            </p>
-          </article>
-        </section>
-
-        <section class="public-dark-cta">
-          <p class="eyebrow">Need Access?</p>
-          <h2>Admins create customers and manage portfolio records inside the dashboard.</h2>
-          <p>Use the secure login page to enter the private workspace.</p>
-          <div class="public-cta-row">
-            <a class="primary-btn" href="./login.html">Open Login</a>
-            <a class="secondary-btn" href="./faq.html">Read FAQ</a>
+        <section class="section-card fade-up">
+          <div class="section-head">
+            <p class="section-kicker">SEBI Disclaimer</p>
+            <h2>Important disclosure</h2>
+          </div>
+          <div class="sebi-note">
+            As we're not currently registered as a SEBI investment advisor or Portfolio Management Service firm (although certified), we're seeking Beta users who have confidence in our abilities and are willing to join us on this journey to achieve favorable returns.
           </div>
         </section>
-      </main>
 
-      <footer class="site-footer public-footer">
-        <div class="public-footer-brand">
-          <div><strong>AssetYantra</strong><p>Price is what you pay. Value is what you get</p></div>
-          <div class="public-footer-meta"><p>Legal, privacy, and market-data notes for the AssetYantra demo.</p></div>
-        </div>
-        <div class="public-footer-links">
-          <a href="./index.html">Home</a>
-          <a href="./about.html">About</a>
-          <a href="./faq.html">FAQ</a>
-          <a href="./reviews.html">Reviews</a>
-          <a href="./login.html">Login</a>
-        </div>
-      </footer>
+        <footer class="footer-shell fade-up">
+          <div class="footer-brand">
+            <a class="brand public-brand" href="./index.html">
+              <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
+              <span class="public-brand-copy"><strong class="brand-wordmark">AssetYantra</strong><small class="brand-tagline">Grow. Protect. Automate.</small></span>
+            </a>
+            <p class="footer-note">AI-Powered Wealth Management for Every Indian Investor</p>
+          </div>
+          <nav class="footer-links">
+            <a href="./index.html">Home</a>
+            <a href="./about.html">About</a>
+            <a href="./products.html">Products</a>
+            <a href="./contact.html">Contact</a>
+            <a href="./trust-safety.html">Trust &amp; Safety</a>
+          </nav>
+          <div class="footer-legal">
+            <p>Disclaimer: As we're not currently registered as a SEBI investment advisor or Portfolio Management Service firm (although certified), we're seeking Beta users who have confidence in our abilities and are willing to join us on this journey to achieve favorable returns.</p>
+            <p class="footer-copy">© 2024 AssetYantra. All Rights Reserved.</p>
+          </div>
+        </footer>
+      </main>
     </div>
     <script src="./app-live.js"></script>
   </body>

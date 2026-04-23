@@ -7,123 +7,44 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;500;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=Space+Mono:wght@700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
     <link rel="stylesheet" href="./public-theme.css" />
   </head>
   <body data-page="reviews" class="public-page">
+    <div class="page-progress" id="pageProgress" aria-hidden="true"></div>
     <div class="site-shell">
-      <header class="site-header">
-        <a class="brand" href="./index.html">
-          <span class="brand-mark brand-logo"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
-          <span><strong>AssetYantra</strong><small>Price is what you pay. Value is what you get</small></span>
+      <header class="site-header public-navbar">
+        <a class="brand public-brand" href="./index.html">
+          <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
+          <span class="public-brand-copy"><strong class="brand-wordmark">AssetYantra</strong><small class="brand-tagline">Grow. Protect. Automate.</small></span>
         </a>
-        <nav class="site-nav">
+        <button class="nav-toggle" type="button" data-nav-toggle="true" aria-label="Open navigation"><span></span><span></span><span></span></button>
+        <nav class="site-nav public-nav">
           <a href="./index.html">Home</a>
           <a href="./about.html">About</a>
-          <a href="./faq.html">FAQ</a>
-          <a class="active" href="./reviews.html">Reviews</a>
+          <a href="./products.html">Products</a>
+          <a href="./contact.html">Contact</a>
+          <a href="./trust-safety.html">Trust &amp; Safety</a>
           <a href="./legal.html">Legal</a>
         </nav>
-        <div class="header-actions">
-          <a class="login-link" href="./login.html">Login</a>
-        </div>
+        <div class="header-actions public-actions"><a class="nav-cta" href="./login.html">Login</a></div>
       </header>
-
       <main class="public-main">
-        <section class="public-hero-card reviews-hero-card">
-          <div class="public-hero-copy reviews-hero-copy">
-            <p class="eyebrow">Reviews</p>
-            <div class="public-mini-ticker">
-              <span>Client confidence <small>clear and credible</small></span>
-              <span>Advisor-ready <small>simple demo proof</small></span>
-              <span>Admin control <small>moderated feedback</small></span>
-            </div>
-            <h1>Real feedback makes the platform feel credible before login.</h1>
-            <p class="public-lead">
-              Reviews support the public trust layer while the dashboard proves the product with holdings, live prices,
-              profit/loss, and downloadable client views.
-            </p>
+        <section class="section-card fade-up">
+          <div class="section-head">
+            <p class="section-kicker">Reviews</p>
+            <h2>What customers are saying</h2>
           </div>
-          <div class="public-hero-panel">
-            <article class="public-dashboard-card reviews-summary-card">
-              <p class="eyebrow">Trust Snapshot</p>
-              <strong>Designed to make demos feel safer and more believable.</strong>
-              <p>Clean reviews, a clear message, and moderated content make the website feel ready for client viewing.</p>
-              <div class="reviews-market-image">
-                <img src="./assets/bull-bear-market.svg?v=3" alt="Bull and bear stock market illustration" />
-              </div>
-              <div class="reviews-meter">
-                <span>5.0</span>
-                <div>
-                  <strong>Average demo rating</strong>
-                  <small>Based on seeded and submitted public reviews</small>
-                </div>
-              </div>
-              <div class="reviews-proof-grid">
-                <div><strong>Premium UI</strong><small>Modern public pages</small></div>
-                <div><strong>Useful Dashboard</strong><small>Real portfolio logic</small></div>
-                <div><strong>Admin Moderation</strong><small>Cleaner trust layer</small></div>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section class="public-section public-review-layout">
-          <div id="reviewsList"></div>
-          <article class="public-review-form">
-            <p class="eyebrow">Add Review</p>
-            <h2>Share how the product feels to you.</h2>
-            <p>Your existing review logic still works here, now in the new public-page format.</p>
-            <form id="reviewForm" class="review-form">
-              <label><span>Name</span><input type="text" name="name" placeholder="Your name" required /></label>
-              <label><span>Role</span><input type="text" name="role" placeholder="Investor / Analyst / Advisor" required /></label>
-              <label><span>Rating</span><input type="number" name="rating" min="1" max="5" value="5" required /></label>
-              <label><span>Review</span><textarea name="message" rows="5" placeholder="Write your feedback" required></textarea></label>
-              <button class="primary-btn" type="submit">Add Review</button>
-            </form>
-          </article>
-        </section>
-
-        <section class="public-section public-grid-two">
-          <article class="public-side-card">
-            <p class="eyebrow">Review System</p>
-            <strong>Designed to strengthen the public trust layer, not just fill space on the website.</strong>
-            <p>Reviews help visitors see the platform through a practical lens and reinforce that it was built for real use.</p>
-          </article>
-          <article class="public-side-card">
-            <p class="eyebrow">Moderation</p>
-            <strong>Reviews can be managed from the admin side so the trust layer stays intentional.</strong>
-            <p>This keeps the public experience credible and connected to the private operational layer.</p>
-          </article>
-        </section>
-
-        <section class="public-dark-cta">
-          <p class="eyebrow">Trust Signal</p>
-          <h2>Good feedback works best when the experience behind it actually delivers.</h2>
-          <p>The public site creates belief. The logged-in workspaces need to justify it, and reviews help connect the two.</p>
-          <div class="public-cta-row">
-            <a class="primary-btn" href="./login.html">Open Platform</a>
-            <a class="secondary-btn" href="./about.html">About The Product</a>
+          <div class="testimonials-grid" id="reviewsList">
+            <article class="testimonial-card"><div class="stars">★★★★★</div><blockquote>AssetYantra made the wealth workflow feel more structured and professional.</blockquote><div class="testimonial-author"><strong>Vinay D</strong><span>Consultant, Hyderabad</span></div></article>
+            <article class="testimonial-card"><div class="stars">★★★★★</div><blockquote>The combination of protection messaging and automation is very compelling.</blockquote><div class="testimonial-author"><strong>Srinivas M</strong><span>Employee, Bangalore</span></div></article>
+            <article class="testimonial-card"><div class="stars">★★★★★</div><blockquote>It looks modern and growth-oriented without losing trust.</blockquote><div class="testimonial-author"><strong>Deepika R</strong><span>Investor, Delhi</span></div></article>
           </div>
         </section>
       </main>
-
-      <footer class="site-footer public-footer">
-        <div class="public-footer-brand">
-          <div><strong>AssetYantra</strong><p>Price is what you pay. Value is what you get</p></div>
-          <div class="public-footer-meta"><p>Built to make trust, proof, and product quality support each other instead of feeling disconnected.</p></div>
-        </div>
-        <div class="public-footer-links">
-          <a href="./index.html">Home</a>
-          <a href="./about.html">About</a>
-          <a href="./faq.html">FAQ</a>
-          <a href="./legal.html">Legal</a>
-          <a href="./login.html">Login</a>
-        </div>
-      </footer>
     </div>
     <script src="./app-live.js"></script>
   </body>

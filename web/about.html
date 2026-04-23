@@ -7,163 +7,136 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;500;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=Space+Mono:wght@700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
     <link rel="stylesheet" href="./public-theme.css" />
   </head>
   <body data-page="about" class="public-page">
+    <div class="page-progress" id="pageProgress" aria-hidden="true"></div>
     <div class="site-shell">
-      <header class="site-header">
-        <a class="brand" href="./index.html">
-          <span class="brand-mark brand-logo"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
-          <span><strong>AssetYantra</strong><small>Price is what you pay. Value is what you get</small></span>
+      <header class="site-header public-navbar">
+        <a class="brand public-brand" href="./index.html">
+          <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
+          <span class="public-brand-copy">
+            <strong class="brand-wordmark">AssetYantra</strong>
+            <small class="brand-tagline">Grow. Protect. Automate.</small>
+          </span>
         </a>
-        <nav class="site-nav">
+        <button class="nav-toggle" type="button" data-nav-toggle="true" aria-label="Open navigation"><span></span><span></span><span></span></button>
+        <nav class="site-nav public-nav">
           <a href="./index.html">Home</a>
           <a class="active" href="./about.html">About</a>
-          <a href="./faq.html">FAQ</a>
-          <a href="./reviews.html">Reviews</a>
+          <a href="./products.html">Products</a>
+          <a href="./contact.html">Contact</a>
+          <a href="./trust-safety.html">Trust &amp; Safety</a>
           <a href="./legal.html">Legal</a>
         </nav>
-        <div class="header-actions">
-          <a class="login-link" href="./login.html">Login</a>
-        </div>
+        <div class="header-actions public-actions"><a class="nav-cta" href="./login.html">Login</a></div>
       </header>
 
       <main class="public-main">
-        <section class="public-hero-card about-hero-card">
-          <div class="public-hero-copy about-hero-copy">
-            <p class="eyebrow">About Us</p>
-            <div class="public-mini-ticker">
-              <span>Brand confidence <small>calm first impression</small></span>
-              <span>Portfolio clarity <small>daily workspace utility</small></span>
-              <span>Client reports <small>simple review output</small></span>
-            </div>
-            <h1>A calmer way to present portfolios, performance, and client trust.</h1>
-            <p class="public-lead">
-              AssetYantra is built for a simple job: help clients understand the service quickly, then give admins and
-              investors a clean workspace for holdings, profit/loss, and reports.
-            </p>
+        <section class="section-card page-hero fade-up">
+          <div class="page-hero-copy">
+            <p class="section-kicker">Believe. Earn. Trust.</p>
+            <h1>Supercharge Your Financial Growth with AssetYantra's Intelligent, Data-Driven Solutions</h1>
+            <p class="section-intro">AssetYantra was built to turn complexity into confidence for Indian investors, wealth teams, and institutions looking for a one-click financial solution.</p>
           </div>
-          <div class="public-hero-panel">
-            <article class="public-dashboard-card about-summary-card">
-              <p class="eyebrow">Operating Model</p>
-              <strong>Public trust outside. Portfolio work inside.</strong>
-              <p>One focused product flow from first impression to daily client review.</p>
-              <div class="about-layer-grid">
-                <div>
-                  <span>01</span>
-                  <strong>Explain</strong>
-                  <small>Public pages tell clients what the platform does.</small>
-                </div>
-                <div>
-                  <span>02</span>
-                  <strong>Secure</strong>
-                  <small>Login separates admin and investor workspaces.</small>
-                </div>
-                <div>
-                  <span>03</span>
-                  <strong>Review</strong>
-                  <small>Dashboards show holdings, live values, and P/L.</small>
-                </div>
-                <div>
-                  <span>04</span>
-                  <strong>Report</strong>
-                  <small>Client snapshots make follow-up conversations easier.</small>
-                </div>
+          <div class="page-hero-panel fundcellence-visual has-image">
+            <img src="./assets/3.jpg" alt="AssetYantra intelligent financial growth illustration" />
+          </div>
+        </section>
+
+        <section class="section-card fade-up">
+          <div class="about-story">
+            <div>
+              <div class="section-head">
+                <p class="section-kicker">Our Story</p>
+                <h2>From lockdown experimentation to a serious algorithmic wealth platform</h2>
               </div>
-              <div class="about-score-strip">
-                <span><strong>Live</strong><small>NSE prices</small></span>
-                <span><strong>P/L</strong><small>clear tracking</small></span>
-                <span><strong>PDF</strong><small>client-ready</small></span>
-              </div>
+              <p class="section-intro">In June 2020, during the lockdown, the AssetYantra journey began with one core challenge: how do we automate disciplined capital market decisions without losing the human need for trust and protection?</p>
+              <p class="section-intro">That idea matured into a wealth operating system focused on intelligent forecasting, capital protection, sustainable technology, and practical execution support.</p>
+            </div>
+            <div class="story-timeline">
+              <article class="story-step"><time>June 2020</time><h3>Algorithmic beginnings</h3><p>Initial models were built around disciplined trade logic and automated decision support.</p></article>
+              <article class="story-step"><time>Build Phase</time><h3>Workflow refinement</h3><p>Research expanded into allocation logic, monitoring, and order execution pathways.</p></article>
+              <article class="story-step"><time>Today</time><h3>AssetYantra</h3><p>A modern platform for growth, protection, and automation across investor journeys.</p></article>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card fade-up">
+          <div class="section-head">
+            <p class="section-kicker">Leadership Team</p>
+            <h2>Three leaders shaping the AssetYantra mission</h2>
+          </div>
+          <div class="team-grid">
+            <article class="team-card">
+              <div class="team-avatar">PN</div>
+              <h3>Pradhyumnnan NG</h3>
+              <p class="section-kicker">CEO</p>
+              <p>8 years in business transformation with strong strategic grounding in customer growth, investment advisory thinking, and financial independence outcomes.</p>
+              <a class="mini-bio-link" href="./contact.html">Bio</a>
+            </article>
+            <article class="team-card">
+              <div class="team-avatar">AN</div>
+              <h3>Anil</h3>
+              <p class="section-kicker">CTO</p>
+              <p>11 years across IT and Data Science, leading the AI forecasting, system design, and intelligent wealth automation engine.</p>
+              <a class="mini-bio-link" href="./contact.html">Bio</a>
+            </article>
+            <article class="team-card">
+              <div class="team-avatar">KA</div>
+              <h3>Kamalakar</h3>
+              <p class="section-kicker">COO</p>
+              <p>13 years in IT operations and stock market execution with an emphasis on process reliability and scalable delivery.</p>
+              <a class="mini-bio-link" href="./contact.html">Bio</a>
             </article>
           </div>
         </section>
 
-        <section class="public-section public-story-grid">
-          <div class="public-copy">
-            <p class="eyebrow">Why This Exists</p>
-            <h2>A simple public site outside login, a useful dashboard inside login.</h2>
-            <p>The goal is simple: help clients understand the platform quickly and then move them into the working dashboard.</p>
+        <section class="section-card fade-up">
+          <div class="section-head">
+            <p class="section-kicker">Values</p>
+            <h2>What drives AssetYantra</h2>
           </div>
-          <div class="public-side-stack">
-            <article class="public-side-card"><strong>Public</strong><p>Storytelling pages built for trust, clarity, and conversion.</p></article>
-            <article class="public-side-card"><strong>Private</strong><p>Actionable dashboards built for decisions, oversight, and reviews.</p></article>
-          </div>
-        </section>
-
-        <section class="public-section market-confidence-section">
-          <div class="public-copy">
-            <p class="eyebrow">Market Confidence</p>
-            <h2>Built to explain both upside and downside clearly.</h2>
-            <p>Clients do not only want numbers. They want to understand whether the portfolio is moving with strength, pressure, or a mixed market.</p>
-          </div>
-          <article class="market-animal-card" aria-label="Bull and bear market illustration">
-            <div class="market-animal-visual">
-              <img src="./assets/bull-bear-market.svg?v=3" alt="Bull and bear stock market illustration" />
-            </div>
-            <div class="market-animal-copy">
-              <span>Bull and Bear Read</span>
-              <strong>Profit/loss clarity for every client conversation.</strong>
-              <p>Green signals show strength. Red signals show pressure. The dashboard keeps both visible without overwhelming the customer.</p>
-            </div>
-          </article>
-        </section>
-
-        <section class="public-section">
-          <div class="public-section-heading">
-            <p class="eyebrow">Three Layers</p>
-            <h2>A unified fintech product with three jobs.</h2>
-            <p>Each layer supports a different stage of the customer relationship.</p>
-          </div>
-          <div class="public-process-layout">
-            <article class="public-process-card"><time>01</time><strong>Public brand layer</strong><p>Home, About, FAQ, and Reviews set expectations before authentication.</p></article>
-            <article class="public-process-card"><time>02</time><strong>Investor workspace</strong><p>Users see performance, allocation, holdings, and recent activity in a cleaner shell.</p></article>
-            <article class="public-process-card"><time>03</time><strong>Admin control</strong><p>Teams review client portfolios, manage trust content, and monitor operations.</p></article>
-            <article class="public-process-card"><time>04</time><strong>Backend discipline</strong><p>Auth, persistence, and role separation hold the product together underneath.</p></article>
+          <div class="values-grid">
+            <article class="team-card">
+              <h3>Vision</h3>
+              <p>Financial Independence for customers through intelligent systems that prioritize protection as much as growth.</p>
+            </article>
+            <article class="team-card">
+              <h3>Mission</h3>
+              <p>A One-click financial solution that makes wealth strategy, execution, and monitoring simpler for every investor.</p>
+            </article>
           </div>
         </section>
 
-        <section class="public-section public-grid-two">
-          <article class="public-side-card">
-            <p class="eyebrow">Mission</p>
-            <strong>Help wealth teams communicate performance with more confidence and less friction.</strong>
-            <p>Clients want something trustworthy. Teams need something that actually supports review conversations and reporting.</p>
-          </article>
-          <article class="public-side-card">
-            <p class="eyebrow">Approach</p>
-            <strong>Use strong information design so numbers become decisions, not noise.</strong>
-            <p>That means clearer hierarchy, cleaner cards, softer charts, and public pages that feel intentional instead of generic.</p>
-          </article>
-        </section>
-
-        <section class="public-dark-cta">
-          <p class="eyebrow">Built For Real Use</p>
-          <h2>A brand-first website outside, a portfolio-first application inside.</h2>
-          <p>That combination is what makes the product feel more valuable than a dashboard demo alone.</p>
-          <div class="public-cta-row">
-            <a class="primary-btn" href="./login.html">Open Login</a>
-            <a class="secondary-btn" href="./faq.html">Read FAQ</a>
+        <footer class="footer-shell fade-up">
+          <div class="footer-brand">
+            <a class="brand public-brand" href="./index.html">
+              <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
+              <span class="public-brand-copy">
+                <strong class="brand-wordmark">AssetYantra</strong>
+                <small class="brand-tagline">Grow. Protect. Automate.</small>
+              </span>
+            </a>
+            <p class="footer-note">AI-Powered Wealth Management for Every Indian Investor</p>
           </div>
-        </section>
+          <nav class="footer-links">
+            <a href="./index.html">Home</a>
+            <a href="./products.html">Products</a>
+            <a href="./contact.html">Contact</a>
+            <a href="./trust-safety.html">Trust &amp; Safety</a>
+            <a href="./legal.html">Legal</a>
+          </nav>
+          <div class="footer-legal">
+            <p>Disclaimer: As we're not currently registered as a SEBI investment advisor or Portfolio Management Service firm (although certified), we're seeking Beta users who have confidence in our abilities and are willing to join us on this journey to achieve favorable returns.</p>
+            <p class="footer-copy">© 2024 AssetYantra. All Rights Reserved.</p>
+          </div>
+        </footer>
       </main>
-
-      <footer class="site-footer public-footer">
-        <div class="public-footer-brand">
-          <div><strong>AssetYantra</strong><p>Price is what you pay. Value is what you get</p></div>
-          <div class="public-footer-meta"><p>Built to make trust, onboarding, and ongoing servicing feel like one connected system.</p></div>
-        </div>
-        <div class="public-footer-links">
-          <a href="./index.html">Home</a>
-          <a href="./faq.html">FAQ</a>
-          <a href="./reviews.html">Reviews</a>
-          <a href="./legal.html">Legal</a>
-          <a href="./login.html">Login</a>
-        </div>
-      </footer>
     </div>
     <script src="./app-live.js"></script>
   </body>

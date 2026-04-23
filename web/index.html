@@ -7,117 +7,233 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;500;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=Space+Mono:wght@700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
     <link rel="stylesheet" href="./public-theme.css" />
   </head>
   <body data-page="home" class="public-page">
+    <div class="page-progress" id="pageProgress" aria-hidden="true"></div>
     <div class="site-shell">
-      <header class="site-header">
-        <a class="brand" href="./index.html">
-          <span class="brand-mark brand-logo"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
-          <span>
-            <strong>AssetYantra</strong>
-            <small>Price is what you pay. Value is what you get</small>
+      <header class="site-header public-navbar">
+        <a class="brand public-brand" href="./index.html">
+          <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
+          <span class="public-brand-copy">
+            <strong class="brand-wordmark">AssetYantra</strong>
+            <small class="brand-tagline">Grow. Protect. Automate.</small>
           </span>
         </a>
-        <nav class="site-nav">
+        <button class="nav-toggle" type="button" data-nav-toggle="true" aria-label="Open navigation"><span></span><span></span><span></span></button>
+        <nav class="site-nav public-nav">
           <a class="active" href="./index.html">Home</a>
           <a href="./about.html">About</a>
-          <a href="./faq.html">FAQ</a>
-          <a href="./reviews.html">Reviews</a>
+          <a href="./products.html">Products</a>
+          <a href="./contact.html">Contact</a>
+          <a href="./trust-safety.html">Trust &amp; Safety</a>
           <a href="./legal.html">Legal</a>
         </nav>
-        <div class="header-actions">
-          <a class="login-link" href="./login.html">Login</a>
+        <div class="header-actions public-actions">
+          <a class="nav-cta" href="./login.html">Login</a>
         </div>
       </header>
 
-      <main class="public-main compact-public-main">
-        <section class="public-hero-card compact-hero-card">
-          <p class="eyebrow hero-market-label">Private Stock Platform</p>
-          <div id="homeLiveTicker" class="home-live-ticker" aria-live="polite">
-            <div class="home-ticker-track">
-              <article class="home-ticker-item is-up">
-                <span class="ticker-dot"></span>
-                <strong>NIFTY 50 <em>Loading...</em></strong>
-                <small>Live</small>
+      <main class="public-main">
+        <section class="hero-shell fade-up">
+          <div class="home-hero-carousel" data-home-hero-carousel="true" aria-label="AssetYantra highlights">
+            <button class="hero-carousel-btn hero-carousel-prev" type="button" data-hero-prev="true" aria-label="Previous slide">&#8249;</button>
+            <div class="hero-carousel-stage">
+              <article class="hero-carousel-slide is-active" data-hero-slide="true">
+                <div class="hero-carousel-image">
+                  <img src="./assets/4.jpg" alt="AssetYantra intelligent wealth growth illustration" />
+                </div>
+                <div class="hero-carousel-copy">
+                  <h1>AssetYantra - Intelligent Wealth. Engineered for Growth</h1>
+                  <p>Empowering your financial journey with AI-driven insights, strategic guidance, and a trusted ecosystem designed to maximize your potential.</p>
+                </div>
+              </article>
+              <article class="hero-carousel-slide" data-hero-slide="true">
+                <div class="hero-carousel-image">
+                  <img src="./assets/5.jpg" alt="AI powered wealth management illustration" />
+                </div>
+                <div class="hero-carousel-copy">
+                  <h1>Embrace AI for the Future of Wealth Management</h1>
+                  <p>Our intelligent platform analyzes markets in real time, optimizes your portfolio, and safeguards your investments with data-backed precision.</p>
+                </div>
+              </article>
+              <article class="hero-carousel-slide" data-hero-slide="true">
+                <div class="hero-carousel-image">
+                  <img src="./assets/6.jpg" alt="Strategic growth ecosystem illustration" />
+                </div>
+                <div class="hero-carousel-copy">
+                  <h1>Beyond Investing - A Strategic Growth Ecosystem</h1>
+                  <p>AssetYantra goes beyond capital. Gain access to expert mentorship, powerful networks, and strategic support to accelerate your financial success.</p>
+                </div>
               </article>
             </div>
-          </div>
-          <div class="public-hero-copy">
-            <h1>Track client portfolios with live prices and clear profit/loss.</h1>
-            <p class="public-lead">
-              A simple stock dashboard for admins and investors. Add holdings, view live values, check profit/loss, and
-              download clean client reports.
-            </p>
+            <button class="hero-carousel-btn hero-carousel-next" type="button" data-hero-next="true" aria-label="Next slide">&#8250;</button>
+            <div class="hero-carousel-dots" aria-label="Choose slide">
+              <button class="is-active" type="button" data-hero-dot="0" aria-label="Show slide 1"></button>
+              <button type="button" data-hero-dot="1" aria-label="Show slide 2"></button>
+              <button type="button" data-hero-dot="2" aria-label="Show slide 3"></button>
+            </div>
           </div>
 
-          <div class="public-hero-panel">
-            <article class="public-dashboard-card compact-market-card">
-              <div class="public-dashboard-top">
-                <div>
-                  <p class="eyebrow">Live Market News</p>
-                  <strong>Today’s market pulse.</strong>
-                  <small>Rotating stock updates with today’s date for quick client context.</small>
-                </div>
-                <span class="public-badge green" id="homeNewsDate">Today</span>
+          <div class="hero-ticker-wrap">
+            <div id="homeLiveTicker" aria-live="polite">
+              <div class="home-ticker-track">
+                <article class="home-ticker-item"><span class="ticker-dot"></span><strong>NIFTY 50 <em>Loading...</em></strong><small>Live</small></article>
               </div>
-              <div id="homeLiveNews" class="home-live-news">
-                <article class="home-news-item">
-                  <span>Market Update</span>
-                  <strong>Loading today’s stock news...</strong>
-                  <small>Please wait</small>
-                </article>
-              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card fundcellence-strip fade-up">
+          <div class="fundcellence-visual has-image">
+            <img src="./assets/1.jpg" alt="Bull market growth visual" />
+          </div>
+          <div class="hero-copy">
+            <p class="section-kicker">Fundcellence</p>
+            <h2>Fundcellence - Cultivating Excellence Through Strategic Partnership</h2>
+            <p>More Than Financing: Mentorship, Networking, and Strategic Guidance for founders who believe in growing together.</p>
+            <a class="pill-link" href="./products.html">Explore the Product</a>
+          </div>
+        </section>
+
+        <section class="stats-shell fade-up">
+          <article class="stat-card">
+            <strong class="stat-number" data-countup="40" data-suffix="+">0</strong>
+            <span class="stat-label">Happy Customers</span>
+          </article>
+          <article class="stat-card">
+            <strong class="stat-number" data-countup="1" data-prefix="Rs. " data-suffix="B+">0</strong>
+            <span class="stat-label">Portfolio Size</span>
+          </article>
+          <article class="stat-card">
+            <strong class="stat-number" data-countup="5" data-prefix="Rs. " data-suffix="B+">0</strong>
+            <span class="stat-label">Turnover</span>
+          </article>
+          <article class="stat-card">
+            <strong class="stat-number" data-countup="4">0</strong>
+            <span class="stat-label">Countries Footprint</span>
+          </article>
+        </section>
+
+        <section class="section-card fade-up" id="products">
+          <div class="section-head">
+            <p class="section-kicker">Products</p>
+            <h2>Our Products</h2>
+            <p>Two focused offerings designed around capital access and AI-powered wealth automation.</p>
+          </div>
+          <div class="products-grid">
+            <article class="product-card">
+              <div class="product-icon">FD</div>
+              <h3>Fundcellence</h3>
+              <p>Have an Idea? Need funds to make it a reality? Believe in growing together?</p>
+              <a class="pill-link" href="./products.html">Learn More -></a>
+            </article>
+            <article class="product-card">
+              <div class="product-icon">AI</div>
+              <h3>AssetYantra Engine</h3>
+              <p>AI-powered wealth optimization takes complete control - from capital market strategy to order execution.</p>
+              <a class="pill-link" href="./products.html">Learn More -></a>
             </article>
           </div>
         </section>
 
-        <section class="public-section compact-feature-strip">
-          <article>
-            <span>01</span>
-            <strong>Admin Dashboard</strong>
-            <p>Click any stock to see all users holding it, quantity, live value, and P/L.</p>
-          </article>
-          <article>
-            <span>02</span>
-            <strong>User Portfolio</strong>
-            <p>Users can add stocks, sell holdings, and see lifetime profit/loss clearly.</p>
-          </article>
-          <article>
-            <span>03</span>
-            <strong>Client Reports</strong>
-            <p>Download simple portfolio snapshots for review meetings and demos.</p>
-          </article>
-        </section>
-
-        <section class="public-dark-cta compact-dark-cta">
-          <p class="eyebrow">Demo Ready</p>
-          <h2>Open the platform and show the dashboard directly.</h2>
-          <p>Clean public pages outside login. Functional admin and user dashboards after login.</p>
-          <div class="public-cta-row">
-            <a class="secondary-btn" href="./faq.html">Questions</a>
+        <section class="section-card fade-up">
+          <div class="usp-grid">
+            <div>
+              <div class="section-head">
+                <p class="section-kicker">Unique Selling Proposition</p>
+                <h2>End-to-end automation for financial institutions, corporations, and retail investors</h2>
+              </div>
+              <ul class="check-list">
+                <li>Precise asset class selection within capital markets</li>
+                <li>Timely entry and exit strategies</li>
+                <li>Proportionate position sizing</li>
+                <li>Strategic allocation and assortment of assets</li>
+                <li>Continuous full-time monitoring</li>
+                <li>Efficient order management</li>
+              </ul>
+            </div>
+            <div class="usp-visual has-image">
+              <img src="./assets/2.jpg" alt="Automation workflow for financial institutions, corporations, and investors" />
+            </div>
           </div>
         </section>
+
+        <section class="section-card competitive-edge-section fade-up">
+          <div class="section-head centered-head">
+            <p class="section-kicker">Competitive Edge</p>
+            <h2>Why AssetYantra Wins</h2>
+            <p>Most competitors provide strategy and platforms without any execution plan. We deliver both - seamlessly.</p>
+          </div>
+          <div class="table-wrap">
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th>Feature</th>
+                  <th>Competitors</th>
+                  <th class="brand-head">AssetYantra Engine</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Asset Class Selection</td><td class="mark-no">&times;</td><td class="mark-yes">&#10003;</td></tr>
+                <tr><td>Quantity (Position Sizing)</td><td class="mark-no">&times;</td><td class="mark-yes">&#10003;</td></tr>
+                <tr><td>Different Market Types</td><td class="mark-no">&times;</td><td class="mark-yes">&#10003;</td></tr>
+                <tr><td>Unique Price Entry / Exit Strategy</td><td class="mark-no">&times;</td><td class="mark-yes">&#10003;</td></tr>
+                <tr><td>End-to-End Order Management</td><td class="mark-no">&times;</td><td class="mark-yes">&#10003;</td></tr>
+                <tr><td>Full-Time Monitoring</td><td class="mark-no">&times;</td><td class="mark-yes">&#10003;</td></tr>
+                <tr><td>WhatsApp &amp; SMS Notifications</td><td class="mark-yes">&#10003;</td><td class="mark-yes">&#10003;</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section-card testimonials-section fade-up">
+          <div class="section-head centered-head">
+            <p class="section-kicker">Testimonials</p>
+            <h2>Trusted by Investors Across India</h2>
+            <p>Thousands of professionals and businesses are already growing with AssetYantra.</p>
+          </div>
+          <div class="testimonials-grid">
+            <article class="testimonial-card"><div class="stars">*****</div><blockquote>The AssetYantra Engine has delivered promised returns consistently. Their capital protection methods and almost zero-risk approach have kept my investments safe even during volatile market conditions.</blockquote><div class="testimonial-author"><strong>Vinay D.</strong><span>Realty Developer, Hyderabad</span></div></article>
+            <article class="testimonial-card"><div class="stars">*****</div><blockquote>Choosing AssetYantra has been one of the best decisions for my investments. Their intelligent wealth optimization tool ensures effective risk mitigation and a customer-first approach.</blockquote><div class="testimonial-author"><strong>Srinivas M.</strong><span>US Banking &amp; Taxation, Bangalore</span></div></article>
+            <article class="testimonial-card"><div class="stars">*****</div><blockquote>AssetYantra made investing easy for me. They give the returns they promise, with strong safety controls, quick support, and a simple onboarding experience.</blockquote><div class="testimonial-author"><strong>Shashi A.</strong><span>Manufacturing Industry, Hyderabad</span></div></article>
+            <article class="testimonial-card"><div class="stars">*****</div><blockquote>The AssetYantra Engine has exceeded my expectations. The consistent returns and prompt support make investing stress-free. I rarely check my account because I trust their intelligent tool.</blockquote><div class="testimonial-author"><strong>Deepak K.</strong><span>IT Employee, Delhi</span></div></article>
+            <article class="testimonial-card"><div class="stars">*****</div><blockquote>With AssetYantra, I have been getting steady and reliable returns. Their capital protection methods are top-notch and they clearly put customer safety first.</blockquote><div class="testimonial-author"><strong>David Kevin</strong><span>E-Commerce Owner, USA</span></div></article>
+            <article class="testimonial-card"><div class="stars">*****</div><blockquote>AssetYantra is the best investment tool I have used. The returns, effective risk mitigation plans, and customer-first attitude make me feel secure about my portfolio.</blockquote><div class="testimonial-author"><strong>Sneha T.</strong><span>Restaurant Owner, UK</span></div></article>
+            <article class="testimonial-card"><div class="stars">*****</div><blockquote>The dashboard is easy to understand and the team explains portfolio movement clearly. I like that growth and protection are both visible in one place.</blockquote><div class="testimonial-author"><strong>Deepika R.</strong><span>Retail Investor, Mumbai</span></div></article>
+            <article class="testimonial-card"><div class="stars">*****</div><blockquote>AssetYantra gives a professional experience from the first demo. The automation, reporting, and safety-first approach make it ideal for serious investors.</blockquote><div class="testimonial-author"><strong>Amit R.</strong><span>Business Owner, Pune</span></div></article>
+          </div>
+        </section>
+
+        <footer class="footer-shell fade-up">
+          <div class="footer-brand">
+            <a class="brand public-brand" href="./index.html">
+              <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
+              <span class="public-brand-copy">
+                <strong class="brand-wordmark">AssetYantra</strong>
+                <small class="brand-tagline">Grow. Protect. Automate.</small>
+              </span>
+            </a>
+            <p class="footer-note">AI-Powered Wealth Management for Every Indian Investor</p>
+          </div>
+          <nav class="footer-links">
+            <a href="./index.html">Home</a>
+            <a href="./about.html">About</a>
+            <a href="./products.html">Products</a>
+            <a href="./contact.html">Contact</a>
+            <a href="./trust-safety.html">Trust &amp; Safety</a>
+            <a href="./legal.html">Legal</a>
+          </nav>
+          <div class="footer-legal">
+            <p>Disclaimer: As we're not currently registered as a SEBI investment advisor or Portfolio Management Service firm (although certified), we're seeking Beta users who have confidence in our abilities and are willing to join us on this journey to achieve favorable returns.</p>
+            <p class="footer-copy">&copy; 2024 AssetYantra. All Rights Reserved.</p>
+          </div>
+        </footer>
       </main>
-
-      <footer class="site-footer public-footer compact-footer">
-        <div class="public-footer-brand">
-          <div>
-            <strong>AssetYantra</strong>
-            <p>Price is what you pay. Value is what you get</p>
-          </div>
-        </div>
-        <div class="public-footer-links">
-          <a href="./about.html">About</a>
-          <a href="./faq.html">FAQ</a>
-          <a href="./reviews.html">Reviews</a>
-          <a href="./legal.html">Legal</a>
-        </div>
-      </footer>
     </div>
     <script src="./app-live.js"></script>
   </body>

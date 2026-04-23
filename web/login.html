@@ -7,135 +7,141 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;500;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=Space+Mono:wght@700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
     <link rel="stylesheet" href="./public-theme.css" />
   </head>
   <body data-page="login" class="public-page">
+    <div class="page-progress" id="pageProgress" aria-hidden="true"></div>
     <div class="site-shell">
-      <header class="site-header">
-        <a class="brand" href="./index.html">
-          <span class="brand-mark brand-logo"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
-          <span><strong>AssetYantra</strong><small>Price is what you pay. Value is what you get</small></span>
+      <header class="site-header public-navbar">
+        <a class="brand public-brand" href="./index.html">
+          <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
+          <span class="public-brand-copy">
+            <strong class="brand-wordmark">AssetYantra</strong>
+            <small class="brand-tagline">Grow. Protect. Automate.</small>
+          </span>
         </a>
-        <nav class="site-nav">
+        <button class="nav-toggle" type="button" data-nav-toggle="true" aria-label="Open navigation"><span></span><span></span><span></span></button>
+        <nav class="site-nav public-nav">
           <a href="./index.html">Home</a>
           <a href="./about.html">About</a>
-          <a href="./faq.html">FAQ</a>
-          <a href="./reviews.html">Reviews</a>
+          <a href="./products.html">Products</a>
+          <a href="./contact.html">Contact</a>
+          <a href="./trust-safety.html">Trust &amp; Safety</a>
           <a href="./legal.html">Legal</a>
         </nav>
-        <div class="header-actions">
-          <span class="login-link active">Login</span>
+        <div class="header-actions public-actions">
+          <div class="nav-dropdown" data-login-dropdown="true">
+            <button class="nav-login-btn" type="button" data-login-dropdown-toggle="true">Login</button>
+            <div class="nav-dropdown-menu">
+              <a class="nav-dropdown-link" href="./login.html?role=admin" data-login-role-link="admin">Login as Admin</a>
+              <a class="nav-dropdown-link" href="./login.html?role=user" data-login-role-link="user">Login as User</a>
+            </div>
+          </div>
         </div>
       </header>
 
-      <main class="public-main login-split-main">
-        <section class="login-split-card">
-          <aside class="login-visual-panel">
-            <div class="login-visual-brand">
-              <span class="brand-mark brand-logo"><img src="./assets/assetyantra-logo.svg" alt="" /></span>
-              <strong>AssetYantra</strong>
-            </div>
-            <div class="login-finance-art" aria-hidden="true">
-              <article class="float-card balance-card">
-                <span class="mini-icon">₹</span>
-                <small>Current Value</small>
-                <strong>₹3,29,477</strong>
-              </article>
-              <article class="float-card donut-card">
-                <div class="donut-ring"><span>34%</span></div>
-                <small>Equity</small>
-              </article>
-              <article class="float-card transaction-card">
-                <button type="button">+</button>
-                <strong>New deal</strong>
-                <small>add stock position</small>
-              </article>
-            </div>
-            <div class="login-visual-copy">
-              <p class="eyebrow" id="authAsideEyebrow">Admin View</p>
-              <h2 id="authHeroTitle">Login as admin.</h2>
-              <p id="authHeroText">Review clients, portfolio performance, and export-ready dashboards.</p>
-              <div class="login-slider-dots" aria-hidden="true"><span></span><span></span><span class="active"></span></div>
-            </div>
-            <div class="login-hidden-dynamic" aria-hidden="true">
-              <article id="authDynamicCard">
+      <main class="public-main">
+        <section class="auth-shell fade-up">
+          <aside class="auth-panel">
+            <div class="auth-panel-visual">
+              <p class="section-kicker" id="authAsideEyebrow">Secure Access</p>
+              <h1 class="auth-heading" id="authHeroTitle">Welcome back to AssetYantra.</h1>
+              <p class="auth-subtitle" id="authHeroText">Login securely to manage client portfolios, monitor holdings, and review growth with confidence.</p>
+
+              <div class="auth-float-grid" aria-hidden="true">
+                <article class="auth-float-card balance">
+                  <small>Current Value</small>
+                  <strong>Rs. 24,359</strong>
+                </article>
+                <article class="auth-float-card ring"></article>
+                <article class="auth-float-card deal">
+                  <button type="button">+</button>
+                  <h3>New deal</h3>
+                  <p class="form-note">Secure workflow with smart execution support</p>
+                </article>
+              </div>
+
+              <article class="team-card" id="authDynamicCard">
                 <h3 id="authAsideTitle">Control client portfolios and exports.</h3>
                 <div id="authAsideMetrics"></div>
               </article>
-              <article id="authDynamicListCard">
-                <p id="authAsideListEyebrow">Admin Tools</p>
-                <ul id="authAsideList"></ul>
+              <article class="team-card" id="authDynamicListCard">
+                <p class="section-kicker" id="authAsideListEyebrow">Admin Tools</p>
+                <ul class="check-list" id="authAsideList"></ul>
               </article>
             </div>
           </aside>
 
-          <section class="login-form-panel">
-            <div class="login-switcher auth-switcher">
+          <section class="auth-form-zone">
+            <div class="auth-switcher-bar auth-switcher">
               <button class="role-toggle active" data-role-tab="admin">Login as Admin</button>
               <button class="role-toggle" data-role-tab="user">Login as User</button>
             </div>
 
-            <div class="login-form-shell auth-stage-card">
-              <form id="adminForm" class="feature-card auth-card auth-form-card" novalidate>
-                <p class="eyebrow">Secure Access</p>
-                <h2>Welcome back!</h2>
-                <p class="form-subtitle">Enter admin credentials and OTP to manage client portfolios.</p>
+            <div class="auth-form-shell auth-stage-card">
+              <form id="adminForm" class="auth-form-card" novalidate>
+                <p class="section-kicker">Admin Login</p>
+                <h2 class="auth-heading">Secure admin workspace</h2>
+                <p class="auth-subtitle">Use username, password, phone number, and OTP to open the control panel.</p>
                 <label><span>Username</span><input name="username" type="text" placeholder="admin username" autocomplete="username" required /></label>
                 <label><span>Password</span><input name="password" type="password" placeholder="password" autocomplete="current-password" required /></label>
                 <label><span>Phone Number</span><input name="phone" type="tel" placeholder="registered phone number" autocomplete="tel" required /></label>
                 <div class="split-row">
                   <label><span>OTP</span><input name="otp" type="text" placeholder="6 digit code" required /></label>
-                  <button class="secondary-btn" type="button" data-send-otp="admin">Send OTP</button>
+                  <button class="secondary-outline" type="button" data-send-otp="admin">Send OTP</button>
                 </div>
                 <p class="helper-text" id="adminOtpHint">OTP status will appear here after request.</p>
                 <p class="error-text" id="adminError"></p>
-                <button class="primary-btn" type="submit">Login</button>
+                <button class="submit-btn" type="submit">Login</button>
               </form>
 
-              <form id="userForm" class="feature-card auth-card auth-form-card hidden" novalidate>
-                <p class="eyebrow">Client Workspace</p>
-                <h2>Welcome back!</h2>
-                <p class="form-subtitle">Enter your client ID, password, phone number and OTP.</p>
-                <label><span>Fixed User ID</span><input name="userId" type="text" placeholder="CLIENT-1001" autocomplete="username" required /></label>
+              <form id="userForm" class="auth-form-card hidden" novalidate>
+                <p class="section-kicker">User Login</p>
+                <h2 class="auth-heading">Secure user workspace</h2>
+                <p class="auth-subtitle">Use fixed user ID, password, phone number, and verification code to enter your dashboard.</p>
+                <label><span>Fixed User ID</span><input name="userId" type="text" placeholder="ABC123" autocomplete="username" required /></label>
                 <label><span>Password</span><input name="password" type="password" placeholder="password" autocomplete="current-password" required /></label>
                 <label><span>Phone Number</span><input name="phone" type="tel" placeholder="registered phone number" autocomplete="tel" required /></label>
                 <div class="split-row">
                   <label><span>Verification Code</span><input name="otp" type="text" placeholder="6 digit code" required /></label>
-                  <button class="secondary-btn" type="button" data-send-otp="user">Send Code</button>
+                  <button class="secondary-outline" type="button" data-send-otp="user">Send Code</button>
                 </div>
                 <p class="helper-text" id="userOtpHint">Verification status will appear here after request.</p>
                 <p class="error-text" id="userError"></p>
-                <button class="primary-btn" type="submit">Login</button>
+                <button class="submit-btn" type="submit">Login</button>
               </form>
-            </div>
-
-            <div class="login-demo-strip">
-              <strong>Client-ready access</strong>
-              <span>New customers are created by the admin from the dashboard.</span>
-              <span>Admin access is shared privately with the owner only.</span>
             </div>
           </section>
         </section>
-      </main>
 
-      <footer class="site-footer public-footer">
-        <div class="public-footer-brand">
-          <div><strong>AssetYantra</strong><p>Price is what you pay. Value is what you get</p></div>
-          <div class="public-footer-meta"><p>The login page now matches the same premium public format before the dashboard loads.</p></div>
-        </div>
-        <div class="public-footer-links">
-          <a href="./index.html">Home</a>
-          <a href="./about.html">About</a>
-          <a href="./faq.html">FAQ</a>
-          <a href="./reviews.html">Reviews</a>
-          <a href="./legal.html">Legal</a>
-        </div>
-      </footer>
+        <footer class="footer-shell fade-up">
+          <div class="footer-brand">
+            <a class="brand public-brand" href="./index.html">
+              <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
+              <span class="public-brand-copy"><strong class="brand-wordmark">AssetYantra</strong><small class="brand-tagline">Grow. Protect. Automate.</small></span>
+            </a>
+            <p class="footer-note">AI-Powered Wealth Management for Every Indian Investor</p>
+          </div>
+          <nav class="footer-links">
+            <a href="./index.html">Home</a>
+            <a href="./about.html">About</a>
+            <a href="./products.html">Products</a>
+            <a href="./contact.html">Contact</a>
+            <a href="./trust-safety.html">Trust &amp; Safety</a>
+            <a href="./legal.html">Legal</a>
+          </nav>
+          <div class="footer-legal">
+            <p>Disclaimer: As we're not currently registered as a SEBI investment advisor or Portfolio Management Service firm (although certified), we're seeking Beta users who have confidence in our abilities and are willing to join us on this journey to achieve favorable returns.</p>
+            <p class="footer-copy">&copy; 2024 AssetYantra. All Rights Reserved.</p>
+          </div>
+        </footer>
+      </main>
     </div>
+
     <div id="authLoadingOverlay" class="auth-loading-overlay hidden" aria-hidden="true">
       <div class="auth-loading-card">
         <div class="auth-loading-brand">AssetYantra Secure Login</div>
@@ -144,18 +150,12 @@
           <span></span>
           <img src="./assets/assetyantra-logo.svg" alt="" />
         </div>
-        <p class="eyebrow">Secure Workspace</p>
+        <p class="section-kicker">Secure Workspace</p>
         <h2 id="authLoadingTitle">Opening dashboard...</h2>
         <p id="authLoadingText">Please wait while we verify access and load your workspace.</p>
         <div class="auth-loading-progress" aria-hidden="true"><span></span></div>
-        <div class="auth-loading-steps" aria-hidden="true">
-          <span>Verify</span>
-          <span>Load Data</span>
-          <span>Open</span>
-        </div>
       </div>
     </div>
     <script src="./app-live.js"></script>
   </body>
 </html>
-

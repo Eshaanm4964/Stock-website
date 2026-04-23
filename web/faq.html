@@ -7,126 +7,45 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;500;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=Space+Mono:wght@700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
     <link rel="stylesheet" href="./public-theme.css" />
   </head>
   <body data-page="faq" class="public-page">
+    <div class="page-progress" id="pageProgress" aria-hidden="true"></div>
     <div class="site-shell">
-      <header class="site-header">
-        <a class="brand" href="./index.html">
-          <span class="brand-mark brand-logo"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
-          <span><strong>AssetYantra</strong><small>Price is what you pay. Value is what you get</small></span>
+      <header class="site-header public-navbar">
+        <a class="brand public-brand" href="./index.html">
+          <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
+          <span class="public-brand-copy"><strong class="brand-wordmark">AssetYantra</strong><small class="brand-tagline">Grow. Protect. Automate.</small></span>
         </a>
-        <nav class="site-nav">
+        <button class="nav-toggle" type="button" data-nav-toggle="true" aria-label="Open navigation"><span></span><span></span><span></span></button>
+        <nav class="site-nav public-nav">
           <a href="./index.html">Home</a>
           <a href="./about.html">About</a>
-          <a class="active" href="./faq.html">FAQ</a>
-          <a href="./reviews.html">Reviews</a>
+          <a href="./products.html">Products</a>
+          <a href="./contact.html">Contact</a>
+          <a href="./trust-safety.html">Trust &amp; Safety</a>
           <a href="./legal.html">Legal</a>
         </nav>
-        <div class="header-actions">
-          <a class="login-link" href="./login.html">Login</a>
-        </div>
+        <div class="header-actions public-actions"><a class="nav-cta" href="./login.html">Login</a></div>
       </header>
-
       <main class="public-main">
-        <section class="public-hero-card faq-hero-card">
-          <div class="public-hero-copy faq-hero-copy">
-            <p class="eyebrow">Frequently Asked Questions</p>
-            <div class="public-mini-ticker">
-              <span>Public website <small>trust and explanation</small></span>
-              <span>Private workspace <small>utility and action</small></span>
-              <span>Admin + user roles <small>separate experiences</small></span>
-            </div>
-            <h1>Clear answers for admins, investors, and client demos.</h1>
-            <p class="public-lead">
-              Understand how AssetYantra separates the public website from the secure workspace, how users enter the
-              dashboard, and what the admin can review after login.
-            </p>
+        <section class="section-card fade-up">
+          <div class="section-head">
+            <p class="section-kicker">FAQ</p>
+            <h2>Practical answers about AssetYantra</h2>
           </div>
-          <div class="public-hero-panel">
-            <article class="public-faq-summary faq-summary-card">
-              <p class="eyebrow">Quick Summary</p>
-              <strong>One product, two clean layers.</strong>
-              <p>The public pages explain the product. The login area opens the practical admin and user dashboard.</p>
-              <div class="faq-summary-steps">
-                <div>
-                  <span>01</span>
-                  <strong>Public Site</strong>
-                  <small>Simple pages for trust, FAQ, reviews, and demo context.</small>
-                </div>
-                <div>
-                  <span>02</span>
-                  <strong>Secure Login</strong>
-                  <small>Separate admin and investor entry before dashboard access.</small>
-                </div>
-                <div>
-                  <span>03</span>
-                  <strong>Portfolio View</strong>
-                  <small>Live holdings, profit/loss, and downloadable client reports.</small>
-                </div>
-              </div>
-              <div class="faq-summary-route" aria-label="Platform flow">
-                <span>Website</span>
-                <b></b>
-                <span>Login</span>
-                <b></b>
-                <span>Dashboard</span>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section class="faq-list">
-          <article class="faq-item"><button class="faq-question" type="button">How does the admin login work?</button><div class="faq-answer"><p>The admin flow uses username, password, phone number, and OTP verification before opening the private admin workspace.</p></div></article>
-          <article class="faq-item"><button class="faq-question" type="button">How does the user login work?</button><div class="faq-answer"><p>Users login with a fixed client ID, password, phone number, and OTP before entering their portfolio workspace.</p></div></article>
-          <article class="faq-item"><button class="faq-question" type="button">What can the admin do after login?</button><div class="faq-answer"><p>The admin can review portfolios, inspect holdings, moderate reviews, manage users, control public-site settings, and export client dashboard views.</p></div></article>
-          <article class="faq-item"><button class="faq-question" type="button"><span class="faq-market-icon bull" aria-hidden="true"></span>What can users do after login?</button><div class="faq-answer"><p>Users can review portfolio performance, see allocation breakdowns, track live holdings, add stocks, remove stocks, and monitor recent activity.</p></div></article>
-          <article class="faq-item"><button class="faq-question" type="button"><span class="faq-market-icon bull" aria-hidden="true"></span>Are market prices real-time?</button><div class="faq-answer"><p>The platform is structured for live quote integration and quote caching, with fallback handling when live data is unavailable.</p></div></article>
-          <article class="faq-item"><button class="faq-question" type="button"><span class="faq-market-icon bear" aria-hidden="true"></span>How does profit/loss tracking work?</button><div class="faq-answer"><p>Each holding compares buy value with the latest available market value, while sold deals are separated as booked profit/loss for clearer reporting.</p></div></article>
-          <article class="faq-item"><button class="faq-question" type="button">How are reviews handled?</button><div class="faq-answer"><p>The reviews page can display seeded testimonials and submitted reviews, while admins can moderate or remove non-protected entries.</p></div></article>
-        </section>
-
-        <section class="public-section public-grid-two" id="faqHighlightCards">
-          <article class="public-side-card">
-            <p class="eyebrow">Admin Drilldowns</p>
-            <strong>Click a client name to open live holdings and older purchase history.</strong>
-            <p>The admin dashboard includes direct client-level drilldowns so portfolio reviews take fewer clicks.</p>
-          </article>
-          <article class="public-side-card">
-            <p class="eyebrow">Stock Exposure</p>
-            <strong>Click a stock name to identify all clients currently holding that stock.</strong>
-            <p>This makes concentration reviews faster and gives the admin a better owner-level view.</p>
-          </article>
-        </section>
-
-        <section class="public-dark-cta">
-          <p class="eyebrow">Need More Detail?</p>
-          <h2>Open the demo and test the admin or user dashboard.</h2>
-          <p>The FAQ answers the practical questions. Login opens the working dashboard experience.</p>
-          <div class="public-cta-row">
-            <a class="primary-btn" href="./login.html">Open Login</a>
-            <a class="secondary-btn" href="./reviews.html">Read Reviews</a>
+          <div class="services-grid">
+            <article class="service-card"><h3>How does login work?</h3><p>Admins and users verify with credentials, phone number, and OTP before entering their dashboard.</p></article>
+            <article class="service-card"><h3>Are market prices real-time?</h3><p>The platform is built for live quotes with fallback handling when feeds are unavailable.</p></article>
+            <article class="service-card"><h3>Can client reports be downloaded?</h3><p>Yes. The admin and user workspaces support export-friendly review flows.</p></article>
+            <article class="service-card"><h3>What does AssetYantra automate?</h3><p>Allocation logic, monitoring, decision support, and execution-linked workflows.</p></article>
           </div>
         </section>
       </main>
-
-      <footer class="site-footer public-footer">
-        <div class="public-footer-brand">
-          <div><strong>AssetYantra</strong><p>Price is what you pay. Value is what you get</p></div>
-          <div class="public-footer-meta"><p>Built to answer the right questions before users ever enter the dashboard.</p></div>
-        </div>
-        <div class="public-footer-links">
-          <a href="./index.html">Home</a>
-          <a href="./about.html">About</a>
-          <a href="./reviews.html">Reviews</a>
-          <a href="./legal.html">Legal</a>
-          <a href="./login.html">Login</a>
-        </div>
-      </footer>
     </div>
     <script src="./app-live.js"></script>
   </body>
