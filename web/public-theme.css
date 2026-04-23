@@ -374,7 +374,7 @@ body.public-page .site-shell {
 .home-hero-carousel {
   position: relative;
   z-index: 1;
-  min-height: 430px;
+  min-height: 440px;
   overflow: hidden;
   border: 1px solid rgba(17, 201, 108, 0.12);
   border-radius: 30px;
@@ -388,17 +388,17 @@ body.public-page .site-shell {
 
 .hero-carousel-stage {
   position: relative;
-  min-height: 430px;
+  min-height: 440px;
 }
 
 .hero-carousel-slide {
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-columns: minmax(280px, 0.9fr) minmax(340px, 1.1fr);
+  grid-template-columns: minmax(420px, 0.98fr) minmax(380px, 1.02fr);
   align-items: center;
-  gap: 54px;
-  padding: 52px 92px;
+  gap: 46px;
+  padding: 42px 88px 58px;
   opacity: 0;
   pointer-events: none;
   transform: translateX(28px);
@@ -414,35 +414,39 @@ body.public-page .site-shell {
 .hero-carousel-image {
   display: grid;
   place-items: center;
-  min-height: 300px;
+  min-height: 320px;
+  overflow: visible;
 }
 
 .hero-carousel-image img {
   display: block;
-  width: min(420px, 100%);
+  width: min(580px, 100%);
+  height: auto;
   max-height: 320px;
   object-fit: contain;
-  filter: drop-shadow(0 22px 34px rgba(49, 96, 73, 0.1));
+  object-position: center;
+  border-radius: 22px;
+  filter: drop-shadow(0 24px 34px rgba(35, 85, 60, 0.1));
 }
 
 .hero-carousel-copy {
-  max-width: 660px;
+  max-width: 620px;
 }
 
 .hero-carousel-copy h1 {
-  margin: 0 0 20px;
+  margin: 0 0 18px;
   color: #0877d9;
-  font-size: clamp(2.1rem, 4.5vw, 4.35rem);
+  font-size: clamp(2.1rem, 3.15vw, 3.45rem);
   line-height: 1.12;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
 }
 
 .hero-carousel-copy p {
-  max-width: 680px;
+  max-width: 570px;
   margin: 0;
   color: #1f2f29;
-  font-size: clamp(1rem, 1.5vw, 1.25rem);
-  line-height: 1.75;
+  font-size: clamp(1rem, 1.08vw, 1.12rem);
+  line-height: 1.62;
 }
 
 .hero-carousel-btn {
@@ -2633,22 +2637,22 @@ body.public-page .site-shell {
 
   .home-hero-carousel,
   .hero-carousel-stage {
-    min-height: 600px;
+    min-height: 570px;
   }
 
   .hero-carousel-slide {
     grid-template-columns: 1fr;
     gap: 24px;
-    padding: 48px 26px 64px;
+    padding: 42px 26px 66px;
     text-align: center;
   }
 
   .hero-carousel-image {
-    min-height: 230px;
+    min-height: 250px;
   }
 
   .hero-carousel-image img {
-    max-height: 230px;
+    max-height: 250px;
   }
 
   .hero-carousel-copy {
