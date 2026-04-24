@@ -596,6 +596,15 @@ body.dashboard-page {
   gap: 14px;
 }
 
+.admin-dashboard-brand--compact .brand-mark {
+  width: 48px;
+  height: 48px;
+}
+
+.admin-toolbar-left--compact {
+  align-items: center;
+}
+
 .admin-dashboard-brand .brand-mark {
   width: 56px;
   height: 56px;

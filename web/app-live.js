@@ -1263,6 +1263,22 @@ function setupPortalActions() {
       window.location.href = select.value;
     });
   });
+
+  document.querySelectorAll(".admin-dropdown-menu").forEach((dropdown) => {
+    if (dropdown.dataset.outsideCloseBound === "true") return;
+    dropdown.dataset.outsideCloseBound = "true";
+
+    const closeDropdown = () => dropdown.removeAttribute("open");
+
+    document.addEventListener("click", (event) => {
+      if (dropdown.contains(event.target)) return;
+      closeDropdown();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeDropdown();
+    });
+  });
 }
 
 function setupScrollSync(wrapId, scrollerId) {
@@ -1301,15 +1317,26 @@ function setupScrollSync(wrapId, scrollerId) {
 function buildAdminActionToolbar(selectedValue = "") {
   return `
     <header class="user-topbar admin-compact-topbar">
-      <div class="admin-toolbar-left">
-        <a class="secondary-btn compact-btn" href="./login.html">Back to Login</a>
+      <div class="admin-toolbar-left admin-toolbar-left--compact">
+        <div class="brand admin-dashboard-brand admin-dashboard-brand--compact">
+          <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
+          <span class="public-brand-copy">
+            <strong class="brand-wordmark">AssetYantra</strong>
+            <small class="brand-tagline">${selectedValue === "customer" ? "Add Customer" : "Add Deal"}</small>
+          </span>
+        </div>
       </div>
       <div class="user-topbar-actions admin-toolbar-right">
-        <select class="user-search admin-action-select" data-admin-action-nav="true">
-          <option value="">Admin Actions</option>
-          <option value="./admin-add-customer.html" ${selectedValue === "customer" ? "selected" : ""}>Add Customer</option>
-          <option value="./admin-add-deal.html" ${selectedValue === "deal" ? "selected" : ""}>Add Deal</option>
-        </select>
+        <details class="admin-dropdown-menu">
+          <summary class="secondary-btn compact-btn">Admin Actions</summary>
+          <div class="admin-dropdown-panel">
+            <p class="admin-dropdown-section-label">Quick Actions</p>
+            <div class="admin-dropdown-links">
+              <a class="secondary-btn compact-btn" href="./admin-add-customer.html"><strong>Add Customer</strong><small>Open the dedicated registration page</small></a>
+              <a class="secondary-btn compact-btn" href="./admin-add-deal.html"><strong>Add Deal</strong><small>Open the separate deal entry page</small></a>
+            </div>
+          </div>
+        </details>
         <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
       </div>
     </header>
@@ -1319,6 +1346,7 @@ function buildAdminActionToolbar(selectedValue = "") {
 async function renderAdminCustomerPage() {
   const mount = document.getElementById("adminPortal");
   if (!mount) return;
+  revealPortal(mount);
 
   mount.innerHTML = `
     <section class="dashboard-stack admin-dashboard-stack">
@@ -1354,6 +1382,7 @@ async function renderAdminCustomerPage() {
 async function renderAdminDealPage() {
   const mount = document.getElementById("adminPortal");
   if (!mount) return;
+  revealPortal(mount);
 
   let users = [];
   try {
@@ -3095,10 +3124,22 @@ function setupDashboardPages() {
       return;
     }
     if (isAdminCustomerPage()) {
-      renderAdminCustomerPage().catch(() => {});
+      renderAdminCustomerPage().catch(() => {
+        renderPortalError(
+          document.getElementById("adminPortal"),
+          "Add Customer",
+          "The add customer page could not load yet. Please try again."
+        );
+      });
     }
     if (isAdminDealPage()) {
-      renderAdminDealPage().catch(() => {});
+      renderAdminDealPage().catch(() => {
+        renderPortalError(
+          document.getElementById("adminPortal"),
+          "Add Deal",
+          "The add deal page could not load yet. Please try again."
+        );
+      });
     }
   }
 }
