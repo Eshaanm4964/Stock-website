@@ -6,6 +6,7 @@ let activeRole = null;
 let activeUserId = null;
 let liveTickerTimer = null;
 let adminRefreshTimer = null;
+let homeHeroTimer = null;
 let adminUiState = {
   search: "",
   clientFilter: "",
@@ -160,6 +161,10 @@ function hidePortalMounts() {
   });
 }
 
+function isHomePage() {
+  return document.body?.dataset?.page === "home";
+}
+
 function revealPortal(target) {
   if (!target) return;
   target.classList.remove("hidden");
@@ -198,17 +203,7 @@ function saveSiteControls(nextControls) {
 }
 
 function getApiBase() {
-  const savedApiUrl = localStorage.getItem("stock_trader_api_url");
-  const host = window.location.hostname;
-  const isLocalFrontend = host === "localhost" || host === "127.0.0.1";
-  if (isLocalFrontend) {
-    const isLocalApi = savedApiUrl && /localhost|127\.0\.0\.1/i.test(savedApiUrl);
-    return isLocalApi ? savedApiUrl : "http://localhost:8000/api/v1";
-  }
-  if (savedApiUrl && !/localhost|127\.0\.0\.1/i.test(savedApiUrl)) {
-    return savedApiUrl;
-  }
-  return "https://stock-trader-demo-backend.onrender.com/api/v1";
+  return localStorage.getItem("stock_trader_api_url") || "http://localhost:8000/api/v1";
 }
 
 function formatError(error) {
@@ -748,6 +743,147 @@ async function renderTicker(elementId, symbols) {
       `
     )
     .join("");
+}
+
+async function renderHomeTicker() {
+  const mount = document.getElementById("homeLiveTicker");
+  if (!mount) return;
+
+  const defaultSymbols = ["NIFTY50", "SENSEX", "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN"];
+  const feed = await api(`/stocks/feed?symbols=${encodeURIComponent(defaultSymbols.join(","))}`).catch(() => []);
+  const safeFeed = Array.isArray(feed) ? feed.filter((quote) => quote?.symbol) : [];
+
+  if (!safeFeed.length) {
+    mount.innerHTML = `
+      <div class="home-ticker-track">
+        <article class="home-ticker-item">
+          <span class="ticker-dot"></span>
+          <strong>Live feed <em>Unavailable</em></strong>
+          <small>Backend connection needed for market values</small>
+        </article>
+      </div>
+    `;
+    return;
+  }
+
+  const items = safeFeed.map((quote) => {
+    const isDown = Number(quote.change_percent || 0) < 0;
+    return `
+      <article class="home-ticker-item ${isDown ? "is-down" : ""}">
+        <span class="ticker-dot"></span>
+        <strong>${escapeHtml(quote.symbol)} <em>${currency(quote.price)}</em></strong>
+        <small class="${isDown ? "ticker-down" : ""}">${percent(quote.change_percent)}</small>
+        <small>Live</small>
+      </article>
+    `;
+  });
+
+  mount.innerHTML = `<div class="home-ticker-track">${items.concat(items).join("")}</div>`;
+}
+
+function animateCountUp(node) {
+  if (!node || node.dataset.counted === "true") return;
+  const target = Number(node.dataset.countup || 0);
+  const prefix = node.dataset.prefix || "";
+  const suffix = node.dataset.suffix || "";
+  const duration = 1200;
+  const startTime = performance.now();
+
+  const tick = (now) => {
+    const progress = Math.min((now - startTime) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const value = Math.round(target * eased);
+    node.textContent = `${prefix}${value}${suffix}`;
+    if (progress < 1) {
+      window.requestAnimationFrame(tick);
+    } else {
+      node.dataset.counted = "true";
+      node.textContent = `${prefix}${target}${suffix}`;
+    }
+  };
+
+  window.requestAnimationFrame(tick);
+}
+
+function setupStatsCountUp() {
+  const statNodes = Array.from(document.querySelectorAll(".stat-number[data-countup]"));
+  if (!statNodes.length) return;
+
+  if (!("IntersectionObserver" in window)) {
+    statNodes.forEach(animateCountUp);
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        animateCountUp(entry.target);
+        observer.unobserve(entry.target);
+      });
+    },
+    { threshold: 0.35 }
+  );
+
+  statNodes.forEach((node) => observer.observe(node));
+}
+
+function setupHomeHeroCarousel() {
+  const carousel = document.querySelector("[data-home-hero-carousel='true']");
+  if (!carousel) return;
+
+  const slides = Array.from(carousel.querySelectorAll("[data-hero-slide='true']"));
+  const dots = Array.from(carousel.querySelectorAll("[data-hero-dot]"));
+  const prev = carousel.querySelector("[data-hero-prev='true']");
+  const next = carousel.querySelector("[data-hero-next='true']");
+  if (!slides.length) return;
+
+  let activeIndex = Math.max(0, slides.findIndex((slide) => slide.classList.contains("is-active")));
+  if (activeIndex < 0) activeIndex = 0;
+
+  const paint = (index) => {
+    activeIndex = (index + slides.length) % slides.length;
+    slides.forEach((slide, slideIndex) => slide.classList.toggle("is-active", slideIndex === activeIndex));
+    dots.forEach((dot, dotIndex) => dot.classList.toggle("is-active", dotIndex === activeIndex));
+  };
+
+  const restart = () => {
+    if (homeHeroTimer) window.clearInterval(homeHeroTimer);
+    homeHeroTimer = window.setInterval(() => paint(activeIndex + 1), 5000);
+  };
+
+  prev?.addEventListener("click", () => {
+    paint(activeIndex - 1);
+    restart();
+  });
+
+  next?.addEventListener("click", () => {
+    paint(activeIndex + 1);
+    restart();
+  });
+
+  dots.forEach((dot, index) => {
+    dot.addEventListener("click", () => {
+      paint(index);
+      restart();
+    });
+  });
+
+  carousel.addEventListener("mouseenter", () => {
+    if (homeHeroTimer) window.clearInterval(homeHeroTimer);
+  });
+
+  carousel.addEventListener("mouseleave", restart);
+
+  paint(activeIndex);
+  restart();
+}
+
+function setupHomePage() {
+  if (!isHomePage()) return;
+  setupHomeHeroCarousel();
+  setupStatsCountUp();
+  renderHomeTicker().catch(() => {});
 }
 
 function setupDownloadButtons(userDashboards = []) {
@@ -2574,5 +2710,6 @@ loadSiteControls().catch(() => {});
 setupReviewForm();
 setupPageTransitions();
 setupPublicPageVisibility();
+setupHomePage();
 setupLogin();
 setupDashboardPages();
