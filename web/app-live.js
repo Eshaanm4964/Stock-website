@@ -1236,11 +1236,59 @@ async function setupAdminDealForm() {
   const exchangeInput = form.querySelector('[name="exchange"]');
   const suggestionsList = document.getElementById("adminDealSuggestions");
   const selectedExchangeInput = document.getElementById("adminDealSelectedExchange");
+  const livePricePreview = document.getElementById("adminDealLivePricePreview");
   let searchTimer = null;
   let requestToken = 0;
+  let quoteToken = 0;
 
   const clearSuggestions = () => {
     if (suggestionsList) suggestionsList.innerHTML = "";
+  };
+
+  const setLivePricePreview = ({ state = "idle", title = "Live price preview", price = "Waiting for a stock selection", meta = "Choose a stock from the live search results.", exchange = "" } = {}) => {
+    if (!livePricePreview) return;
+    livePricePreview.dataset.state = state;
+    livePricePreview.innerHTML = `
+      <span>${escapeHtml(title)}</span>
+      <strong>${escapeHtml(price)}</strong>
+      <small>${escapeHtml([meta, exchange].filter(Boolean).join(" · "))}</small>
+    `;
+  };
+
+  const loadLivePrice = async (symbol, exchange, companyName = "") => {
+    if (!symbol) {
+      setLivePricePreview();
+      return;
+    }
+    const activeToken = ++quoteToken;
+    setLivePricePreview({
+      state: "loading",
+      title: "Fetching live market price",
+      price: "Loading...",
+      meta: companyName || symbol,
+      exchange
+    });
+    try {
+      const detail = await api(`/stocks/${encodeURIComponent(symbol)}?exchange=${encodeURIComponent(exchange || "NSE")}`);
+      if (activeToken !== quoteToken) return;
+      const quote = detail?.quote || {};
+      setLivePricePreview({
+        state: "ready",
+        title: "Live market price",
+        price: `${currency(quote.price || 0)}`,
+        meta: companyName || quote.short_name || symbol,
+        exchange: quote.exchange || exchange || "NSE"
+      });
+    } catch {
+      if (activeToken !== quoteToken) return;
+      setLivePricePreview({
+        state: "error",
+        title: "Live market price",
+        price: "Unavailable",
+        meta: companyName || symbol,
+        exchange: exchange || "NSE"
+      });
+    }
   };
 
   const applySuggestion = (result) => {
@@ -1249,6 +1297,7 @@ async function setupAdminDealForm() {
     if (selectedExchangeInput) selectedExchangeInput.value = result.exchange || "NSE";
     exchangeInput.value = result.exchange || "NSE";
     clearSuggestions();
+    void loadLivePrice(result.symbol, result.exchange || "NSE", result.name || result.symbol);
     if (status) {
       status.textContent = `${result.symbol} selected from ${result.exchange}.`;
     }
@@ -1294,8 +1343,9 @@ async function setupAdminDealForm() {
     if (selectedExchangeInput) {
       selectedExchangeInput.value = searchExchange === "ALL" ? "" : searchExchange;
     }
-    if (query.length < 1) {
+    if (query.length < 3) {
       clearSuggestions();
+      setLivePricePreview();
       return;
     }
     const activeToken = ++requestToken;
@@ -1315,6 +1365,7 @@ async function setupAdminDealForm() {
 
   if (symbolInput) {
     symbolInput.addEventListener("input", () => {
+      if (selectedExchangeInput) selectedExchangeInput.value = "";
       if (searchTimer) window.clearTimeout(searchTimer);
       searchTimer = window.setTimeout(runSearch, 220);
     });
@@ -1327,6 +1378,9 @@ async function setupAdminDealForm() {
     exchangeInput.addEventListener("change", () => {
       if (selectedExchangeInput) {
         selectedExchangeInput.value = exchangeInput.value === "ALL" ? "" : exchangeInput.value;
+      }
+      if (symbolInput && String(symbolInput.value || "").trim().length >= 3) {
+        setLivePricePreview();
       }
       void runSearch();
     });
@@ -1578,6 +1632,11 @@ async function renderAdminDealPage() {
               <option value="BSE">BSE</option>
             </select>
           </label>
+          <div class="portfolio-live-price-preview" id="adminDealLivePricePreview" data-state="idle">
+            <span>Live price preview</span>
+            <strong>Waiting for a stock selection</strong>
+            <small>Type at least 3 letters and choose a stock from the live search list.</small>
+          </div>
           <button class="primary-btn" type="submit">Add Deal</button>
         </form>
         <p class="helper-text" id="adminDealStatus">Choose a customer, enter the position, and submit to add the deal.</p>
