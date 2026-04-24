@@ -198,7 +198,17 @@ function saveSiteControls(nextControls) {
 }
 
 function getApiBase() {
-  return localStorage.getItem("stock_trader_api_url") || "http://localhost:8000/api/v1";
+  const savedApiUrl = localStorage.getItem("stock_trader_api_url");
+  const host = window.location.hostname;
+  const isLocalFrontend = host === "localhost" || host === "127.0.0.1";
+  if (isLocalFrontend) {
+    const isLocalApi = savedApiUrl && /localhost|127\.0\.0\.1/i.test(savedApiUrl);
+    return isLocalApi ? savedApiUrl : "http://localhost:8000/api/v1";
+  }
+  if (savedApiUrl && !/localhost|127\.0\.0\.1/i.test(savedApiUrl)) {
+    return savedApiUrl;
+  }
+  return "https://stock-trader-demo-backend.onrender.com/api/v1";
 }
 
 function formatError(error) {
