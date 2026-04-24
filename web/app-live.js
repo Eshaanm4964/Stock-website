@@ -1,81 +1,17 @@
 const STORAGE_KEY = "stock_trader_auth";
 const SITE_CONTROL_KEY = "stock_trader_site_controls";
 const REVIEW_STORAGE_KEY = "stock_trader_reviews";
-const USER_RECOMMENDATION_SYMBOLS = ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN", "LT", "ITC", "AXISBANK", "KOTAKBANK", "BHARTIARTL", "ASIANPAINT"];
-const STOCK_SEARCH_CATALOG = [
-  { symbol: "RELIANCE", name: "Reliance Industries Ltd", sector: "Energy" },
-  { symbol: "TCS", name: "Tata Consultancy Services Ltd", sector: "Technology" },
-  { symbol: "INFY", name: "Infosys Ltd", sector: "Technology" },
-  { symbol: "HDFCBANK", name: "HDFC Bank Ltd", sector: "Financial Services" },
-  { symbol: "ICICIBANK", name: "ICICI Bank Ltd", sector: "Financial Services" },
-  { symbol: "SBIN", name: "State Bank of India", sector: "Financial Services" },
-  { symbol: "LT", name: "Larsen & Toubro Ltd", sector: "Industrials" },
-  { symbol: "ITC", name: "ITC Ltd", sector: "Consumer Defensive" },
-  { symbol: "AXISBANK", name: "Axis Bank Ltd", sector: "Financial Services" },
-  { symbol: "KOTAKBANK", name: "Kotak Mahindra Bank Ltd", sector: "Financial Services" },
-  { symbol: "BHARTIARTL", name: "Bharti Airtel Ltd", sector: "Telecom" },
-  { symbol: "ASIANPAINT", name: "Asian Paints Ltd", sector: "Consumer Cyclical" },
-  { symbol: "TATAMOTORS", name: "Tata Motors Ltd", sector: "Automotive" },
-  { symbol: "SUNPHARMA", name: "Sun Pharmaceutical Industries Ltd", sector: "Healthcare" },
-  { symbol: "MARUTI", name: "Maruti Suzuki India Ltd", sector: "Automotive" },
-  { symbol: "HINDUNILVR", name: "Hindustan Unilever Ltd", sector: "Consumer Defensive" },
-  { symbol: "BAJFINANCE", name: "Bajaj Finance Ltd", sector: "Financial Services" },
-  { symbol: "HCLTECH", name: "HCL Technologies Ltd", sector: "Technology" },
-  { symbol: "WIPRO", name: "Wipro Ltd", sector: "Technology" },
-  { symbol: "TECHM", name: "Tech Mahindra Ltd", sector: "Technology" },
-  { symbol: "ADANIENT", name: "Adani Enterprises Ltd", sector: "Industrials" },
-  { symbol: "ADANIPORTS", name: "Adani Ports and SEZ Ltd", sector: "Industrials" },
-  { symbol: "ULTRACEMCO", name: "UltraTech Cement Ltd", sector: "Materials" },
-  { symbol: "TITAN", name: "Titan Company Ltd", sector: "Consumer Cyclical" },
-  { symbol: "POWERGRID", name: "Power Grid Corporation of India Ltd", sector: "Utilities" },
-  { symbol: "NTPC", name: "NTPC Ltd", sector: "Utilities" },
-  { symbol: "ONGC", name: "Oil and Natural Gas Corporation Ltd", sector: "Energy" },
-  { symbol: "COALINDIA", name: "Coal India Ltd", sector: "Energy" },
-  { symbol: "JSWSTEEL", name: "JSW Steel Ltd", sector: "Materials" },
-  { symbol: "TATASTEEL", name: "Tata Steel Ltd", sector: "Materials" },
-  { symbol: "HINDALCO", name: "Hindalco Industries Ltd", sector: "Materials" },
-  { symbol: "NESTLEIND", name: "Nestle India Ltd", sector: "Consumer Defensive" },
-  { symbol: "BRITANNIA", name: "Britannia Industries Ltd", sector: "Consumer Defensive" },
-  { symbol: "CIPLA", name: "Cipla Ltd", sector: "Healthcare" },
-  { symbol: "DRREDDY", name: "Dr Reddy's Laboratories Ltd", sector: "Healthcare" },
-  { symbol: "APOLLOHOSP", name: "Apollo Hospitals Enterprise Ltd", sector: "Healthcare" },
-  { symbol: "GRASIM", name: "Grasim Industries Ltd", sector: "Materials" },
-  { symbol: "M&M", name: "Mahindra & Mahindra Ltd", sector: "Automotive" },
-  { symbol: "EICHERMOT", name: "Eicher Motors Ltd", sector: "Automotive" },
-  { symbol: "HEROMOTOCO", name: "Hero MotoCorp Ltd", sector: "Automotive" },
-  { symbol: "BAJAJ-AUTO", name: "Bajaj Auto Ltd", sector: "Automotive" },
-  { symbol: "SHRIRAMFIN", name: "Shriram Finance Ltd", sector: "Financial Services" },
-  { symbol: "SBILIFE", name: "SBI Life Insurance Company Ltd", sector: "Financial Services" },
-  { symbol: "HDFCLIFE", name: "HDFC Life Insurance Company Ltd", sector: "Financial Services" },
-  { symbol: "BAJAJFINSV", name: "Bajaj Finserv Ltd", sector: "Financial Services" }
-];
-const HOME_TICKER_SYMBOLS = ["NIFTY50", "SENSEX", "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN", "LT", "TATAMOTORS", "SUNPHARMA"];
-const HOME_TICKER_FALLBACK = {
-  NIFTY50: { symbol: "NIFTY 50", price: 22580.35, change_percent: 0.42, is_fallback: true },
-  SENSEX: { symbol: "SENSEX", price: 74221.06, change_percent: 0.36, is_fallback: true },
-  RELIANCE: { symbol: "RELIANCE", price: 2910, change_percent: 1.12, is_fallback: true },
-  TCS: { symbol: "TCS", price: 3660, change_percent: -0.34, is_fallback: true },
-  INFY: { symbol: "INFY", price: 1512, change_percent: 0.82, is_fallback: true },
-  HDFCBANK: { symbol: "HDFCBANK", price: 1618, change_percent: -0.76, is_fallback: true },
-  ICICIBANK: { symbol: "ICICIBANK", price: 1112, change_percent: 1.45, is_fallback: true },
-  SBIN: { symbol: "SBIN", price: 768, change_percent: 0.28, is_fallback: true },
-  LT: { symbol: "LT", price: 3475, change_percent: -0.18, is_fallback: true },
-  TATAMOTORS: { symbol: "TATAMOTORS", price: 904, change_percent: 2.04, is_fallback: true },
-  SUNPHARMA: { symbol: "SUNPHARMA", price: 1710, change_percent: -0.41, is_fallback: true }
-};
 let activeRole = null;
 let activeUserId = null;
 let liveTickerTimer = null;
 let chatNudgeTimer = null;
-let adminSearchRenderTimer = null;
-let liveDashboardPriceTimer = null;
-const marketSymbolSearchCache = new Map();
+let adminRefreshTimer = null;
 let adminUiState = {
   search: "",
-  scriptSearch: "",
-  status: "all",
-  detailType: "",
-  detailKey: ""
+  clientFilter: "",
+  dateFrom: "",
+  dateTo: "",
+  stocksVisible: false
 };
 let userUiState = {
   search: "",
@@ -84,11 +20,6 @@ let userUiState = {
 let siteControlsCache = {
   showFaqInsights: true,
   chatNudgesEnabled: true
-};
-let userDashboardCache = {
-  performance: [],
-  recommendationFeed: [],
-  symbolCatalog: []
 };
 
 const reviewsSeed = [
@@ -127,30 +58,28 @@ const formatDateTime = (value) => {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return "No activity yet";
   return parsed.toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Asia/Kolkata"
-  });
-};
-const formatIndianSoldDateTime = (value) => {
-  if (!value) return "No sale time";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "No sale time";
-  return parsed.toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
     timeZone: "Asia/Kolkata",
-    timeZoneName: "short"
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
   });
 };
+
+function formatDateInputValue(value) {
+  if (!value) return "";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return parsed.toISOString().slice(0, 10);
+}
+
+function maskStockSymbol(symbol) {
+  const safe = String(symbol || "").toUpperCase();
+  if (!safe) return "Hidden";
+  if (safe.length <= 2) return "••";
+  return `${safe.slice(0, 1)}${"•".repeat(Math.max(safe.length - 2, 1))}${safe.slice(-1)}`;
+}
 
 function getAuth() {
   try {
@@ -173,50 +102,33 @@ function isLoginPage() {
 }
 
 function isAdminDashboardPage() {
-  return document.body?.dataset?.page === "admin-dashboard";
+  return document.body?.dataset?.page === "admin-dashboard" || isLoginPage();
 }
 
-function isUserDashboardPage() {
-  return document.body?.dataset?.page === "user-dashboard";
+function isAdminCustomerPage() {
+  return document.body?.dataset?.page === "admin-add-customer";
 }
 
-function goToDashboard(role) {
-  const target = role === "admin" ? "./admin-dashboard.html" : "./user-dashboard.html";
-  try {
-    localStorage.setItem(
-      "stock_trader_dashboard_launch",
-      JSON.stringify({ role, at: Date.now() })
-    );
-  } catch {
-    // Navigation should never fail because localStorage is unavailable.
+function isAdminDealPage() {
+  return document.body?.dataset?.page === "admin-add-deal";
+}
+
+function stopAdminRefresh() {
+  if (adminRefreshTimer) {
+    window.clearInterval(adminRefreshTimer);
+    adminRefreshTimer = null;
   }
-  if (isLoginPage()) {
-    const overlay = document.getElementById("authLoadingOverlay");
-    document.body.classList.add("dashboard-launching");
-    if (overlay && !overlay.classList.contains("hidden")) {
-      overlay.classList.add("auth-loading-success");
-    }
-    window.setTimeout(() => {
-      window.location.href = target;
-    }, 620);
-    return;
-  }
-  window.location.href = target;
 }
 
-function setupSmartLoginLinks() {
-  document.querySelectorAll('a[href="./login.html"]').forEach((link) => {
-    link.addEventListener("click", (event) => {
-      const auth = getAuth();
-      if (!auth?.token || !auth.role) return;
-      event.preventDefault();
-      goToDashboard(auth.role);
-    });
-  });
-}
-
-function removeDeprecatedPublicNavigation() {
-  return;
+function startAdminRefresh() {
+  stopAdminRefresh();
+  if (!isAdminDashboardPage() || activeRole !== "admin") return;
+  adminRefreshTimer = window.setInterval(async () => {
+    if (document.hidden) return;
+    const activeElement = document.activeElement;
+    if (activeElement && ["adminUniversalSearch"].includes(activeElement.id)) return;
+    await renderAdminPortal().catch(() => {});
+  }, 5000);
 }
 
 function setButtonLoading(button, loadingText) {
@@ -251,6 +163,8 @@ function hidePortalMounts() {
 function revealPortal(target) {
   if (!target) return;
   target.classList.remove("hidden");
+  target.classList.remove("portal-visible");
+  void target.offsetWidth;
   target.classList.add("portal-visible");
 }
 
@@ -261,7 +175,6 @@ function showAuthLoading(title, text) {
   if (!overlay) return;
   if (titleNode) titleNode.textContent = title || "Opening dashboard...";
   if (textNode) textNode.textContent = text || "Please wait while we verify access and load your workspace.";
-  overlay.classList.remove("auth-loading-success");
   overlay.classList.remove("hidden");
   overlay.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
@@ -271,29 +184,8 @@ function hideAuthLoading() {
   const overlay = document.getElementById("authLoadingOverlay");
   if (!overlay) return;
   overlay.classList.add("hidden");
-  overlay.classList.remove("auth-loading-success");
-  document.body.classList.remove("dashboard-launching");
   overlay.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
-}
-
-function setupDashboardLaunchReveal() {
-  if (!isAdminDashboardPage() && !isUserDashboardPage()) return;
-  let launch = null;
-  try {
-    launch = JSON.parse(localStorage.getItem("stock_trader_dashboard_launch") || "null");
-    localStorage.removeItem("stock_trader_dashboard_launch");
-  } catch {
-    launch = null;
-  }
-  const isFreshLaunch = launch && Date.now() - Number(launch.at || 0) < 8000;
-  if (!isFreshLaunch) return;
-  document.body.classList.add("dashboard-arriving");
-  document.body.dataset.launchRole = launch.role || "";
-  window.setTimeout(() => {
-    document.body.classList.remove("dashboard-arriving");
-    delete document.body.dataset.launchRole;
-  }, 2600);
 }
 
 function getSiteControls() {
@@ -306,23 +198,9 @@ function saveSiteControls(nextControls) {
 }
 
 function getApiBase() {
-  const savedApiUrl = localStorage.getItem("stock_trader_api_url");
-  const host = window.location.hostname;
-  const isLocalFrontend = host === "localhost" || host === "127.0.0.1";
-  if (isLocalFrontend) {
-    const isLocalApi = savedApiUrl && /localhost|127\.0\.0\.1/i.test(savedApiUrl);
-    return isLocalApi ? savedApiUrl : "http://localhost:8000/api/v1";
-  }
-  return savedApiUrl || "https://stock-trader-demo-backend.onrender.com/api/v1";
+  return localStorage.getItem("stock_trader_api_url") || "http://localhost:8000/api/v1";
 }
 
-function notifyPortfolioChanged() {
-  try {
-    localStorage.setItem("stock_trader_portfolio_updated", String(Date.now()));
-  } catch {
-    // Ignore storage errors; polling still keeps dashboards fresh.
-  }
-}
 function formatError(error) {
   if (
     error instanceof TypeError &&
@@ -331,31 +209,6 @@ function formatError(error) {
     return "Unable to reach the backend server. Start the API and check the API Base URL.";
   }
   return error.message || "Something went wrong.";
-}
-
-function humanizeApiField(value) {
-  return String(value || "")
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function normalizeApiErrorDetail(detail) {
-  if (!detail) return "Request failed";
-  if (typeof detail === "string") return detail;
-  if (Array.isArray(detail)) {
-    return detail
-      .map((item) => {
-        if (typeof item === "string") return item;
-        const field = Array.isArray(item?.loc) ? item.loc[item.loc.length - 1] : "";
-        const message = item?.msg || "Invalid value";
-        return field ? `${humanizeApiField(field)}: ${message}` : message;
-      })
-      .join(" ");
-  }
-  if (typeof detail === "object") {
-    return detail.msg || detail.message || JSON.stringify(detail);
-  }
-  return String(detail);
 }
 
 function updateBackendStatus(message, state = "neutral") {
@@ -403,7 +256,7 @@ async function api(path, options = {}) {
   }
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error(normalizeApiErrorDetail(data.detail));
+    throw new Error(data.detail || "Request failed");
   }
   if (response.status === 204) {
     return null;
@@ -509,11 +362,11 @@ function buildRecentActivityMarkup(performance) {
       (holding) => `
         <article class="activity-row">
           <div class="activity-icon ${getHoldingState(holding)}">${escapeHtml(String(holding.symbol || "?").slice(0, 2))}</div>
-          <div class="activity-copy">
+          <div>
             <strong>${escapeHtml(holding.symbol)}</strong>
-            <small>${Number(holding.quantity || 0).toLocaleString("en-IN")} shares added on ${formatDate(holding.created_at)}</small>
+            <small>${holding.quantity} shares added on ${formatDate(holding.created_at)}</small>
           </div>
-          <span class="activity-pnl ${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}</span>
+          <span class="badge ${holding.profit_loss >= 0 ? "green" : "red"}">${currency(holding.profit_loss)}</span>
         </article>
       `
     )
@@ -544,469 +397,25 @@ function buildUserWatchlistMarkup(feed) {
     .join("");
 }
 
-function normalizeSearchText(value) {
-  return String(value || "").trim().toLowerCase();
-}
-
-function buildUserSymbolCatalog(performance = [], recommendationFeed = []) {
-  const map = new Map();
-  const pushCandidate = (symbol, label, sector, price, name = "") => {
-    const safeSymbol = String(symbol || "").trim().toUpperCase();
-    if (!safeSymbol) return;
-    if (map.has(safeSymbol)) {
-      const existing = map.get(safeSymbol);
-      map.set(safeSymbol, {
-        ...existing,
-        label: label || existing.label,
-        name: name || existing.name,
-        sector: sector || existing.sector,
-        price: Number(price || 0) || existing.price
-      });
-      return;
-    }
-    map.set(safeSymbol, {
-      symbol: safeSymbol,
-      label: label || name || safeSymbol,
-      name: name || label || safeSymbol,
-      sector: sector || "Suggested",
-      price: Number(price || 0)
-    });
-  };
-
-  STOCK_SEARCH_CATALOG.forEach((stock) => {
-    pushCandidate(stock.symbol, stock.name, stock.sector, 0, stock.name);
-  });
-  performance.forEach((holding) => {
-    pushCandidate(
-      holding.symbol,
-      holding.symbol,
-      holding.sector || "Tracked holding",
-      holding.current_price || holding.buy_price,
-      holding.name || `${holding.symbol} holding`
-    );
-  });
-  recommendationFeed.forEach((quote) => {
-    pushCandidate(
-      quote.symbol,
-      quote.short_name || quote.symbol,
-      quote.short_name || quote.symbol,
-      quote.price,
-      quote.short_name || quote.symbol
-    );
-  });
-  USER_RECOMMENDATION_SYMBOLS.forEach((symbol) => {
-    pushCandidate(symbol, symbol, "NSE", 0, symbol);
-  });
-
-  return [...map.values()];
-}
-
-function getLooseSearchScore(query, value) {
-  const normalizedQuery = normalizeSearchText(query).replace(/[^a-z0-9]/g, "");
-  const normalizedValue = normalizeSearchText(value).replace(/[^a-z0-9]/g, "");
-  if (!normalizedQuery || !normalizedValue) return 0;
-  let score = 0;
-  let cursor = 0;
-  for (const char of normalizedQuery) {
-    const foundAt = normalizedValue.indexOf(char, cursor);
-    if (foundAt === -1) continue;
-    score += Math.max(1, 12 - (foundAt - cursor));
-    cursor = foundAt + 1;
-  }
-  return score >= normalizedQuery.length ? score : 0;
-}
-
-function getAlphabetSearchScore(query, candidate) {
-  const normalizedQuery = normalizeSearchText(query).replace(/[^a-z0-9]/g, "");
-  const symbol = normalizeSearchText(candidate.symbol).replace(/[^a-z0-9]/g, "");
-  const name = normalizeSearchText(candidate.name || candidate.label).replace(/[^a-z0-9]/g, "");
-  const sector = normalizeSearchText(candidate.sector).replace(/[^a-z0-9]/g, "");
-  if (!normalizedQuery) return 0;
-  const hasDirectMatch = symbol.includes(normalizedQuery) || name.includes(normalizedQuery) || sector.includes(normalizedQuery);
-  if (normalizedQuery.length >= 3 && !hasDirectMatch) return 0;
-
-  let score = 0;
-  if (symbol === normalizedQuery) score += 1000;
-  if (symbol.startsWith(normalizedQuery)) score += 840;
-  if (name.startsWith(normalizedQuery)) score += 720;
-  if (symbol.includes(normalizedQuery)) score += 560 - symbol.indexOf(normalizedQuery);
-  if (name.includes(normalizedQuery)) score += 460 - name.indexOf(normalizedQuery);
-  if (sector.includes(normalizedQuery)) score += 140;
-  if (normalizedQuery.length <= 2) {
-    score += getLooseSearchScore(normalizedQuery, candidate.symbol);
-    score += Math.round(getLooseSearchScore(normalizedQuery, candidate.name || candidate.label) * 0.6);
-  }
-  return score;
-}
-
-function getClosestSymbolMatches(query, candidates, limit = 6) {
-  const normalizedQuery = normalizeSearchText(query);
-  if (!normalizedQuery) {
-    return candidates.slice(0, limit);
-  }
-
-  return candidates
-    .map((candidate) => {
-      return { candidate, score: getAlphabetSearchScore(normalizedQuery, candidate) };
-    })
-    .filter((entry) => entry.score > 0)
-    .sort((a, b) => b.score - a.score || a.candidate.symbol.localeCompare(b.candidate.symbol))
-    .slice(0, limit)
-    .map((entry) => entry.candidate);
-}
-
-function mergeSymbolCandidates(...candidateGroups) {
-  const map = new Map();
-  candidateGroups.flat().forEach((candidate) => {
-    const symbol = String(candidate?.symbol || "").trim().toUpperCase();
-    if (!symbol) return;
-    const current = map.get(symbol);
-    map.set(symbol, {
-      ...current,
-      ...candidate,
-      symbol,
-      label: candidate.label || candidate.name || current?.label || symbol,
-      name: candidate.name || candidate.label || current?.name || symbol,
-      sector: candidate.sector || current?.sector || "NSE equity",
-      price: Number(candidate.price || 0) || Number(current?.price || 0)
-    });
-  });
-  return [...map.values()];
-}
-
-function buildUserRecommendationsMarkup(feed, performance) {
-  const heldSymbols = new Set(performance.map((holding) => String(holding.symbol || "").toUpperCase()));
-  const candidates = feed
-    .filter((quote) => quote && quote.symbol && !heldSymbols.has(String(quote.symbol).toUpperCase()))
-    .sort((a, b) => Number(b.change_percent || 0) - Number(a.change_percent || 0))
-    .slice(0, 6);
-
-  if (!candidates.length) {
-    return `<div class="empty-mini-state">Recommendations will appear as soon as more market ideas are available.</div>`;
-  }
-
-  return candidates
-    .map(
-      (quote) => `
-        <button class="recommendation-card" type="button" data-recommend-symbol="${escapeHtml(quote.symbol)}" data-recommend-price="${Number(quote.price || 0).toFixed(2)}">
-          <div>
-            <strong>${escapeHtml(quote.symbol)}</strong>
-            <small>${escapeHtml(quote.short_name || quote.symbol)}</small>
-          </div>
-          <div class="recommendation-metrics">
-            <span>${currency(quote.price)}</span>
-            <small class="${Number(quote.change_percent || 0) >= 0 ? "profit" : "loss"}">${percent(Number(quote.change_percent || 0))}</small>
-          </div>
-        </button>
-      `
-    )
-    .join("");
-}
-
-function renderHoldingsSearchSuggestions(rows) {
-  const mount = document.getElementById("userSearchSuggestions");
-  if (!mount) return;
-
-  const query = normalizeSearchText(userUiState.search);
-  if (!query) {
-    mount.innerHTML = "";
-    return;
-  }
-
-  const matches = rows.slice(0, 5).map((row) => ({
-    symbol: row.dataset.symbol || "",
-    sector: row.dataset.sector || ""
-  }));
-
-  mount.innerHTML = matches.length
-    ? matches
-        .map(
-          (match) => `<button class="search-chip" type="button" data-search-chip="${escapeHtml(match.symbol)}">${escapeHtml(match.symbol)}<small>${escapeHtml(match.sector || "Tracked")}</small></button>`
-        )
-        .join("")
-    : `<span class="search-empty">No close holding matches yet.</span>`;
-
-  mount.querySelectorAll("[data-search-chip]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const input = document.getElementById("userPortfolioSearch");
-      if (!input) return;
-      input.value = button.dataset.searchChip || "";
-      userUiState.search = input.value;
-      applyUserPortfolioFilters();
-      input.focus();
-    });
-  });
-}
-
-function applyUserPortfolioFilters() {
-  const tbody = document.getElementById("userHoldingsTableBody");
-  if (!tbody) return;
-
-  const rows = [...tbody.querySelectorAll("tr[data-symbol]")];
-  const query = normalizeSearchText(userUiState.search);
-  const status = userUiState.status;
-  let visibleCount = 0;
-  let visibleValue = 0;
-
-  rows.forEach((row) => {
-    const symbol = normalizeSearchText(row.dataset.symbol);
-    const sector = normalizeSearchText(row.dataset.sector);
-    const state = row.dataset.state || "flat";
-    const value = Number(row.dataset.value || 0);
-    const matchesSearch = !query || symbol.includes(query) || sector.includes(query);
-    const matchesStatus = status === "all" || status === state;
-    const visible = matchesSearch && matchesStatus;
-    row.hidden = !visible;
-    if (visible) {
-      visibleCount += 1;
-      visibleValue += value;
-    }
-  });
-
-  const emptyRow = document.getElementById("userHoldingsEmptyRow");
-  if (emptyRow) emptyRow.hidden = visibleCount > 0;
-
-  const summary = document.getElementById("userSearchSummary");
-  if (summary) {
-    summary.textContent = visibleCount
-      ? `${visibleCount} holding${visibleCount === 1 ? "" : "s"} visible  -  ${currency(visibleValue)} in view`
-      : "No holdings match the current search or filter.";
-  }
-
-  renderHoldingsSearchSuggestions(rows.filter((row) => !row.hidden));
-}
-
-function setupPortfolioSymbolSuggestions() {
-  const input = document.querySelector('#portfolioForm [name="symbol"]');
-  const suggestions = document.getElementById("portfolioSymbolSuggestions");
-  const buyPriceInput = document.querySelector('#portfolioForm [name="buyPrice"]');
-  const livePriceBox = document.getElementById("portfolioLivePricePreview");
-  const livePriceValue = document.getElementById("portfolioLivePriceValue");
-  const livePriceMeta = document.getElementById("portfolioLivePriceMeta");
-  if (!input || !suggestions) return;
-  let quoteLookupTimer;
-  let marketSearchTimer;
-  let activeSuggestionIndex = -1;
-  let remoteSearchResults = [];
-
-  const setLivePricePreview = (message, state = "idle", meta = "") => {
-    if (livePriceBox) livePriceBox.dataset.state = state;
-    if (livePriceValue) livePriceValue.textContent = message;
-    if (livePriceMeta) livePriceMeta.textContent = meta;
-  };
-
-  const applyQuotePrice = (symbol, price, source = "live market") => {
-    const livePrice = Number(price || 0);
-    if (!livePrice) return;
-    setLivePricePreview(currency(livePrice), "ready", `${symbol.toUpperCase()} ${source}`);
-    if (buyPriceInput) buyPriceInput.value = livePrice.toFixed(2);
-  };
-
-  const fetchAndApplyQuote = async (symbol) => {
-    const safeSymbol = String(symbol || "").trim().toUpperCase();
-    if (safeSymbol.length < 2) {
-      setLivePricePreview("Select a stock", "idle", "Live price will appear here.");
-      return;
-    }
-    setLivePricePreview("Fetching...", "loading", `Checking ${safeSymbol}`);
-    try {
-      const quote = await api(`/stocks/${encodeURIComponent(safeSymbol)}?exchange=NSE`);
-      const price = Number(quote?.quote?.price ?? quote?.price ?? 0);
-      applyQuotePrice(safeSymbol, price, quote?.quote?.data_source ? `${quote.quote.data_source} price` : "live price");
-    } catch {
-      const cached = getClosestSymbolMatches(safeSymbol, userDashboardCache.symbolCatalog, 1)[0];
-      if (cached?.price) {
-        applyQuotePrice(safeSymbol, cached.price, "cached price");
-      } else {
-        setLivePricePreview("Price unavailable", "error", "Enter buy price manually.");
-      }
-    }
-  };
-
-  const scheduleQuoteLookup = () => {
-    window.clearTimeout(quoteLookupTimer);
-    quoteLookupTimer = window.setTimeout(() => fetchAndApplyQuote(input.value), 450);
-  };
-
-  const searchMarketSymbols = async (query) => {
-    const safeQuery = String(query || "").trim();
-    if (!safeQuery) {
-      remoteSearchResults = [];
-      return;
-    }
-    const cacheKey = safeQuery.toLowerCase();
-    if (marketSymbolSearchCache.has(cacheKey)) {
-      remoteSearchResults = marketSymbolSearchCache.get(cacheKey);
-      renderSuggestions();
-      return;
-    }
-    try {
-      const results = await api(`/stocks/search?q=${encodeURIComponent(safeQuery)}&exchange=NSE&limit=12`);
-      remoteSearchResults = Array.isArray(results)
-        ? results.map((item) => ({
-            symbol: item.symbol,
-            label: item.name || item.symbol,
-            name: item.name || item.symbol,
-            sector: item.sector || item.exchange || "NSE equity",
-            price: Number(item.price || 0),
-            source: item.source || "market_search"
-          }))
-        : [];
-      marketSymbolSearchCache.set(cacheKey, remoteSearchResults);
-      renderSuggestions();
-    } catch {
-      remoteSearchResults = [];
-    }
-  };
-
-  const scheduleMarketSearch = () => {
-    window.clearTimeout(marketSearchTimer);
-    marketSearchTimer = window.setTimeout(() => searchMarketSymbols(input.value), 220);
-  };
-
-  const getSuggestionButtons = () => [...suggestions.querySelectorAll("[data-symbol-suggestion]")];
-
-  const setActiveSuggestion = (index) => {
-    const buttons = getSuggestionButtons();
-    if (!buttons.length) {
-      activeSuggestionIndex = -1;
-      return;
-    }
-    activeSuggestionIndex = (index + buttons.length) % buttons.length;
-    buttons.forEach((button, buttonIndex) => {
-      button.classList.toggle("is-active", buttonIndex === activeSuggestionIndex);
-      button.setAttribute("aria-selected", buttonIndex === activeSuggestionIndex ? "true" : "false");
-    });
-    buttons[activeSuggestionIndex]?.scrollIntoView({ block: "nearest" });
-  };
-
-  const selectSymbol = (symbol, price = 0, source = "suggested price") => {
-    input.value = String(symbol || "").toUpperCase();
-    if (Number(price || 0) > 0) {
-      applyQuotePrice(input.value, Number(price), source);
-    }
-    fetchAndApplyQuote(input.value);
-    suggestions.innerHTML = "";
-    activeSuggestionIndex = -1;
-    buyPriceInput?.focus();
-  };
-
-  const renderSuggestions = () => {
-    const combinedCandidates = mergeSymbolCandidates(remoteSearchResults, userDashboardCache.symbolCatalog);
-    const matches = getClosestSymbolMatches(input.value, combinedCandidates, 8);
-    activeSuggestionIndex = -1;
-    suggestions.innerHTML = matches.length
-      ? matches
-          .map(
-            (candidate) => `
-              <button class="symbol-suggestion-btn" type="button" data-symbol-suggestion="${escapeHtml(candidate.symbol)}" data-symbol-price="${Number(candidate.price || 0).toFixed(2)}">
-                <span class="symbol-suggestion-main">
-                  <strong>${escapeHtml(candidate.symbol)}</strong>
-                  <small>${escapeHtml(candidate.name || candidate.label || "")}</small>
-                </span>
-                ${Number(candidate.price || 0) > 0 ? `<span class="symbol-suggestion-meta"><strong>${currency(candidate.price)}</strong></span>` : ""}
-              </button>
-            `
-          )
-          .join("")
-      : `<span class="search-empty">No close match yet. Try company name like Tata, bank, ITC, Infosys.</span>`;
-  };
-
-  input.setAttribute("placeholder", "Search stock or company name");
-  input.setAttribute("role", "combobox");
-  input.setAttribute("aria-autocomplete", "list");
-  input.setAttribute("aria-expanded", "false");
-
-  input.addEventListener("focus", renderSuggestions);
-  input.addEventListener("input", () => {
-    input.value = input.value.toUpperCase();
-    renderSuggestions();
-    input.setAttribute("aria-expanded", suggestions.innerHTML ? "true" : "false");
-    scheduleMarketSearch();
-    scheduleQuoteLookup();
-  });
-  input.addEventListener("keydown", (event) => {
-    const buttons = getSuggestionButtons();
-    if (!buttons.length) return;
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      setActiveSuggestion(activeSuggestionIndex + 1);
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault();
-      setActiveSuggestion(activeSuggestionIndex - 1);
-    } else if (event.key === "Enter" && activeSuggestionIndex >= 0) {
-      event.preventDefault();
-      const button = buttons[activeSuggestionIndex];
-      selectSymbol(button.dataset.symbolSuggestion, Number(button.dataset.symbolPrice || 0));
-    } else if (event.key === "Escape") {
-      suggestions.innerHTML = "";
-      activeSuggestionIndex = -1;
-      input.setAttribute("aria-expanded", "false");
-    }
-  });
-
-  suggestions.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-symbol-suggestion]");
-    if (!button) return;
-    selectSymbol(button.dataset.symbolSuggestion, Number(button.dataset.symbolPrice || 0));
-  });
-
-  document.addEventListener("click", (event) => {
-    if (event.target === input || suggestions.contains(event.target)) return;
-    suggestions.innerHTML = "";
-    activeSuggestionIndex = -1;
-    input.setAttribute("aria-expanded", "false");
-  });
-
-  renderSuggestions();
-  setLivePricePreview("Select a stock", "idle", "Live price will appear here.");
-}
-
-function setupUserRecommendationButtons() {
-  document.querySelectorAll("[data-recommend-symbol]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const form = document.getElementById("portfolioForm");
-      const symbolInput = form?.querySelector('[name="symbol"]');
-      const buyPriceInput = form?.querySelector('[name="buyPrice"]');
-      const livePriceValue = document.getElementById("portfolioLivePriceValue");
-      const livePriceMeta = document.getElementById("portfolioLivePriceMeta");
-      const livePriceBox = document.getElementById("portfolioLivePricePreview");
-      if (!form || !symbolInput) return;
-      symbolInput.value = String(button.dataset.recommendSymbol || "").toUpperCase();
-      if (buyPriceInput && Number(button.dataset.recommendPrice || 0) > 0) {
-        const price = Number(button.dataset.recommendPrice);
-        buyPriceInput.value = price.toFixed(2);
-        if (livePriceBox) livePriceBox.dataset.state = "ready";
-        if (livePriceValue) livePriceValue.textContent = currency(price);
-        if (livePriceMeta) livePriceMeta.textContent = `${symbolInput.value} suggested price`;
-      }
-      form.scrollIntoView({ behavior: "smooth", block: "center" });
-      symbolInput.focus();
-    });
-  });
-}
-
 function setupUserPortfolioFilters() {
   const searchInput = document.getElementById("userPortfolioSearch");
   const statusFilter = document.getElementById("userPortfolioStatusFilter");
 
   if (searchInput) {
     searchInput.value = userUiState.search;
-    searchInput.addEventListener("input", () => {
+    searchInput.addEventListener("input", async () => {
       userUiState.search = searchInput.value;
-      applyUserPortfolioFilters();
+      await renderUserPortal();
     });
   }
 
   if (statusFilter) {
     statusFilter.value = userUiState.status;
-    statusFilter.addEventListener("change", () => {
+    statusFilter.addEventListener("change", async () => {
       userUiState.status = statusFilter.value;
-      applyUserPortfolioFilters();
+      await renderUserPortal();
     });
   }
-
-  applyUserPortfolioFilters();
 }
 
 function setupFaq() {
@@ -1146,8 +555,6 @@ function setupReviewForm() {
 }
 
 function setupPageTransitions() {
-  if (document.body.classList.contains("dashboard-page")) return;
-
   document.body.classList.add("page-enter");
 
   window.requestAnimationFrame(() => {
@@ -1218,6 +625,26 @@ function renderPortalError(target, title, message) {
   revealPortal(target);
 }
 
+function setupHoldingDeleteButtons() {
+  document.querySelectorAll("[data-delete-holding]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const holdingId = button.dataset.deleteHolding;
+      const symbol = button.dataset.symbol || "this stock";
+      const confirmed = window.confirm(`Remove ${symbol} from the portfolio?`);
+      if (!confirmed) return;
+      const stopLoading = setButtonLoading(button, "Removing...");
+      try {
+        await api(`/portfolio/${holdingId}`, { method: "DELETE" });
+        await renderUserPortal();
+      } catch (error) {
+        alert(formatError(error));
+      } finally {
+        stopLoading();
+      }
+    });
+  });
+}
+
 async function safeAdminUserDashboards(users) {
   const settled = await Promise.allSettled(users.map((user) => api(`/admin/users/${user.user_id}/dashboard?audit=false`)));
   return settled
@@ -1225,188 +652,66 @@ async function safeAdminUserDashboards(users) {
     .map((result) => result.value);
 }
 
-async function loadAdminPortalData() {
-  try {
-    const [overview, archivedUsers] = await Promise.all([
-      api("/admin/portfolio-overview"),
-      api("/admin/users/archived").catch(() => [])
-    ]);
-    return {
-      dashboard: overview.dashboard || {},
-      users: Array.isArray(overview.users) ? overview.users : [],
-      archivedUsers: Array.isArray(archivedUsers) ? archivedUsers : [],
-      systemStatus: overview.system_status || {},
-      userDashboards: Array.isArray(overview.user_dashboards) ? overview.user_dashboards : []
-    };
-  } catch {
-    const [dashboard, users, archivedUsers, systemStatus] = await Promise.all([
-      api("/admin/dashboard"),
-      api("/admin/users"),
-      api("/admin/users/archived").catch(() => []),
-      api("/admin/system-status")
-    ]);
-    const safeUsers = Array.isArray(users) ? users : [];
-    return {
-      dashboard,
-      users: safeUsers,
-      archivedUsers: Array.isArray(archivedUsers) ? archivedUsers : [],
-      systemStatus,
-      userDashboards: await safeAdminUserDashboards(safeUsers)
-    };
-  }
-}
-
 function buildUserDownloadHtml(dashboard) {
-  const investedValue = (dashboard.holdings || []).reduce(
-    (sum, holding) => sum + Number(holding.buy_price || 0) * Number(holding.quantity || 0),
-    0
-  );
-  const holdings = Array.isArray(dashboard.holdings) ? dashboard.holdings : [];
-  const sales = Array.isArray(dashboard.sales) ? dashboard.sales : [];
-  const bookedPnl = Number(dashboard.booked_profit_loss || 0);
-  const lifetimePnl = Number(dashboard.lifetime_profit_loss ?? dashboard.total_profit_loss ?? 0);
-  const lifetimeReturn = investedValue ? (lifetimePnl / investedValue) * 100 : 0;
-  const generatedAt = new Date().toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Asia/Kolkata",
-    timeZoneName: "short"
-  });
   return `
     <!DOCTYPE html>
     <html lang="en">
       <head>
         <meta charset="UTF-8" />
-        <base href="${window.location.href.replace(/[^/]*$/, "")}" />
-        <title>${escapeHtml(dashboard.full_name)} Profile PDF</title>
+        <title>${dashboard.full_name} Dashboard</title>
         <style>
-          * { box-sizing: border-box; }
-          body { margin: 0; font-family: Arial, sans-serif; color: #0b172f; background: #eef5f1; }
-          .page { max-width: 1120px; margin: 0 auto; padding: 28px; }
-          .report { border: 1px solid #d9e5df; border-radius: 24px; padding: 26px; background: #ffffff; }
-          .header { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; border-bottom: 1px solid #e5ece8; padding-bottom: 18px; }
-          .header-copy { position: relative; z-index: 1; }
-          .brand { color: #0f766e; font-family: Poppins, Arial, sans-serif; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
-          .pdf-market-mark { width: 142px; height: 82px; display: block; object-fit: contain; opacity: 0.95; }
-          h1, h2 { margin: 8px 0; }
-          h1 { font-size: 2rem; letter-spacing: -0.04em; }
-          h2 { margin-top: 24px; font-size: 1.15rem; }
-          .subtle { color: #53645e; margin: 0; line-height: 1.55; }
-          .pill { display: inline-flex; border: 1px solid #d9e5df; border-radius: 999px; padding: 8px 12px; color: #0f2f28; background: #f6fbf8; font-weight: 800; }
-          .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0; }
-          .card { border: 1px solid #d9e5df; border-radius: 18px; padding: 16px; background: #fbfdfc; }
-          .card strong { display: block; color: #53645e; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; }
-          .card div { margin-top: 8px; font-size: 1.35rem; font-weight: 900; }
-          table { width: 100%; border-collapse: collapse; margin-top: 12px; background: #fff; font-size: 0.92rem; }
-          th, td { border-bottom: 1px solid #e5ece8; padding: 10px 8px; text-align: left; vertical-align: top; }
-          th { color: #53645e; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; background: #f3f8f5; }
+          body { font-family: Arial, sans-serif; padding: 28px; color: #11233f; }
+          h1, h2 { margin-bottom: 8px; }
+          .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
+          .card { border: 1px solid #d9e3f2; border-radius: 16px; padding: 16px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+          th, td { border-bottom: 1px solid #d9e3f2; padding: 10px 8px; text-align: left; }
           .profit { color: #0f9f62; font-weight: bold; }
           .loss { color: #d64045; font-weight: bold; }
-          .note { margin-top: 18px; color: #53645e; font-size: 0.9rem; line-height: 1.55; }
-          .actions { margin: 18px 0; text-align: right; }
-          button { border: 0; border-radius: 999px; padding: 12px 18px; color: #fff; background: #0f766e; font-weight: 800; cursor: pointer; }
-          @media print {
-            body { background: #ffffff; }
-            .page { max-width: none; padding: 0; }
-            .report { border: 0; border-radius: 0; padding: 0; }
-            .actions { display: none; }
-            table { page-break-inside: auto; }
-            tr { page-break-inside: avoid; page-break-after: auto; }
-          }
         </style>
       </head>
       <body>
-        <div class="page">
-          <div class="actions"><button type="button" onclick="window.print()">Save As PDF</button></div>
-          <section class="report">
-            <div class="header">
-              <div class="header-copy">
-                <div class="brand">AssetYantra</div>
-                <h1>${escapeHtml(dashboard.full_name)} Profile</h1>
-                <p class="subtle">${escapeHtml(dashboard.fixed_user_id || dashboard.username || "Client")} | ${escapeHtml(dashboard.phone_number || "Phone not available")}</p>
-              </div>
-              <div>
-                <img class="pdf-market-mark" src="./assets/bull-bear-market.svg?v=3" alt="" />
-                <div class="pill">Generated ${generatedAt}</div>
-              </div>
-            </div>
-            <div class="grid">
-              <div class="card"><strong>Total Holdings</strong><div>${Number(dashboard.total_holdings || holdings.length).toLocaleString("en-IN")}</div></div>
-              <div class="card"><strong>Invested Value</strong><div>${currency(investedValue)}</div></div>
-              <div class="card"><strong>Current Value</strong><div>${currency(dashboard.total_portfolio_value)}</div></div>
-              <div class="card"><strong>Lifetime P&amp;L</strong><div class="${lifetimePnl >= 0 ? "profit" : "loss"}">${currency(lifetimePnl)} (${percent(lifetimeReturn)})</div></div>
-            </div>
-            <h2>Current Equity Holdings</h2>
-            <table>
-              <thead><tr><th>Script</th><th>Exchange</th><th>Quantity</th><th>Buy Price</th><th>Buy Value</th><th>Live Price</th><th>Live Value</th><th>Unrealised P&amp;L</th><th>Return</th></tr></thead>
-              <tbody>
-                ${holdings.length
-                  ? holdings
-                      .map((holding) => {
-                        const buyValue = Number(holding.buy_price || 0) * Number(holding.quantity || 0);
-                        const returnPct = buyValue ? (Number(holding.profit_loss || 0) / buyValue) * 100 : 0;
-                        return `<tr><td>${escapeHtml(holding.symbol)}</td><td>${escapeHtml(holding.exchange || "NSE")}</td><td>${Number(holding.quantity || 0).toLocaleString("en-IN")}</td><td>${currency(holding.buy_price)}</td><td>${currency(buyValue)}</td><td>${currency(holding.current_price)}</td><td>${currency(holding.value)}</td><td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}</td><td class="${returnPct >= 0 ? "profit" : "loss"}">${percent(returnPct)}</td></tr>`;
-                      })
-                      .join("")
-                  : `<tr><td colspan="9">No current holdings.</td></tr>`}
-              </tbody>
-            </table>
-            <h2>Sold / Booked Deals</h2>
-            <table>
-              <thead><tr><th>Script</th><th>Qty Sold</th><th>Buy Price</th><th>Sell Price</th><th>Booked P&amp;L</th><th>Sold Time</th></tr></thead>
-              <tbody>
-                ${sales.length
-                  ? sales
-                      .map((sale) => `<tr><td>${escapeHtml(sale.symbol)}</td><td>${Number(sale.quantity || 0).toLocaleString("en-IN")}</td><td>${currency(sale.buy_price)}</td><td>${currency(sale.sell_price)}</td><td class="${Number(sale.profit_loss || 0) >= 0 ? "profit" : "loss"}">${currency(sale.profit_loss)}</td><td>${formatIndianSoldDateTime(sale.sold_at)}</td></tr>`)
-                      .join("")
-                  : `<tr><td colspan="6">No sold deals recorded yet.</td></tr>`}
-              </tbody>
-            </table>
-            <p class="note">This profile is generated from the admin dashboard. Live values depend on the latest market quote available to AssetYantra at the time of generation. Booked P&amp;L shown: ${currency(bookedPnl)}.</p>
-          </section>
+        <h1>${dashboard.full_name} Portfolio Dashboard</h1>
+        <p>${dashboard.fixed_user_id || dashboard.username}</p>
+        <div class="grid">
+          <div class="card"><strong>Total Holdings</strong><div>${dashboard.total_holdings}</div></div>
+          <div class="card"><strong>Current Value</strong><div>${currency(dashboard.total_portfolio_value)}</div></div>
+          <div class="card"><strong>Total P&amp;L</strong><div class="${dashboard.total_profit_loss >= 0 ? "profit" : "loss"}">${currency(dashboard.total_profit_loss)}</div></div>
         </div>
+        <h2>Holdings</h2>
+        <table>
+          <thead><tr><th>Stock</th><th>Qty</th><th>Buy</th><th>Current</th><th>P&amp;L</th></tr></thead>
+          <tbody>
+            ${dashboard.holdings
+              .map(
+                (holding) =>
+                  `<tr><td>${holding.symbol}</td><td>${holding.quantity}</td><td>${currency(holding.buy_price)}</td><td>${currency(holding.current_price)}</td><td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}</td></tr>`
+              )
+              .join("")}
+          </tbody>
+        </table>
       </body>
     </html>
   `;
 }
 
-function safeFilename(value) {
-  return String(value || "client-profile")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "") || "client-profile";
-}
-
-function openUserProfilePdf(dashboard) {
-  const reportWindow = window.open("", "_blank");
-  if (!reportWindow) {
-    alert("Allow popups to open the PDF profile.");
-    return;
-  }
-  const html = buildUserDownloadHtml(dashboard);
-  const filename = `${safeFilename(dashboard.fixed_user_id || dashboard.username || dashboard.full_name)}-profile-pdf`;
-  reportWindow.document.open();
-  reportWindow.document.write(html);
-  reportWindow.document.close();
-  reportWindow.document.title = filename;
-  window.setTimeout(() => {
-    reportWindow.focus();
-    reportWindow.print();
-  }, 350);
+function downloadHtmlFile(filename, html) {
+  const blob = new Blob([html], { type: "text/html" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
 }
 
 function logoutAndResetPortals() {
+  stopAdminRefresh();
   clearAuth();
   activeRole = null;
   activeUserId = null;
-  stopLiveDashboardPrices();
   hidePortalMounts();
   hideAuthLoading();
-  window.location.href = "./login.html";
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 async function renderTicker(elementId, symbols) {
@@ -1435,196 +740,13 @@ async function renderTicker(elementId, symbols) {
     .join("");
 }
 
-async function setupHomeLiveTicker() {
-  const mount = document.getElementById("homeLiveTicker");
-  if (!mount) return;
-
-  const renderHomeTicker = async () => {
-    const fallbackFeed = HOME_TICKER_SYMBOLS.map((symbol) => HOME_TICKER_FALLBACK[symbol]);
-    const feed = await api(`/stocks/feed?symbols=${encodeURIComponent(HOME_TICKER_SYMBOLS.join(","))}`).catch(() => fallbackFeed);
-    const quotes = Array.isArray(feed) && feed.length ? feed : fallbackFeed;
-    const latestFetch = quotes.find((quote) => quote.fetched_at)?.fetched_at;
-    const tickerItems = quotes
-      .map((quote) => {
-        const change = Number(quote.change_percent || 0);
-        const symbol = quote.symbol === "NIFTY50" ? "NIFTY 50" : quote.symbol;
-        return `
-          <article class="home-ticker-item ${change >= 0 ? "is-up" : "is-down"}">
-            <span class="ticker-dot"></span>
-            <strong>${escapeHtml(symbol)} <em>${currency(quote.price)}</em></strong>
-            <small>${percent(change)} ${quote.is_fallback ? "Backup" : "Live"}</small>
-          </article>
-      `;
-      })
-      .join("");
-    mount.innerHTML = `
-      <div class="home-ticker-track">${tickerItems}${tickerItems}</div>
-    `;
-  };
-
-  window.clearInterval(liveTickerTimer);
-  await renderHomeTicker();
-  liveTickerTimer = window.setInterval(() => {
-    renderHomeTicker().catch(() => {});
-  }, 30000);
-}
-
-function setPriceClass(node, value) {
-  if (!node) return;
-  node.classList.toggle("profit", Number(value || 0) >= 0);
-  node.classList.toggle("loss", Number(value || 0) < 0);
-  node.classList.toggle("price-up", Number(value || 0) >= 0);
-  node.classList.toggle("price-down", Number(value || 0) < 0);
-}
-
-async function refreshVisibleDashboardPrices() {
-  const rows = [...document.querySelectorAll("[data-live-symbol]")];
-  if (!rows.length) return;
-
-  const symbols = [...new Set(rows.map((row) => row.dataset.liveSymbol).filter(Boolean))];
-  if (!symbols.length) return;
-
-  const feed = await api(`/stocks/feed?symbols=${encodeURIComponent(symbols.join(","))}`).catch(() => []);
-  const quoteMap = new Map(
-    (Array.isArray(feed) ? feed : []).map((quote) => [String(quote.symbol || "").toUpperCase(), quote])
-  );
-  const summaryRows = rows.filter((row) => row.dataset.liveSummary === "true");
-  let totalLiveValue = 0;
-  let totalBuyValue = 0;
-
-  rows.forEach((row) => {
-    const symbol = String(row.dataset.liveSymbol || "").toUpperCase();
-    const quote = quoteMap.get(symbol);
-    if (!quote) return;
-
-    const quantity = Number(row.dataset.quantity || 0);
-    const buyPrice = Number(row.dataset.buyPrice || 0);
-    const buyValue = buyPrice * quantity;
-    const livePrice = Number(quote.price || 0);
-    const liveValue = livePrice * quantity;
-    const pnl = liveValue - buyValue;
-    const returnPct = buyValue ? (pnl / buyValue) * 100 : 0;
-
-    row.dataset.currentPrice = String(livePrice);
-    row.dataset.value = String(liveValue);
-    if (summaryRows.length ? row.dataset.liveSummary === "true" : true) {
-      totalLiveValue += liveValue;
-      totalBuyValue += buyValue;
-    }
-
-    const livePriceCell = row.querySelector("[data-live-price-cell]");
-    const liveValueCell = row.querySelector("[data-live-value-cell]");
-    const pnlCell = row.querySelector("[data-pnl-cell]");
-    const returnCell = row.querySelector("[data-return-cell]");
-    const sellButton = row.querySelector("[data-admin-sell-holding]");
-
-    if (livePriceCell) {
-      livePriceCell.textContent = currency(livePrice);
-      setPriceClass(livePriceCell, Number(quote.change_percent || 0));
-    }
-    if (liveValueCell) {
-      liveValueCell.textContent = currency(liveValue);
-      setPriceClass(liveValueCell, pnl);
-    }
-    if (pnlCell) {
-      pnlCell.textContent = currency(pnl);
-      setPriceClass(pnlCell, pnl);
-    }
-    if (returnCell) {
-      returnCell.textContent = percent(returnPct);
-      setPriceClass(returnCell, returnPct);
-    }
-    if (sellButton) sellButton.dataset.livePrice = String(livePrice);
-  });
-
-  const bookedPnl = Number(document.querySelector("[data-live-booked-pnl]")?.dataset.liveBookedPnl || 0);
-  const totalPnl = totalLiveValue - totalBuyValue + bookedPnl;
-  document.querySelectorAll("[data-live-total-value]").forEach((node) => {
-    node.textContent = currency(totalLiveValue);
-    setPriceClass(node, totalLiveValue - totalBuyValue);
-  });
-  document.querySelectorAll("[data-live-total-pnl]").forEach((node) => {
-    node.textContent = currency(totalPnl);
-    setPriceClass(node, totalPnl);
-  });
-  document.querySelectorAll("[data-live-total-return]").forEach((node) => {
-    node.textContent = percent(totalBuyValue ? (totalPnl / totalBuyValue) * 100 : 0);
-    setPriceClass(node, totalPnl);
-  });
-
-  const status = document.querySelector("[data-live-price-status]");
-  if (status) {
-    status.textContent = `Live prices updated ${new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`;
-  }
-}
-
-function startLiveDashboardPrices() {
-  stopLiveDashboardPrices();
-  refreshVisibleDashboardPrices().catch(() => {});
-  liveDashboardPriceTimer = window.setInterval(() => {
-    refreshVisibleDashboardPrices().catch(() => {});
-  }, 20000);
-}
-
-function stopLiveDashboardPrices() {
-  if (!liveDashboardPriceTimer) return;
-  window.clearInterval(liveDashboardPriceTimer);
-  liveDashboardPriceTimer = null;
-}
-
-function todayLabel() {
-  return new Intl.DateTimeFormat("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
-  }).format(new Date());
-}
-
-async function setupHomeLiveNews() {
-  const mount = document.getElementById("homeLiveNews");
-  const dateBadge = document.getElementById("homeNewsDate");
-  if (!mount) return;
-
-  const today = todayLabel();
-  if (dateBadge) dateBadge.textContent = today;
-
-  const fallbackNews = [
-    { title: "NIFTY 50 and SENSEX remain the key market indicators to watch today.", source: "Market Desk" },
-    { title: "Banking and IT stocks are being tracked closely for portfolio movement.", source: "Live Watch" },
-    { title: "Client portfolio P/L updates as live prices move through the session.", source: "Portfolio Feed" },
-    { title: "Admins can review stock-wise client exposure directly from the dashboard.", source: "Dashboard Update" }
-  ];
-
-  const newsResponse = await api("/stocks/market/news").catch(() => []);
-  const liveNews = (Array.isArray(newsResponse) ? newsResponse : [])
-    .filter((article) => article?.title)
-    .slice(0, 6);
-  const news = liveNews.length ? liveNews : fallbackNews;
-  let index = 0;
-
-  const showNews = () => {
-    const item = news[index % news.length];
-    mount.innerHTML = `
-      <article class="home-news-item">
-        <span>${escapeHtml(item.source || "Market News")} · ${today}</span>
-        <strong>${escapeHtml(item.title)}</strong>
-        <small>${liveNews.length ? "Alpha Vantage news feed" : "Market brief while Alpha Vantage is rate-limited"}</small>
-      </article>
-    `;
-    index += 1;
-  };
-
-  showNews();
-  window.setInterval(showNews, 3200);
-}
-
 function setupDownloadButtons(userDashboards = []) {
   const dashboardMap = new Map(userDashboards.map((user) => [String(user.user_id), user]));
   document.querySelectorAll("[data-download-user-id]").forEach((button) => {
     button.addEventListener("click", () => {
       const dashboard = dashboardMap.get(String(button.dataset.downloadUserId));
       if (!dashboard) return;
-      openUserProfilePdf(dashboard);
+      downloadHtmlFile(`${(dashboard.fixed_user_id || dashboard.username).toLowerCase()}-dashboard.html`, buildUserDownloadHtml(dashboard));
     });
   });
 }
@@ -1677,37 +799,50 @@ function setupWebsiteControlButtons() {
 
 function setupAdminManagementButtons() {
   const statusMessage = document.getElementById("adminUserActionStatus");
-  const searchInput = document.getElementById("adminUserSearch");
-  const scriptSearchInput = document.getElementById("adminScriptSearch");
-  const statusFilter = document.getElementById("adminUserStatusFilter");
+  const searchInput = document.getElementById("adminUniversalSearch");
+  const clientFilter = document.getElementById("adminClientFilter");
+  const dateFromInput = document.getElementById("adminDateFrom");
+  const dateToInput = document.getElementById("adminDateTo");
+  const stockVisibilityButton = document.getElementById("adminStockVisibilityToggle");
   const selectAll = document.getElementById("adminSelectAllUsers");
   const bulkActivate = document.getElementById("bulkActivateUsersBtn");
   const bulkDisable = document.getElementById("bulkDisableUsersBtn");
-  const bulkDelete = document.getElementById("bulkDeleteUsersBtn");
-  const bulkArchive = document.getElementById("bulkArchiveUsersBtn");
 
   if (searchInput) {
     searchInput.value = adminUiState.search;
-    searchInput.addEventListener("input", () => {
+    searchInput.addEventListener("input", async () => {
       adminUiState.search = searchInput.value.trim();
-      window.clearTimeout(adminSearchRenderTimer);
-      adminSearchRenderTimer = window.setTimeout(() => renderAdminPortal().catch(() => {}), 450);
+      await renderAdminPortal();
     });
   }
 
-  if (scriptSearchInput) {
-    scriptSearchInput.value = adminUiState.scriptSearch;
-    scriptSearchInput.addEventListener("input", () => {
-      adminUiState.scriptSearch = scriptSearchInput.value.trim();
-      window.clearTimeout(adminSearchRenderTimer);
-      adminSearchRenderTimer = window.setTimeout(() => renderAdminPortal().catch(() => {}), 450);
+  if (clientFilter) {
+    clientFilter.value = adminUiState.clientFilter;
+    clientFilter.addEventListener("change", async () => {
+      adminUiState.clientFilter = clientFilter.value;
+      await renderAdminPortal();
     });
   }
 
-  if (statusFilter) {
-    statusFilter.value = adminUiState.status;
-    statusFilter.addEventListener("change", async () => {
-      adminUiState.status = statusFilter.value;
+  if (dateFromInput) {
+    dateFromInput.value = adminUiState.dateFrom;
+    dateFromInput.addEventListener("change", async () => {
+      adminUiState.dateFrom = dateFromInput.value;
+      await renderAdminPortal();
+    });
+  }
+
+  if (dateToInput) {
+    dateToInput.value = adminUiState.dateTo;
+    dateToInput.addEventListener("change", async () => {
+      adminUiState.dateTo = dateToInput.value;
+      await renderAdminPortal();
+    });
+  }
+
+  if (stockVisibilityButton) {
+    stockVisibilityButton.addEventListener("click", async () => {
+      adminUiState.stocksVisible = !adminUiState.stocksVisible;
       await renderAdminPortal();
     });
   }
@@ -1755,18 +890,6 @@ function setupAdminManagementButtons() {
     bulkDisable.addEventListener("click", async () => runBulkAction("disable", bulkDisable));
   }
 
-  if (bulkDelete) {
-    bulkDelete.addEventListener("click", async () =>
-      runBulkAction("archive", bulkDelete, "Archive all selected clients? Their data will be kept, but they will be hidden from active views.")
-    );
-  }
-
-  if (bulkArchive) {
-    bulkArchive.addEventListener("click", async () =>
-      runBulkAction("archive", bulkArchive, "Archive all selected clients? Their data will be kept, but they will be hidden from active views.")
-    );
-  }
-
   document.querySelectorAll("[data-user-status-action]").forEach((button) => {
     button.addEventListener("click", async () => {
       const userId = button.dataset.userStatusAction;
@@ -1779,79 +902,6 @@ function setupAdminManagementButtons() {
         });
         if (statusMessage) {
           statusMessage.textContent = `${updated.full_name} is now ${updated.is_active ? "active" : "inactive"}.`;
-        }
-        await renderAdminPortal();
-      } catch (error) {
-        if (statusMessage) {
-          statusMessage.textContent = formatError(error);
-        }
-      } finally {
-        stopLoading();
-      }
-    });
-  });
-
-  document.querySelectorAll("[data-delete-user]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const userId = button.dataset.deleteUser;
-      const userName = button.dataset.userName || "this user";
-      const confirmed = window.confirm(`Archive ${userName}? Their login will be disabled and portfolio data will be kept.`);
-      if (!confirmed) return;
-      const stopLoading = setButtonLoading(button, "Archiving...");
-      try {
-        await api(`/admin/users/${userId}`, { method: "DELETE" });
-        if (statusMessage) {
-          statusMessage.textContent = `${userName} was archived successfully.`;
-        }
-        await renderAdminPortal();
-      } catch (error) {
-        if (statusMessage) {
-          statusMessage.textContent = formatError(error);
-        }
-      } finally {
-        stopLoading();
-      }
-    });
-  });
-
-  document.querySelectorAll("[data-archive-user]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const userId = button.dataset.archiveUser;
-      const userName = button.dataset.userName || "this client";
-      const confirmed = window.confirm(`Archive ${userName}? Their login will be disabled and they will be hidden from active admin views, but portfolio data will be kept.`);
-      if (!confirmed) return;
-      const stopLoading = setButtonLoading(button, "Archiving...");
-      try {
-        const archived = await api(`/admin/users/${userId}/archive`, { method: "PATCH" });
-        if (statusMessage) {
-          statusMessage.textContent = `${archived.full_name} was archived. Portfolio records are still stored.`;
-        }
-        if (Number(adminUiState.detailKey) === Number(userId)) {
-          adminUiState.detailType = null;
-          adminUiState.detailKey = null;
-        }
-        await renderAdminPortal();
-      } catch (error) {
-        if (statusMessage) {
-          statusMessage.textContent = formatError(error);
-        }
-      } finally {
-        stopLoading();
-      }
-    });
-  });
-
-  document.querySelectorAll("[data-permanent-delete-user]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const userId = button.dataset.permanentDeleteUser;
-      const userName = button.dataset.userName || "this archived client";
-      const confirmed = window.confirm(`Permanently delete ${userName}? This is only allowed for archived clients and will remove their portfolio records forever.`);
-      if (!confirmed) return;
-      const stopLoading = setButtonLoading(button, "Deleting...");
-      try {
-        await api(`/admin/users/${userId}/permanent`, { method: "DELETE" });
-        if (statusMessage) {
-          statusMessage.textContent = `${userName} was permanently deleted.`;
         }
         await renderAdminPortal();
       } catch (error) {
@@ -1880,6 +930,124 @@ function setupAdminManagementButtons() {
         stopLoading();
       }
     });
+  });
+
+  document.querySelectorAll("[data-admin-sell-holding]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const holdingId = button.dataset.adminSellHolding;
+      const symbol = button.dataset.symbol || "this stock";
+      const owner = button.dataset.owner || "this customer";
+      if (!window.confirm(`Sell ${symbol} for ${owner}?`)) return;
+      const stopLoading = setButtonLoading(button, "Selling...");
+      try {
+        await api(`/admin/holdings/${holdingId}/sell`, { method: "POST" });
+        if (statusMessage) {
+          statusMessage.textContent = `${symbol} was sold for ${owner}.`;
+        }
+        await renderAdminPortal();
+      } catch (error) {
+        if (statusMessage) statusMessage.textContent = formatError(error);
+      } finally {
+        stopLoading();
+      }
+    });
+  });
+}
+
+async function refreshAdminCurrentPage() {
+  if (isAdminCustomerPage()) {
+    await renderAdminCustomerPage();
+    return;
+  }
+  if (isAdminDealPage()) {
+    await renderAdminDealPage();
+    return;
+  }
+  await renderAdminPortal();
+}
+
+async function setupAdminCustomerForm() {
+  const form = document.getElementById("adminCustomerForm");
+  const status = document.getElementById("adminCustomerStatus");
+  if (!form) return;
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const submitButton = form.querySelector('button[type="submit"]');
+    const stopLoading = setButtonLoading(submitButton, "Creating...");
+    try {
+      const data = new FormData(form);
+      const payload = {
+        full_name: String(data.get("full_name") || "").trim(),
+        email: String(data.get("email") || "").trim(),
+        phone_number: String(data.get("phone_number") || "").trim(),
+        password: String(data.get("password") || "")
+      };
+
+      if (!payload.full_name || !payload.email || !payload.phone_number || !payload.password) {
+        throw new Error("Complete all customer fields before creating the account.");
+      }
+
+      await api("/auth/signup", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+
+      const users = await api("/admin/users");
+      const createdUser = (Array.isArray(users) ? users : []).find(
+        (user) =>
+          String(user.phone_number || "") === payload.phone_number ||
+          String(user.email || "").toLowerCase() === payload.email.toLowerCase()
+      );
+
+      if (status) {
+        status.textContent = createdUser?.fixed_user_id
+          ? `Customer created successfully. Client ID: ${createdUser.fixed_user_id}`
+          : "Customer created successfully.";
+      }
+      form.reset();
+      await refreshAdminCurrentPage();
+    } catch (error) {
+      if (status) status.textContent = formatError(error);
+    } finally {
+      stopLoading();
+    }
+  });
+}
+
+async function setupAdminDealForm() {
+  const form = document.getElementById("adminDealForm");
+  const status = document.getElementById("adminDealStatus");
+  if (!form) return;
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const submitButton = form.querySelector('button[type="submit"]');
+    const stopLoading = setButtonLoading(submitButton, "Adding...");
+    try {
+      const data = new FormData(form);
+      const userId = String(data.get("customer_id") || "").trim();
+      const payload = {
+        symbol: String(data.get("symbol") || "").trim().toUpperCase(),
+        quantity: Number(data.get("quantity") || 0),
+        buy_price: Number(data.get("buy_price") || 0),
+        exchange: String(data.get("exchange") || "NSE").trim().toUpperCase()
+      };
+      if (!userId || !payload.symbol || !payload.quantity || !payload.buy_price) {
+        throw new Error("Complete all deal fields before adding the position.");
+      }
+      await api(`/admin/users/${userId}/holdings`, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+      if (status) status.textContent = `${payload.symbol} was added successfully.`;
+      form.reset();
+      await refreshAdminCurrentPage();
+    } catch (error) {
+      if (status) status.textContent = formatError(error);
+    } finally {
+      stopLoading();
+    }
   });
 }
 
@@ -1922,833 +1090,836 @@ function setupPortalActions() {
       }
     });
   });
+
+  document.querySelectorAll("[data-admin-action-nav]").forEach((select) => {
+    select.addEventListener("change", () => {
+      if (!select.value) return;
+      window.location.href = select.value;
+    });
+  });
+}
+
+function buildAdminActionToolbar(selectedValue = "") {
+  return `
+    <header class="user-topbar admin-compact-topbar">
+      <div class="admin-toolbar-left">
+        <a class="secondary-btn compact-btn" href="./login.html">Back to Login</a>
+      </div>
+      <div class="user-topbar-actions admin-toolbar-right">
+        <select class="user-search admin-action-select" data-admin-action-nav="true">
+          <option value="">Admin Actions</option>
+          <option value="./admin-add-customer.html" ${selectedValue === "customer" ? "selected" : ""}>Add Customer</option>
+          <option value="./admin-add-deal.html" ${selectedValue === "deal" ? "selected" : ""}>Add Deal</option>
+        </select>
+        <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
+      </div>
+    </header>
+  `;
+}
+
+async function renderAdminCustomerPage() {
+  const mount = document.getElementById("adminPortal");
+  if (!mount) return;
+
+  mount.innerHTML = `
+    <section class="dashboard-stack admin-dashboard-stack">
+      ${buildAdminActionToolbar("customer")}
+      <article class="dashboard-card full-span-card admin-form-page-card">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Admin Only</p>
+            <h3>Add Customer</h3>
+            <p class="helper-text">Create customer access from admin only. The generated client ID is used for user login.</p>
+          </div>
+          <span class="badge green">Customer Access</span>
+        </div>
+        <form id="adminCustomerForm" class="admin-inline-form">
+          <label><span>Customer Name</span><input name="full_name" type="text" placeholder="Customer full name" required /></label>
+          <label><span>Email</span><input name="email" type="email" placeholder="client@email.com" required /></label>
+          <label><span>Phone</span><input name="phone_number" type="tel" placeholder="Phone number" required /></label>
+          <label><span>Password</span><input name="password" type="password" placeholder="Minimum 8 characters" required /></label>
+          <button class="primary-btn" type="submit">Create Customer</button>
+        </form>
+        <p class="helper-text" id="adminCustomerStatus">Client ID will be generated after the customer account is created.</p>
+      </article>
+    </section>
+  `;
+
+  revealPortal(mount);
+  activeRole = "admin";
+  activeUserId = null;
+  setupPortalActions();
+  await setupAdminCustomerForm();
+}
+
+async function renderAdminDealPage() {
+  const mount = document.getElementById("adminPortal");
+  if (!mount) return;
+
+  let users = [];
+  try {
+    users = await api("/admin/users");
+  } catch {
+    users = [];
+  }
+
+  mount.innerHTML = `
+    <section class="dashboard-stack admin-dashboard-stack">
+      ${buildAdminActionToolbar("deal")}
+      <article class="dashboard-card full-span-card admin-form-page-card">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Deal Entry</p>
+            <h3>Add Deal</h3>
+            <p class="helper-text">Add a stock position directly to a customer portfolio. Repeated buys for the same stock are merged into one averaged holding.</p>
+          </div>
+          <span class="badge">Workflow</span>
+        </div>
+        <form id="adminDealForm" class="admin-inline-form">
+          <label>
+            <span>Customer</span>
+            <select name="customer_id">
+              <option value="">Select customer</option>
+              ${(Array.isArray(users) ? users : [])
+                .map((user) => `<option value="${user.user_id}">${escapeHtml(user.full_name)} (${escapeHtml(user.fixed_user_id || user.username || "")})</option>`)
+                .join("")}
+            </select>
+          </label>
+          <label><span>Stock Name / Symbol</span><input name="symbol" type="text" placeholder="Type stock symbol" /></label>
+          <label><span>Quantity</span><input name="quantity" type="number" placeholder="100" /></label>
+          <label><span>Buy Price</span><input name="buy_price" type="number" placeholder="1500" /></label>
+          <label>
+            <span>Exchange</span>
+            <select name="exchange">
+              <option value="NSE">NSE</option>
+              <option value="BSE">BSE</option>
+            </select>
+          </label>
+          <button class="primary-btn" type="submit">Add Deal</button>
+        </form>
+        <p class="helper-text" id="adminDealStatus">Choose a customer, enter the position, and submit to add the deal.</p>
+      </article>
+    </section>
+  `;
+
+  revealPortal(mount);
+  activeRole = "admin";
+  activeUserId = null;
+  setupPortalActions();
+  await setupAdminDealForm();
 }
 
 function buildAdminClientDetail(user) {
-  const holdings = Array.isArray(user.holdings) ? user.holdings : [];
-  const investedValue = holdings.reduce((sum, holding) => sum + Number(holding.buy_price || 0) * Number(holding.quantity || 0), 0);
-  const currentValue = holdings.reduce((sum, holding) => sum + Number(holding.value || 0), 0);
-  const openPnl = currentValue - investedValue;
-  const sales = Array.isArray(user.sales) ? user.sales : [];
-  const bookedPnl = sales.reduce((sum, sale) => sum + Number(sale.profit_loss || 0), 0);
-  const totalPnl = openPnl + bookedPnl;
-  const lifetimeReturn = investedValue ? (totalPnl / investedValue) * 100 : 0;
   return `
-    <article class="dashboard-card detail-card admin-simple-detail-card">
+    <article class="dashboard-card detail-card">
       <div class="panel-head">
         <div>
-          <p class="eyebrow">Client Portfolio</p>
-          <h3>${escapeHtml(user.full_name)}</h3>
-          <p class="detail-subtitle">${escapeHtml(user.fixed_user_id || user.username || "Client")}</p>
+          <p class="eyebrow">Client Detail</p>
+          <h3>${user.full_name}</h3>
+          <p class="detail-subtitle">${user.fixed_user_id || user.username}</p>
         </div>
-        <div class="admin-detail-actions">
-          <span class="badge ${totalPnl >= 0 ? "green" : "red"}">Lifetime ${currency(totalPnl)}</span>
-          <button class="secondary-btn compact-btn archive-client-btn" type="button" data-archive-user="${user.user_id}" data-user-name="${escapeHtml(user.full_name)}">Archive Client</button>
-        </div>
+        <span class="badge ${user.total_profit_loss >= 0 ? "green" : "red"}">${currency(user.total_profit_loss)}</span>
       </div>
-      <div class="detail-stat-grid admin-simple-stats">
-        <article><strong>${holdings.length}</strong><span>Stocks Holding</span></article>
-        <article><strong>${currency(investedValue)}</strong><span>Total Buy Value</span></article>
-        <article><strong>${currency(currentValue)}</strong><span>Live Value</span></article>
-        <article><strong class="${openPnl >= 0 ? "profit" : "loss"}">${currency(openPnl)}</strong><span>Open Profit / Loss</span></article>
-        <article><strong class="${bookedPnl >= 0 ? "profit" : "loss"}">${currency(bookedPnl)}</strong><span>Booked Profit / Loss</span></article>
-        <article><strong class="${totalPnl >= 0 ? "profit" : "loss"}">${currency(totalPnl)}</strong><span>Lifetime Profit / Loss</span></article>
-        <article><strong class="${lifetimeReturn >= 0 ? "profit" : "loss"}">${percent(lifetimeReturn)}</strong><span>Lifetime Return</span></article>
+      <div class="detail-stat-grid">
+        <article><strong>${user.total_holdings}</strong><span>Live Stocks</span></article>
+        <article><strong>${currency(user.total_portfolio_value)}</strong><span>Current Value</span></article>
+        <article><strong class="${user.total_profit_loss >= 0 ? "profit" : "loss"}">${percent((user.total_profit_loss / Math.max(user.total_portfolio_value - user.total_profit_loss, 1)) * 100)}</strong><span>Total Return</span></article>
       </div>
-      <div class="table-wrap admin-position-table-wrap">
-        <table class="compact-table admin-position-table">
-          <thead><tr><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Buy Value</th><th>Live Price</th><th>Live Value</th><th>Profit / Loss</th><th>Return</th><th>Action</th></tr></thead>
-          <tbody>
-            ${holdings.length
-              ? holdings.map((holding) => {
-                  const buyValue = Number(holding.buy_price || 0) * Number(holding.quantity || 0);
-                  const liveValue = Number(holding.value || 0);
-                  const pnl = liveValue - buyValue;
-                  const returnPct = buyValue ? (pnl / buyValue) * 100 : 0;
-                  return `
-                    <tr data-live-symbol="${escapeHtml(holding.symbol)}" data-quantity="${Number(holding.quantity || 0)}" data-buy-price="${Number(holding.buy_price || 0)}" data-current-price="${Number(holding.current_price || 0)}" data-value="${Number(holding.value || 0)}">
-                      <td><button class="table-link" type="button" data-stock-detail="${escapeHtml(holding.symbol)}">${escapeHtml(holding.symbol)}</button><br /><small>${escapeHtml(holding.sector || "Tracked holding")}</small></td>
-                      <td>${Number(holding.quantity || 0).toLocaleString("en-IN")}</td>
-                      <td>${currency(holding.buy_price)}</td>
-                      <td>${currency(buyValue)}</td>
-                      <td><strong class="${pnl >= 0 ? "price-up" : "price-down"}" data-live-price-cell>${currency(holding.current_price)}</strong></td>
-                      <td><strong class="${pnl >= 0 ? "price-up" : "price-down"}" data-live-value-cell>${currency(liveValue)}</strong></td>
-                      <td class="${pnl >= 0 ? "profit" : "loss"}" data-pnl-cell>${currency(pnl)}</td>
-                      <td class="${returnPct >= 0 ? "profit" : "loss"}" data-return-cell>${percent(returnPct)}</td>
-                      <td><button class="sell-action-btn compact-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${escapeHtml(holding.symbol)}" data-quantity="${Number(holding.quantity || 0)}" data-live-price="${Number(holding.current_price || 0)}">Sell</button></td>
-                    </tr>
-                  `;
-                }).join("")
-              : `<tr><td colspan="9"><span class="helper-text">This client has not added stocks yet.</span></td></tr>`}
-          </tbody>
-        </table>
+      <div class="dashboard-grid detail-grid">
+        <article class="table-card">
+          <div class="panel-head"><h3>Live Stock View</h3><span class="badge">Realtime</span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Live Price</th><th>P&amp;L</th></tr></thead>
+              <tbody>
+                ${user.holdings.map((holding) => `
+                  <tr>
+                    <td>${adminUiState.stocksVisible ? holding.symbol : maskStockSymbol(holding.symbol)}<br /><small>${holding.sector || "Tracked holding"}</small></td>
+                    <td>${holding.quantity}</td>
+                    <td>${currency(holding.buy_price)}</td>
+                    <td>${currency(holding.current_price)}</td>
+                    <td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </article>
+        <article class="table-card">
+          <div class="panel-head"><h3>Old Stock History</h3><span class="badge green">Purchase Records</span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Date</th><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Status</th></tr></thead>
+              <tbody>
+                ${user.holdings.map((holding) => `
+                  <tr>
+                    <td>${formatDate(holding.created_at)}</td>
+                    <td>${holding.symbol}</td>
+                    <td>${holding.quantity}</td>
+                    <td>${currency(holding.buy_price)}</td>
+                    <td>${holding.current_price >= holding.buy_price ? "In Profit" : "Under Watch"}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </article>
       </div>
     </article>
   `;
-}
-
-function setupAdminDealForm() {
-  const form = document.getElementById("adminDealForm");
-  const statusMessage = document.getElementById("adminDealStatus");
-  if (!form) return;
-
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const submitButton = form.querySelector('button[type="submit"]');
-    const data = new FormData(form);
-    const userId = String(data.get("userId") || "").trim();
-    const symbol = String(data.get("symbol") || "").trim().toUpperCase();
-    const quantity = Number(data.get("quantity"));
-    const buyPrice = Number(data.get("buyPrice"));
-    const exchange = String(data.get("exchange") || "NSE").trim().toUpperCase() || "NSE";
-
-    if (!userId || !symbol || !quantity || !buyPrice) {
-      if (statusMessage) statusMessage.textContent = "Select customer and enter stock, quantity, and buy price.";
-      return;
-    }
-
-    const stopLoading = setButtonLoading(submitButton, "Adding...");
-    try {
-      await api(`/admin/users/${encodeURIComponent(userId)}/deals`, {
-        method: "POST",
-        body: JSON.stringify({
-          symbol,
-          quantity,
-          buy_price: buyPrice,
-          exchange
-        })
-      });
-      if (statusMessage) statusMessage.textContent = `${symbol} deal added successfully. Refreshing dashboard...`;
-      notifyPortfolioChanged();
-      await renderAdminPortal();
-    } catch (error) {
-      if (statusMessage) statusMessage.textContent = formatError(error);
-    } finally {
-      stopLoading();
-    }
-  });
-}
-
-function setupAdminCustomerForm() {
-  const form = document.getElementById("adminCustomerForm");
-  const statusMessage = document.getElementById("adminCustomerStatus");
-  if (!form) return;
-
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const submitButton = form.querySelector('button[type="submit"]');
-    const data = new FormData(form);
-    const payload = {
-      full_name: String(data.get("full_name") || "").trim(),
-      email: String(data.get("email") || "").trim(),
-      phone_number: String(data.get("phone_number") || "").trim(),
-      password: String(data.get("password") || "")
-    };
-    if (!payload.full_name || !payload.email || !payload.phone_number || payload.password.length < 8) {
-      if (statusMessage) statusMessage.textContent = "Enter name, email, phone, and a password with at least 8 characters.";
-      return;
-    }
-    const stopLoading = setButtonLoading(submitButton, "Creating...");
-    try {
-      const created = await api("/admin/users", {
-        method: "POST",
-        body: JSON.stringify(payload)
-      });
-      if (statusMessage) {
-        statusMessage.textContent = `${created.full_name} created. Client ID: ${created.fixed_user_id}. Share this ID for user login.`;
-      }
-      sessionStorage.setItem(
-        "assetyantra_admin_customer_status",
-        `${created.full_name} created. Client ID: ${created.fixed_user_id}. Share this ID for user login.`
-      );
-      form.reset();
-      await renderAdminPortal();
-    } catch (error) {
-      if (statusMessage) statusMessage.textContent = formatError(error);
-    } finally {
-      stopLoading();
-    }
-  });
-}
-
-function setupAdminDealSymbolSuggestions() {
-  const form = document.getElementById("adminDealForm");
-  const input = form?.querySelector('[name="symbol"]');
-  const suggestions = document.getElementById("adminDealSymbolSuggestions");
-  const buyPriceInput = form?.querySelector('[name="buyPrice"]');
-  const exchangeInput = form?.querySelector('[name="exchange"]');
-  const statusMessage = document.getElementById("adminDealStatus");
-  if (!form || !input || !suggestions) return;
-
-  let marketSearchTimer;
-  let quoteLookupTimer;
-  let activeSuggestionIndex = -1;
-  let remoteSearchResults = [];
-
-  const safeExchange = () => String(exchangeInput?.value || "NSE").trim().toUpperCase() || "NSE";
-
-  const setDealStatus = (message) => {
-    if (statusMessage) statusMessage.textContent = message;
-  };
-
-  const fetchAndApplyQuote = async (symbol) => {
-    const safeSymbol = String(symbol || "").trim().toUpperCase();
-    if (safeSymbol.length < 2) return;
-    try {
-      setDealStatus(`Fetching live price for ${safeSymbol}...`);
-      const quote = await api(`/stocks/${encodeURIComponent(safeSymbol)}?exchange=${encodeURIComponent(safeExchange())}`);
-      const price = Number(quote?.quote?.price ?? quote?.price ?? 0);
-      if (price > 0 && buyPriceInput) {
-        buyPriceInput.value = price.toFixed(2);
-        setDealStatus(`${safeSymbol} live price loaded: ${currency(price)}.`);
-      }
-    } catch {
-      setDealStatus("Live price unavailable right now. Enter buy price manually.");
-    }
-  };
-
-  const searchMarketSymbols = async (query) => {
-    const safeQuery = String(query || "").trim();
-    if (safeQuery.length < 3) {
-      remoteSearchResults = [];
-      renderSuggestions();
-      return;
-    }
-    const cacheKey = `admin:${safeExchange()}:${safeQuery.toLowerCase()}`;
-    if (marketSymbolSearchCache.has(cacheKey)) {
-      remoteSearchResults = marketSymbolSearchCache.get(cacheKey);
-      renderSuggestions();
-      return;
-    }
-    try {
-      const results = await api(`/stocks/search?q=${encodeURIComponent(safeQuery)}&exchange=${encodeURIComponent(safeExchange())}&limit=15`);
-      remoteSearchResults = Array.isArray(results)
-        ? results.map((item) => ({
-            symbol: item.symbol,
-            label: item.name || item.symbol,
-            name: item.name || item.symbol,
-            sector: item.sector || item.exchange || `${safeExchange()} equity`,
-            price: Number(item.price || 0),
-            source: item.source || "market_search"
-          }))
-        : [];
-      marketSymbolSearchCache.set(cacheKey, remoteSearchResults);
-      renderSuggestions();
-    } catch {
-      remoteSearchResults = [];
-      renderSuggestions();
-    }
-  };
-
-  const scheduleMarketSearch = () => {
-    window.clearTimeout(marketSearchTimer);
-    marketSearchTimer = window.setTimeout(() => searchMarketSymbols(input.value), 240);
-  };
-
-  const scheduleQuoteLookup = () => {
-    window.clearTimeout(quoteLookupTimer);
-    quoteLookupTimer = window.setTimeout(() => fetchAndApplyQuote(input.value), 500);
-  };
-
-  const getSuggestionButtons = () => [...suggestions.querySelectorAll("[data-symbol-suggestion]")];
-
-  const setActiveSuggestion = (index) => {
-    const buttons = getSuggestionButtons();
-    if (!buttons.length) {
-      activeSuggestionIndex = -1;
-      return;
-    }
-    activeSuggestionIndex = (index + buttons.length) % buttons.length;
-    buttons.forEach((button, buttonIndex) => {
-      button.classList.toggle("is-active", buttonIndex === activeSuggestionIndex);
-      button.setAttribute("aria-selected", buttonIndex === activeSuggestionIndex ? "true" : "false");
-    });
-  };
-
-  const selectSymbol = (symbol, price = 0) => {
-    input.value = String(symbol || "").toUpperCase();
-    if (Number(price || 0) > 0 && buyPriceInput) buyPriceInput.value = Number(price).toFixed(2);
-    suggestions.innerHTML = "";
-    activeSuggestionIndex = -1;
-    fetchAndApplyQuote(input.value);
-    buyPriceInput?.focus();
-  };
-
-  function renderSuggestions() {
-    const localCandidates = mergeSymbolCandidates(userDashboardCache.symbolCatalog, HOME_TICKER_SYMBOLS.map((symbol) => ({ symbol, name: symbol, sector: "NSE equity" })));
-    const matches = getClosestSymbolMatches(input.value, mergeSymbolCandidates(remoteSearchResults, localCandidates), 8);
-    suggestions.innerHTML = matches.length
-      ? matches
-          .map((candidate) => `
-            <button class="symbol-suggestion-btn" type="button" data-symbol-suggestion="${escapeHtml(candidate.symbol)}" data-symbol-price="${Number(candidate.price || 0).toFixed(2)}">
-              <span class="symbol-suggestion-main">
-                <strong>${escapeHtml(candidate.symbol)}</strong>
-                <small>${escapeHtml(candidate.name || candidate.label || "")}</small>
-              </span>
-              ${Number(candidate.price || 0) > 0 ? `<span class="symbol-suggestion-meta"><strong>${currency(candidate.price)}</strong></span>` : ""}
-            </button>
-          `)
-          .join("")
-      : `<span class="search-empty">Type at least 3 letters, for example ITC, Tata, Reliance, bank.</span>`;
-  }
-
-  input.setAttribute("placeholder", "Type 3 letters of stock or company");
-  input.setAttribute("role", "combobox");
-  input.setAttribute("aria-autocomplete", "list");
-
-  input.addEventListener("focus", renderSuggestions);
-  input.addEventListener("input", () => {
-    input.value = input.value.toUpperCase();
-    renderSuggestions();
-    scheduleMarketSearch();
-    scheduleQuoteLookup();
-  });
-  input.addEventListener("keydown", (event) => {
-    const buttons = getSuggestionButtons();
-    if (!buttons.length) return;
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      setActiveSuggestion(activeSuggestionIndex + 1);
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault();
-      setActiveSuggestion(activeSuggestionIndex - 1);
-    } else if (event.key === "Enter" && activeSuggestionIndex >= 0) {
-      event.preventDefault();
-      const button = buttons[activeSuggestionIndex];
-      selectSymbol(button.dataset.symbolSuggestion, Number(button.dataset.symbolPrice || 0));
-    } else if (event.key === "Escape") {
-      suggestions.innerHTML = "";
-      activeSuggestionIndex = -1;
-    }
-  });
-
-  suggestions.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-symbol-suggestion]");
-    if (!button) return;
-    selectSymbol(button.dataset.symbolSuggestion, Number(button.dataset.symbolPrice || 0));
-  });
-
-  exchangeInput?.addEventListener("change", () => {
-    suggestions.innerHTML = "";
-    scheduleMarketSearch();
-    scheduleQuoteLookup();
-  });
-
-  document.addEventListener("click", (event) => {
-    if (event.target === input || suggestions.contains(event.target)) return;
-    suggestions.innerHTML = "";
-    activeSuggestionIndex = -1;
-  });
-}
-
-function setupAdminSellButtons() {
-  const statusMessage = document.getElementById("adminUserActionStatus");
-  document.querySelectorAll("[data-admin-sell-holding]").forEach((button) => {
-    if (button.dataset.adminSellBound === "true") return;
-    button.dataset.adminSellBound = "true";
-    button.addEventListener("click", async () => {
-      const holdingId = button.dataset.adminSellHolding;
-      const symbol = button.dataset.symbol || "this stock";
-      const maxQuantity = Number(button.dataset.quantity || 0);
-      const livePrice = Number(button.dataset.livePrice || 0);
-      const quantityInput = window.prompt(`How many shares of ${symbol} should admin sell?`, String(maxQuantity || 1));
-      if (quantityInput === null) return;
-      const sellQuantity = Number(quantityInput);
-      if (!sellQuantity || sellQuantity <= 0 || sellQuantity > maxQuantity) {
-        alert(`Enter a sell quantity between 1 and ${maxQuantity}.`);
-        return;
-      }
-      const priceInput = window.prompt(`Sell price for ${symbol}`, livePrice ? String(livePrice.toFixed(2)) : "");
-      if (priceInput === null) return;
-      const sellPrice = Number(priceInput);
-      if (!sellPrice || sellPrice <= 0) {
-        alert("Enter a valid sell price.");
-        return;
-      }
-      const stopLoading = setButtonLoading(button, "Selling...");
-      try {
-        const sale = await api(`/admin/holdings/${encodeURIComponent(holdingId)}/sell`, {
-          method: "POST",
-          body: JSON.stringify({ quantity: sellQuantity, sell_price: sellPrice })
-        });
-        if (statusMessage) {
-          statusMessage.textContent = `${symbol} sold. Booked P/L: ${currency(sale.profit_loss)}.`;
-        }
-        notifyPortfolioChanged();
-        await renderAdminPortal();
-      } catch (error) {
-        if (statusMessage) statusMessage.textContent = formatError(error);
-      } finally {
-        stopLoading();
-      }
-    });
-  });
 }
 
 function buildAdminStockDetail(symbol, holdings) {
-  const safeHoldings = Array.isArray(holdings) ? holdings : [];
-  const totalQty = safeHoldings.reduce((sum, holding) => sum + Number(holding.quantity || 0), 0);
-  const investedValue = safeHoldings.reduce((sum, holding) => sum + Number(holding.buy_price || 0) * Number(holding.quantity || 0), 0);
-  const currentValue = safeHoldings.reduce((sum, holding) => sum + Number(holding.value || 0), 0);
-  const totalPnl = currentValue - investedValue;
-  const returnPct = investedValue ? (totalPnl / investedValue) * 100 : 0;
+  const totalQty = holdings.reduce((sum, holding) => sum + Number(holding.quantity || 0), 0);
+  const totalPnl = holdings.reduce((sum, holding) => sum + Number(holding.profit_loss || 0), 0);
   return `
-    <article class="dashboard-card detail-card admin-simple-detail-card">
+    <article class="dashboard-card detail-card">
       <div class="panel-head">
         <div>
-          <p class="eyebrow">Stock Holders</p>
-          <h3>${escapeHtml(symbol)}</h3>
-          <p class="detail-subtitle">Every client currently holding this stock</p>
+          <p class="eyebrow">Stock Detail</p>
+          <h3>${symbol}</h3>
+          <p class="detail-subtitle">Clients currently holding this stock</p>
         </div>
-        <span class="badge ${totalPnl >= 0 ? "green" : "red"}">${safeHoldings.length} Client${safeHoldings.length === 1 ? "" : "s"}</span>
+        <span class="badge">${holdings.length} Holders</span>
       </div>
-      <div class="detail-stat-grid admin-simple-stats">
-        <article><strong>${safeHoldings.length}</strong><span>Users Holding</span></article>
-        <article><strong>${Number(totalQty || 0).toLocaleString("en-IN")}</strong><span>Total Quantity</span></article>
-        <article><strong>${currency(investedValue)}</strong><span>Total Buy Value</span></article>
-        <article><strong>${currency(currentValue)}</strong><span>Live Value</span></article>
-        <article><strong class="${totalPnl >= 0 ? "profit" : "loss"}">${currency(totalPnl)}</strong><span>Total Profit / Loss</span></article>
-        <article><strong class="${returnPct >= 0 ? "profit" : "loss"}">${percent(returnPct)}</strong><span>Total Return</span></article>
+      <div class="detail-stat-grid">
+        <article><strong>${holdings.length}</strong><span>Total Clients</span></article>
+        <article><strong>${totalQty}</strong><span>Total Quantity</span></article>
+        <article><strong class="${totalPnl >= 0 ? "profit" : "loss"}">${currency(totalPnl)}</strong><span>Combined P&amp;L</span></article>
       </div>
-      <div class="table-wrap admin-position-table-wrap">
-        <table class="compact-table admin-position-table">
-          <thead><tr><th>Client</th><th>Client ID</th><th>Qty</th><th>Buy Price</th><th>Live Price</th><th>Buy Value</th><th>Live Value</th><th>Profit / Loss</th><th>Return</th></tr></thead>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Customer</th><th>Client ID</th><th>Qty</th><th>Buy Price</th><th>Live Price</th><th>P&amp;L</th></tr></thead>
           <tbody>
-            ${safeHoldings.length
-              ? safeHoldings.map((holding) => {
-                  const buyValue = Number(holding.buy_price || 0) * Number(holding.quantity || 0);
-                  const liveValue = Number(holding.value || 0);
-                  const pnl = liveValue - buyValue;
-                  const holdingReturn = buyValue ? (pnl / buyValue) * 100 : 0;
-                  return `
-                    <tr data-live-symbol="${escapeHtml(holding.symbol)}" data-quantity="${Number(holding.quantity || 0)}" data-buy-price="${Number(holding.buy_price || 0)}" data-current-price="${Number(holding.current_price || 0)}" data-value="${Number(holding.value || 0)}">
-                      <td><button class="table-link" type="button" data-user-detail="${holding.user_id}">${escapeHtml(holding.owner || "Client")}</button></td>
-                      <td>${escapeHtml(holding.fixed_user_id || "")}</td>
-                      <td>${Number(holding.quantity || 0).toLocaleString("en-IN")}</td>
-                      <td>${currency(holding.buy_price)}</td>
-                      <td><strong class="${pnl >= 0 ? "price-up" : "price-down"}" data-live-price-cell>${currency(holding.current_price)}</strong></td>
-                      <td>${currency(buyValue)}</td>
-                      <td><strong class="${pnl >= 0 ? "price-up" : "price-down"}" data-live-value-cell>${currency(liveValue)}</strong></td>
-                      <td class="${pnl >= 0 ? "profit" : "loss"}" data-pnl-cell>${currency(pnl)}</td>
-                      <td class="${holdingReturn >= 0 ? "profit" : "loss"}" data-return-cell>${percent(holdingReturn)}</td>
-                    </tr>
-                  `;
-                }).join("")
-              : `<tr><td colspan="9"><span class="helper-text">No clients currently hold this stock.</span></td></tr>`}
+            ${holdings.map((holding) => `
+              <tr>
+                <td>${holding.owner}</td>
+                <td>${holding.fixed_user_id || ""}</td>
+                <td>${holding.quantity}</td>
+                <td>${currency(holding.buy_price)}</td>
+                <td>${currency(holding.current_price)}</td>
+                <td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}</td>
+              </tr>
+            `).join("")}
           </tbody>
         </table>
       </div>
     </article>
   `;
 }
-function renderAdminSelectedDetail(userDashboards, allHoldings, shouldScroll = false) {
-  const detailMount = document.getElementById("adminDetailMount");
-  if (!detailMount || !adminUiState.detailType || !adminUiState.detailKey) return;
-
-  if (adminUiState.detailType === "user") {
-    const user = userDashboards.find((entry) => Number(entry.user_id) === Number(adminUiState.detailKey));
-    if (!user) return;
-    detailMount.innerHTML = buildAdminClientDetail(user);
-  }
-
-  if (adminUiState.detailType === "stock") {
-    const symbol = String(adminUiState.detailKey || "").toUpperCase();
-    const holdings = allHoldings.filter((entry) => String(entry.symbol || "").toUpperCase() === symbol);
-    if (!holdings.length) return;
-    detailMount.innerHTML = buildAdminStockDetail(symbol, holdings);
-  }
-
-  detailMount.classList.remove("hidden");
-  setupAdminSellButtons();
-  if (shouldScroll) detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
-}
 
 function setupAdminDrilldowns(userDashboards, allHoldings) {
-  const portal = document.getElementById("adminPortal");
   const detailMount = document.getElementById("adminDetailMount");
-  if (!portal || !detailMount) return;
+  if (!detailMount) return;
 
-  portal.__adminDrilldownData = { userDashboards, allHoldings };
-  if (portal.__adminDrilldownBound) return;
-  portal.__adminDrilldownBound = true;
+  document.querySelectorAll("[data-user-detail]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const userId = Number(button.dataset.userDetail);
+      const user = userDashboards.find((entry) => Number(entry.user_id) === userId);
+      if (!user) return;
+      detailMount.innerHTML = buildAdminClientDetail(user);
+      detailMount.classList.remove("hidden");
+      detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
 
-  portal.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-user-detail], [data-stock-detail]");
-    if (!button) return;
-    const data = portal.__adminDrilldownData || { userDashboards: [], allHoldings: [] };
-
-    if (button.dataset.userDetail) {
-      adminUiState.detailType = "user";
-      adminUiState.detailKey = String(button.dataset.userDetail || "");
-      renderAdminSelectedDetail(data.userDashboards, data.allHoldings, true);
-      return;
-    }
-
-    adminUiState.detailType = "stock";
-    adminUiState.detailKey = String(button.dataset.stockDetail || "").toUpperCase();
-    renderAdminSelectedDetail(data.userDashboards, data.allHoldings, true);
+  document.querySelectorAll("[data-stock-detail]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const symbol = String(button.dataset.stockDetail || "").toUpperCase();
+      const holdings = allHoldings.filter((entry) => entry.symbol === symbol);
+      if (!holdings.length) return;
+      detailMount.innerHTML = buildAdminStockDetail(symbol, holdings);
+      detailMount.classList.remove("hidden");
+      detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   });
 }
+
 async function renderAdminPortal() {
   const mount = document.getElementById("adminPortal");
   if (!mount) return;
   try {
-    const { dashboard, users, archivedUsers, systemStatus, userDashboards } = await loadAdminPortalData();
+    const [dashboard, users, auditLogs, authAttempts, systemStatus, reviews, operationsOverview, soldHistory] = await Promise.all([
+      api("/admin/dashboard"),
+      api("/admin/users"),
+      api("/admin/audit-logs?limit=8"),
+      api("/admin/auth-attempts?limit=8"),
+      api("/admin/system-status"),
+      api("/admin/reviews"),
+      api("/admin/operations-overview"),
+      api("/admin/sold-history?limit=100").catch(() => [])
+    ]);
     const safeUsers = Array.isArray(users) ? users : [];
-    const safeArchivedUsers = Array.isArray(archivedUsers) ? archivedUsers : [];
+    const safeAuditLogs = Array.isArray(auditLogs) ? auditLogs : [];
+    const safeAuthAttempts = Array.isArray(authAttempts) ? authAttempts : [];
+    const safeReviews = Array.isArray(reviews) ? reviews : [];
+    const safeSoldHistory = Array.isArray(soldHistory) ? soldHistory : [];
+    const userDashboards = await safeAdminUserDashboards(safeUsers);
     const baseHoldings = userDashboards.flatMap((user) =>
       (Array.isArray(user.holdings) ? user.holdings : []).map((holding) => ({
         ...holding,
         owner: user.full_name,
         fixed_user_id: user.fixed_user_id,
-        username: user.username,
         user_id: user.user_id
       }))
     );
-    const symbols = [...new Set(baseHoldings.map((holding) => String(holding.symbol || "").toUpperCase()).filter(Boolean))];
+    const symbols = [...new Set(baseHoldings.map((holding) => holding.symbol))];
     const feed = symbols.length
       ? await api(`/stocks/feed?symbols=${encodeURIComponent(symbols.join(","))}`).catch(() => [])
       : [];
     const safeFeed = Array.isArray(feed) ? feed : [];
-    const quoteMap = new Map(safeFeed.map((quote) => [String(quote.symbol || "").toUpperCase(), quote]));
+    const quoteMap = new Map(safeFeed.map((quote) => [quote.symbol, quote]));
     const allHoldings = baseHoldings.map((holding) => {
-      const symbol = String(holding.symbol || "").toUpperCase();
-      const quantity = Number(holding.quantity || 0);
-      const buyPrice = Number(holding.buy_price || 0);
-      const quote = quoteMap.get(symbol);
-      const currentPrice = Number(quote?.price ?? holding.current_price ?? buyPrice);
-      const value = currentPrice * quantity;
-      const investedValue = buyPrice * quantity;
-      const profitLoss = value - investedValue;
-      const percentChange = investedValue ? (profitLoss / investedValue) * 100 : 0;
+      const quote = quoteMap.get(holding.symbol);
+      const currentPrice = Number(quote?.price ?? holding.current_price ?? holding.buy_price);
+      const changePercent = Number(quote?.change_percent ?? 0);
+      const previousClose = changePercent === -100 ? currentPrice : currentPrice / (1 + changePercent / 100 || 1);
+      const todayProfit = (currentPrice - previousClose) * Number(holding.quantity || 0);
       return {
         ...holding,
-        symbol,
-        quantity,
-        buy_price: buyPrice,
         current_price: currentPrice,
-        value,
-        invested_value: investedValue,
-        profit_loss: profitLoss,
-        percent_change: percentChange,
-        quote_change_percent: Number(quote?.change_percent ?? 0),
-        sector: quote?.sector || holding.sector || "Tracked holding",
-        exchange: holding.exchange || quote?.exchange || "NSE"
+        percent_change: Number(holding.percent_change ?? ((currentPrice - holding.buy_price) / Math.max(holding.buy_price, 1)) * 100),
+        profit_loss: (currentPrice - Number(holding.buy_price || 0)) * Number(holding.quantity || 0),
+        today_profit: Number.isFinite(todayProfit) ? todayProfit : 0
       };
     });
-    const holdingsByUser = allHoldings.reduce((map, holding) => {
-      const key = Number(holding.user_id);
-      if (!map.has(key)) map.set(key, []);
-      map.get(key).push(holding);
-      return map;
-    }, new Map());
-    const liveUserDashboards = userDashboards.map((user) => {
-      const holdings = holdingsByUser.get(Number(user.user_id)) || [];
-      const totalPortfolioValue = holdings.reduce((sum, holding) => sum + Number(holding.value || 0), 0);
-      const totalInvestedValue = holdings.reduce((sum, holding) => sum + Number(holding.invested_value || 0), 0);
-      const openProfitLoss = totalPortfolioValue - totalInvestedValue;
-      const bookedProfitLoss = Number(user.booked_profit_loss || 0);
-      const lifetimeProfitLoss = openProfitLoss + bookedProfitLoss;
-      return {
-        ...user,
-        holdings,
-        sales: Array.isArray(user.sales) ? user.sales : [],
-        total_portfolio_value: totalPortfolioValue,
-        total_invested_value: totalInvestedValue,
-        open_profit_loss: openProfitLoss,
-        booked_profit_loss: bookedProfitLoss,
-        total_profit_loss: lifetimeProfitLoss,
-        lifetime_profit_loss: lifetimeProfitLoss,
-        total_holdings: holdings.length
-      };
+    const totalValue = userDashboards.reduce((sum, user) => sum + Number(user.total_portfolio_value), 0);
+    const totalPnl = userDashboards.reduce((sum, user) => sum + Number(user.total_profit_loss), 0);
+    const todayProfit = allHoldings.reduce((sum, holding) => sum + Number(holding.today_profit || 0), 0);
+    const inactiveUsers = safeUsers.filter((user) => !user.is_active).length;
+    const failedAttempts = safeAuthAttempts.filter((attempt) => !attempt.success).length;
+    const searchText = adminUiState.search.toLowerCase();
+    const selectedClient = adminUiState.clientFilter;
+    const fromDate = adminUiState.dateFrom ? new Date(`${adminUiState.dateFrom}T00:00:00`) : null;
+    const toDate = adminUiState.dateTo ? new Date(`${adminUiState.dateTo}T23:59:59`) : null;
+    const filteredUsers = safeUsers.filter((user) => {
+      return (
+        !searchText ||
+        user.full_name.toLowerCase().includes(searchText) ||
+        String(user.fixed_user_id || user.username).toLowerCase().includes(searchText) ||
+        String(user.phone_number || "").toLowerCase().includes(searchText)
+      );
     });
-    const searchText = adminUiState.search.trim().toLowerCase();
-    const scriptSearchText = adminUiState.scriptSearch.trim().toLowerCase();
-    const totalInvested = allHoldings.reduce((sum, holding) => sum + Number(holding.invested_value || 0), 0);
-    const totalValue = allHoldings.reduce((sum, holding) => sum + Number(holding.value || 0), 0);
-    const totalPnl = allHoldings.reduce((sum, holding) => sum + Number(holding.profit_loss || 0), 0);
-    const totalBookedPnl = liveUserDashboards.reduce((sum, user) => sum + Number(user.booked_profit_loss || 0), 0);
-    const totalPnlPct = totalInvested ? (totalPnl / totalInvested) * 100 : 0;
-    const todayPnl = allHoldings.reduce((sum, holding) => {
-      const livePrice = Number(holding.current_price || holding.buy_price || 0);
-      const changePct = Number(holding.quote_change_percent || 0);
-      const previousPrice = changePct ? livePrice / (1 + changePct / 100) : livePrice;
-      return sum + (livePrice - previousPrice) * Number(holding.quantity || 0);
-    }, 0);
-    const todayPnlPct = totalValue ? (todayPnl / totalValue) * 100 : 0;
-    const filteredPositionHoldings = allHoldings.filter((holding) => {
-      const matchesInvestor =
+    const filteredHoldings = allHoldings.filter((holding) => {
+      const createdAt = holding.created_at ? new Date(holding.created_at) : null;
+      const matchesSearch =
         !searchText ||
         String(holding.owner || "").toLowerCase().includes(searchText) ||
-        String(holding.fixed_user_id || holding.username || "").toLowerCase().includes(searchText);
-      const matchesScript =
-        !scriptSearchText ||
-        String(holding.symbol || "").toLowerCase().includes(scriptSearchText) ||
-        String(holding.sector || "").toLowerCase().includes(scriptSearchText) ||
-        String(holding.exchange || "").toLowerCase().includes(scriptSearchText);
-      return matchesInvestor && matchesScript;
+        String(holding.fixed_user_id || "").toLowerCase().includes(searchText) ||
+        String(holding.symbol || "").toLowerCase().includes(searchText) ||
+        String(holding.sector || "").toLowerCase().includes(searchText) ||
+        String(holding.exchange || "").toLowerCase().includes(searchText);
+      const matchesClient = !selectedClient || String(holding.fixed_user_id || holding.user_id) === String(selectedClient);
+      const matchesDate =
+        (!fromDate || (createdAt && createdAt >= fromDate)) &&
+        (!toDate || (createdAt && createdAt <= toDate));
+      return matchesSearch && matchesClient && matchesDate;
     });
-    const clientRows = liveUserDashboards
-      .slice()
-      .sort((a, b) => Number(b.total_portfolio_value || 0) - Number(a.total_portfolio_value || 0));
-    const stockRows = symbols
-      .map((symbol) => {
-        const holdings = allHoldings.filter((holding) => holding.symbol === symbol);
-        const invested = holdings.reduce((sum, holding) => sum + Number(holding.invested_value || 0), 0);
-        const value = holdings.reduce((sum, holding) => sum + Number(holding.value || 0), 0);
-        const pnl = value - invested;
-        return { symbol, holdings, invested, value, pnl };
-      })
-      .sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl));
-    const adminCustomerStatus =
-      sessionStorage.getItem("assetyantra_admin_customer_status") ||
-      "Client ID will be generated like ABC123 and shown here.";
+    const filteredSoldHistory = safeSoldHistory.filter((entry) => {
+      const soldAt = entry.sold_at ? new Date(entry.sold_at) : null;
+      const matchesSearch =
+        !searchText ||
+        String(entry.full_name || "").toLowerCase().includes(searchText) ||
+        String(entry.fixed_user_id || "").toLowerCase().includes(searchText) ||
+        String(entry.symbol || "").toLowerCase().includes(searchText);
+      const matchesClient = !selectedClient || String(entry.fixed_user_id || entry.user_id) === String(selectedClient);
+      const matchesDate =
+        (!fromDate || (soldAt && soldAt >= fromDate)) &&
+        (!toDate || (soldAt && soldAt <= toDate));
+      return matchesSearch && matchesClient && matchesDate;
+    });
+    const filteredPeriodProfit =
+      filteredHoldings.reduce((sum, holding) => sum + Number(holding.profit_loss || 0), 0) +
+      filteredSoldHistory.reduce((sum, entry) => sum + Number(entry.profit_loss || 0), 0);
+    const pendingModerationCount = safeReviews.filter((review) => !review.is_seeded).length;
+    const stockConcentration = Array.isArray(operationsOverview?.stock_concentration) ? operationsOverview.stock_concentration : [];
+    const recentUserActivity = Array.isArray(operationsOverview?.recent_user_activity) ? operationsOverview.recent_user_activity : [];
+    const loginIssueBreakdown = Array.isArray(operationsOverview?.login_issue_breakdown) ? operationsOverview.login_issue_breakdown : [];
+
     mount.innerHTML = `
-      <section class="user-shell admin-shell admin-simple-shell no-sidebar-shell">
-        <div class="user-shell-main admin-simple-main">
-          <header class="user-topbar admin-simple-topbar">
-            <div>
-              <p class="eyebrow">Admin Portfolio Dashboard</p>
-              <h2>Admin Dashboard</h2>
-              <p class="detail-subtitle">Manage customers, deals, portfolio views, and booked sell records.</p>
-              <p class="live-price-status" data-live-price-status>Live prices updating...</p>
-            </div>
-            <div class="user-topbar-actions">
-              <input class="user-search" id="adminUserSearch" type="text" placeholder="Search user or client ID" />
-              <input class="user-search" id="adminScriptSearch" type="text" placeholder="Search stock" />
-              <button class="secondary-btn" type="button" data-refresh-admin="true">Refresh</button>
-              <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
-            </div>
-            <p class="helper-text admin-action-status" id="adminUserActionStatus">Archive keeps client records safe while removing the client from active views.</p>
-          </header>
-
-          <article class="dashboard-card full-span-card portfolio-ledger-card admin-equity-ledger-card">
-            <nav class="portfolio-ledger-tabs" aria-label="Admin portfolio section">
-              <button class="active" type="button">Equity</button>
-            </nav>
-            <div class="portfolio-ledger-metrics">
-              <article>
-                <span>Invested Value</span>
-                <strong>${currency(totalInvested)}</strong>
-              </article>
-              <article>
-                <span>Current Value</span>
-                <strong class="${totalValue >= totalInvested ? "profit" : "loss"}" data-live-total-value>${currency(totalValue)}</strong>
-              </article>
-              <article>
-                <span>Unrealised P&amp;L</span>
-                <strong class="${totalPnl >= 0 ? "profit" : "loss"}" data-live-total-pnl>${currency(totalPnl)} <small data-live-total-return>${percent(totalPnlPct)}</small></strong>
-              </article>
-              <article>
-                <span>Today's P&amp;L</span>
-                <strong class="${todayPnl >= 0 ? "profit" : "loss"}">${currency(todayPnl)} <small>${percent(todayPnlPct)}</small></strong>
-              </article>
-              <article>
-                <span>Realised P&amp;L</span>
-                <strong class="${totalBookedPnl >= 0 ? "profit" : "loss"}">${currency(totalBookedPnl)}</strong>
-              </article>
-            </div>
-          </article>
-
-          <article class="dashboard-card full-span-card admin-deal-card admin-customer-card" id="adminCustomerCard">
-            <div class="panel-head">
-              <div>
-                <h3>Add Customer</h3>
-                <p class="detail-subtitle">Create customer access from admin only. The generated client ID is used for user login.</p>
-              </div>
-              <span class="badge green">Admin Only</span>
-            </div>
-            <form id="adminCustomerForm" class="portfolio-form admin-customer-form">
-              <label><span>Customer Name</span><input name="full_name" type="text" placeholder="Customer full name" autocomplete="name" required /></label>
-              <label><span>Email</span><input name="email" type="email" placeholder="client@email.com" autocomplete="email" required /></label>
-              <label><span>Phone</span><input name="phone_number" type="tel" placeholder="Phone number" autocomplete="tel" required /></label>
-              <label><span>Password</span><input name="password" type="password" placeholder="Minimum 8 characters" autocomplete="new-password" required /></label>
-              <button class="primary-btn" type="submit">Create Customer</button>
-              <p class="helper-text admin-deal-status" id="adminCustomerStatus">${escapeHtml(adminCustomerStatus)}</p>
-            </form>
-          </article>
-
-          <article class="dashboard-card full-span-card admin-deal-card" id="adminDealCard">
-            <div class="panel-head">
-              <div>
-                <h3>Add Deal</h3>
-                <p class="detail-subtitle">Add a stock position directly to a customer portfolio.</p>
-              </div>
-              <span class="badge green">Deal Entry</span>
-            </div>
-            <form id="adminDealForm" class="portfolio-form admin-deal-form">
-              <label>
-                <span>Customer</span>
-                <select name="userId" required ${liveUserDashboards.length ? "" : "disabled"}>
-                  <option value="">Select customer</option>
-                  ${liveUserDashboards
-                    .slice()
-                    .sort((a, b) => String(a.full_name || "").localeCompare(String(b.full_name || "")))
-                    .map((user) => `<option value="${user.user_id}">${escapeHtml(user.full_name)} (${escapeHtml(user.fixed_user_id || user.username || "Client")})</option>`)
-                    .join("")}
-                </select>
-              </label>
-              <label class="portfolio-symbol-wrap">
-                <span>Stock Name / Symbol</span>
-                <input name="symbol" type="text" placeholder="Type 3 letters" autocomplete="off" required />
-                <div id="adminDealSymbolSuggestions" class="symbol-suggestion-list"></div>
-              </label>
-              <label><span>Quantity</span><input name="quantity" type="number" min="1" step="1" placeholder="100" required /></label>
-              <label><span>Buy Price</span><input name="buyPrice" type="number" min="1" step="0.01" placeholder="1500" required /></label>
-              <label>
-                <span>Exchange</span>
-                <select name="exchange" required>
-                  <option value="NSE" selected>NSE</option>
-                  <option value="BSE">BSE</option>
-                </select>
-              </label>
-              <button class="primary-btn" type="submit" ${liveUserDashboards.length ? "" : "disabled"}>Add Deal</button>
-              <p class="helper-text admin-deal-status" id="adminDealStatus">${liveUserDashboards.length ? "Choose customer, stock, quantity, and buy price." : "Create a customer first, then add a deal."}</p>
-            </form>
-          </article>
-
-          <article class="table-card full-span-card admin-positions-card" id="adminPositionsCard">
-            <div class="panel-head">
-              <div>
-                <h3>All Client Positions</h3>
-                <p class="detail-subtitle">Click a user or stock name to open the detailed view below.</p>
-              </div>
-              <span class="badge">${filteredPositionHoldings.length} shown</span>
-            </div>
-            <div class="table-wrap admin-position-table-wrap">
-              <table class="compact-table admin-position-table">
-                <thead><tr><th>User</th><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Buy Value</th><th>Live Price</th><th>Live Value</th><th>Lifetime P/L</th><th>Return</th><th>Actions</th></tr></thead>
-                <tbody>
-                  ${filteredPositionHoldings.length
-                    ? filteredPositionHoldings.map((holding) => {
-                        const pnl = Number(holding.profit_loss || 0);
-                        const returnPct = Number(holding.invested_value || 0) ? (pnl / Number(holding.invested_value || 0)) * 100 : 0;
-                        return `
-                          <tr data-live-summary="true" data-live-symbol="${escapeHtml(holding.symbol)}" data-quantity="${Number(holding.quantity || 0)}" data-buy-price="${Number(holding.buy_price || 0)}" data-current-price="${Number(holding.current_price || 0)}" data-value="${Number(holding.value || 0)}">
-                            <td><button class="table-link" type="button" data-user-detail="${holding.user_id}">${escapeHtml(holding.owner || "Client")}</button><br /><small>${escapeHtml(holding.fixed_user_id || "")}</small></td>
-                            <td><button class="table-link" type="button" data-stock-detail="${escapeHtml(holding.symbol)}">${escapeHtml(holding.symbol)}</button><br /><small>${escapeHtml(holding.sector || "Tracked holding")}</small></td>
-                            <td>${Number(holding.quantity || 0).toLocaleString("en-IN")}</td>
-                            <td>${currency(holding.buy_price)}</td>
-                            <td>${currency(holding.invested_value)}</td>
-                            <td><strong class="${pnl >= 0 ? "price-up" : "price-down"}" data-live-price-cell>${currency(holding.current_price)}</strong></td>
-                            <td><strong class="${pnl >= 0 ? "price-up" : "price-down"}" data-live-value-cell>${currency(holding.value)}</strong></td>
-                            <td class="${pnl >= 0 ? "profit" : "loss"}" data-pnl-cell>${currency(pnl)}</td>
-                            <td class="${returnPct >= 0 ? "profit" : "loss"}" data-return-cell>${percent(returnPct)}</td>
-                            <td class="admin-row-actions">
-                              <button class="sell-action-btn compact-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${escapeHtml(holding.symbol)}" data-quantity="${Number(holding.quantity || 0)}" data-live-price="${Number(holding.current_price || 0)}">Sell</button>
-                              <button class="secondary-btn compact-btn" type="button" data-download-user-id="${holding.user_id}">PDF</button>
-                            </td>
-                          </tr>
-                        `;
-                      }).join("")
-                    : `<tr><td colspan="10"><span class="helper-text">No positions match the search.</span></td></tr>`}
-                </tbody>
-              </table>
-            </div>
-          </article>
-
-          <div class="dashboard-grid admin-simple-grid">
-            <article class="dashboard-card admin-simple-list-card full-span-card archived-clients-card">
-              <div class="panel-head"><h3>Archived Clients</h3><span class="badge red">Permanent delete</span></div>
-              <div class="stack-list admin-simple-list">
-                ${safeArchivedUsers.length
-                  ? safeArchivedUsers.map((user) => `
-                    <article class="stack-item archived-client-item">
-                      <div>
-                        <strong>${escapeHtml(user.full_name)}</strong>
-                        <small>${escapeHtml(user.fixed_user_id || user.username || "Client")} | archived client</small>
-                      </div>
-                      <button class="secondary-btn compact-btn danger-btn" type="button" data-permanent-delete-user="${user.user_id}" data-user-name="${escapeHtml(user.full_name)}">Delete permanently</button>
-                    </article>
-                  `).join("")
-                  : `<article class="stack-item archived-empty-item"><div><strong>No archived clients</strong><small>Permanent delete appears here only after a client is archived.</small></div></article>`}
-              </div>
-            </article>
-          </div>
-
-          <section id="adminDetailMount" class="dashboard-section admin-detail-mount">
-            <article class="dashboard-card detail-card admin-simple-detail-card">
-              <div class="panel-head">
-                <div>
-                  <p class="eyebrow">Details</p>
-                  <h3>Select a user or stock</h3>
-                  <p class="detail-subtitle">Click a user name to view their full portfolio. Click a stock name to view every client holding that stock.</p>
-                </div>
-              </div>
-              <div class="admin-market-empty-art" aria-hidden="true">
-                <img src="./assets/bull-bear-market.svg?v=3" alt="" />
-                <span>Market movement appears here once you choose a client or stock.</span>
-              </div>
-            </article>
-          </section>
+    <section class="dashboard-stack admin-dashboard-stack">
+      <header class="user-topbar admin-compact-topbar">
+        <div class="admin-toolbar-left">
+          <input class="user-search admin-universal-search" id="adminUniversalSearch" type="text" placeholder="Search user, client ID, or stock" />
+          <p class="live-price-status admin-auto-refresh-label">Auto-refresh every 5 seconds</p>
         </div>
-      </section>
-    `;
+        <div class="user-topbar-actions admin-toolbar-right">
+          <select class="user-search admin-action-select" data-admin-action-nav="true">
+            <option value="">Admin Actions</option>
+            <option value="./admin-add-customer.html">Add Customer</option>
+            <option value="./admin-add-deal.html">Add Deal</option>
+          </select>
+          <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
+        </div>
+      </header>
+      <div id="adminOverviewCard">
+    <div class="metrics-grid">
+      <article class="metric-card"><strong>${dashboard?.total_users ?? safeUsers.length}</strong><span>Clients</span><small>Persisted registered users</small></article>
+      <article class="metric-card"><strong>${dashboard?.newly_registered_users ?? 0}</strong><span>New This Week</span><small>Non-demo client registrations</small></article>
+      <article class="metric-card"><strong>${dashboard?.total_holdings ?? baseHoldings.length}</strong><span>Total Holdings</span><small>Stocks stored in the database</small></article>
+      <article class="metric-card"><strong class="${todayProfit >= 0 ? "profit" : "loss"}">${currency(todayProfit)}</strong><span>Today Profit</span><small>Intraday movement across tracked holdings</small></article>
+      <article class="metric-card"><strong class="${totalPnl >= 0 ? "profit" : "loss"}">${currency(totalPnl)}</strong><span>Total Profit Till Now</span><small>Current tracked value ${currency(totalValue)}</small></article>
+    </div>
+    <div class="metrics-grid admin-status-grid">
+      <article class="metric-card"><strong>${systemStatus.backend_status}</strong><span>Backend</span><small>Environment ${systemStatus.environment}</small></article>
+      <article class="metric-card"><strong>${systemStatus.database_status}</strong><span>Database</span><small>Connection health</small></article>
+      <article class="metric-card"><strong>${systemStatus.redis_status}</strong><span>Redis</span><small>Cache and queue state</small></article>
+      <article class="metric-card"><strong class="${systemStatus.otp_debug_mode ? "loss" : "profit"}">${systemStatus.otp_debug_mode ? "On" : "Off"}</strong><span>OTP Debug</span><small>${systemStatus.environment === "production" ? "Must stay off in production" : "Development-only testing mode"}</small></article>
+      <article class="metric-card"><strong>${pendingModerationCount}</strong><span>Reviews To Moderate</span><small>Non-seeded public reviews</small></article>
+    </div>
+    <div class="dashboard-grid">
+      <article class="table-card">
+        <div class="panel-head">
+          <h3>All Client Positions</h3>
+          <div class="table-actions">
+            <button class="secondary-btn compact-btn" type="button" id="adminStockVisibilityToggle">${adminUiState.stocksVisible ? "Hide Stocks 🙈" : "Show Stocks 👁"}</button>
+            <span class="badge">Admin View</span>
+          </div>
+        </div>
+        <div class="admin-filter-bar">
+          <select class="user-search admin-filter-select" id="adminClientFilter">
+            <option value="">All Clients</option>
+            ${safeUsers
+              .map((user) => `<option value="${escapeHtml(user.fixed_user_id || String(user.user_id))}" ${String(adminUiState.clientFilter) === String(user.fixed_user_id || user.user_id) ? "selected" : ""}>${escapeHtml(user.full_name)} (${escapeHtml(user.fixed_user_id || user.username)})</option>`)
+              .join("")}
+          </select>
+          <input class="user-search admin-filter-date" id="adminDateFrom" type="date" value="${escapeHtml(adminUiState.dateFrom)}" />
+          <input class="user-search admin-filter-date" id="adminDateTo" type="date" value="${escapeHtml(adminUiState.dateTo)}" />
+          <span class="badge ${filteredPeriodProfit >= 0 ? "green" : "red"}">Period P/L ${currency(filteredPeriodProfit)}</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Customer</th><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Live Price</th><th>P&amp;L</th><th>Action</th></tr></thead>
+            <tbody>
+              ${filteredHoldings.length
+                ? filteredHoldings
+                .map(
+                  (holding) => `
+                    <tr>
+                      <td><button class="table-link" type="button" data-user-detail="${holding.user_id}">${holding.owner}</button><br /><small>${holding.fixed_user_id || ""}</small></td>
+                      <td><button class="table-link" type="button" data-stock-detail="${holding.symbol}">${adminUiState.stocksVisible ? holding.symbol : maskStockSymbol(holding.symbol)}</button><br /><small>${holding.sector || "Tracked holding"}</small></td>
+                      <td>${holding.quantity}</td>
+                      <td>${currency(holding.buy_price)}</td>
+                      <td>${currency(holding.current_price)}</td>
+                      <td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
+                      <td><button class="secondary-btn compact-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}">Sell</button></td>
+                    </tr>
+                  `
+                )
+                .join("")
+                : `<tr><td colspan="7"><span class="helper-text">No client or stock matched this search.</span></td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </article>
+      <article class="dashboard-card" id="adminClientOpsCard">
+        <div class="panel-head"><h3>Client Downloads</h3><span class="badge green">Export</span></div>
+        <div class="stack-list">
+          ${userDashboards
+            .map(
+              (user) => `
+                <article class="stack-item">
+                  <div>
+                    <strong>${user.full_name}</strong>
+                    <small>${user.fixed_user_id || user.username}</small>
+                  </div>
+                  <div class="actions-row">
+                    <span class="${user.total_profit_loss >= 0 ? "profit" : "loss"}">${currency(user.total_profit_loss)}</span>
+                    <button class="download-btn" type="button" data-download-user-id="${user.user_id}">Download Dashboard</button>
+                  </div>
+                </article>
+              `
+            )
+            .join("")}
+        </div>
+      </article>
+    </div>
+    <div class="dashboard-grid">
+      <article class="dashboard-card full-span-card">
+        <div class="panel-head"><h3>Sold History</h3><span class="badge ${filteredSoldHistory.length ? "green" : ""}">${filteredSoldHistory.length} Records</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>User</th><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Sell Price</th><th>P&amp;L</th><th>Sold At (IST)</th></tr></thead>
+            <tbody>
+              ${filteredSoldHistory.length
+                ? filteredSoldHistory
+                    .map(
+                      (entry) => `
+                        <tr>
+                          <td><strong>${escapeHtml(entry.full_name)}</strong><br /><small>${escapeHtml(entry.fixed_user_id || "")}</small></td>
+                          <td>${adminUiState.stocksVisible ? escapeHtml(entry.symbol) : maskStockSymbol(entry.symbol)}</td>
+                          <td>${entry.quantity}</td>
+                          <td>${currency(entry.buy_price)}</td>
+                          <td>${currency(entry.sell_price)}</td>
+                          <td class="${Number(entry.profit_loss) >= 0 ? "profit" : "loss"}">${currency(entry.profit_loss)}</td>
+                          <td>${formatDateTime(entry.sold_at)}</td>
+                        </tr>
+                      `
+                    )
+                    .join("") 
+                : `<tr><td colspan="7"><span class="helper-text">No sold history for the selected filters yet.</span></td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+    <div class="dashboard-grid">
+      <article class="dashboard-card">
+        <div class="panel-head"><h3>Backend Operations</h3><span class="badge">Owner View</span></div>
+        <div class="detail-stat-grid">
+          <article><strong>${operationsOverview.active_users}</strong><span>Active Users</span></article>
+          <article><strong>${operationsOverview.users_with_holdings}</strong><span>Users With Holdings</span></article>
+          <article><strong>${currency(operationsOverview.average_portfolio_value)}</strong><span>Avg Portfolio Value</span></article>
+        </div>
+        <div class="stack-list">
+          <article class="stack-item stack-item-compact">
+            <div>
+              <strong>Largest Client Portfolio</strong>
+              <small>Highest invested value across tracked users</small>
+            </div>
+            <div>
+              <strong>${currency(operationsOverview.largest_client_value)}</strong>
+              <small>Current backend snapshot</small>
+            </div>
+          </article>
+          <article class="stack-item stack-item-compact">
+            <div>
+              <strong>Issue Hotspots</strong>
+              <small>${loginIssueBreakdown.length ? loginIssueBreakdown.map((item) => `${item.reason.replaceAll("_", " ")} (${item.count})`).join(", ") : "No recent login issues"}</small>
+            </div>
+          </article>
+        </div>
+      </article>
+      <article class="dashboard-card" id="adminUsersCard">
+        <div class="panel-head"><h3>User Management</h3><span class="badge">Control</span></div>
+        <div class="admin-bulk-bar">
+          <label class="bulk-select-all"><input id="adminSelectAllUsers" type="checkbox" /> Select visible users</label>
+          <div class="table-actions">
+            <button class="secondary-btn compact-btn" type="button" id="bulkActivateUsersBtn">Bulk Activate</button>
+            <button class="secondary-btn compact-btn" type="button" id="bulkDisableUsersBtn">Bulk Disable</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th></th><th>Client</th><th>Status</th><th>Joined</th><th>Value</th><th>Actions</th></tr></thead>
+            <tbody>
+              ${filteredUsers.length
+                ? filteredUsers
+                .map(
+                  (user) => `
+                    <tr>
+                      <td><input type="checkbox" data-user-select value="${user.user_id}" /></td>
+                      <td><strong>${user.full_name}</strong><br /><small>${user.fixed_user_id || user.username}${user.is_demo ? " | Demo" : ""}</small></td>
+                      <td><span class="badge ${user.is_active ? "green" : "red"}">${user.is_active ? "Active" : "Inactive"}</span></td>
+                      <td>${formatDate(user.created_at)}</td>
+                      <td>${currency(user.portfolio_value)}</td>
+                      <td>
+                        <div class="table-actions">
+                          <button class="secondary-btn compact-btn" type="button" data-user-status-action="${user.user_id}" data-next-active="${(!user.is_active).toString()}">${user.is_active ? "Disable" : "Activate"}</button>
+                        </div>
+                      </td>
+                    </tr>
+                  `
+                )
+                .join("")
+                : `<tr><td colspan="6"><span class="helper-text">No users match the current search or filter.</span></td></tr>`}
+            </tbody>
+          </table>
+        </div>
+        <p class="helper-text" id="adminUserActionStatus">${inactiveUsers} non-demo user account(s) are currently inactive. Showing ${filteredUsers.length} result(s).</p>
+      </article>
+      <article class="dashboard-card" id="adminControlsCard">
+        <div class="panel-head"><h3>Website Controls</h3><span class="badge">Manage</span></div>
+        <div class="stack-list">
+          <article class="stack-item">
+            <div><strong>FAQ Insight Cards</strong><small>Show or hide the extra cards on the FAQ page.</small></div>
+            <button class="secondary-btn" type="button" id="toggleFaqInsightsBtn">Hide FAQ Cards</button>
+          </article>
+          <article class="stack-item">
+            <div><strong>Chatbot Popups</strong><small>Control the 5-second finance assistant popup prompts.</small></div>
+            <button class="secondary-btn" type="button" id="toggleChatNudgesBtn">Disable Chat Popups</button>
+          </article>
+          <article class="stack-item">
+            <div><strong>Delete User Reviews</strong><small>Remove all user-submitted reviews from website storage.</small></div>
+            <button class="secondary-btn danger-btn" type="button" id="clearCustomReviewsBtn">Delete Reviews</button>
+          </article>
+        </div>
+        <p class="helper-text" id="siteControlStatus">Website controls are available for admin actions.</p>
+      </article>
+    </div>
+    <div class="dashboard-grid">
+      <article class="dashboard-card" id="adminModerationCard">
+        <div class="panel-head"><h3>Month-on-Month P&amp;L</h3><span class="badge">Trend</span></div>
+        ${renderChart([
+          { label: "Nov", value: totalPnl * 0.48 },
+          { label: "Dec", value: totalPnl * 0.61 },
+          { label: "Jan", value: totalPnl * -0.12 },
+          { label: "Feb", value: totalPnl * 0.39 },
+          { label: "Mar", value: totalPnl * 0.57 },
+          { label: "Apr", value: totalPnl || totalValue * 0.05 }
+        ])}
+      </article>
+      <article class="dashboard-card" id="adminSecurityCard">
+        <div class="panel-head"><h3>Review Moderation</h3><span class="badge">${pendingModerationCount} Pending</span></div>
+        <div class="stack-list">
+          ${safeReviews.length
+            ? safeReviews
+                .slice(0, 8)
+                .map(
+                  (review) => `
+                    <article class="stack-item stack-item-compact">
+                      <div>
+                        <strong>${review.name}</strong>
+                        <small>${review.role} · ${"★".repeat(review.rating)}</small>
+                        <small>${review.message}</small>
+                      </div>
+                      <div class="table-actions">
+                        <span class="badge ${review.is_seeded ? "green" : ""}">${review.is_seeded ? "Seeded" : "Public"}</span>
+                        ${review.is_seeded
+                          ? `<span class="helper-chip">Protected</span>`
+                          : `<button class="secondary-btn danger-btn compact-btn" type="button" data-delete-review="${review.id}" data-review-name="${review.name}">Remove</button>`}
+                      </div>
+                    </article>
+                  `
+                )
+                .join("")
+            : `<article class="stack-item"><div><strong>No reviews available</strong><small>Submitted reviews will appear here.</small></div></article>`}
+        </div>
+      </article>
+    </div>
+    <div class="dashboard-grid">
+      <article class="dashboard-card">
+        <div class="panel-head"><h3>User Activity View</h3><span class="badge">Recent</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>User</th><th>Status</th><th>Holdings</th><th>Last Holding</th><th>Last Auth</th></tr></thead>
+            <tbody>
+              ${recentUserActivity.length
+                ? recentUserActivity
+                    .map(
+                      (activity) => `
+                        <tr>
+                          <td><strong>${activity.full_name}</strong><br /><small>${activity.fixed_user_id || ""}</small></td>
+                          <td><span class="badge ${activity.is_active ? "green" : "red"}">${activity.is_active ? "Active" : "Inactive"}</span></td>
+                          <td>${activity.holding_count}</td>
+                          <td>${formatDate(activity.last_holding_at)}</td>
+                          <td>${formatDateTime(activity.last_auth_attempt_at)}</td>
+                        </tr>
+                      `
+                    )
+                    .join("")
+                : `<tr><td colspan="5"><span class="helper-text">No recent user activity to display.</span></td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </article>
+      <article class="dashboard-card">
+        <div class="panel-head"><h3>Stock Concentration</h3><span class="badge">Exposure</span></div>
+        <div class="stack-list">
+          ${stockConcentration.length
+            ? stockConcentration
+                .map(
+                  (item) => `
+                    <article class="stack-item stack-item-compact">
+                      <div>
+                        <strong>${item.symbol}</strong>
+                        <small>${item.client_count} client(s) holding this stock</small>
+                      </div>
+                      <div>
+                        <strong>${currency(item.invested_value)}</strong>
+                        <small>${item.total_quantity} shares</small>
+                      </div>
+                    </article>
+                  `
+                )
+                .join("")
+            : `<article class="stack-item"><div><strong>No concentration data</strong><small>Portfolio exposure will appear here.</small></div></article>`}
+        </div>
+      </article>
+    </div>
+    <div class="dashboard-grid">
+      <article class="dashboard-card">
+        <div class="panel-head"><h3>Security Activity</h3><span class="badge ${failedAttempts ? "red" : "green"}">${failedAttempts} Failed</span></div>
+        <div class="stack-list">
+          ${safeAuthAttempts.length
+            ? safeAuthAttempts
+                .map(
+                  (attempt) => `
+                    <article class="stack-item stack-item-compact">
+                      <div>
+                        <strong>${attempt.stage === "request_otp" ? "OTP Request" : "Login"} · ${attempt.identifier}</strong>
+                        <small>${attempt.role} ${attempt.failure_reason ? `· ${attempt.failure_reason.replaceAll("_", " ")}` : "· successful"}</small>
+                      </div>
+                      <div>
+                        <strong class="${attempt.success ? "profit" : "loss"}">${attempt.success ? "Success" : "Failed"}</strong>
+                        <small>${formatDateTime(attempt.created_at)}</small>
+                      </div>
+                    </article>
+                  `
+                )
+                .join("")
+            : `<article class="stack-item"><div><strong>No recent auth activity</strong><small>Login and OTP events will appear here.</small></div></article>`}
+        </div>
+      </article>
+      <article class="dashboard-card">
+        <div class="panel-head"><h3>Admin Audit Trail</h3><span class="badge">Tracked</span></div>
+        <div class="stack-list">
+          ${safeAuditLogs.length
+            ? safeAuditLogs
+                .map(
+                  (log) => `
+                    <article class="stack-item stack-item-compact">
+                      <div>
+                        <strong>${log.action.replaceAll("_", " ")}</strong>
+                        <small>${log.entity_type}${log.entity_id ? ` · ${log.entity_id}` : ""}</small>
+                      </div>
+                      <div>
+                        <strong>${log.ip_address || "local"}</strong>
+                        <small>${formatDateTime(log.created_at)}</small>
+                      </div>
+                    </article>
+                  `
+                )
+                .join("")
+            : `<article class="stack-item"><div><strong>No admin actions yet</strong><small>Management activity will appear here.</small></div></article>`}
+        </div>
+      </article>
+      <article class="dashboard-card">
+        <div class="panel-head"><h3>System Settings Overview</h3><span class="badge">Config</span></div>
+        <div class="stack-list">
+          <article class="stack-item stack-item-compact">
+            <div><strong>FAQ Insights</strong><small>Extra FAQ cards on public FAQ page</small></div>
+            <div><strong>${operationsOverview.settings_overview.show_faq_insights ? "Enabled" : "Disabled"}</strong></div>
+          </article>
+          <article class="stack-item stack-item-compact">
+            <div><strong>Chat Nudges</strong><small>Finance assistant popup prompts</small></div>
+            <div><strong>${operationsOverview.settings_overview.chat_nudges_enabled ? "Enabled" : "Disabled"}</strong></div>
+          </article>
+          <article class="stack-item stack-item-compact">
+            <div><strong>OTP Debug Mode</strong><small>Must be off in production</small></div>
+            <div><strong class="${operationsOverview.settings_overview.otp_debug_mode ? "loss" : "profit"}">${operationsOverview.settings_overview.otp_debug_mode ? "Enabled" : "Disabled"}</strong></div>
+          </article>
+          <article class="stack-item stack-item-compact">
+            <div><strong>Rate Limit Window</strong><small>Failed auth throttling window</small></div>
+            <div><strong>${operationsOverview.settings_overview.auth_rate_limit_window_minutes} min</strong></div>
+          </article>
+          <article class="stack-item stack-item-compact">
+            <div><strong>Max Failed Attempts</strong><small>Allowed before throttling</small></div>
+            <div><strong>${operationsOverview.settings_overview.auth_max_failed_attempts}</strong></div>
+          </article>
+        </div>
+      </article>
+    </div>
+    <section id="adminDetailMount" class="dashboard-section hidden"></section>
+    </section>
+  `;
 
     revealPortal(mount);
     activeRole = "admin";
     activeUserId = null;
-    setupDownloadButtons(liveUserDashboards);
+    startAdminRefresh();
+    setupDownloadButtons(userDashboards);
+    setupWebsiteControlButtons();
     setupAdminManagementButtons();
-    setupAdminCustomerForm();
-    setupAdminDealForm();
-    setupAdminDealSymbolSuggestions();
-    setupAdminSellButtons();
-    setupAdminDrilldowns(liveUserDashboards, allHoldings);
-    renderAdminSelectedDetail(liveUserDashboards, allHoldings, false);
+    setupAdminDrilldowns(userDashboards, allHoldings);
     setupPortalActions();
-    startLiveDashboardPrices();
   } catch (error) {
     renderPortalError(mount, "Admin Dashboard", `Login succeeded, but admin dashboard data could not load yet. ${formatError(error)}`);
     const retry = document.getElementById("retryPortalBtn");
-    if (retry) retry.addEventListener("click", () => renderAdminPortal());
+    if (retry) {
+      retry.addEventListener("click", () => renderAdminPortal());
+    }
   }
 }
+
 async function renderUserPortal() {
   const mount = document.getElementById("userPortal");
   if (!mount) return;
   try {
     const [profile, holdings, summary] = await Promise.all([api("/auth/me"), api("/portfolio"), api("/portfolio/summary")]);
     const performance = Array.isArray(summary.performance) ? summary.performance : [];
-    const sales = Array.isArray(summary.sales) ? summary.sales : [];
-    const totalBookedPnl = Number(summary.booked_profit_loss || 0);
-    const totalLifetimePnl = Number(summary.lifetime_profit_loss ?? (Number(summary.total_profit_loss || 0) + totalBookedPnl));
     const totalInvested = performance.reduce((sum, item) => sum + Number(item.buy_price || 0) * Number(item.quantity || 0), 0);
+    const overallPct = totalInvested ? (summary.total_profit_loss / totalInvested) * 100 : 0;
     const symbols = [...new Set(performance.map((holding) => holding.symbol).filter(Boolean))];
     const liveFeed = symbols.length
       ? await api(`/stocks/feed?symbols=${encodeURIComponent(symbols.join(","))}`).catch(() => [])
       : [];
-    const liveQuoteMap = new Map(
-      (Array.isArray(liveFeed) ? liveFeed : []).map((quote) => [String(quote.symbol || "").toUpperCase(), quote])
-    );
-    const unrealisedPnl = Number(summary.total_profit_loss || 0);
-    const unrealisedPct = totalInvested ? (unrealisedPnl / totalInvested) * 100 : 0;
-    const todayPnl = performance.reduce((sum, holding) => {
-      const quote = liveQuoteMap.get(String(holding.symbol || "").toUpperCase());
-      const quantity = Number(holding.quantity || 0);
-      const livePrice = Number(quote?.price || holding.current_price || 0);
-      const changePct = Number(quote?.change_percent || 0);
-      const previousPrice = changePct ? livePrice / (1 + changePct / 100) : livePrice;
-      return sum + (livePrice - previousPrice) * quantity;
-    }, 0);
-    const todayPnlPct = Number(summary.total_portfolio_value || 0) ? (todayPnl / Number(summary.total_portfolio_value || 0)) * 100 : 0;
+    const profitableCount = performance.filter((holding) => Number(holding.profit_loss || 0) > 0).length;
+    const sectorCount = new Set(performance.map((holding) => holding.sector || "Tracked")).size;
+    const topPerformer = performance.length
+      ? performance.slice().sort((a, b) => Number(b.profit_loss || 0) - Number(a.profit_loss || 0))[0]
+      : null;
+    const laggard = performance.length
+      ? performance.slice().sort((a, b) => Number(a.profit_loss || 0) - Number(b.profit_loss || 0))[0]
+      : null;
     const filteredPerformance = getFilteredUserPerformance(performance);
-    userDashboardCache = {
-      performance,
-      recommendationFeed: [],
-      symbolCatalog: buildUserSymbolCatalog(performance, [])
-    };
-    const newClientId = sessionStorage.getItem("stock_trader_new_client_id");
+    const totalVisibleValue = filteredPerformance.reduce((sum, holding) => sum + Number(holding.value || 0), 0);
+    const gainRate = performance.length ? (profitableCount / performance.length) * 100 : 0;
+    const exposureEntries = Object.entries(summary.sector_exposure || {})
+      .sort((a, b) => Number(b[1]) - Number(a[1]))
+      .slice(0, 5);
+    const tickerMarkup = (Array.isArray(liveFeed) ? liveFeed : [])
+      .map(
+        (quote) => `
+          <article>
+            <strong>${escapeHtml(quote.symbol)}</strong>
+            <small>${escapeHtml(quote.short_name || quote.symbol)}</small>
+            <small class="${quote.change_percent >= 0 ? "profit" : "loss"}">${percent(quote.change_percent)}</small>
+          </article>
+        `
+      )
+      .join("");
 
     mount.innerHTML = `
-    <section class="user-shell no-sidebar-shell">
+    <section class="user-shell">
+      <aside class="user-sidebar">
+        <div class="brand">
+          <span class="brand-mark">ST</span>
+          <span>
+            <strong>Stock Trader Web</strong>
+            <small>Investor workspace</small>
+          </span>
+        </div>
+        <article class="user-balance-card">
+          <span class="user-sidebar-label">Balance</span>
+          <strong>${currency(summary.total_portfolio_value)}</strong>
+          <span>Latest portfolio value</span>
+        </article>
+        <div class="user-sidebar-section">
+          <span class="user-sidebar-label">Main</span>
+          <nav class="user-sidebar-nav">
+            <a class="user-nav-item active" href="#userPerformanceCard">Dashboard <span>${performance.length}</span></a>
+            <a class="user-nav-item" href="#userPortfolioCard">Portfolio <span>${filteredPerformance.length}</span></a>
+            <a class="user-nav-item" href="#userAllocationCard">Allocation <span>${sectorCount}</span></a>
+            <a class="user-nav-item" href="#userActivityCard">History <span>${performance.length ? "Live" : "New"}</span></a>
+          </nav>
+        </div>
+        <div class="user-sidebar-section">
+          <span class="user-sidebar-label">Explore</span>
+          <nav class="user-sidebar-nav">
+            <a class="user-nav-item" href="#userSignalsCard">Signals <span>${summary.risk_level || "Moderate"}</span></a>
+            <a class="user-nav-item" href="#portfolioForm">Add Stock <span>Now</span></a>
+          </nav>
+        </div>
+        <article class="user-reward-card">
+          <strong>Get investor-ready reporting</strong>
+          <span>Download your dashboard and keep a clean portfolio snapshot for every review.</span>
+          <div class="actions-row" style="margin-top:14px;">
+            <button class="download-btn" type="button" id="userPrintBtn">Download Dashboard</button>
+          </div>
+        </article>
+        <article class="user-profile-card">
+          <strong>${profile.full_name}</strong>
+          <small>${profile.fixed_user_id || profile.username}</small>
+          <small>${profile.phone_number || "Client access"}</small>
+        </article>
+      </aside>
+
       <div class="user-shell-main">
         <header class="user-topbar">
           <div>
             <p class="eyebrow">Welcome Back</p>
             <h2>${profile.full_name}</h2>
-            <p class="detail-subtitle">${profile.fixed_user_id || profile.username} | ${profile.phone_number || "Client access"}</p>
-            <p class="live-price-status" data-live-price-status>Live prices updating...</p>
           </div>
           <div class="user-topbar-actions">
             <input class="user-search" id="userPortfolioSearch" type="text" placeholder="Search holdings or sectors" />
@@ -2758,47 +1929,98 @@ async function renderUserPortal() {
               <option value="loss">In loss</option>
               <option value="flat">Flat</option>
             </select>
-            <button class="download-btn" type="button" id="userPrintBtn">Download</button>
+            <button class="assistant-btn" type="button" data-open-finance-chat="true">AI Assistant</button>
             <button class="secondary-btn" type="button" data-refresh-user="true">Refresh</button>
-            <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
+            <button class="secondary-btn" type="button" data-logout="true">Logout</button>
           </div>
         </header>
-        ${
-          newClientId
-            ? `<div class="client-id-confirmation"><span>Account created</span><strong>Your Client ID: ${escapeHtml(newClientId)}</strong><small>Use this ID with your password and phone number when logging in as User.</small></div>`
-            : ""
-        }
+
+        <div class="user-ticker-strip">
+          ${tickerMarkup || `<article><strong>Market feed</strong><small>No tracked symbols yet</small><small>Add a stock to begin</small></article>`}
+        </div>
 
         <div class="user-app-grid">
-          <article class="user-app-card full-span-card portfolio-ledger-card" id="portfolioLedgerCard">
-            <nav class="portfolio-ledger-tabs" aria-label="Portfolio sections">
-              <button class="active" type="button">Equity</button>
-            </nav>
-            <div class="portfolio-ledger-metrics">
-              <article>
-                <span>Invested Value</span>
-                <strong>${currency(totalInvested)}</strong>
-              </article>
-              <article>
-                <span>Current Value</span>
-                <strong class="${summary.total_portfolio_value >= totalInvested ? "profit" : "loss"}" data-live-total-value>${currency(summary.total_portfolio_value)}</strong>
-              </article>
-              <article>
-                <span>Unrealised P&amp;L</span>
-                <strong class="${unrealisedPnl >= 0 ? "profit" : "loss"}">${currency(unrealisedPnl)} <small>${percent(unrealisedPct)}</small></strong>
-              </article>
-              <article>
-                <span>Lifetime P&amp;L</span>
-                <strong class="${totalLifetimePnl >= 0 ? "profit" : "loss"}" data-live-total-pnl>${currency(totalLifetimePnl)} <small data-live-total-return>${percent(totalInvested ? (totalLifetimePnl / totalInvested) * 100 : 0)}</small></strong>
-              </article>
-              <article>
-                <span>Today's P&amp;L</span>
-                <strong class="${todayPnl >= 0 ? "profit" : "loss"}">${currency(todayPnl)} <small>${percent(todayPnlPct)}</small></strong>
-              </article>
-              <article>
-                <span>Realised P&amp;L</span>
-                <strong class="${totalBookedPnl >= 0 ? "profit" : "loss"}" data-live-booked-pnl="${Number(totalBookedPnl || 0)}">${currency(totalBookedPnl)}</strong>
-              </article>
+          <article class="user-app-card" id="userPerformanceCard">
+            <div class="panel-head">
+              <h3>Portfolio Performance</h3>
+              <div class="chart-range">
+                <span>1D</span>
+                <span>1M</span>
+                <span class="active">1Y</span>
+                <span>All</span>
+              </div>
+            </div>
+            <div class="chart-card-main">
+              <div class="chart-metric-panel">
+                <div class="chart-figure">
+                  <span>Your portfolio is <strong class="${summary.total_profit_loss >= 0 ? "profit" : "loss"}">${summary.total_profit_loss >= 0 ? "up" : "down"} ${Math.abs(overallPct).toFixed(1)}%</strong> overall</span>
+                  <strong class="chart-value">${currency(summary.total_portfolio_value)}</strong>
+                  <small>Current investment value across tracked holdings</small>
+                </div>
+                <article class="mini-stat-box">
+                  <strong class="${summary.total_profit_loss >= 0 ? "profit" : "loss"}">${currency(summary.total_profit_loss)}</strong>
+                  <small>Total profit and loss</small>
+                </article>
+                <div class="chart-inline-grid">
+                  <article>
+                    <strong>${currency(totalInvested)}</strong>
+                    <small>Total invested</small>
+                  </article>
+                  <article>
+                    <strong>${currency(totalVisibleValue || summary.total_portfolio_value)}</strong>
+                    <small>Visible value</small>
+                  </article>
+                  <article>
+                    <strong>${performance.length}</strong>
+                    <small>Active positions</small>
+                  </article>
+                  <article>
+                    <strong>${gainRate.toFixed(0)}%</strong>
+                    <small>Positions in profit</small>
+                  </article>
+                </div>
+              </div>
+              <div class="chart-display">
+                <svg viewBox="0 0 700 360" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="userPerformanceFill" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="rgba(15,159,98,0.28)" />
+                      <stop offset="100%" stop-color="rgba(15,159,98,0.03)" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,230 C40,210 70,240 110,214 C160,182 190,132 236,148 C278,162 312,82 362,96 C404,108 426,196 472,202 C520,208 540,120 584,116 C626,112 658,76 700,66 L700,360 L0,360 Z" fill="url(#userPerformanceFill)"></path>
+                  <path d="M0,230 C40,210 70,240 110,214 C160,182 190,132 236,148 C278,162 312,82 362,96 C404,108 426,196 472,202 C520,208 540,120 584,116 C626,112 658,76 700,66" fill="none" stroke="#22b573" stroke-width="4" stroke-linecap="round"></path>
+                </svg>
+                <div class="chart-tooltip">
+                  <small>${topPerformer ? escapeHtml(topPerformer.symbol) : "Portfolio View"}</small>
+                  <strong>${topPerformer ? currency(topPerformer.value) : currency(summary.total_portfolio_value)}</strong>
+                  <small>${topPerformer ? percent(topPerformer.percent_change) : percent(overallPct)}</small>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="user-app-card" id="userAllocationCard">
+            <div class="panel-head"><h3>Portfolio Allocation</h3><span class="badge">Sector View</span></div>
+            <div class="allocation-summary-bar">
+              ${exposureEntries.length
+                ? exposureEntries.map(([, value]) => `<span style="width:${Math.max(Number(value), 8)}%"></span>`).join("")
+                : `<span style="width:100%"></span>`}
+            </div>
+            <div class="allocation-grid">
+              ${exposureEntries.length
+                ? exposureEntries
+                    .map(
+                      ([sector, value]) => `
+                        <article class="allocation-pill">
+                          <strong>${escapeHtml(sector)}</strong>
+                          <span>${Number(value).toFixed(0)}%</span>
+                          <small>Estimated portfolio exposure</small>
+                        </article>
+                      `
+                    )
+                    .join("")
+                : `<article class="allocation-pill"><strong>No allocation data</strong><small>Add a stock to populate your sector mix.</small></article>`}
             </div>
           </article>
         </div>
@@ -2806,79 +2028,70 @@ async function renderUserPortal() {
         <div class="user-app-grid">
           <article class="user-app-card" id="userPortfolioCard">
             <div class="panel-head"><h3>Portfolio Holdings</h3><span class="badge green">Live</span></div>
-            <div class="search-helper-row">
-              <small id="userSearchSummary">${filteredPerformance.length} holdings visible</small>
-              <div id="userSearchSuggestions" class="search-chip-list"></div>
-            </div>
             <div class="table-wrap">
               <table class="compact-table">
-                <thead><tr><th>Asset</th><th>Qty</th><th>Invested</th><th>Live Value</th><th>P&amp;L</th></tr></thead>
-                <tbody id="userHoldingsTableBody">
-                  ${performance.length
-                    ? performance
+                <thead><tr><th>Asset</th><th>Invested</th><th>Live Value</th><th>P&amp;L</th><th>Action</th></tr></thead>
+                <tbody>
+                  ${filteredPerformance.length
+                    ? filteredPerformance
                         .map(
                           (holding) => `
-                            <tr data-live-summary="true" data-symbol="${escapeHtml(holding.symbol)}" data-live-symbol="${escapeHtml(holding.symbol)}" data-sector="${escapeHtml(holding.sector || "Tracked holding")}" data-state="${getHoldingState(holding)}" data-quantity="${Number(holding.quantity || 0)}" data-buy-price="${Number(holding.buy_price || 0)}" data-current-price="${Number(holding.current_price || 0)}" data-value="${Number(holding.value || 0)}">
+                            <tr>
                               <td>${holding.symbol}<br /><small>${holding.sector || "Tracked holding"}</small></td>
-                              <td><strong>${Number(holding.quantity || 0).toLocaleString("en-IN")}</strong><br /><small>shares</small></td>
-                              <td><strong class="price-buy">${currency(holding.buy_price * holding.quantity)}</strong><br /><small>Avg ${currency(holding.buy_price)}</small></td>
-                              <td><strong class="${holding.profit_loss >= 0 ? "price-up" : "price-down"}" data-live-value-cell>${currency(holding.value)}</strong><br /><small>Live <span data-live-price-cell>${currency(holding.current_price)}</span></small></td>
-                              <td><strong class="${holding.profit_loss >= 0 ? "profit" : "loss"}" data-pnl-cell>${currency(holding.profit_loss)}</strong><br /><small data-return-cell>${percent(holding.percent_change)}</small></td>
+                              <td>${currency(holding.buy_price * holding.quantity)}</td>
+                              <td>${currency(holding.value)}</td>
+                              <td><strong class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}</strong><br /><small>${percent(holding.percent_change)}</small></td>
+                              <td><button class="secondary-btn compact-btn" type="button" data-delete-holding="${holding.holding_id}" data-symbol="${holding.symbol}">Remove</button></td>
                             </tr>
                           `
                         )
                         .join("")
-                    : ""}
-                  <tr id="userHoldingsEmptyRow" ${performance.length ? "hidden" : ""}><td colspan="5"><span class="helper-text">${performance.length ? "No holdings match the active filters." : "No stocks added yet. Use the form to build the portfolio."}</span></td></tr>
+                    : `<tr><td colspan="5"><span class="helper-text">${performance.length ? "No holdings match the active filters." : "No stocks added yet. Use the form to build the portfolio."}</span></td></tr>`}
                 </tbody>
               </table>
             </div>
           </article>
 
           <article class="user-app-card">
-            <div class="panel-head"><h3>Add To Portfolio</h3></div>
+            <div class="panel-head"><h3>Add To Portfolio</h3><span class="badge">Manual</span></div>
             <form id="portfolioForm" class="portfolio-form">
-              <label class="portfolio-symbol-wrap"><span>Stock Symbol</span><input name="symbol" type="text" autocomplete="off" required /><div id="portfolioSymbolSuggestions" class="symbol-suggestion-list"></div></label>
+              <label><span>Stock Symbol</span><input name="symbol" type="text" required /></label>
               <label><span>Quantity</span><input name="quantity" type="number" min="1" required /></label>
-              <div class="portfolio-live-price-preview" id="portfolioLivePricePreview" data-state="idle">
-                <span>Live Price</span>
-                <strong id="portfolioLivePriceValue">Select a stock</strong>
-                <small id="portfolioLivePriceMeta">Live price will appear here.</small>
-              </div>
               <label><span>Buy Price</span><input name="buyPrice" type="number" min="1" step="0.01" required /></label>
-              <label><span>Exchange</span><input name="exchange" type="text" value="NSE" disabled /></label>
+              <label><span>Exchange</span><input name="exchange" type="text" value="NSE" required /></label>
               <button class="primary-btn" type="submit">Add Stock</button>
             </form>
           </article>
         </div>
 
         <div class="user-app-grid">
-          <article class="user-app-card full-span-card" id="userSoldHistoryCard">
-            <div class="panel-head"><h3>Sold History</h3><span class="badge">Booked P&amp;L</span></div>
-            <div class="table-wrap">
-              <table class="compact-table">
-                <thead><tr><th>Stock</th><th>Qty Sold</th><th>Buy Price</th><th>Sell Price</th><th>Booked P&amp;L</th><th>Sold Date &amp; Time</th></tr></thead>
-                <tbody>
-                  ${sales.length
-                    ? sales.map((sale) => `
-                      <tr>
-                        <td>${escapeHtml(sale.symbol)}<br /><small>${escapeHtml(sale.exchange || "NSE")}</small></td>
-                        <td>${Number(sale.quantity || 0).toLocaleString("en-IN")}</td>
-                        <td>${currency(sale.buy_price)}</td>
-                        <td>${currency(sale.sell_price)}</td>
-                        <td class="${Number(sale.profit_loss || 0) >= 0 ? "profit" : "loss"}">${currency(sale.profit_loss)}</td>
-                        <td>${formatIndianSoldDateTime(sale.sold_at)}</td>
-                      </tr>
-                    `).join("")
-                    : `<tr><td colspan="6"><span class="helper-text">No sold stocks yet. Sold stocks will appear here with booked profit/loss.</span></td></tr>`}
-                </tbody>
-              </table>
+          <article class="user-app-card" id="userSignalsCard">
+            <div class="panel-head"><h3>Performance Signals</h3><span class="badge">Insights</span></div>
+            <div class="performance-grid">
+              <article class="note-card">
+                <strong>Best performer</strong>
+                <span>${topPerformer ? topPerformer.symbol : "Pending"}</span>
+                <small class="${topPerformer && topPerformer.profit_loss >= 0 ? "profit" : ""}">${topPerformer ? `${currency(topPerformer.profit_loss)} · ${percent(topPerformer.percent_change)}` : "No data yet"}</small>
+              </article>
+              <article class="note-card">
+                <strong>Needs attention</strong>
+                <span>${laggard ? laggard.symbol : "Pending"}</span>
+                <small class="${laggard && laggard.profit_loss < 0 ? "loss" : ""}">${laggard ? `${currency(laggard.profit_loss)} · ${percent(laggard.percent_change)}` : "No data yet"}</small>
+              </article>
+              <article class="note-card">
+                <strong>Risk level</strong>
+                <span>${summary.risk_level || "Moderate"}</span>
+                <small>${summary.diversification_analysis || "Diversification insight will appear here."}</small>
+              </article>
+              <article class="note-card">
+                <strong>Winning positions</strong>
+                <span>${profitableCount}/${performance.length || 0}</span>
+                <small>${gainRate.toFixed(0)}% of tracked holdings are in profit.</small>
+              </article>
             </div>
           </article>
-        </div>
 
-        <div class="user-app-grid">
-          <article class="user-app-card full-span-card" id="userActivityCard">
+          <article class="user-app-card" id="userActivityCard">
             <div class="panel-head"><h3>Recent Activity</h3><span class="badge">Timeline</span></div>
             <div class="stack-list">
               ${buildRecentActivityMarkup(performance)}
@@ -2890,16 +2103,13 @@ async function renderUserPortal() {
   `;
 
     revealPortal(mount);
-    mount.dataset.liveBookedPnl = String(totalBookedPnl);
-    mount.setAttribute("data-live-booked-pnl", String(totalBookedPnl));
     activeRole = "user";
     activeUserId = profile.id;
     document.getElementById("userPrintBtn").addEventListener("click", () => window.print());
     setupPortfolioForm();
-    setupPortfolioSymbolSuggestions();
+    setupHoldingDeleteButtons();
     setupUserPortfolioFilters();
     setupPortalActions();
-    startLiveDashboardPrices();
   } catch (error) {
     renderPortalError(mount, "User Dashboard", `Login succeeded, but portfolio data could not load yet. ${formatError(error)}`);
     const retry = document.getElementById("retryPortalBtn");
@@ -2923,15 +2133,11 @@ function setupPortfolioForm() {
           symbol: String(data.get("symbol")).trim().toUpperCase(),
           quantity: Number(data.get("quantity")),
           buy_price: Number(data.get("buyPrice")),
-          exchange: "NSE"
+          exchange: String(data.get("exchange")).trim().toUpperCase()
         })
       });
       form.reset();
-      const exchangeInput = form.querySelector('[name="exchange"]');
-      if (exchangeInput) exchangeInput.value = "NSE";
-      notifyPortfolioChanged();
-      const suggestions = document.getElementById("portfolioSymbolSuggestions");
-      if (suggestions) suggestions.innerHTML = "";
+      form.querySelector('[name="exchange"]').value = "NSE";
       await renderUserPortal();
     } catch (error) {
       alert(error.message);
@@ -2942,7 +2148,8 @@ function setupPortfolioForm() {
 function setupLogin() {
   const adminForm = document.getElementById("adminForm");
   const userForm = document.getElementById("userForm");
-  if (!adminForm || !userForm) return;
+  const registerForm = document.getElementById("registerForm");
+  if (!adminForm || !userForm || !registerForm) return;
 
   const toggles = document.querySelectorAll(".role-toggle");
   const adminPortal = document.getElementById("adminPortal");
@@ -2997,7 +2204,24 @@ function setupLogin() {
         "Simple performance tracking"
       ]
     },
-    register: null
+    register: {
+      heroTitle: "Create a new account.",
+      heroText: "Register once, receive a fixed user ID, and start building a tracked portfolio.",
+      eyebrow: "New Account",
+      title: "Create a client profile in minutes.",
+      metrics: [
+        ["Secure", "Stored in the backend DB"],
+        ["ID", "Fixed user ID generated"],
+        ["Ready", "Portfolio can be added after signup"]
+      ],
+      listEyebrow: "Signup Flow",
+      items: [
+        "Full name and contact details",
+        "Password-based secure access",
+        "Backend persistence",
+        "Immediate platform entry"
+      ]
+    }
   };
 
   const updateAside = (role) => {
@@ -3048,37 +2272,24 @@ function setupLogin() {
     });
   }
 
-  const applyRoleState = (role, syncUrl = true) => {
-    toggles.forEach((entry) => entry.classList.toggle("active", entry.dataset.roleTab === role));
-    adminForm.classList.toggle("hidden", role !== "admin");
-    userForm.classList.toggle("hidden", role !== "user");
-    hidePortalMounts();
-    hideAuthLoading();
-    activeRole = null;
-    activeUserId = null;
-    updateAside(role);
-    document.querySelectorAll("[data-login-role-link]").forEach((link) => {
-      link.classList.toggle("is-active", link.dataset.loginRoleLink === role);
-    });
-    if (syncUrl) {
-      const nextUrl = new URL(window.location.href);
-      nextUrl.searchParams.set("role", role);
-      window.history.replaceState({}, "", nextUrl);
-    }
-  };
-
   toggles.forEach((toggle) => {
     toggle.addEventListener("click", () => {
-      applyRoleState(toggle.dataset.roleTab || "admin");
+      const role = toggle.dataset.roleTab;
+      toggles.forEach((entry) => entry.classList.toggle("active", entry === toggle));
+      adminForm.classList.toggle("hidden", role !== "admin");
+      userForm.classList.toggle("hidden", role !== "user");
+      registerForm.classList.toggle("hidden", role !== "register");
+      hidePortalMounts();
+      hideAuthLoading();
+      activeRole = null;
+      activeUserId = null;
+      updateAside(role);
     });
   });
 
-  const requestedRole = new URLSearchParams(window.location.search).get("role");
-  applyRoleState(requestedRole === "user" ? "user" : "admin", false);
-
   document.querySelectorAll("[data-send-otp]").forEach((button) => {
     button.addEventListener("click", async () => {
-      const stopLoading = setButtonLoading(button, "Sending...");
+      const stopLoading = setButtonLoading(button, button.dataset.sendOtp === "admin" ? "Sending..." : "Sending...");
       try {
         if (button.dataset.sendOtp === "admin") {
           if (!hasRequiredFields(adminForm, ["username", "password", "phone"])) {
@@ -3092,10 +2303,10 @@ function setupLogin() {
             password: String(adminForm.querySelector('[name="password"]').value),
             phone_number: String(adminForm.querySelector('[name="phone"]').value).trim()
           };
-          const response = await api("/auth/request-otp", { method: "POST", body: JSON.stringify(payload), timeout_ms: 60000 });
+          const response = await api("/auth/request-otp", { method: "POST", body: JSON.stringify(payload) });
           document.getElementById("adminOtpHint").textContent = response.otp_preview ? `Testing OTP: ${response.otp_preview}` : response.message;
           document.getElementById("adminError").textContent = "";
-        } else if (button.dataset.sendOtp === "user") {
+        } else {
           if (!hasRequiredFields(userForm, ["userId", "password", "phone"])) {
             document.getElementById("userError").textContent = "Fill user ID, password, and phone number before requesting verification code.";
             return;
@@ -3107,14 +2318,14 @@ function setupLogin() {
             password: String(userForm.querySelector('[name="password"]').value),
             phone_number: String(userForm.querySelector('[name="phone"]').value).trim()
           };
-          const response = await api("/auth/request-otp", { method: "POST", body: JSON.stringify(payload), timeout_ms: 60000 });
+          const response = await api("/auth/request-otp", { method: "POST", body: JSON.stringify(payload) });
           document.getElementById("userOtpHint").textContent = response.otp_preview ? `Testing code: ${response.otp_preview}` : response.message;
           document.getElementById("userError").textContent = "";
         }
       } catch (error) {
         if (button.dataset.sendOtp === "admin") {
           document.getElementById("adminError").textContent = formatError(error);
-        } else if (button.dataset.sendOtp === "user") {
+        } else {
           document.getElementById("userError").textContent = formatError(error);
         }
       } finally {
@@ -3137,7 +2348,6 @@ function setupLogin() {
       showAuthLoading("Opening admin dashboard...", "Verifying credentials, loading client data, and preparing admin controls.");
       const response = await api("/auth/login", {
         method: "POST",
-        timeout_ms: 60000,
         body: JSON.stringify({
           role: "admin",
           identifier: String(data.get("username")).trim(),
@@ -3148,7 +2358,9 @@ function setupLogin() {
       });
       setAuth({ token: response.access_token, role: response.role });
       document.getElementById("adminError").textContent = "";
-      goToDashboard("admin");
+      await renderAdminPortal();
+      hideAuthLoading();
+      window.scrollTo({ top: adminPortal.offsetTop - 20, behavior: "smooth" });
     } catch (error) {
       document.getElementById("adminError").textContent = formatError(error);
       hidePortalMounts();
@@ -3172,7 +2384,6 @@ function setupLogin() {
       showAuthLoading("Opening user dashboard...", "Loading your holdings, returns, and portfolio summary.");
       const response = await api("/auth/login", {
         method: "POST",
-        timeout_ms: 60000,
         body: JSON.stringify({
           role: "user",
           identifier: String(data.get("userId")).trim().toUpperCase(),
@@ -3183,7 +2394,9 @@ function setupLogin() {
       });
       setAuth({ token: response.access_token, role: response.role });
       document.getElementById("userError").textContent = "";
-      goToDashboard("user");
+      await renderUserPortal();
+      hideAuthLoading();
+      window.scrollTo({ top: userPortal.offsetTop - 20, behavior: "smooth" });
     } catch (error) {
       document.getElementById("userError").textContent = formatError(error);
       hidePortalMounts();
@@ -3193,62 +2406,78 @@ function setupLogin() {
     }
   });
 
+  registerForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const submitButton = registerForm.querySelector('button[type="submit"]');
+    const stopLoading = setButtonLoading(submitButton, "Creating Account...");
+    try {
+      if (!hasRequiredFields(registerForm, ["full_name", "email", "phone_number", "password"])) {
+        document.getElementById("registerError").textContent = "Complete all registration fields before creating the account.";
+        return;
+      }
+      const data = new FormData(registerForm);
+      hidePortalMounts();
+      showAuthLoading("Creating secure account...", "Saving user details and preparing the first portfolio workspace.");
+      const response = await api("/auth/signup", {
+        method: "POST",
+        body: JSON.stringify({
+          full_name: String(data.get("full_name")).trim(),
+          email: String(data.get("email")).trim(),
+          phone_number: String(data.get("phone_number")).trim(),
+          password: String(data.get("password"))
+        })
+      });
+      setAuth({ token: response.access_token, role: response.role });
+      let profile = null;
+      try {
+        profile = await api("/auth/me");
+      } catch {
+        profile = null;
+      }
+      document.getElementById("registerError").textContent = "";
+      document.getElementById("registerHint").textContent = profile?.fixed_user_id
+        ? `Account created successfully. Your fixed user ID is ${profile.fixed_user_id}.`
+        : "Account created successfully. Your fixed user ID is available once the profile loads.";
+      await renderUserPortal();
+      hideAuthLoading();
+    } catch (error) {
+      document.getElementById("registerError").textContent = formatError(error);
+      hidePortalMounts();
+      hideAuthLoading();
+    } finally {
+      stopLoading();
+    }
+  });
+
   if (isLoginPage()) {
-    stopLiveDashboardPrices();
     clearAuth();
     hidePortalMounts();
     hideAuthLoading();
   } else {
     const auth = getAuth();
     if (auth?.token && auth.role === "admin") {
-      renderAdminPortal().catch(() => clearAuth());
+      if (isAdminCustomerPage()) {
+        renderAdminCustomerPage().catch(() => clearAuth());
+      } else if (isAdminDealPage()) {
+        renderAdminDealPage().catch(() => clearAuth());
+      } else {
+        renderAdminPortal().catch(() => clearAuth());
+      }
     } else if (auth?.token && auth.role === "user") {
       renderUserPortal().catch(() => clearAuth());
+    } else if (isAdminDashboardPage() || isAdminCustomerPage() || isAdminDealPage()) {
+      window.location.href = "./login.html";
     }
   }
 
   updateAside("admin");
   checkBackendStatus();
 
-  // Dashboard auto-refresh disabled to prevent flicker. Use Refresh or portfolio actions to update.
-}
-
-function setupDashboardPages() {
-  const adminPortal = document.getElementById("adminPortal");
-  const userPortal = document.getElementById("userPortal");
-  const auth = getAuth();
-
-  if (isAdminDashboardPage()) {
-    if (!auth?.token) {
-      window.location.href = "./login.html";
-      return;
+  liveTickerTimer = setInterval(async () => {
+    if (activeRole === "user" && activeUserId) {
+      await renderUserPortal();
     }
-    if (auth.role !== "admin") {
-      goToDashboard(auth.role === "user" ? "user" : "admin");
-      return;
-    }
-    renderAdminPortal().catch(() => {
-      clearAuth();
-      window.location.href = "./login.html";
-    });
-  }
-
-  if (isUserDashboardPage()) {
-    if (!auth?.token) {
-      window.location.href = "./login.html";
-      return;
-    }
-    if (auth.role !== "user") {
-      goToDashboard(auth.role === "admin" ? "admin" : "user");
-      return;
-    }
-    renderUserPortal().catch(() => {
-      clearAuth();
-      window.location.href = "./login.html";
-    });
-  }
-
-  // Dashboard auto-refresh disabled to prevent flicker. Use Refresh or portfolio actions to update.
+  }, 15000);
 }
 
 function isFinancialQuestion(message) {
@@ -3267,13 +2496,13 @@ function financeFallbackReply(message) {
     return "Choose Admin or User login, enter your credentials, request the OTP, then submit the code to open the dashboard.";
   }
   if (text.includes("register") || text.includes("new user") || text.includes("create account")) {
-    return "New customers are created by the admin inside the admin dashboard. The system generates a client ID like ABC123, which the customer uses to login as User.";
+    return "Use the Register User option on the login page. A fixed client ID is generated after signup and your details are saved in the backend database.";
   }
   if (text.includes("otp")) {
     return "OTP is used as an added login verification step. Click Send OTP, use the displayed code in local testing, and then complete login.";
   }
   if (text.includes("admin") && text.includes("download")) {
-    return "Admins can open the admin dashboard and use Download for a selected client portfolio snapshot.";
+    return "Admins can open the admin dashboard and use Download Dashboard for a selected client portfolio snapshot.";
   }
   if (text.includes("faq") || text.includes("question") || text.includes("help")) {
     return "I can help with login steps, portfolio basics, admin dashboard actions, OTP flow, finance terms, and stock-related questions.";
@@ -3300,191 +2529,105 @@ function financeFallbackReply(message) {
 }
 
 function setupFinanceChatbot() {
-  document.querySelectorAll("[data-open-finance-chat]").forEach((button) => button.remove());
-}
-
-function setupPublicChrome() {
-  if (!document.body?.classList.contains("public-page")) return;
-
-  const header = document.querySelector(".public-navbar");
-  const progress = document.getElementById("pageProgress");
-  const navToggle = document.querySelector("[data-nav-toggle='true']");
-
-  if (navToggle && header) {
-    navToggle.addEventListener("click", () => {
-      header.classList.toggle("nav-open");
-    });
-  }
-
-  const loginDropdown = document.querySelector("[data-login-dropdown='true']");
-  if (loginDropdown) {
-    const toggle = loginDropdown.querySelector("[data-login-dropdown-toggle='true']");
-    if (toggle) {
-      toggle.addEventListener("click", () => {
-        loginDropdown.classList.toggle("open");
-      });
-      document.addEventListener("click", (event) => {
-        if (loginDropdown.contains(event.target)) return;
-        loginDropdown.classList.remove("open");
-      });
-    }
-  }
-
-  const updateScrollUi = () => {
-    const maxScroll = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
-    const ratio = Math.min(window.scrollY / maxScroll, 1);
-    if (progress) progress.style.width = `${ratio * 100}%`;
-    if (header) header.classList.toggle("is-scrolled", window.scrollY > 12);
-  };
-
-  updateScrollUi();
-  window.addEventListener("scroll", updateScrollUi, { passive: true });
-
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add("in-view");
-        observer.unobserve(entry.target);
-      });
-    },
-    { threshold: 0.16 }
-  );
-
-  document.querySelectorAll(".fade-up").forEach((node) => observer.observe(node));
-
-  const statObserver = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        const node = entry.target;
-        const target = Number(node.dataset.countup || 0);
-        const prefix = node.dataset.prefix || "";
-        const suffix = node.dataset.suffix || "";
-        const duration = 1100;
-        const start = performance.now();
-        const tick = (now) => {
-          const progressRatio = Math.min((now - start) / duration, 1);
-          const current = Math.round(target * progressRatio);
-          node.textContent = `${prefix}${current}${suffix}`;
-          if (progressRatio < 1) {
-            requestAnimationFrame(tick);
-          }
-        };
-        requestAnimationFrame(tick);
-        statObserver.unobserve(node);
-      });
-    },
-    { threshold: 0.45 }
-  );
-  document.querySelectorAll("[data-countup]").forEach((node) => statObserver.observe(node));
-
-  const contactForm = document.getElementById("contactForm");
-  if (contactForm) {
-    contactForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const status = document.getElementById("contactStatus");
-      if (status) {
-        status.textContent = "Thank you. Your message has been prepared for the AssetYantra team.";
-      }
-      contactForm.reset();
-    });
-  }
-}
-
-function setupFloatingWhatsAppButton() {
-  const allowedPages = new Set(["home", "about", "products", "contact", "trust-safety", "legal"]);
-  const currentPage = document.body?.dataset?.page || "";
-  if (!allowedPages.has(currentPage)) return;
-  if (document.querySelector(".floating-whatsapp")) return;
-
-  const button = document.createElement("a");
-  button.className = "floating-whatsapp";
-  button.href = "https://wa.me/919089080505";
-  button.target = "_blank";
-  button.rel = "noreferrer";
-  button.setAttribute("aria-label", "Chat with AssetYantra on WhatsApp");
-  button.innerHTML = `
-    <span class="floating-whatsapp-icon" aria-hidden="true">
-      <svg viewBox="0 0 32 32" focusable="false">
-        <path d="M16.01 4.5c-6.28 0-11.38 5.02-11.38 11.2 0 2.12.61 4.12 1.69 5.79L4.5 27.5l6.24-1.77a11.54 11.54 0 0 0 5.27 1.27c6.28 0 11.38-5.02 11.38-11.2S22.29 4.5 16.01 4.5Zm0 20.58c-1.74 0-3.36-.47-4.77-1.29l-.34-.2-3.67 1.04 1.06-3.48-.23-.36a9.15 9.15 0 0 1-1.5-5.09c0-5.12 4.24-9.28 9.45-9.28s9.45 4.16 9.45 9.28-4.24 9.38-9.45 9.38Zm5.18-6.95c-.28-.14-1.67-.81-1.93-.9-.26-.1-.45-.14-.64.14-.19.28-.73.9-.9 1.09-.17.19-.33.21-.61.07-.28-.14-1.18-.43-2.25-1.37-.83-.73-1.39-1.64-1.55-1.92-.16-.28-.02-.43.12-.57.13-.13.28-.33.42-.49.14-.16.19-.28.28-.47.09-.19.05-.35-.02-.49-.07-.14-.64-1.52-.88-2.08-.23-.54-.47-.47-.64-.48h-.55c-.19 0-.49.07-.75.35-.26.28-.99.95-.99 2.32s1.02 2.69 1.16 2.88c.14.19 2.01 3.02 4.88 4.23.68.29 1.21.46 1.63.59.68.21 1.31.18 1.8.11.55-.08 1.67-.67 1.91-1.32.24-.65.24-1.2.17-1.32-.07-.12-.26-.19-.54-.33Z" />
-      </svg>
-    </span>
-    <span class="floating-whatsapp-copy">
-      <strong>WhatsApp</strong>
-      <small>Chat now</small>
-    </span>
+  const wrapper = document.createElement("div");
+  wrapper.className = "finance-chat";
+  wrapper.innerHTML = `
+    <div class="chat-nudge" id="financeChatNudge">How may I help you?</div>
+    <div class="chat-panel hidden" id="financeChatPanel">
+      <div class="chat-head">
+        <div>
+          <h3>Finance Assistant</h3>
+          <p>Ask finance questions, customer FAQs, or platform queries.</p>
+        </div>
+        <button class="chat-close" type="button" id="chatCloseBtn">x</button>
+      </div>
+      <div class="chat-log" id="financeChatLog">
+        <div class="chat-msg bot">Ask me about stocks, portfolio metrics, login steps, OTP flow, admin downloads, FAQs, diversification, valuation, or investing basics.</div>
+      </div>
+      <form class="chat-form" id="financeChatForm">
+        <input id="financeChatInput" type="text" placeholder="Ask a finance or platform question" />
+        <button class="primary-btn" type="submit">Send</button>
+      </form>
+    </div>
+    <button class="chat-launcher" id="chatLauncher" type="button">AI</button>
   `;
-  document.body.appendChild(button);
-}
+  document.body.appendChild(wrapper);
 
-function setupHomeHeroCarousel() {
-  const carousel = document.querySelector("[data-home-hero-carousel='true']");
-  if (!carousel) return;
+  const panel = document.getElementById("financeChatPanel");
+  const launcher = document.getElementById("chatLauncher");
+  const closeBtn = document.getElementById("chatCloseBtn");
+  const nudge = document.getElementById("financeChatNudge");
+  const form = document.getElementById("financeChatForm");
+  const input = document.getElementById("financeChatInput");
+  const log = document.getElementById("financeChatLog");
 
-  const slides = [...carousel.querySelectorAll("[data-hero-slide='true']")];
-  const dots = [...carousel.querySelectorAll("[data-hero-dot]")];
-  const prevButton = carousel.querySelector("[data-hero-prev='true']");
-  const nextButton = carousel.querySelector("[data-hero-next='true']");
-  if (!slides.length) return;
-
-  let activeIndex = Math.max(slides.findIndex((slide) => slide.classList.contains("is-active")), 0);
-  let autoTimer = null;
-
-  const showSlide = (nextIndex) => {
-    activeIndex = (nextIndex + slides.length) % slides.length;
-    slides.forEach((slide, index) => {
-      const isActive = index === activeIndex;
-      slide.classList.toggle("is-active", isActive);
-      slide.setAttribute("aria-hidden", isActive ? "false" : "true");
-    });
-    dots.forEach((dot, index) => dot.classList.toggle("is-active", index === activeIndex));
+  const appendMessage = (type, message) => {
+    const node = document.createElement("div");
+    node.className = `chat-msg ${type}`;
+    node.textContent = message;
+    log.appendChild(node);
+    log.scrollTop = log.scrollHeight;
   };
 
-  const startAuto = () => {
-    window.clearInterval(autoTimer);
-    autoTimer = window.setInterval(() => {
-      showSlide(activeIndex + 1);
-    }, 5000);
+  launcher.addEventListener("click", () => {
+    panel.classList.toggle("hidden");
+    if (nudge) nudge.classList.add("hidden");
+    if (!panel.classList.contains("hidden")) {
+      input.focus();
+    }
+  });
+
+  closeBtn.addEventListener("click", () => panel.classList.add("hidden"));
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const message = input.value.trim();
+    if (!message) return;
+
+    appendMessage("user", message);
+    input.value = "";
+
+    const auth = getAuth();
+    if (auth?.token && isFinancialQuestion(message)) {
+      try {
+        const symbolMatch = message.match(/\b[A-Z]{2,15}\b/);
+        const response = await api("/ai/chat", {
+          method: "POST",
+          body: JSON.stringify({
+            message,
+            symbol: symbolMatch ? symbolMatch[0] : null
+          })
+        });
+        appendMessage("bot", response.answer);
+        return;
+      } catch {
+        appendMessage("bot", financeFallbackReply(message));
+        return;
+      }
+    }
+
+    appendMessage("bot", financeFallbackReply(message));
+  });
+
+  const rotateNudge = () => {
+    if (!nudge || !panel.classList.contains("hidden") || !getSiteControls().chatNudgesEnabled) {
+      if (nudge) nudge.classList.add("hidden");
+      return;
+    }
+    nudge.classList.remove("hidden");
+    nudge.textContent = "How may I help you?";
+    window.setTimeout(() => {
+      nudge.classList.add("hidden");
+    }, 2200);
   };
 
-  prevButton?.addEventListener("click", () => {
-    showSlide(activeIndex - 1);
-    startAuto();
-  });
-  nextButton?.addEventListener("click", () => {
-    showSlide(activeIndex + 1);
-    startAuto();
-  });
-  dots.forEach((dot) => {
-    dot.addEventListener("click", () => {
-      showSlide(Number(dot.dataset.heroDot || 0));
-      startAuto();
-    });
-  });
-
-  showSlide(activeIndex);
-  startAuto();
+  rotateNudge();
+  chatNudgeTimer = window.setInterval(rotateNudge, 5000);
 }
 
 setupFaq();
 loadSiteControls().catch(() => {});
 setupReviewForm();
-window.addEventListener("storage", (event) => {
-  if (event.key !== "stock_trader_portfolio_updated") return;
-  if (isAdminDashboardPage() && activeRole === "admin") {
-    renderAdminPortal().catch(() => {});
-  }
-});
 setupPageTransitions();
-removeDeprecatedPublicNavigation();
-setupPublicChrome();
-setupHomeHeroCarousel();
-setupHomeLiveTicker().catch(() => {});
-setupHomeLiveNews().catch(() => {});
-setupSmartLoginLinks();
 setupLogin();
-setupDashboardLaunchReveal();
-setupDashboardPages();
-setupFloatingWhatsAppButton();
 setupFinanceChatbot();

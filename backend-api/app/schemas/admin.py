@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class AdminDashboardResponse(BaseModel):
@@ -19,8 +19,6 @@ class AdminUserSummary(BaseModel):
     role: str
     is_active: bool
     is_demo: bool
-    is_archived: bool = False
-    archived_at: datetime | None = None
     created_at: datetime
     portfolio_value: float
     total_holdings: int
@@ -40,16 +38,11 @@ class AdminHoldingSnapshot(BaseModel):
     created_at: datetime | None = None
 
 
-class AdminSaleSnapshot(BaseModel):
-    sale_id: int
+class AdminHoldingCreateRequest(BaseModel):
     symbol: str
     quantity: float
     buy_price: float
-    sell_price: float
-    profit_loss: float
-    sector: str | None
-    exchange: str | None = None
-    sold_at: datetime | None = None
+    exchange: str = "NSE"
 
 
 class AdminUserDashboardResponse(BaseModel):
@@ -60,11 +53,8 @@ class AdminUserDashboardResponse(BaseModel):
     phone_number: str
     total_portfolio_value: float
     total_profit_loss: float
-    booked_profit_loss: float = 0.0
-    lifetime_profit_loss: float = 0.0
     total_holdings: int
     holdings: list[AdminHoldingSnapshot]
-    sales: list[AdminSaleSnapshot] = []
 
 
 class AdminAuditLogResponse(BaseModel):
@@ -96,20 +86,6 @@ class AdminUserStatusUpdateRequest(BaseModel):
     is_active: bool
 
 
-class AdminUserCreateRequest(BaseModel):
-    full_name: str = Field(min_length=2, max_length=120)
-    email: str = Field(min_length=5, max_length=255)
-    phone_number: str = Field(min_length=8, max_length=20)
-    password: str = Field(min_length=8, max_length=128)
-
-
-class AdminDealCreateRequest(BaseModel):
-    symbol: str = Field(min_length=1, max_length=20)
-    quantity: float = Field(gt=0)
-    buy_price: float = Field(gt=0)
-    exchange: str = Field(default="NSE", min_length=2, max_length=10)
-
-
 class AdminBulkUserActionRequest(BaseModel):
     action: str
     user_ids: list[int]
@@ -132,13 +108,6 @@ class AdminSystemStatusResponse(BaseModel):
     total_auth_attempts: int
 
 
-class AdminPortfolioOverviewResponse(BaseModel):
-    dashboard: AdminDashboardResponse
-    users: list[AdminUserSummary]
-    system_status: AdminSystemStatusResponse
-    user_dashboards: list[AdminUserDashboardResponse]
-
-
 class AdminStockConcentrationItem(BaseModel):
     symbol: str
     client_count: int
@@ -156,7 +125,6 @@ class AdminUserActivityItem(BaseModel):
     full_name: str
     fixed_user_id: str | None
     is_active: bool
-    is_archived: bool = False
     holding_count: int
     last_holding_at: datetime | None
     last_auth_attempt_at: datetime | None
@@ -180,3 +148,19 @@ class AdminOperationsOverviewResponse(BaseModel):
     login_issue_breakdown: list[AdminLoginIssueItem]
     recent_user_activity: list[AdminUserActivityItem]
     settings_overview: AdminSettingsOverview
+
+
+class AdminSoldHistoryItem(BaseModel):
+    id: int
+    user_id: int
+    full_name: str
+    fixed_user_id: str | None
+    symbol: str
+    exchange: str
+    quantity: float
+    buy_price: float
+    sell_price: float
+    profit_loss: float
+    sold_by_role: str
+    sold_by_identifier: str | None
+    sold_at: datetime

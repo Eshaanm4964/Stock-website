@@ -4,37 +4,21 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from jose import jwt
-from sqlalchemy import select, text
+from sqlalchemy import select
 
 from app.api.router import api_router
 from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import AsyncSessionLocal, engine, redis_client
-from app.models import admin_audit_log, admin_setting, alert, auth_attempt, login_otp, notification, portfolio, review, signup_otp, user, watchlist  # noqa: F401
+from app.models import admin_audit_log, admin_setting, alert, auth_attempt, login_otp, notification, portfolio, review, sold_history, user, watchlist  # noqa: F401
 from app.models.alert import Alert
 from app.models.notification import Notification
 from app.services.notification_service import build_notification_payload
 from app.services.stock_service import fetch_market_feed, fetch_quote
-from app.utils.bootstrap import ensure_admin_user, ensure_seed_reviews, ensure_site_settings, remove_demo_users
+from app.utils.bootstrap import ensure_admin_user, ensure_demo_users, ensure_seed_reviews, ensure_site_settings
 from app.websocket.manager import manager
 
 settings = get_settings()
-
-
-async def ensure_user_archive_columns(conn) -> None:
-    if conn.dialect.name == "sqlite":
-        columns = {
-            row[1]
-            for row in (await conn.execute(text("PRAGMA table_info(users)"))).fetchall()
-        }
-        if "is_archived" not in columns:
-            await conn.execute(text("ALTER TABLE users ADD COLUMN is_archived BOOLEAN NOT NULL DEFAULT 0"))
-        if "archived_at" not in columns:
-            await conn.execute(text("ALTER TABLE users ADD COLUMN archived_at DATETIME"))
-        return
-
-    await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_archived BOOLEAN NOT NULL DEFAULT FALSE"))
-    await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS archived_at TIMESTAMP WITH TIME ZONE"))
 
 
 def _extract_user_id_from_token(token: str) -> str | None:
@@ -99,10 +83,9 @@ async def stock_broadcast() -> None:
 async def lifespan(_: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        await ensure_user_archive_columns(conn)
     async with AsyncSessionLocal() as session:
         await ensure_admin_user(session)
-        await remove_demo_users(session)
+        await ensure_demo_users(session)
         await ensure_site_settings(session)
         await ensure_seed_reviews(session)
     alert_task = asyncio.create_task(alert_monitor())
