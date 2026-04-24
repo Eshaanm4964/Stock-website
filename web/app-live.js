@@ -5,7 +5,6 @@ const REVIEW_STORAGE_KEY = "stock_trader_reviews";
 let activeRole = null;
 let activeUserId = null;
 let liveTickerTimer = null;
-let chatNudgeTimer = null;
 let adminRefreshTimer = null;
 let adminUiState = {
   search: "",
@@ -20,7 +19,7 @@ let userUiState = {
 };
 let siteControlsCache = {
   showFaqInsights: true,
-  chatNudgesEnabled: true
+  chatNudgesEnabled: false
 };
 
 const reviewsSeed = [
@@ -754,7 +753,6 @@ function setupDownloadButtons(userDashboards = []) {
 
 function setupWebsiteControlButtons() {
   const toggleFaqBtn = document.getElementById("toggleFaqInsightsBtn");
-  const toggleNudgeBtn = document.getElementById("toggleChatNudgesBtn");
   const clearReviewsBtn = document.getElementById("clearCustomReviewsBtn");
   const controlStatus = document.getElementById("siteControlStatus");
   const controls = getSiteControls();
@@ -769,20 +767,6 @@ function setupWebsiteControlButtons() {
         controlStatus.textContent = nextControls.showFaqInsights
           ? "FAQ insight cards will be shown on the FAQ page."
           : "FAQ insight cards are hidden on the FAQ page.";
-      }
-    });
-  }
-
-  if (toggleNudgeBtn) {
-    toggleNudgeBtn.textContent = controls.chatNudgesEnabled ? "Disable Chat Popups" : "Enable Chat Popups";
-    toggleNudgeBtn.addEventListener("click", async () => {
-      const nextControls = { ...getSiteControls(), chatNudgesEnabled: !getSiteControls().chatNudgesEnabled };
-      await updateSiteControls(nextControls);
-      toggleNudgeBtn.textContent = nextControls.chatNudgesEnabled ? "Disable Chat Popups" : "Enable Chat Popups";
-      if (controlStatus) {
-        controlStatus.textContent = nextControls.chatNudgesEnabled
-          ? "Finance chatbot nudges are enabled."
-          : "Finance chatbot nudges are disabled.";
       }
     });
   }
@@ -1055,13 +1039,6 @@ async function setupAdminDealForm() {
 function setupPortalActions() {
   document.querySelectorAll("[data-logout]").forEach((button) => {
     button.addEventListener("click", () => logoutAndResetPortals());
-  });
-
-  document.querySelectorAll("[data-open-finance-chat]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const launcher = document.getElementById("chatLauncher");
-      if (launcher) launcher.click();
-    });
   });
 
   document.querySelectorAll("[data-refresh-admin]").forEach((button) => {
@@ -1638,10 +1615,6 @@ async function renderAdminPortal() {
             <button class="secondary-btn" type="button" id="toggleFaqInsightsBtn">Hide FAQ Cards</button>
           </article>
           <article class="stack-item">
-            <div><strong>Chatbot Popups</strong><small>Control the 5-second finance assistant popup prompts.</small></div>
-            <button class="secondary-btn" type="button" id="toggleChatNudgesBtn">Disable Chat Popups</button>
-          </article>
-          <article class="stack-item">
             <div><strong>Delete User Reviews</strong><small>Remove all user-submitted reviews from website storage.</small></div>
             <button class="secondary-btn danger-btn" type="button" id="clearCustomReviewsBtn">Delete Reviews</button>
           </article>
@@ -1931,7 +1904,6 @@ async function renderUserPortal() {
               <option value="loss">In loss</option>
               <option value="flat">Flat</option>
             </select>
-            <button class="assistant-btn" type="button" data-open-finance-chat="true">AI Assistant</button>
             <button class="secondary-btn" type="button" data-refresh-user="true">Refresh</button>
             <button class="secondary-btn" type="button" data-logout="true">Logout</button>
           </div>
@@ -2530,106 +2502,8 @@ function financeFallbackReply(message) {
   return "I can help with financial topics such as stocks, portfolios, diversification, profit and loss, valuation, risk, and market basics.";
 }
 
-function setupFinanceChatbot() {
-  const wrapper = document.createElement("div");
-  wrapper.className = "finance-chat";
-  wrapper.innerHTML = `
-    <div class="chat-nudge" id="financeChatNudge">How may I help you?</div>
-    <div class="chat-panel hidden" id="financeChatPanel">
-      <div class="chat-head">
-        <div>
-          <h3>Finance Assistant</h3>
-          <p>Ask finance questions, customer FAQs, or platform queries.</p>
-        </div>
-        <button class="chat-close" type="button" id="chatCloseBtn">x</button>
-      </div>
-      <div class="chat-log" id="financeChatLog">
-        <div class="chat-msg bot">Ask me about stocks, portfolio metrics, login steps, OTP flow, admin downloads, FAQs, diversification, valuation, or investing basics.</div>
-      </div>
-      <form class="chat-form" id="financeChatForm">
-        <input id="financeChatInput" type="text" placeholder="Ask a finance or platform question" />
-        <button class="primary-btn" type="submit">Send</button>
-      </form>
-    </div>
-    <button class="chat-launcher" id="chatLauncher" type="button">AI</button>
-  `;
-  document.body.appendChild(wrapper);
-
-  const panel = document.getElementById("financeChatPanel");
-  const launcher = document.getElementById("chatLauncher");
-  const closeBtn = document.getElementById("chatCloseBtn");
-  const nudge = document.getElementById("financeChatNudge");
-  const form = document.getElementById("financeChatForm");
-  const input = document.getElementById("financeChatInput");
-  const log = document.getElementById("financeChatLog");
-
-  const appendMessage = (type, message) => {
-    const node = document.createElement("div");
-    node.className = `chat-msg ${type}`;
-    node.textContent = message;
-    log.appendChild(node);
-    log.scrollTop = log.scrollHeight;
-  };
-
-  launcher.addEventListener("click", () => {
-    panel.classList.toggle("hidden");
-    if (nudge) nudge.classList.add("hidden");
-    if (!panel.classList.contains("hidden")) {
-      input.focus();
-    }
-  });
-
-  closeBtn.addEventListener("click", () => panel.classList.add("hidden"));
-
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const message = input.value.trim();
-    if (!message) return;
-
-    appendMessage("user", message);
-    input.value = "";
-
-    const auth = getAuth();
-    if (auth?.token && isFinancialQuestion(message)) {
-      try {
-        const symbolMatch = message.match(/\b[A-Z]{2,15}\b/);
-        const response = await api("/ai/chat", {
-          method: "POST",
-          body: JSON.stringify({
-            message,
-            symbol: symbolMatch ? symbolMatch[0] : null
-          })
-        });
-        appendMessage("bot", response.answer);
-        return;
-      } catch {
-        appendMessage("bot", financeFallbackReply(message));
-        return;
-      }
-    }
-
-    appendMessage("bot", financeFallbackReply(message));
-  });
-
-  const rotateNudge = () => {
-    if (!nudge || !panel.classList.contains("hidden") || !getSiteControls().chatNudgesEnabled) {
-      if (nudge) nudge.classList.add("hidden");
-      return;
-    }
-    nudge.classList.remove("hidden");
-    nudge.textContent = "How may I help you?";
-    window.setTimeout(() => {
-      nudge.classList.add("hidden");
-    }, 2200);
-  };
-
-  rotateNudge();
-  chatNudgeTimer = window.setInterval(rotateNudge, 5000);
-}
-
 setupFaq();
 loadSiteControls().catch(() => {});
 setupReviewForm();
 setupPageTransitions();
 setupLogin();
-setupFinanceChatbot();
