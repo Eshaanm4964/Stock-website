@@ -134,6 +134,10 @@ function isAdminDashboardPage() {
   return document.body?.dataset?.page === "admin-dashboard";
 }
 
+function isUserDashboardPage() {
+  return document.body?.dataset?.page === "user-dashboard";
+}
+
 function isAdminCustomerPage() {
   return document.body?.dataset?.page === "admin-add-customer";
 }
