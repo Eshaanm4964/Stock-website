@@ -1493,6 +1493,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings) {
 async function renderAdminPortal() {
   const mount = document.getElementById("adminPortal");
   if (!mount) return;
+  revealPortal(mount);
   try {
     const [dashboard, users, auditLogs, authAttempts, systemStatus, reviews, operationsOverview, soldHistory] = await Promise.all([
       api("/admin/dashboard"),
@@ -2347,6 +2348,7 @@ async function renderAdminPortal() {
 async function renderUserPortal() {
   const mount = document.getElementById("userPortal");
   if (!mount) return;
+  revealPortal(mount);
   try {
     const [profile, holdings, summary] = await Promise.all([api("/auth/me"), api("/portfolio"), api("/portfolio/summary")]);
     const performance = Array.isArray(summary.performance) ? summary.performance : [];
