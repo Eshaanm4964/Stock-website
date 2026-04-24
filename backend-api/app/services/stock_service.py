@@ -271,27 +271,33 @@ async def search_stock_symbols(query: str, exchange: str = "NSE", limit: int = 1
     if len(cleaned_query) < 1:
         return []
     safe_limit = max(1, min(limit, 20))
-    results: list[StockSearchResult] = []
-    seen: set[str] = set()
-
     safe_exchange = (exchange or "NSE").upper()
-    try:
-        for item in await _search_yahoo_symbols(cleaned_query, safe_limit, safe_exchange):
-            score = _search_score(cleaned_query, item.symbol, item.name, item.sector)
-            if score <= 0:
+    exchange_targets = ["NSE", "BSE"] if safe_exchange in {"ALL", "SME", "MSME"} else [safe_exchange]
+    results: list[StockSearchResult] = []
+    seen: set[tuple[str, str]] = set()
+
+    for target_exchange in exchange_targets:
+        try:
+            for item in await _search_yahoo_symbols(cleaned_query, safe_limit, target_exchange):
+                score = _search_score(cleaned_query, item.symbol, item.name, item.sector)
+                key = (item.symbol, item.exchange)
+                if score <= 0 or key in seen:
+                    continue
+                results.append(item)
+                seen.add(key)
+        except Exception:
+            continue
+
+    if not results:
+        fallback_exchange = exchange_targets[0] if len(exchange_targets) == 1 else "NSE"
+        for item in _catalog_search(cleaned_query, safe_limit, fallback_exchange):
+            key = (item.symbol, item.exchange)
+            if key in seen:
                 continue
             results.append(item)
-            seen.add(item.symbol)
-    except Exception:
-        pass
+            seen.add(key)
 
-    for item in _catalog_search(cleaned_query, safe_limit, safe_exchange):
-        if item.symbol in seen:
-            continue
-        results.append(item)
-        seen.add(item.symbol)
-
-    results.sort(key=lambda item: (-_search_score(cleaned_query, item.symbol, item.name, item.sector), item.symbol))
+    results.sort(key=lambda item: (-_search_score(cleaned_query, item.symbol, item.name, item.sector), item.symbol, item.exchange))
     return results[:safe_limit]
 
 

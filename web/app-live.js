@@ -1228,6 +1228,112 @@ async function setupAdminDealForm() {
   const status = document.getElementById("adminDealStatus");
   if (!form) return;
 
+  const symbolInput = form.querySelector('[name="symbol"]');
+  const exchangeInput = form.querySelector('[name="exchange"]');
+  const suggestionsList = document.getElementById("adminDealSuggestions");
+  const selectedExchangeInput = document.getElementById("adminDealSelectedExchange");
+  let searchTimer = null;
+  let requestToken = 0;
+
+  const clearSuggestions = () => {
+    if (suggestionsList) suggestionsList.innerHTML = "";
+  };
+
+  const applySuggestion = (result) => {
+    if (!symbolInput || !exchangeInput) return;
+    symbolInput.value = result.symbol;
+    if (selectedExchangeInput) selectedExchangeInput.value = result.exchange || "NSE";
+    exchangeInput.value = result.exchange || "NSE";
+    clearSuggestions();
+    if (status) {
+      status.textContent = `${result.symbol} selected from ${result.exchange}.`;
+    }
+  };
+
+  const renderSuggestions = (items) => {
+    if (!suggestionsList) return;
+    if (!items.length) {
+      suggestionsList.innerHTML = `<div class="search-empty">No matching stocks found in the selected market search.</div>`;
+      return;
+    }
+    suggestionsList.innerHTML = items
+      .map(
+        (item) => `
+          <button class="symbol-suggestion-btn" type="button" data-symbol-pick="${escapeHtml(item.symbol)}" data-exchange-pick="${escapeHtml(item.exchange || "NSE")}">
+            <span class="symbol-suggestion-main">
+              <strong>${escapeHtml(item.symbol)}</strong>
+              <small>${escapeHtml(item.name || item.symbol)}</small>
+            </span>
+            <span class="symbol-suggestion-meta">
+              <strong>${escapeHtml(item.exchange || "NSE")}</strong>
+              <small>${escapeHtml(item.sector || item.source || "Market search")}</small>
+            </span>
+          </button>
+        `
+      )
+      .join("");
+
+    suggestionsList.querySelectorAll("[data-symbol-pick]").forEach((button) => {
+      button.addEventListener("click", () => {
+        applySuggestion({
+          symbol: button.dataset.symbolPick || "",
+          exchange: button.dataset.exchangePick || "NSE",
+        });
+      });
+    });
+  };
+
+  const runSearch = async () => {
+    if (!symbolInput || !exchangeInput) return;
+    const query = String(symbolInput.value || "").trim();
+    const searchExchange = String(exchangeInput.value || "ALL").trim().toUpperCase();
+    if (selectedExchangeInput) {
+      selectedExchangeInput.value = searchExchange === "ALL" ? "" : searchExchange;
+    }
+    if (query.length < 1) {
+      clearSuggestions();
+      return;
+    }
+    const activeToken = ++requestToken;
+    try {
+      const results = await api(
+        `/stocks/search?q=${encodeURIComponent(query)}&exchange=${encodeURIComponent(searchExchange)}&limit=10`
+      );
+      if (activeToken !== requestToken) return;
+      renderSuggestions(Array.isArray(results) ? results : []);
+    } catch {
+      if (activeToken !== requestToken) return;
+      if (suggestionsList) {
+        suggestionsList.innerHTML = `<div class="search-empty">Live stock search is unavailable right now. Try a direct symbol like RELIANCE or TCS.</div>`;
+      }
+    }
+  };
+
+  if (symbolInput) {
+    symbolInput.addEventListener("input", () => {
+      if (searchTimer) window.clearTimeout(searchTimer);
+      searchTimer = window.setTimeout(runSearch, 220);
+    });
+    symbolInput.addEventListener("focus", () => {
+      void runSearch();
+    });
+  }
+
+  if (exchangeInput) {
+    exchangeInput.addEventListener("change", () => {
+      if (selectedExchangeInput) {
+        selectedExchangeInput.value = exchangeInput.value === "ALL" ? "" : exchangeInput.value;
+      }
+      void runSearch();
+    });
+  }
+
+  document.addEventListener("click", (event) => {
+    if (!form.contains(event.target)) {
+      clearSuggestions();
+    }
+  });
+
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const submitButton = form.querySelector('button[type="submit"]');
@@ -1235,14 +1341,18 @@ async function setupAdminDealForm() {
     try {
       const data = new FormData(form);
       const userId = String(data.get("customer_id") || "").trim();
+      const selectedExchange = String(data.get("selected_exchange") || "").trim().toUpperCase();
       const payload = {
         symbol: String(data.get("symbol") || "").trim().toUpperCase(),
         quantity: Number(data.get("quantity") || 0),
         buy_price: Number(data.get("buy_price") || 0),
-        exchange: String(data.get("exchange") || "NSE").trim().toUpperCase()
+        exchange: (selectedExchange || String(data.get("exchange") || "NSE")).trim().toUpperCase()
       };
       if (!userId || !payload.symbol || !payload.quantity || !payload.buy_price) {
         throw new Error("Complete all deal fields before adding the position.");
+      }
+      if (!["NSE", "BSE"].includes(payload.exchange)) {
+        throw new Error("Choose a valid NSE or BSE stock from the live search suggestions before adding the deal.");
       }
       await api(`/admin/users/${userId}/holdings`, {
         method: "POST",
@@ -1448,12 +1558,18 @@ async function renderAdminDealPage() {
                 .join("")}
             </select>
           </label>
-          <label><span>Stock Name / Symbol</span><input name="symbol" type="text" placeholder="Type stock symbol" /></label>
+          <label class="portfolio-symbol-wrap">
+            <span>Stock Name / Symbol</span>
+            <input name="symbol" type="text" placeholder="Search NSE / BSE stocks" autocomplete="off" />
+            <input type="hidden" name="selected_exchange" id="adminDealSelectedExchange" value="" />
+            <div class="symbol-suggestion-list" id="adminDealSuggestions"></div>
+          </label>
           <label><span>Quantity</span><input name="quantity" type="number" placeholder="100" /></label>
           <label><span>Buy Price</span><input name="buy_price" type="number" placeholder="1500" /></label>
           <label>
-            <span>Exchange</span>
+            <span>Search Market</span>
             <select name="exchange">
+              <option value="ALL">All NSE / BSE</option>
               <option value="NSE">NSE</option>
               <option value="BSE">BSE</option>
             </select>
