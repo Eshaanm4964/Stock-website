@@ -2490,9 +2490,8 @@ function setupLogin() {
       });
       setAuth({ token: response.access_token, role: response.role });
       document.getElementById("adminError").textContent = "";
-      await renderAdminPortal();
       hideAuthLoading();
-      window.scrollTo({ top: adminPortal.offsetTop - 20, behavior: "smooth" });
+      window.location.href = "./admin-dashboard.html";
     } catch (error) {
       document.getElementById("adminError").textContent = formatError(error);
       hidePortalMounts();
@@ -2526,9 +2525,8 @@ function setupLogin() {
       });
       setAuth({ token: response.access_token, role: response.role });
       document.getElementById("userError").textContent = "";
-      await renderUserPortal();
       hideAuthLoading();
-      window.scrollTo({ top: userPortal.offsetTop - 20, behavior: "smooth" });
+      window.location.href = "./user-dashboard.html";
     } catch (error) {
       document.getElementById("userError").textContent = formatError(error);
       hidePortalMounts();
