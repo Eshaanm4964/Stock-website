@@ -1252,6 +1252,39 @@ function setupPortalActions() {
   });
 }
 
+function setupScrollSync(wrapId, scrollerId) {
+  const wrap = document.getElementById(wrapId);
+  const scroller = document.getElementById(scrollerId);
+  const inner = scroller?.querySelector(".admin-table-bottom-scroll-inner");
+  const table = wrap?.querySelector("table");
+  if (!wrap || !scroller || !inner || !table) return;
+
+  const syncWidths = () => {
+    inner.style.width = `${table.scrollWidth}px`;
+    scroller.classList.toggle("hidden", table.scrollWidth <= wrap.clientWidth + 4);
+  };
+
+  let syncingFromWrap = false;
+  let syncingFromScroller = false;
+
+  wrap.addEventListener("scroll", () => {
+    if (syncingFromScroller) return;
+    syncingFromWrap = true;
+    scroller.scrollLeft = wrap.scrollLeft;
+    syncingFromWrap = false;
+  });
+
+  scroller.addEventListener("scroll", () => {
+    if (syncingFromWrap) return;
+    syncingFromScroller = true;
+    wrap.scrollLeft = scroller.scrollLeft;
+    syncingFromScroller = false;
+  });
+
+  window.addEventListener("resize", syncWidths);
+  syncWidths();
+}
+
 function buildAdminActionToolbar(selectedValue = "") {
   return `
     <header class="user-topbar admin-compact-topbar">
@@ -2210,8 +2243,8 @@ async function renderAdminPortal() {
             </div>
             <span class="badge">Protected View</span>
           </div>
-          <div class="table-wrap admin-position-table-wrap">
-            <table class="admin-position-table">
+          <div class="table-wrap admin-position-table-wrap" id="adminPositionsTableWrap">
+            <table class="admin-position-table" id="adminPositionsTable">
               <thead>
                 <tr>
                   <th>Client</th>
@@ -2276,6 +2309,9 @@ async function renderAdminPortal() {
               </tfoot>
             </table>
           </div>
+          <div class="admin-table-bottom-scroll" id="adminPositionsTableScroller" aria-label="Scroll positions table horizontally">
+            <div class="admin-table-bottom-scroll-inner"></div>
+          </div>
         </article>
 
         <article class="dashboard-card full-span-card">
@@ -2335,6 +2371,7 @@ async function renderAdminPortal() {
     setupDownloadButtons(userDashboards);
     setupAdminManagementButtons();
     setupAdminDrilldowns(userDashboards, allHoldings);
+    setupScrollSync("adminPositionsTableWrap", "adminPositionsTableScroller");
     setupPortalActions();
   } catch (error) {
     renderPortalError(mount, "Admin Dashboard", `Login succeeded, but admin dashboard data could not load yet. ${formatError(error)}`);
