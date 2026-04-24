@@ -590,8 +590,31 @@ body.dashboard-page {
   gap: 8px;
 }
 
-.admin-toolbar-left h2 {
-  margin: 0;
+.admin-dashboard-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.admin-dashboard-brand .brand-mark {
+  width: 56px;
+  height: 56px;
+}
+
+.admin-dashboard-brand .public-brand-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-dashboard-brand .brand-wordmark {
+  font-family: "Poppins", "Manrope", sans-serif;
+  font-size: 1.9rem;
+  color: #10251d;
+}
+
+.admin-dashboard-brand .brand-tagline {
+  color: #58667e;
+  font-weight: 800;
 }
 
 .admin-toolbar-right {

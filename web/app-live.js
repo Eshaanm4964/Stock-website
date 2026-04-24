@@ -2192,9 +2192,13 @@ async function renderAdminPortal() {
       <div class="user-shell-main admin-simple-main dashboard-stack admin-dashboard-stack">
         <header class="user-topbar admin-compact-topbar admin-simple-topbar">
           <div class="admin-toolbar-left">
-            <p class="eyebrow">Admin Portfolio Dashboard</p>
-            <h2>All Client Positions</h2>
-            <p class="helper-text">Track aggregated holdings, realised exits, and protected stock names in one clean workspace.</p>
+            <div class="brand admin-dashboard-brand">
+              <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
+              <span class="public-brand-copy">
+                <strong class="brand-wordmark">AssetYantra</strong>
+                <small class="brand-tagline">Admin Portfolio Dashboard</small>
+              </span>
+            </div>
           </div>
           <div class="user-topbar-actions admin-toolbar-right">
             <input class="user-search admin-universal-search" id="adminUniversalSearch" type="text" placeholder="Search user, client ID, or stock" />
