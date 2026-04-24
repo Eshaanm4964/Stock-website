@@ -97,6 +97,19 @@ function toggleAdminRevealedStock(symbol) {
   adminUiState.revealedStocks = [...adminUiState.revealedStocks, safe];
 }
 
+function refreshAdminStockVisibility(symbol) {
+  const safe = String(symbol || "").toUpperCase();
+  if (!safe) return;
+  const isRevealed = isAdminStockRevealed(safe);
+  document.querySelectorAll(`[data-stock-label="${safe}"]`).forEach((node) => {
+    node.textContent = isRevealed ? safe : maskStockSymbol(safe);
+  });
+  document.querySelectorAll(`[data-stock-visibility-toggle="${safe}"]`).forEach((button) => {
+    button.setAttribute("aria-label", isRevealed ? "Hide stock name" : "Show stock name");
+    button.classList.toggle("is-active", isRevealed);
+  });
+}
+
 function getAuth() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
@@ -1001,9 +1014,9 @@ function setupAdminManagementButtons() {
   }
 
   document.querySelectorAll("[data-stock-visibility-toggle]").forEach((button) => {
-    button.addEventListener("click", async () => {
+    button.addEventListener("click", () => {
       toggleAdminRevealedStock(button.dataset.stockVisibilityToggle);
-      await renderAdminPortal();
+      refreshAdminStockVisibility(button.dataset.stockVisibilityToggle);
     });
   });
 
@@ -2272,8 +2285,8 @@ async function renderAdminPortal() {
                           <td><button class="table-link" type="button" data-user-detail="${holding.user_id}">${holding.owner}</button><br /><small>${holding.fixed_user_id || ""}</small></td>
                           <td>
                             <div class="admin-stock-cell">
-                              <button class="admin-eye-btn" type="button" data-stock-visibility-toggle="${escapeHtml(holding.symbol)}" aria-label="${isAdminStockRevealed(holding.symbol) ? "Hide stock name" : "Show stock name"}">&#128065;</button>
-                              <button class="table-link" type="button" data-stock-detail="${holding.symbol}">${isAdminStockRevealed(holding.symbol) ? holding.symbol : maskStockSymbol(holding.symbol)}</button>
+                              <button class="admin-eye-btn ${isAdminStockRevealed(holding.symbol) ? "is-active" : ""}" type="button" data-stock-visibility-toggle="${escapeHtml(String(holding.symbol || "").toUpperCase())}" aria-label="${isAdminStockRevealed(holding.symbol) ? "Hide stock name" : "Show stock name"}">&#128065;</button>
+                              <button class="table-link" type="button" data-stock-detail="${holding.symbol}" data-stock-label="${escapeHtml(String(holding.symbol || "").toUpperCase())}">${isAdminStockRevealed(holding.symbol) ? holding.symbol : maskStockSymbol(holding.symbol)}</button>
                             </div>
                             <small>${holding.exchange || "NSE"}</small>
                           </td>
@@ -2328,8 +2341,8 @@ async function renderAdminPortal() {
                             <td><strong>${escapeHtml(entry.full_name)}</strong><br /><small>${escapeHtml(entry.fixed_user_id || "")}</small></td>
                             <td>
                               <div class="admin-stock-cell">
-                                <button class="admin-eye-btn" type="button" data-stock-visibility-toggle="${escapeHtml(entry.symbol)}" aria-label="${isAdminStockRevealed(entry.symbol) ? "Hide stock name" : "Show stock name"}">&#128065;</button>
-                                <span>${isAdminStockRevealed(entry.symbol) ? escapeHtml(entry.symbol) : maskStockSymbol(entry.symbol)}</span>
+                                <button class="admin-eye-btn ${isAdminStockRevealed(entry.symbol) ? "is-active" : ""}" type="button" data-stock-visibility-toggle="${escapeHtml(String(entry.symbol || "").toUpperCase())}" aria-label="${isAdminStockRevealed(entry.symbol) ? "Hide stock name" : "Show stock name"}">&#128065;</button>
+                                <span data-stock-label="${escapeHtml(String(entry.symbol || "").toUpperCase())}">${isAdminStockRevealed(entry.symbol) ? escapeHtml(entry.symbol) : maskStockSymbol(entry.symbol)}</span>
                               </div>
                             </td>
                             <td>${formatDate(entry.created_at)}</td>

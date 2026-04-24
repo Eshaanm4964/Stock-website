@@ -727,6 +727,12 @@ body.dashboard-page {
   background: #eef7f2;
 }
 
+.admin-eye-btn.is-active {
+  border-color: rgba(15, 138, 85, 0.3);
+  background: linear-gradient(180deg, #eef8f2 0%, #e5f4eb 100%);
+  color: #0f8a55;
+}
+
 .sell-action-btn {
   min-height: 40px;
   padding: 9px 16px;
