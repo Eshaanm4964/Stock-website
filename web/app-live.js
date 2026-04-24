@@ -1573,8 +1573,9 @@ async function renderAdminPortal() {
     const loginIssueBreakdown = Array.isArray(operationsOverview?.login_issue_breakdown) ? operationsOverview.login_issue_breakdown : [];
 
     mount.innerHTML = `
-    <section class="dashboard-stack admin-dashboard-stack">
-      <header class="user-topbar admin-compact-topbar">
+    <section class="user-shell admin-simple-shell no-sidebar-shell">
+      <div class="user-shell-main admin-simple-main dashboard-stack admin-dashboard-stack">
+      <header class="user-topbar admin-compact-topbar admin-simple-topbar">
         <div class="admin-toolbar-left">
           <input class="user-search admin-universal-search" id="adminUniversalSearch" type="text" placeholder="Search user, client ID, or stock" />
           <p class="live-price-status admin-auto-refresh-label">Auto-refresh every 5 seconds</p>
@@ -1588,8 +1589,8 @@ async function renderAdminPortal() {
           <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
         </div>
       </header>
-      <div id="adminOverviewCard">
-    <div class="metrics-grid">
+    <div id="adminOverviewCard">
+    <div class="metrics-grid admin-simple-metrics">
       <article class="metric-card"><strong>${dashboard?.total_users ?? safeUsers.length}</strong><span>Clients</span><small>Persisted registered users</small></article>
       <article class="metric-card"><strong>${dashboard?.newly_registered_users ?? 0}</strong><span>New This Week</span><small>Non-demo client registrations</small></article>
       <article class="metric-card"><strong>${dashboard?.total_holdings ?? baseHoldings.length}</strong><span>Total Holdings</span><small>Stocks stored in the database</small></article>
@@ -1944,6 +1945,7 @@ async function renderAdminPortal() {
       </article>
     </div>
     <section id="adminDetailMount" class="dashboard-section hidden"></section>
+    </div>
     </section>
   `;
 
@@ -1978,7 +1980,6 @@ async function renderUserPortal() {
       ? await api(`/stocks/feed?symbols=${encodeURIComponent(symbols.join(","))}`).catch(() => [])
       : [];
     const profitableCount = performance.filter((holding) => Number(holding.profit_loss || 0) > 0).length;
-    const sectorCount = new Set(performance.map((holding) => holding.sector || "Tracked")).size;
     const topPerformer = performance.length
       ? performance.slice().sort((a, b) => Number(b.profit_loss || 0) - Number(a.profit_loss || 0))[0]
       : null;
@@ -2004,55 +2005,13 @@ async function renderUserPortal() {
       .join("");
 
     mount.innerHTML = `
-    <section class="user-shell">
-      <aside class="user-sidebar">
-        <div class="brand">
-          <span class="brand-mark">ST</span>
-          <span>
-            <strong>Stock Trader Web</strong>
-            <small>Investor workspace</small>
-          </span>
-        </div>
-        <article class="user-balance-card">
-          <span class="user-sidebar-label">Balance</span>
-          <strong>${currency(summary.total_portfolio_value)}</strong>
-          <span>Latest portfolio value</span>
-        </article>
-        <div class="user-sidebar-section">
-          <span class="user-sidebar-label">Main</span>
-          <nav class="user-sidebar-nav">
-            <a class="user-nav-item active" href="#userPerformanceCard">Dashboard <span>${performance.length}</span></a>
-            <a class="user-nav-item" href="#userPortfolioCard">Portfolio <span>${filteredPerformance.length}</span></a>
-            <a class="user-nav-item" href="#userAllocationCard">Allocation <span>${sectorCount}</span></a>
-            <a class="user-nav-item" href="#userActivityCard">History <span>${performance.length ? "Live" : "New"}</span></a>
-          </nav>
-        </div>
-        <div class="user-sidebar-section">
-          <span class="user-sidebar-label">Explore</span>
-          <nav class="user-sidebar-nav">
-            <a class="user-nav-item" href="#userSignalsCard">Signals <span>${summary.risk_level || "Moderate"}</span></a>
-            <a class="user-nav-item" href="#portfolioForm">Add Stock <span>Now</span></a>
-          </nav>
-        </div>
-        <article class="user-reward-card">
-          <strong>Get investor-ready reporting</strong>
-          <span>Download your dashboard and keep a clean portfolio snapshot for every review.</span>
-          <div class="actions-row" style="margin-top:14px;">
-            <button class="download-btn" type="button" id="userPrintBtn">Download Dashboard</button>
-          </div>
-        </article>
-        <article class="user-profile-card">
-          <strong>${profile.full_name}</strong>
-          <small>${profile.fixed_user_id || profile.username}</small>
-          <small>${profile.phone_number || "Client access"}</small>
-        </article>
-      </aside>
-
+    <section class="user-shell no-sidebar-shell">
       <div class="user-shell-main">
         <header class="user-topbar">
           <div>
-            <p class="eyebrow">Welcome Back</p>
+            <p class="eyebrow">Investor Workspace</p>
             <h2>${profile.full_name}</h2>
+            <p class="helper-text">Track live holdings, allocation, returns, and recent portfolio moves in one clean view.</p>
           </div>
           <div class="user-topbar-actions">
             <input class="user-search" id="userPortfolioSearch" type="text" placeholder="Search holdings or sectors" />
@@ -2063,13 +2022,56 @@ async function renderUserPortal() {
               <option value="flat">Flat</option>
             </select>
             <button class="secondary-btn" type="button" data-refresh-user="true">Refresh</button>
-            <button class="secondary-btn" type="button" data-logout="true">Logout</button>
+            <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
           </div>
         </header>
+
+        <section class="simple-summary-strip">
+          <span><strong>${currency(summary.total_portfolio_value)}</strong> Portfolio Value</span>
+          <span class="${summary.total_profit_loss >= 0 ? "profit" : "loss"}"><strong>${currency(summary.total_profit_loss)}</strong> Total P&amp;L</span>
+          <span><strong>${performance.length}</strong> Active Positions</span>
+          <span><strong>${summary.risk_level || "Moderate"}</strong> Risk Profile</span>
+        </section>
 
         <div class="user-ticker-strip">
           ${tickerMarkup || `<article><strong>Market feed</strong><small>No tracked symbols yet</small><small>Add a stock to begin</small></article>`}
         </div>
+
+        <article class="user-app-card portfolio-ledger-card">
+          <div class="portfolio-ledger-tabs">
+            <button class="active" type="button">Overview</button>
+            <button type="button">Performance</button>
+            <button type="button">Allocation</button>
+            <button type="button">Activity</button>
+          </div>
+          <div class="portfolio-ledger-metrics">
+            <article>
+              <span>Total Invested</span>
+              <strong>${currency(totalInvested)}</strong>
+              <small>Capital deployed so far</small>
+            </article>
+            <article class="${summary.total_profit_loss >= 0 ? "profit" : "loss"}">
+              <span>Total P&amp;L</span>
+              <strong>${currency(summary.total_profit_loss)}</strong>
+              <small>${percent(overallPct)} overall return</small>
+            </article>
+            <article>
+              <span>Visible Value</span>
+              <strong>${currency(totalVisibleValue || summary.total_portfolio_value)}</strong>
+              <small>Based on current filters</small>
+            </article>
+            <article>
+              <span>Winning Positions</span>
+              <strong>${profitableCount}/${performance.length || 0}</strong>
+              <small>${gainRate.toFixed(0)}% in profit</small>
+            </article>
+            <article>
+              <span>Client ID</span>
+              <strong>${escapeHtml(profile.fixed_user_id || profile.username)}</strong>
+              <small>${escapeHtml(profile.phone_number || "Client access")}</small>
+            </article>
+          </div>
+        </article>
 
         <div class="user-app-grid">
           <article class="user-app-card" id="userPerformanceCard">
@@ -2227,6 +2229,9 @@ async function renderUserPortal() {
             <div class="panel-head"><h3>Recent Activity</h3><span class="badge">Timeline</span></div>
             <div class="stack-list">
               ${buildRecentActivityMarkup(performance)}
+            </div>
+            <div class="actions-row" style="margin-top:14px;">
+              <button class="download-btn" type="button" id="userPrintBtn">Download Dashboard</button>
             </div>
           </article>
         </div>
