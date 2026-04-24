@@ -163,4 +163,5 @@ class AdminSoldHistoryItem(BaseModel):
     profit_loss: float
     sold_by_role: str
     sold_by_identifier: str | None
+    created_at: datetime | None = None
     sold_at: datetime

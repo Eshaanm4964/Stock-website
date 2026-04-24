@@ -10,9 +10,10 @@ let homeHeroTimer = null;
 let adminUiState = {
   search: "",
   clientFilter: "",
+  stockFilter: "",
   dateFrom: "",
   dateTo: "",
-  stocksVisible: false
+  revealedStocks: []
 };
 let userUiState = {
   search: "",
@@ -80,6 +81,20 @@ function maskStockSymbol(symbol) {
   if (!safe) return "Hidden";
   if (safe.length <= 2) return "••";
   return `${safe.slice(0, 1)}${"•".repeat(Math.max(safe.length - 2, 1))}${safe.slice(-1)}`;
+}
+
+function isAdminStockRevealed(symbol) {
+  return adminUiState.revealedStocks.includes(String(symbol || "").toUpperCase());
+}
+
+function toggleAdminRevealedStock(symbol) {
+  const safe = String(symbol || "").toUpperCase();
+  if (!safe) return;
+  if (isAdminStockRevealed(safe)) {
+    adminUiState.revealedStocks = adminUiState.revealedStocks.filter((entry) => entry !== safe);
+    return;
+  }
+  adminUiState.revealedStocks = [...adminUiState.revealedStocks, safe];
 }
 
 function getAuth() {
@@ -944,9 +959,9 @@ function setupAdminManagementButtons() {
   const statusMessage = document.getElementById("adminUserActionStatus");
   const searchInput = document.getElementById("adminUniversalSearch");
   const clientFilter = document.getElementById("adminClientFilter");
+  const stockFilter = document.getElementById("adminStockFilter");
   const dateFromInput = document.getElementById("adminDateFrom");
   const dateToInput = document.getElementById("adminDateTo");
-  const stockVisibilityButton = document.getElementById("adminStockVisibilityToggle");
   const selectAll = document.getElementById("adminSelectAllUsers");
   const bulkActivate = document.getElementById("bulkActivateUsersBtn");
   const bulkDisable = document.getElementById("bulkDisableUsersBtn");
@@ -967,6 +982,14 @@ function setupAdminManagementButtons() {
     });
   }
 
+  if (stockFilter) {
+    stockFilter.value = adminUiState.stockFilter;
+    stockFilter.addEventListener("change", async () => {
+      adminUiState.stockFilter = stockFilter.value;
+      await renderAdminPortal();
+    });
+  }
+
   if (dateFromInput) {
     dateFromInput.value = adminUiState.dateFrom;
     dateFromInput.addEventListener("change", async () => {
@@ -983,12 +1006,12 @@ function setupAdminManagementButtons() {
     });
   }
 
-  if (stockVisibilityButton) {
-    stockVisibilityButton.addEventListener("click", async () => {
-      adminUiState.stocksVisible = !adminUiState.stocksVisible;
+  document.querySelectorAll("[data-stock-visibility-toggle]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      toggleAdminRevealedStock(button.dataset.stockVisibilityToggle);
       await renderAdminPortal();
     });
-  }
+  });
 
   if (selectAll) {
     selectAll.addEventListener("change", () => {
@@ -1366,11 +1389,12 @@ function buildAdminClientDetail(user) {
           <div class="panel-head"><h3>Live Stock View</h3><span class="badge">Realtime</span></div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Live Price</th><th>P&amp;L</th></tr></thead>
+              <thead><tr><th>Stock</th><th>Purchase Date</th><th>Qty</th><th>Avg Price</th><th>Live Price</th><th>P&amp;L</th></tr></thead>
               <tbody>
                 ${user.holdings.map((holding) => `
                   <tr>
-                    <td>${adminUiState.stocksVisible ? holding.symbol : maskStockSymbol(holding.symbol)}<br /><small>${holding.sector || "Tracked holding"}</small></td>
+                    <td>${isAdminStockRevealed(holding.symbol) ? holding.symbol : maskStockSymbol(holding.symbol)}<br /><small>${holding.sector || "Tracked holding"}</small></td>
+                    <td>${formatDate(holding.created_at)}</td>
                     <td>${holding.quantity}</td>
                     <td>${currency(holding.buy_price)}</td>
                     <td>${currency(holding.current_price)}</td>
@@ -1385,12 +1409,12 @@ function buildAdminClientDetail(user) {
           <div class="panel-head"><h3>Old Stock History</h3><span class="badge green">Purchase Records</span></div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Date</th><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Status</th></tr></thead>
+              <thead><tr><th>Date</th><th>Stock</th><th>Qty</th><th>Avg Price</th><th>Status</th></tr></thead>
               <tbody>
                 ${user.holdings.map((holding) => `
                   <tr>
                     <td>${formatDate(holding.created_at)}</td>
-                    <td>${holding.symbol}</td>
+                    <td>${isAdminStockRevealed(holding.symbol) ? holding.symbol : maskStockSymbol(holding.symbol)}</td>
                     <td>${holding.quantity}</td>
                     <td>${currency(holding.buy_price)}</td>
                     <td>${holding.current_price >= holding.buy_price ? "In Profit" : "Under Watch"}</td>
@@ -1425,12 +1449,13 @@ function buildAdminStockDetail(symbol, holdings) {
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Customer</th><th>Client ID</th><th>Qty</th><th>Buy Price</th><th>Live Price</th><th>P&amp;L</th></tr></thead>
+          <thead><tr><th>Customer</th><th>Client ID</th><th>Purchase Date</th><th>Qty</th><th>Avg Price</th><th>Live Price</th><th>P&amp;L</th></tr></thead>
           <tbody>
             ${holdings.map((holding) => `
               <tr>
                 <td>${holding.owner}</td>
                 <td>${holding.fixed_user_id || ""}</td>
+                <td>${formatDate(holding.created_at)}</td>
                 <td>${holding.quantity}</td>
                 <td>${currency(holding.buy_price)}</td>
                 <td>${currency(holding.current_price)}</td>
@@ -1536,6 +1561,7 @@ async function renderAdminPortal() {
         String(user.phone_number || "").toLowerCase().includes(searchText)
       );
     });
+    const selectedStock = String(adminUiState.stockFilter || "").toUpperCase();
     const filteredHoldings = allHoldings.filter((holding) => {
       const createdAt = holding.created_at ? new Date(holding.created_at) : null;
       const matchesSearch =
@@ -1546,10 +1572,11 @@ async function renderAdminPortal() {
         String(holding.sector || "").toLowerCase().includes(searchText) ||
         String(holding.exchange || "").toLowerCase().includes(searchText);
       const matchesClient = !selectedClient || String(holding.fixed_user_id || holding.user_id) === String(selectedClient);
+      const matchesStock = !selectedStock || String(holding.symbol || "").toUpperCase() === selectedStock;
       const matchesDate =
         (!fromDate || (createdAt && createdAt >= fromDate)) &&
         (!toDate || (createdAt && createdAt <= toDate));
-      return matchesSearch && matchesClient && matchesDate;
+      return matchesSearch && matchesClient && matchesStock && matchesDate;
     });
     const filteredSoldHistory = safeSoldHistory.filter((entry) => {
       const soldAt = entry.sold_at ? new Date(entry.sold_at) : null;
@@ -1559,14 +1586,20 @@ async function renderAdminPortal() {
         String(entry.fixed_user_id || "").toLowerCase().includes(searchText) ||
         String(entry.symbol || "").toLowerCase().includes(searchText);
       const matchesClient = !selectedClient || String(entry.fixed_user_id || entry.user_id) === String(selectedClient);
+      const matchesStock = !selectedStock || String(entry.symbol || "").toUpperCase() === selectedStock;
       const matchesDate =
         (!fromDate || (soldAt && soldAt >= fromDate)) &&
         (!toDate || (soldAt && soldAt <= toDate));
-      return matchesSearch && matchesClient && matchesDate;
+      return matchesSearch && matchesClient && matchesStock && matchesDate;
     });
-    const filteredPeriodProfit =
-      filteredHoldings.reduce((sum, holding) => sum + Number(holding.profit_loss || 0), 0) +
-      filteredSoldHistory.reduce((sum, entry) => sum + Number(entry.profit_loss || 0), 0);
+    const filteredUnrealizedProfit = filteredHoldings.reduce((sum, holding) => sum + Number(holding.profit_loss || 0), 0);
+    const filteredRealizedProfit = filteredSoldHistory.reduce((sum, entry) => sum + Number(entry.profit_loss || 0), 0);
+    const filteredPeriodProfit = filteredUnrealizedProfit + filteredRealizedProfit;
+    const filteredInvestedValue = filteredHoldings.reduce((sum, holding) => sum + Number(holding.buy_price || 0) * Number(holding.quantity || 0), 0);
+    const filteredCurrentValue = filteredHoldings.reduce((sum, holding) => sum + Number(holding.current_price || 0) * Number(holding.quantity || 0), 0);
+    const filteredTotalQuantity = filteredHoldings.reduce((sum, holding) => sum + Number(holding.quantity || 0), 0);
+    const filteredSoldQuantity = filteredSoldHistory.reduce((sum, entry) => sum + Number(entry.quantity || 0), 0);
+    const availableStockOptions = [...new Set([...allHoldings.map((holding) => String(holding.symbol || "").toUpperCase()), ...safeSoldHistory.map((entry) => String(entry.symbol || "").toUpperCase())].filter(Boolean))].sort();
     const pendingModerationCount = safeReviews.filter((review) => !review.is_seeded).length;
     const stockConcentration = Array.isArray(operationsOverview?.stock_concentration) ? operationsOverview.stock_concentration : [];
     const recentUserActivity = Array.isArray(operationsOverview?.recent_user_activity) ? operationsOverview.recent_user_activity : [];
@@ -1589,13 +1622,20 @@ async function renderAdminPortal() {
           <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
         </div>
       </header>
-    <div id="adminOverviewCard">
+      <div id="adminOverviewCard">
     <div class="metrics-grid admin-simple-metrics">
       <article class="metric-card"><strong>${dashboard?.total_users ?? safeUsers.length}</strong><span>Clients</span><small>Persisted registered users</small></article>
       <article class="metric-card"><strong>${dashboard?.newly_registered_users ?? 0}</strong><span>New This Week</span><small>Non-demo client registrations</small></article>
       <article class="metric-card"><strong>${dashboard?.total_holdings ?? baseHoldings.length}</strong><span>Total Holdings</span><small>Stocks stored in the database</small></article>
       <article class="metric-card"><strong class="${todayProfit >= 0 ? "profit" : "loss"}">${currency(todayProfit)}</strong><span>Today Profit</span><small>Intraday movement across tracked holdings</small></article>
       <article class="metric-card"><strong class="${totalPnl >= 0 ? "profit" : "loss"}">${currency(totalPnl)}</strong><span>Total Profit Till Now</span><small>Current tracked value ${currency(totalValue)}</small></article>
+    </div>
+    <div class="admin-position-summary">
+      <span><strong>${currency(filteredInvestedValue)}</strong> Invested Value</span>
+      <span><strong>${currency(filteredCurrentValue)}</strong> Current Value</span>
+      <span class="${filteredUnrealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredUnrealizedProfit)}</strong> Unrealised P&amp;L</span>
+      <span class="${filteredRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredRealizedProfit)}</strong> Realised P&amp;L</span>
+      <span class="${filteredPeriodProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredPeriodProfit)}</strong> Combined P&amp;L</span>
     </div>
     <div class="metrics-grid admin-status-grid">
       <article class="metric-card"><strong>${systemStatus.backend_status}</strong><span>Backend</span><small>Environment ${systemStatus.environment}</small></article>
@@ -1609,7 +1649,6 @@ async function renderAdminPortal() {
         <div class="panel-head">
           <h3>All Client Positions</h3>
           <div class="table-actions">
-            <button class="secondary-btn compact-btn" type="button" id="adminStockVisibilityToggle">${adminUiState.stocksVisible ? "Hide Stocks 🙈" : "Show Stocks 👁"}</button>
             <span class="badge">Admin View</span>
           </div>
         </div>
@@ -1620,13 +1659,19 @@ async function renderAdminPortal() {
               .map((user) => `<option value="${escapeHtml(user.fixed_user_id || String(user.user_id))}" ${String(adminUiState.clientFilter) === String(user.fixed_user_id || user.user_id) ? "selected" : ""}>${escapeHtml(user.full_name)} (${escapeHtml(user.fixed_user_id || user.username)})</option>`)
               .join("")}
           </select>
+          <select class="user-search admin-filter-select" id="adminStockFilter">
+            <option value="">All Stocks</option>
+            ${availableStockOptions
+              .map((symbol) => `<option value="${escapeHtml(symbol)}" ${adminUiState.stockFilter === symbol ? "selected" : ""}>${escapeHtml(symbol)}</option>`)
+              .join("")}
+          </select>
           <input class="user-search admin-filter-date" id="adminDateFrom" type="date" value="${escapeHtml(adminUiState.dateFrom)}" />
           <input class="user-search admin-filter-date" id="adminDateTo" type="date" value="${escapeHtml(adminUiState.dateTo)}" />
-          <span class="badge ${filteredPeriodProfit >= 0 ? "green" : "red"}">Period P/L ${currency(filteredPeriodProfit)}</span>
+          <span class="badge ${filteredPeriodProfit >= 0 ? "green" : "red"}">Range P/L ${currency(filteredPeriodProfit)}</span>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Customer</th><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Live Price</th><th>P&amp;L</th><th>Action</th></tr></thead>
+            <thead><tr><th>Customer</th><th>Stock</th><th>Purchase Date</th><th>Qty</th><th>Avg Price</th><th>Invested Value</th><th>Live Price</th><th>Current Value</th><th>Unrealised P&amp;L</th><th>Action</th></tr></thead>
             <tbody>
               ${filteredHoldings.length
                 ? filteredHoldings
@@ -1634,18 +1679,39 @@ async function renderAdminPortal() {
                   (holding) => `
                     <tr>
                       <td><button class="table-link" type="button" data-user-detail="${holding.user_id}">${holding.owner}</button><br /><small>${holding.fixed_user_id || ""}</small></td>
-                      <td><button class="table-link" type="button" data-stock-detail="${holding.symbol}">${adminUiState.stocksVisible ? holding.symbol : maskStockSymbol(holding.symbol)}</button><br /><small>${holding.sector || "Tracked holding"}</small></td>
+                      <td>
+                        <div class="admin-stock-cell">
+                          <button class="admin-eye-btn" type="button" data-stock-visibility-toggle="${escapeHtml(holding.symbol)}" aria-label="${isAdminStockRevealed(holding.symbol) ? "Hide stock name" : "Show stock name"}">${isAdminStockRevealed(holding.symbol) ? "🙈" : "👁"}</button>
+                          <button class="table-link" type="button" data-stock-detail="${holding.symbol}">${isAdminStockRevealed(holding.symbol) ? holding.symbol : maskStockSymbol(holding.symbol)}</button>
+                        </div>
+                        <small>${holding.sector || "Tracked holding"}</small>
+                      </td>
+                      <td>${formatDate(holding.created_at)}</td>
                       <td>${holding.quantity}</td>
                       <td>${currency(holding.buy_price)}</td>
+                      <td>${currency(Number(holding.buy_price || 0) * Number(holding.quantity || 0))}</td>
                       <td>${currency(holding.current_price)}</td>
+                      <td>${currency(Number(holding.current_price || 0) * Number(holding.quantity || 0))}</td>
                       <td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
                       <td><button class="secondary-btn compact-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}">Sell</button></td>
                     </tr>
                   `
                 )
                 .join("")
-                : `<tr><td colspan="7"><span class="helper-text">No client or stock matched this search.</span></td></tr>`}
+                : `<tr><td colspan="10"><span class="helper-text">No client or stock matched this search.</span></td></tr>`}
             </tbody>
+            <tfoot>
+              <tr class="admin-total-row">
+                <td colspan="3"><strong>Totals</strong></td>
+                <td><strong>${filteredTotalQuantity.toFixed(2)}</strong></td>
+                <td>—</td>
+                <td><strong>${currency(filteredInvestedValue)}</strong></td>
+                <td>—</td>
+                <td><strong>${currency(filteredCurrentValue)}</strong></td>
+                <td class="${filteredUnrealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredUnrealizedProfit)}</strong></td>
+                <td>—</td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </article>
@@ -1676,7 +1742,7 @@ async function renderAdminPortal() {
         <div class="panel-head"><h3>Sold History</h3><span class="badge ${filteredSoldHistory.length ? "green" : ""}">${filteredSoldHistory.length} Records</span></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>User</th><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Sell Price</th><th>P&amp;L</th><th>Sold At (IST)</th><th>Sold By</th></tr></thead>
+            <thead><tr><th>User</th><th>Stock</th><th>Purchase Date</th><th>Qty Sold</th><th>Avg Price</th><th>Sell Price</th><th>Realised P&amp;L</th><th>Sold At (IST)</th><th>Sold By</th></tr></thead>
             <tbody>
               ${filteredSoldHistory.length
                 ? filteredSoldHistory
@@ -1684,7 +1750,13 @@ async function renderAdminPortal() {
                       (entry) => `
                         <tr>
                           <td><strong>${escapeHtml(entry.full_name)}</strong><br /><small>${escapeHtml(entry.fixed_user_id || "")}</small></td>
-                          <td>${adminUiState.stocksVisible ? escapeHtml(entry.symbol) : maskStockSymbol(entry.symbol)}</td>
+                          <td>
+                            <div class="admin-stock-cell">
+                              <button class="admin-eye-btn" type="button" data-stock-visibility-toggle="${escapeHtml(entry.symbol)}" aria-label="${isAdminStockRevealed(entry.symbol) ? "Hide stock name" : "Show stock name"}">${isAdminStockRevealed(entry.symbol) ? "🙈" : "👁"}</button>
+                              <span>${isAdminStockRevealed(entry.symbol) ? escapeHtml(entry.symbol) : maskStockSymbol(entry.symbol)}</span>
+                            </div>
+                          </td>
+                          <td>${formatDate(entry.created_at)}</td>
                           <td>${entry.quantity}</td>
                           <td>${currency(entry.buy_price)}</td>
                           <td>${currency(entry.sell_price)}</td>
@@ -1695,8 +1767,18 @@ async function renderAdminPortal() {
                       `
                     )
                     .join("") 
-                : `<tr><td colspan="8"><span class="helper-text">No sold history for the selected filters yet.</span></td></tr>`}
+                : `<tr><td colspan="9"><span class="helper-text">No sold history for the selected filters yet.</span></td></tr>`}
             </tbody>
+            <tfoot>
+              <tr class="admin-total-row">
+                <td colspan="3"><strong>Totals</strong></td>
+                <td><strong>${filteredSoldQuantity.toFixed(2)}</strong></td>
+                <td>—</td>
+                <td>—</td>
+                <td class="${filteredRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredRealizedProfit)}</strong></td>
+                <td colspan="2">—</td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </article>

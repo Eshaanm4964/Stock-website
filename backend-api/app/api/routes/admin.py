@@ -381,6 +381,7 @@ async def admin_sell_holding(
         profit_loss=float(sold_history.profit_loss),
         sold_by_role=sold_history.sold_by_role,
         sold_by_identifier=sold_history.sold_by_identifier,
+        created_at=sold_history.created_at,
         sold_at=sold_history.sold_at,
     )
 
@@ -415,6 +416,7 @@ async def admin_sold_history(
             profit_loss=float(sold.profit_loss),
             sold_by_role=sold.sold_by_role,
             sold_by_identifier=sold.sold_by_identifier,
+            created_at=sold.created_at,
             sold_at=sold.sold_at,
         )
         for sold, user in rows
