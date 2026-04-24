@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     alert_poll_interval_seconds: int = 60
     otp_expire_minutes: int = 5
     otp_debug_mode: bool = Field(default=True, alias="OTP_DEBUG_MODE")
+    demo_otp_enabled: bool = Field(default=False, alias="DEMO_OTP_ENABLED")
+    demo_otp_code: str = Field(default="123456", alias="DEMO_OTP_CODE")
     sms_provider: str = Field(default="", alias="SMS_PROVIDER")
     sms_api_key: str = Field(default="", alias="SMS_API_KEY")
     sms_sender_id: str = Field(default="ASTYNT", alias="SMS_SENDER_ID")
@@ -72,6 +74,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_production_security(self) -> "Settings":
+        if len(self.demo_otp_code.strip()) != 6 or not self.demo_otp_code.strip().isdigit():
+            raise ValueError("DEMO_OTP_CODE must be a 6 digit numeric value")
         if self.app_env.lower() == "production":
             if self.secret_key == "change-me-in-production":
                 raise ValueError("SECRET_KEY must be set to a strong non-default value in production")

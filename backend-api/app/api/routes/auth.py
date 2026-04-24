@@ -30,7 +30,6 @@ from app.services.sms_service import SmsDeliveryError, normalize_indian_mobile, 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
-DEMO_OTP_CODE = "123456"
 
 
 def _utc_now() -> datetime:
@@ -143,7 +142,7 @@ async def request_login_otp(
             LoginOTP(
                 user_id=user.id,
                 purpose="login",
-                otp_hash=get_password_hash(DEMO_OTP_CODE),
+                otp_hash=get_password_hash(settings.demo_otp_code),
                 expires_at=_utc_now() + timedelta(minutes=settings.otp_expire_minutes),
             )
         )
@@ -160,7 +159,33 @@ async def request_login_otp(
         )
         return OtpResponse(
             message="Demo OTP is ready",
-            otp_preview=DEMO_OTP_CODE,
+            otp_preview=settings.demo_otp_code,
+        )
+
+    if settings.demo_otp_enabled:
+        await db.execute(delete(LoginOTP).where(LoginOTP.user_id == user.id, LoginOTP.purpose == "login"))
+        db.add(
+            LoginOTP(
+                user_id=user.id,
+                purpose="login",
+                otp_hash=get_password_hash(settings.demo_otp_code),
+                expires_at=_utc_now() + timedelta(minutes=settings.otp_expire_minutes),
+            )
+        )
+        await db.commit()
+        await log_auth_attempt(
+            db,
+            stage="request_otp",
+            role=payload.role.value,
+            identifier=identifier,
+            user_id=user.id,
+            phone_number=payload.phone_number,
+            ip_address=client_ip,
+            success=True,
+        )
+        return OtpResponse(
+            message="Demo OTP is ready. Use the fixed demo code for login.",
+            otp_preview=settings.demo_otp_code,
         )
 
     code = generate_otp_code()

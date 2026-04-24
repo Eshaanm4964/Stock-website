@@ -10,6 +10,10 @@ services:
         value: development
       - key: DEMO_MODE
         value: false
+      - key: DEMO_OTP_ENABLED
+        value: true
+      - key: DEMO_OTP_CODE
+        value: 123456
       - key: OTP_DEBUG_MODE
         value: false
       - key: SECRET_KEY
