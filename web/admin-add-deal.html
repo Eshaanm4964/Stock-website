@@ -3,38 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Stock Trader Web | Add Deal</title>
+    <title>AssetYantra | Add Deal</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;500;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;500;700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./dashboard-theme.css" />
   </head>
-  <body data-page="admin-add-deal">
-    <div class="site-shell">
-      <header class="site-header">
-        <a class="brand" href="./index.html">
-          <span class="brand-mark">ST</span>
-          <span><strong>Stock Trader Web</strong><small>Growth, trust and portfolio clarity</small></span>
-        </a>
-        <nav class="site-nav">
-          <a href="./index.html">Home</a>
-          <a href="./about.html">About</a>
-          <a href="./products.html">Products</a>
-          <a href="./trust-safety.html">Trust &amp; Safety</a>
-          <a href="./legal.html">Legal</a>
-          <a href="./faq.html">FAQ</a>
-          <a href="./reviews.html">Reviews</a>
-        </nav>
-        <a class="login-link active" href="./login.html">Login</a>
-      </header>
-
-      <main>
-        <section id="adminPortal" class="dashboard-section hidden"></section>
-      </main>
-    </div>
+  <body data-page="admin-add-deal" class="dashboard-page">
+    <main class="dashboard-app-shell">
+      <section id="adminPortal" class="dashboard-section hidden">
+        <div class="dashboard-loading">
+          <div>
+            <strong>Opening add deal workspace...</strong>
+            <p>Please wait while we load customer lookup and deal entry tools.</p>
+          </div>
+        </div>
+      </section>
+    </main>
     <script src="./app-live.js"></script>
   </body>
 </html>

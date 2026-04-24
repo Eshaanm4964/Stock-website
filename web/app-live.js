@@ -2205,10 +2205,12 @@ async function renderAdminPortal() {
             <details class="admin-dropdown-menu">
               <summary class="secondary-btn compact-btn">Actions & Filters</summary>
               <div class="admin-dropdown-panel">
+                <p class="admin-dropdown-section-label">Quick Actions</p>
                 <div class="admin-dropdown-links">
-                  <a class="secondary-btn compact-btn" href="./admin-add-customer.html">Add Customer</a>
-                  <a class="secondary-btn compact-btn" href="./admin-add-deal.html">Add Deal</a>
+                  <a class="secondary-btn compact-btn" href="./admin-add-customer.html"><strong>Add Customer</strong><small>Open the dedicated registration page</small></a>
+                  <a class="secondary-btn compact-btn" href="./admin-add-deal.html"><strong>Add Deal</strong><small>Open the separate deal entry page</small></a>
                 </div>
+                <p class="admin-dropdown-section-label">Filters</p>
                 <div class="admin-dropdown-filters">
                   <label class="toolbar-field">
                     <span>Client</span>
