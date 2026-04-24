@@ -1110,12 +1110,47 @@ function setupAdminManagementButtons() {
       const holdingId = button.dataset.adminSellHolding;
       const symbol = button.dataset.symbol || "this stock";
       const owner = button.dataset.owner || "this customer";
-      if (!window.confirm(`Sell ${symbol} for ${owner}?`)) return;
+      const availableQuantity = Number(button.dataset.quantity || 0);
+      const averageBuyPrice = Number(button.dataset.buyPrice || 0);
+      const quantityInput = window.prompt(
+        `Enter quantity to sell for ${symbol} (${owner}). Available quantity: ${availableQuantity}`,
+        String(availableQuantity)
+      );
+      if (quantityInput === null) return;
+
+      const sellQuantity = Number(quantityInput);
+      if (!Number.isFinite(sellQuantity) || sellQuantity <= 0) {
+        if (statusMessage) statusMessage.textContent = "Enter a valid quantity to sell.";
+        return;
+      }
+      if (sellQuantity > availableQuantity) {
+        if (statusMessage) statusMessage.textContent = "Sell quantity cannot exceed the available holding quantity.";
+        return;
+      }
+
+      const sellPriceInput = window.prompt(
+        `Enter the sell price for ${symbol}. Average buy price: ${currency(averageBuyPrice)}`,
+        averageBuyPrice ? averageBuyPrice.toFixed(2) : ""
+      );
+      if (sellPriceInput === null) return;
+
+      const sellPrice = Number(sellPriceInput);
+      if (!Number.isFinite(sellPrice) || sellPrice <= 0) {
+        if (statusMessage) statusMessage.textContent = "Enter a valid sell price.";
+        return;
+      }
+
       const stopLoading = setButtonLoading(button, "Selling...");
       try {
-        await api(`/admin/holdings/${holdingId}/sell`, { method: "POST" });
+        const sale = await api(`/admin/holdings/${holdingId}/sell`, {
+          method: "POST",
+          body: JSON.stringify({
+            quantity: sellQuantity,
+            sell_price: sellPrice
+          })
+        });
         if (statusMessage) {
-          statusMessage.textContent = `${symbol} was sold for ${owner}.`;
+          statusMessage.textContent = `${symbol} sale saved for ${owner}. Realised P/L: ${currency(sale?.profit_loss || 0)}.`;
         }
         await renderAdminPortal();
       } catch (error) {
@@ -1763,7 +1798,7 @@ async function renderAdminPortal() {
                       <td>${currency(holding.current_price)}</td>
                       <td>${currency(Number(holding.current_price || 0) * Number(holding.quantity || 0))}</td>
                       <td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
-                      <td><button class="secondary-btn compact-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}">Sell</button></td>
+                      <td><button class="secondary-btn compact-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}">Sell</button></td>
                     </tr>
                   `
                 )
@@ -2334,7 +2369,7 @@ async function renderAdminPortal() {
                           <td class="${Number(holding.today_profit) >= 0 ? "profit" : "loss"}">${currency(holding.today_profit)}</td>
                           <td class="${Number(realizedProfit) >= 0 ? "profit" : "loss"}">${currency(realizedProfit)}</td>
                           <td class="${Number(totalProfit) >= 0 ? "profit" : "loss"}">${currency(totalProfit)}</td>
-                          <td><button class="sell-action-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}">Sell</button></td>
+                          <td><button class="sell-action-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}">Sell</button></td>
                         </tr>
                       `;
                       })
@@ -3056,17 +3091,7 @@ function setupLogin() {
     hideAuthLoading();
   } else {
     const auth = getAuth();
-    if (auth?.token && auth.role === "admin") {
-      if (isAdminCustomerPage()) {
-        renderAdminCustomerPage().catch(() => clearAuth());
-      } else if (isAdminDealPage()) {
-        renderAdminDealPage().catch(() => clearAuth());
-      } else {
-        renderAdminPortal().catch(() => clearAuth());
-      }
-    } else if (auth?.token && auth.role === "user") {
-      renderUserPortal().catch(() => clearAuth());
-    } else if (isAdminDashboardPage() || isAdminCustomerPage() || isAdminDealPage()) {
+    if (!auth?.token && (isAdminDashboardPage() || isAdminCustomerPage() || isAdminDealPage() || isUserDashboardPage())) {
       window.location.href = "./login.html";
     }
   }

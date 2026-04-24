@@ -22,6 +22,7 @@ from app.schemas.admin import (
     AdminBulkUserActionResponse,
     AdminDashboardResponse,
     AdminHoldingCreateRequest,
+    AdminHoldingSellRequest,
     AdminHoldingSnapshot,
     AdminLoginIssueItem,
     AdminOperationsOverviewResponse,
@@ -326,6 +327,7 @@ async def admin_add_holding(
 @router.post("/holdings/{holding_id}/sell", response_model=AdminSoldHistoryItem)
 async def admin_sell_holding(
     holding_id: int,
+    payload: AdminHoldingSellRequest,
     request: Request,
     current_admin: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
@@ -339,23 +341,40 @@ async def admin_sell_holding(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    sell_quantity = float(payload.quantity)
+    sell_price = float(payload.sell_price)
+    holding_quantity = float(holding.quantity)
+
+    if sell_quantity <= 0:
+        raise HTTPException(status_code=400, detail="Sell quantity must be greater than 0")
+    if sell_quantity > holding_quantity:
+        raise HTTPException(status_code=400, detail="Sell quantity cannot exceed the live holding quantity")
+    if sell_price <= 0:
+        raise HTTPException(status_code=400, detail="Sell price must be greater than 0")
+
     quote = await fetch_quote(holding.symbol, holding.exchange, redis)
     sold_history = SoldHistory(
         user_id=user.id,
         holding_id=holding.id,
         symbol=holding.symbol,
         exchange=holding.exchange,
-        quantity=holding.quantity,
+        quantity=sell_quantity,
         buy_price=holding.buy_price,
-        sell_price=quote.price,
-        profit_loss=(quote.price - float(holding.buy_price)) * float(holding.quantity),
+        sell_price=sell_price,
+        profit_loss=(sell_price - float(holding.buy_price)) * sell_quantity,
         sold_by_role="admin",
         sold_by_identifier=current_admin.username,
         created_at=holding.created_at,
     )
     db.add(sold_history)
     await db.flush()
-    await db.delete(holding)
+
+    remaining_quantity = round(holding_quantity - sell_quantity, 2)
+    if remaining_quantity <= 0:
+        await db.delete(holding)
+    else:
+        holding.quantity = remaining_quantity
+
     await db.commit()
     await db.refresh(sold_history)
 
@@ -366,7 +385,14 @@ async def admin_sell_holding(
         entity_type="portfolio_holding",
         entity_id=str(holding_id),
         ip_address=request.client.host if request.client else None,
-        details={"user_id": user.id, "symbol": sold_history.symbol, "profit_loss": float(sold_history.profit_loss)},
+        details={
+            "user_id": user.id,
+            "symbol": sold_history.symbol,
+            "quantity": sell_quantity,
+            "sell_price": sell_price,
+            "market_price": quote.price,
+            "profit_loss": float(sold_history.profit_loss),
+        },
     )
     return AdminSoldHistoryItem(
         id=sold_history.id,

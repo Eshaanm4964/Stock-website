@@ -45,6 +45,11 @@ class AdminHoldingCreateRequest(BaseModel):
     exchange: str = "NSE"
 
 
+class AdminHoldingSellRequest(BaseModel):
+    quantity: float
+    sell_price: float
+
+
 class AdminUserDashboardResponse(BaseModel):
     user_id: int
     username: str
