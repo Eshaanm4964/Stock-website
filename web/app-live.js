@@ -1,4 +1,5 @@
 const STORAGE_KEY = "stock_trader_auth";
+const APP_LIVE_VERSION = "2026-04-24-admin-task-fix";
 const SITE_CONTROL_KEY = "stock_trader_site_controls";
 const REVIEW_STORAGE_KEY = "stock_trader_reviews";
 let activeRole = null;
@@ -102,7 +103,7 @@ function isLoginPage() {
 }
 
 function isAdminDashboardPage() {
-  return document.body?.dataset?.page === "admin-dashboard" || isLoginPage();
+  return document.body?.dataset?.page === "admin-dashboard";
 }
 
 function isAdminCustomerPage() {
@@ -1539,7 +1540,7 @@ async function renderAdminPortal() {
         <div class="panel-head"><h3>Sold History</h3><span class="badge ${filteredSoldHistory.length ? "green" : ""}">${filteredSoldHistory.length} Records</span></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>User</th><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Sell Price</th><th>P&amp;L</th><th>Sold At (IST)</th></tr></thead>
+            <thead><tr><th>User</th><th>Stock</th><th>Qty</th><th>Buy Price</th><th>Sell Price</th><th>P&amp;L</th><th>Sold At (IST)</th><th>Sold By</th></tr></thead>
             <tbody>
               ${filteredSoldHistory.length
                 ? filteredSoldHistory
@@ -1553,11 +1554,12 @@ async function renderAdminPortal() {
                           <td>${currency(entry.sell_price)}</td>
                           <td class="${Number(entry.profit_loss) >= 0 ? "profit" : "loss"}">${currency(entry.profit_loss)}</td>
                           <td>${formatDateTime(entry.sold_at)}</td>
+                          <td><small>${escapeHtml(entry.sold_by_identifier || entry.sold_by_role || "System")}</small></td>
                         </tr>
                       `
                     )
                     .join("") 
-                : `<tr><td colspan="7"><span class="helper-text">No sold history for the selected filters yet.</span></td></tr>`}
+                : `<tr><td colspan="8"><span class="helper-text">No sold history for the selected filters yet.</span></td></tr>`}
             </tbody>
           </table>
         </div>
