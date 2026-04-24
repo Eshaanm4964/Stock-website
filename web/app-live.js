@@ -2123,7 +2123,7 @@ function setupLogin() {
   const adminForm = document.getElementById("adminForm");
   const userForm = document.getElementById("userForm");
   const registerForm = document.getElementById("registerForm");
-  if (!adminForm || !userForm || !registerForm) return;
+  if (!adminForm || !userForm) return;
 
   const toggles = document.querySelectorAll(".role-toggle");
   const adminPortal = document.getElementById("adminPortal");
@@ -2252,7 +2252,7 @@ function setupLogin() {
       toggles.forEach((entry) => entry.classList.toggle("active", entry === toggle));
       adminForm.classList.toggle("hidden", role !== "admin");
       userForm.classList.toggle("hidden", role !== "user");
-      registerForm.classList.toggle("hidden", role !== "register");
+      if (registerForm) registerForm.classList.toggle("hidden", role !== "register");
       hidePortalMounts();
       hideAuthLoading();
       activeRole = null;
@@ -2380,48 +2380,50 @@ function setupLogin() {
     }
   });
 
-  registerForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const submitButton = registerForm.querySelector('button[type="submit"]');
-    const stopLoading = setButtonLoading(submitButton, "Creating Account...");
-    try {
-      if (!hasRequiredFields(registerForm, ["full_name", "email", "phone_number", "password"])) {
-        document.getElementById("registerError").textContent = "Complete all registration fields before creating the account.";
-        return;
-      }
-      const data = new FormData(registerForm);
-      hidePortalMounts();
-      showAuthLoading("Creating secure account...", "Saving user details and preparing the first portfolio workspace.");
-      const response = await api("/auth/signup", {
-        method: "POST",
-        body: JSON.stringify({
-          full_name: String(data.get("full_name")).trim(),
-          email: String(data.get("email")).trim(),
-          phone_number: String(data.get("phone_number")).trim(),
-          password: String(data.get("password"))
-        })
-      });
-      setAuth({ token: response.access_token, role: response.role });
-      let profile = null;
+  if (registerForm) {
+    registerForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const submitButton = registerForm.querySelector('button[type="submit"]');
+      const stopLoading = setButtonLoading(submitButton, "Creating Account...");
       try {
-        profile = await api("/auth/me");
-      } catch {
-        profile = null;
+        if (!hasRequiredFields(registerForm, ["full_name", "email", "phone_number", "password"])) {
+          document.getElementById("registerError").textContent = "Complete all registration fields before creating the account.";
+          return;
+        }
+        const data = new FormData(registerForm);
+        hidePortalMounts();
+        showAuthLoading("Creating secure account...", "Saving user details and preparing the first portfolio workspace.");
+        const response = await api("/auth/signup", {
+          method: "POST",
+          body: JSON.stringify({
+            full_name: String(data.get("full_name")).trim(),
+            email: String(data.get("email")).trim(),
+            phone_number: String(data.get("phone_number")).trim(),
+            password: String(data.get("password"))
+          })
+        });
+        setAuth({ token: response.access_token, role: response.role });
+        let profile = null;
+        try {
+          profile = await api("/auth/me");
+        } catch {
+          profile = null;
+        }
+        document.getElementById("registerError").textContent = "";
+        document.getElementById("registerHint").textContent = profile?.fixed_user_id
+          ? `Account created successfully. Your fixed user ID is ${profile.fixed_user_id}.`
+          : "Account created successfully. Your fixed user ID is available once the profile loads.";
+        await renderUserPortal();
+        hideAuthLoading();
+      } catch (error) {
+        document.getElementById("registerError").textContent = formatError(error);
+        hidePortalMounts();
+        hideAuthLoading();
+      } finally {
+        stopLoading();
       }
-      document.getElementById("registerError").textContent = "";
-      document.getElementById("registerHint").textContent = profile?.fixed_user_id
-        ? `Account created successfully. Your fixed user ID is ${profile.fixed_user_id}.`
-        : "Account created successfully. Your fixed user ID is available once the profile loads.";
-      await renderUserPortal();
-      hideAuthLoading();
-    } catch (error) {
-      document.getElementById("registerError").textContent = formatError(error);
-      hidePortalMounts();
-      hideAuthLoading();
-    } finally {
-      stopLoading();
-    }
-  });
+    });
+  }
 
   if (isLoginPage()) {
     clearAuth();
@@ -2452,6 +2454,61 @@ function setupLogin() {
       await renderUserPortal();
     }
   }, 15000);
+}
+
+function setupDashboardPages() {
+  const auth = getAuth();
+
+  if (isAdminDashboardPage()) {
+    if (!auth?.token) {
+      window.location.href = "./login.html";
+      return;
+    }
+    renderAdminPortal().catch(() => {
+      clearAuth();
+      renderPortalError(
+        document.getElementById("adminPortal"),
+        "Admin Dashboard",
+        "The dashboard could not load yet. Please check that the backend is running and try again."
+      );
+    });
+  }
+
+  if (isUserDashboardPage()) {
+    if (!auth?.token) {
+      window.location.href = "./login.html";
+      return;
+    }
+    renderUserPortal().catch(() => {
+      clearAuth();
+      renderPortalError(
+        document.getElementById("userPortal"),
+        "User Dashboard",
+        "The portfolio could not load yet. Please check that the backend is running and try again."
+      );
+    });
+  }
+
+  if (isAdminCustomerPage() || isAdminDealPage()) {
+    if (!auth?.token) {
+      window.location.href = "./login.html";
+      return;
+    }
+    if (auth.role !== "admin") {
+      window.location.href = "./login.html";
+      return;
+    }
+    if (isAdminCustomerPage()) {
+      renderAdminCustomerPage().catch(() => {});
+    }
+    if (isAdminDealPage()) {
+      renderAdminDealPage().catch(() => {});
+    }
+  }
+}
+
+function setupPublicPageVisibility() {
+  document.querySelectorAll(".fade-up").forEach((node) => node.classList.add("in-view"));
 }
 
 function isFinancialQuestion(message) {
@@ -2506,4 +2563,6 @@ setupFaq();
 loadSiteControls().catch(() => {});
 setupReviewForm();
 setupPageTransitions();
+setupPublicPageVisibility();
 setupLogin();
+setupDashboardPages();
