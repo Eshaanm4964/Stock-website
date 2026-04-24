@@ -138,13 +138,7 @@ function stopAdminRefresh() {
 
 function startAdminRefresh() {
   stopAdminRefresh();
-  if (!isAdminDashboardPage() || activeRole !== "admin") return;
-  adminRefreshTimer = window.setInterval(async () => {
-    if (document.hidden) return;
-    const activeElement = document.activeElement;
-    if (activeElement && ["adminUniversalSearch"].includes(activeElement.id)) return;
-    await renderAdminPortal().catch(() => {});
-  }, 5000);
+  return;
 }
 
 function setButtonLoading(button, loadingText) {
@@ -2037,6 +2031,307 @@ async function renderAdminPortal() {
     startAdminRefresh();
     setupDownloadButtons(userDashboards);
     setupWebsiteControlButtons();
+    setupAdminManagementButtons();
+    setupAdminDrilldowns(userDashboards, allHoldings);
+    setupPortalActions();
+  } catch (error) {
+    renderPortalError(mount, "Admin Dashboard", `Login succeeded, but admin dashboard data could not load yet. ${formatError(error)}`);
+    const retry = document.getElementById("retryPortalBtn");
+    if (retry) {
+      retry.addEventListener("click", () => renderAdminPortal());
+    }
+  }
+}
+
+async function renderAdminPortal() {
+  const mount = document.getElementById("adminPortal");
+  if (!mount) return;
+  try {
+    const [users, soldHistory] = await Promise.all([
+      api("/admin/users"),
+      api("/admin/sold-history?limit=100").catch(() => [])
+    ]);
+    const safeUsers = Array.isArray(users) ? users : [];
+    const safeSoldHistory = Array.isArray(soldHistory) ? soldHistory : [];
+    const userDashboards = await safeAdminUserDashboards(safeUsers);
+    const baseHoldings = userDashboards.flatMap((user) =>
+      (Array.isArray(user.holdings) ? user.holdings : []).map((holding) => ({
+        ...holding,
+        owner: user.full_name,
+        fixed_user_id: user.fixed_user_id,
+        user_id: user.user_id
+      }))
+    );
+    const symbols = [...new Set(baseHoldings.map((holding) => holding.symbol).filter(Boolean))];
+    const feed = symbols.length
+      ? await api(`/stocks/feed?symbols=${encodeURIComponent(symbols.join(","))}`).catch(() => [])
+      : [];
+    const safeFeed = Array.isArray(feed) ? feed : [];
+    const quoteMap = new Map(safeFeed.map((quote) => [quote.symbol, quote]));
+    const allHoldings = baseHoldings.map((holding) => {
+      const quote = quoteMap.get(holding.symbol);
+      const currentPrice = Number(quote?.price ?? holding.current_price ?? holding.buy_price);
+      const changePercent = Number(quote?.change_percent ?? 0);
+      const previousClose = changePercent === -100 ? currentPrice : currentPrice / (1 + changePercent / 100 || 1);
+      const todayProfit = (currentPrice - previousClose) * Number(holding.quantity || 0);
+      return {
+        ...holding,
+        current_price: currentPrice,
+        percent_change: Number(holding.percent_change ?? ((currentPrice - holding.buy_price) / Math.max(holding.buy_price, 1)) * 100),
+        profit_loss: (currentPrice - Number(holding.buy_price || 0)) * Number(holding.quantity || 0),
+        today_profit: Number.isFinite(todayProfit) ? todayProfit : 0
+      };
+    });
+
+    const searchText = adminUiState.search.toLowerCase();
+    const selectedClient = adminUiState.clientFilter;
+    const selectedStock = String(adminUiState.stockFilter || "").toUpperCase();
+    const fromDate = adminUiState.dateFrom ? new Date(`${adminUiState.dateFrom}T00:00:00`) : null;
+    const toDate = adminUiState.dateTo ? new Date(`${adminUiState.dateTo}T23:59:59`) : null;
+
+    const filteredHoldings = allHoldings.filter((holding) => {
+      const createdAt = holding.created_at ? new Date(holding.created_at) : null;
+      const matchesSearch =
+        !searchText ||
+        String(holding.owner || "").toLowerCase().includes(searchText) ||
+        String(holding.fixed_user_id || "").toLowerCase().includes(searchText) ||
+        String(holding.symbol || "").toLowerCase().includes(searchText) ||
+        String(holding.exchange || "").toLowerCase().includes(searchText);
+      const matchesClient = !selectedClient || String(holding.fixed_user_id || holding.user_id) === String(selectedClient);
+      const matchesStock = !selectedStock || String(holding.symbol || "").toUpperCase() === selectedStock;
+      const matchesDate =
+        (!fromDate || (createdAt && createdAt >= fromDate)) &&
+        (!toDate || (createdAt && createdAt <= toDate));
+      return matchesSearch && matchesClient && matchesStock && matchesDate;
+    });
+
+    const filteredSoldHistory = safeSoldHistory.filter((entry) => {
+      const soldAt = entry.sold_at ? new Date(entry.sold_at) : null;
+      const matchesSearch =
+        !searchText ||
+        String(entry.full_name || "").toLowerCase().includes(searchText) ||
+        String(entry.fixed_user_id || "").toLowerCase().includes(searchText) ||
+        String(entry.symbol || "").toLowerCase().includes(searchText);
+      const matchesClient = !selectedClient || String(entry.fixed_user_id || entry.user_id) === String(selectedClient);
+      const matchesStock = !selectedStock || String(entry.symbol || "").toUpperCase() === selectedStock;
+      const matchesDate =
+        (!fromDate || (soldAt && soldAt >= fromDate)) &&
+        (!toDate || (soldAt && soldAt <= toDate));
+      return matchesSearch && matchesClient && matchesStock && matchesDate;
+    });
+
+    const filteredInvestedValue = filteredHoldings.reduce((sum, holding) => sum + Number(holding.buy_price || 0) * Number(holding.quantity || 0), 0);
+    const filteredCurrentValue = filteredHoldings.reduce((sum, holding) => sum + Number(holding.current_price || 0) * Number(holding.quantity || 0), 0);
+    const filteredUnrealizedProfit = filteredHoldings.reduce((sum, holding) => sum + Number(holding.profit_loss || 0), 0);
+    const filteredTodayProfit = filteredHoldings.reduce((sum, holding) => sum + Number(holding.today_profit || 0), 0);
+    const filteredRealizedProfit = filteredSoldHistory.reduce((sum, entry) => sum + Number(entry.profit_loss || 0), 0);
+    const filteredPeriodProfit = filteredUnrealizedProfit + filteredRealizedProfit;
+    const filteredTotalProfit = filteredTodayProfit + filteredRealizedProfit;
+    const filteredTotalQuantity = filteredHoldings.reduce((sum, holding) => sum + Number(holding.quantity || 0), 0);
+    const filteredSoldQuantity = filteredSoldHistory.reduce((sum, entry) => sum + Number(entry.quantity || 0), 0);
+    const availableStockOptions = [
+      ...new Set(
+        [...allHoldings.map((holding) => String(holding.symbol || "").toUpperCase()), ...safeSoldHistory.map((entry) => String(entry.symbol || "").toUpperCase())].filter(Boolean)
+      )
+    ].sort();
+    const realizedMap = safeSoldHistory.reduce((map, entry) => {
+      const key = `${entry.user_id}::${String(entry.symbol || "").toUpperCase()}`;
+      map.set(key, (map.get(key) || 0) + Number(entry.profit_loss || 0));
+      return map;
+    }, new Map());
+
+    mount.innerHTML = `
+    <section class="user-shell admin-simple-shell no-sidebar-shell">
+      <div class="user-shell-main admin-simple-main dashboard-stack admin-dashboard-stack">
+        <header class="user-topbar admin-compact-topbar admin-simple-topbar">
+          <div class="admin-toolbar-left">
+            <p class="eyebrow">Admin Portfolio Dashboard</p>
+            <h2>All Client Positions</h2>
+            <p class="helper-text">Track aggregated holdings, realised exits, and protected stock names in one clean workspace.</p>
+          </div>
+          <div class="user-topbar-actions admin-toolbar-right">
+            <input class="user-search admin-universal-search" id="adminUniversalSearch" type="text" placeholder="Search user, client ID, or stock" />
+            <details class="admin-dropdown-menu">
+              <summary class="secondary-btn compact-btn">Actions & Filters</summary>
+              <div class="admin-dropdown-panel">
+                <div class="admin-dropdown-links">
+                  <a class="secondary-btn compact-btn" href="./admin-add-customer.html">Add Customer</a>
+                  <a class="secondary-btn compact-btn" href="./admin-add-deal.html">Add Deal</a>
+                </div>
+                <div class="admin-dropdown-filters">
+                  <label class="toolbar-field">
+                    <span>Client</span>
+                    <select class="user-search admin-filter-select" id="adminClientFilter">
+                      <option value="">All Clients</option>
+                      ${safeUsers
+                        .map((user) => `<option value="${escapeHtml(user.fixed_user_id || String(user.user_id))}" ${String(adminUiState.clientFilter) === String(user.fixed_user_id || user.user_id) ? "selected" : ""}>${escapeHtml(user.full_name)} (${escapeHtml(user.fixed_user_id || user.username)})</option>`)
+                        .join("")}
+                    </select>
+                  </label>
+                  <label class="toolbar-field">
+                    <span>Stock</span>
+                    <select class="user-search admin-filter-select" id="adminStockFilter">
+                      <option value="">All Stocks</option>
+                      ${availableStockOptions
+                        .map((symbol) => `<option value="${escapeHtml(symbol)}" ${adminUiState.stockFilter === symbol ? "selected" : ""}>${escapeHtml(symbol)}</option>`)
+                        .join("")}
+                    </select>
+                  </label>
+                  <label class="toolbar-field toolbar-field--compact">
+                    <span>From</span>
+                    <input class="user-search admin-filter-date" id="adminDateFrom" type="date" value="${escapeHtml(adminUiState.dateFrom)}" />
+                  </label>
+                  <label class="toolbar-field toolbar-field--compact">
+                    <span>To</span>
+                    <input class="user-search admin-filter-date" id="adminDateTo" type="date" value="${escapeHtml(adminUiState.dateTo)}" />
+                  </label>
+                </div>
+                <p class="helper-text admin-filter-summary">Filtered P&amp;L window: <strong class="${filteredPeriodProfit >= 0 ? "profit" : "loss"}">${currency(filteredPeriodProfit)}</strong></p>
+              </div>
+            </details>
+            <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
+          </div>
+        </header>
+
+        <section class="simple-summary-strip admin-summary-strip">
+          <span><strong>${currency(filteredInvestedValue)}</strong> Invested Value</span>
+          <span><strong>${currency(filteredCurrentValue)}</strong> Current Value</span>
+          <span class="${filteredUnrealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredUnrealizedProfit)}</strong> Unrealised P&amp;L</span>
+          <span class="${filteredTodayProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredTodayProfit)}</strong> Today&apos;s P&amp;L</span>
+          <span class="${filteredRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredRealizedProfit)}</strong> Realised P&amp;L</span>
+        </section>
+
+        <article class="table-card admin-positions-card full-span-card">
+          <div class="panel-head">
+            <div>
+              <h3>All Client Positions</h3>
+              <p class="helper-text admin-positions-helper">Filters are available from the dropdown above. Stock names remain masked until you reveal them.</p>
+            </div>
+            <span class="badge">Protected View</span>
+          </div>
+          <div class="table-wrap admin-position-table-wrap">
+            <table class="admin-position-table">
+              <thead>
+                <tr>
+                  <th>Client</th>
+                  <th>Symbol</th>
+                  <th>Purchase Date</th>
+                  <th>Qty</th>
+                  <th>Avg Price</th>
+                  <th>Invested Value</th>
+                  <th>Current Value</th>
+                  <th>Unrealised P&amp;L</th>
+                  <th>Today&apos;s P&amp;L</th>
+                  <th>Realised P&amp;L</th>
+                  <th>Total P&amp;L</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filteredHoldings.length
+                  ? filteredHoldings
+                      .map((holding) => {
+                        const realizedProfit = realizedMap.get(`${holding.user_id}::${String(holding.symbol || "").toUpperCase()}`) || 0;
+                        const totalProfit = Number(holding.profit_loss || 0) + Number(realizedProfit || 0);
+                        return `
+                        <tr>
+                          <td><button class="table-link" type="button" data-user-detail="${holding.user_id}">${holding.owner}</button><br /><small>${holding.fixed_user_id || ""}</small></td>
+                          <td>
+                            <div class="admin-stock-cell">
+                              <button class="admin-eye-btn" type="button" data-stock-visibility-toggle="${escapeHtml(holding.symbol)}" aria-label="${isAdminStockRevealed(holding.symbol) ? "Hide stock name" : "Show stock name"}">&#128065;</button>
+                              <button class="table-link" type="button" data-stock-detail="${holding.symbol}">${isAdminStockRevealed(holding.symbol) ? holding.symbol : maskStockSymbol(holding.symbol)}</button>
+                            </div>
+                            <small>${holding.exchange || "NSE"}</small>
+                          </td>
+                          <td>${formatDate(holding.created_at)}</td>
+                          <td>${holding.quantity}</td>
+                          <td>${currency(holding.buy_price)}</td>
+                          <td>${currency(Number(holding.buy_price || 0) * Number(holding.quantity || 0))}</td>
+                          <td>${currency(Number(holding.current_price || 0) * Number(holding.quantity || 0))}</td>
+                          <td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
+                          <td class="${Number(holding.today_profit) >= 0 ? "profit" : "loss"}">${currency(holding.today_profit)}</td>
+                          <td class="${Number(realizedProfit) >= 0 ? "profit" : "loss"}">${currency(realizedProfit)}</td>
+                          <td class="${Number(totalProfit) >= 0 ? "profit" : "loss"}">${currency(totalProfit)}</td>
+                          <td><button class="sell-action-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}">Sell</button></td>
+                        </tr>
+                      `;
+                      })
+                      .join("")
+                  : `<tr><td colspan="12"><span class="helper-text">No client or stock matched this search.</span></td></tr>`}
+              </tbody>
+              <tfoot>
+                <tr class="admin-total-row">
+                  <td colspan="3"><strong>Totals</strong></td>
+                  <td><strong>${filteredTotalQuantity.toFixed(2)}</strong></td>
+                  <td>—</td>
+                  <td><strong>${currency(filteredInvestedValue)}</strong></td>
+                  <td><strong>${currency(filteredCurrentValue)}</strong></td>
+                  <td class="${filteredUnrealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredUnrealizedProfit)}</strong></td>
+                  <td class="${filteredTodayProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredTodayProfit)}</strong></td>
+                  <td class="${filteredRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredRealizedProfit)}</strong></td>
+                  <td class="${filteredTotalProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredTotalProfit)}</strong></td>
+                  <td>—</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </article>
+
+        <article class="dashboard-card full-span-card">
+          <div class="panel-head"><h3>Sold History</h3><span class="badge ${filteredSoldHistory.length ? "green" : ""}">${filteredSoldHistory.length} Records</span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>User</th><th>Stock</th><th>Purchase Date</th><th>Qty Sold</th><th>Avg Price</th><th>Sell Price</th><th>Realised P&amp;L</th><th>Sold At (IST)</th><th>Sold By</th></tr></thead>
+              <tbody>
+                ${filteredSoldHistory.length
+                  ? filteredSoldHistory
+                      .map(
+                        (entry) => `
+                          <tr>
+                            <td><strong>${escapeHtml(entry.full_name)}</strong><br /><small>${escapeHtml(entry.fixed_user_id || "")}</small></td>
+                            <td>
+                              <div class="admin-stock-cell">
+                                <button class="admin-eye-btn" type="button" data-stock-visibility-toggle="${escapeHtml(entry.symbol)}" aria-label="${isAdminStockRevealed(entry.symbol) ? "Hide stock name" : "Show stock name"}">&#128065;</button>
+                                <span>${isAdminStockRevealed(entry.symbol) ? escapeHtml(entry.symbol) : maskStockSymbol(entry.symbol)}</span>
+                              </div>
+                            </td>
+                            <td>${formatDate(entry.created_at)}</td>
+                            <td>${entry.quantity}</td>
+                            <td>${currency(entry.buy_price)}</td>
+                            <td>${currency(entry.sell_price)}</td>
+                            <td class="${Number(entry.profit_loss) >= 0 ? "profit" : "loss"}">${currency(entry.profit_loss)}</td>
+                            <td>${formatDateTime(entry.sold_at)}</td>
+                            <td><small>${escapeHtml(entry.sold_by_identifier || entry.sold_by_role || "System")}</small></td>
+                          </tr>
+                        `
+                      )
+                      .join("")
+                  : `<tr><td colspan="9"><span class="helper-text">No sold history for the selected filters yet.</span></td></tr>`}
+              </tbody>
+              <tfoot>
+                <tr class="admin-total-row">
+                  <td colspan="3"><strong>Totals</strong></td>
+                  <td><strong>${filteredSoldQuantity.toFixed(2)}</strong></td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td class="${filteredRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredRealizedProfit)}</strong></td>
+                  <td colspan="2">—</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </article>
+
+        <section id="adminDetailMount" class="dashboard-section hidden"></section>
+      </div>
+    </section>
+  `;
+
+    revealPortal(mount);
+    activeRole = "admin";
+    activeUserId = null;
+    startAdminRefresh();
+    setupDownloadButtons(userDashboards);
     setupAdminManagementButtons();
     setupAdminDrilldowns(userDashboards, allHoldings);
     setupPortalActions();
