@@ -203,7 +203,19 @@ function saveSiteControls(nextControls) {
 }
 
 function getApiBase() {
-  return localStorage.getItem("stock_trader_api_url") || "http://localhost:8000/api/v1";
+  const saved = localStorage.getItem("stock_trader_api_url");
+  const isLocalHost =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1" ||
+    window.location.hostname === "::1";
+
+  if (saved) {
+    return saved;
+  }
+
+  return isLocalHost
+    ? "http://localhost:8000/api/v1"
+    : "https://stock-trader-demo-backend.onrender.com/api/v1";
 }
 
 function formatError(error) {
