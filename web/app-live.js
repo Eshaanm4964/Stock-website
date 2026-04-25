@@ -3357,9 +3357,8 @@ function setupFloatingWhatsApp() {
   anchor.setAttribute("aria-label", "Chat with AssetYantra on WhatsApp");
   anchor.innerHTML = `
     <span class="floating-whatsapp-icon" aria-hidden="true">
-      <svg viewBox="0 0 32 32" role="presentation" focusable="false">
-        <path d="M19.11 17.33c-.29-.15-1.71-.84-1.97-.94-.26-.1-.45-.15-.64.15-.19.29-.74.94-.9 1.13-.16.19-.33.22-.62.07-.29-.15-1.23-.45-2.35-1.44-.87-.77-1.46-1.72-1.63-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.33.43-.49.14-.17.19-.29.29-.49.1-.19.05-.37-.02-.52-.07-.15-.64-1.54-.87-2.1-.23-.56-.47-.49-.64-.49l-.54-.01c-.19 0-.49.07-.74.33-.26.26-.98.96-.98 2.34s1 2.71 1.14 2.9c.14.19 1.96 2.99 4.75 4.19.66.29 1.18.46 1.58.59.66.21 1.25.18 1.72.11.52-.08 1.71-.7 1.95-1.38.24-.68.24-1.26.17-1.38-.07-.12-.26-.19-.55-.34z"></path>
-        <path d="M16.03 3.2c-6.96 0-12.61 5.65-12.61 12.61 0 2.21.58 4.36 1.68 6.25L3.2 28.8l6.92-1.82c1.8.98 3.83 1.49 5.91 1.49h.01c6.95 0 12.6-5.65 12.6-12.61 0-3.37-1.31-6.54-3.7-8.92A12.55 12.55 0 0 0 16.03 3.2zm0 22.95h-.01a10.3 10.3 0 0 1-5.25-1.44l-.38-.22-4.11 1.08 1.1-4-.24-.41a10.27 10.27 0 0 1-1.57-5.41c0-5.67 4.61-10.28 10.29-10.28 2.74 0 5.31 1.07 7.25 3.02a10.2 10.2 0 0 1 3.01 7.26c0 5.67-4.61 10.29-10.29 10.29z"></path>
+      <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+        <path d="M19.05 4.94A9.82 9.82 0 0 0 12.04 2C6.63 2 2.24 6.39 2.24 11.8c0 1.73.45 3.42 1.31 4.91L2 22l5.45-1.51a9.75 9.75 0 0 0 4.58 1.16h.01c5.4 0 9.8-4.39 9.8-9.8a9.73 9.73 0 0 0-2.79-6.91zm-7.01 15.06h-.01a8.13 8.13 0 0 1-4.14-1.13l-.3-.18-3.24.9.87-3.16-.2-.32a8.13 8.13 0 0 1-1.25-4.32c0-4.48 3.64-8.13 8.13-8.13 2.17 0 4.2.84 5.73 2.38a8.06 8.06 0 0 1 2.38 5.75c0 4.48-3.65 8.11-8.13 8.11zm4.46-6.08c-.24-.12-1.41-.7-1.63-.77-.22-.08-.38-.12-.54.12-.16.24-.62.77-.76.93-.14.16-.28.18-.52.06-.24-.12-1.03-.38-1.95-1.21-.72-.64-1.2-1.44-1.34-1.68-.14-.24-.02-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.31-.74-1.79-.2-.48-.4-.42-.54-.43h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.68 2.57 4.06 3.61.57.24 1.01.39 1.36.5.57.18 1.08.15 1.49.09.45-.07 1.41-.58 1.61-1.14.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28z"></path>
       </svg>
     </span>
     <span class="floating-whatsapp-copy">
@@ -3368,6 +3367,43 @@ function setupFloatingWhatsApp() {
     </span>
   `;
   document.body.appendChild(anchor);
+}
+
+function setupFooterSocials() {
+  const publicPages = new Set(["home", "about", "products", "contact", "trust-safety", "legal", "login"]);
+  const page = document.body?.dataset?.page;
+  if (!publicPages.has(page)) return;
+
+  document.querySelectorAll(".footer-legal").forEach((container) => {
+    if (container.querySelector(".footer-socials")) return;
+
+    const socials = document.createElement("div");
+    socials.className = "footer-socials";
+    socials.innerHTML = `
+      <span class="footer-social-icon" aria-label="Instagram placeholder" title="Instagram link coming soon">
+        <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+          <path d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22h-8.5A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2zm0 1.75A4 4 0 0 0 3.75 7.75v8.5a4 4 0 0 0 4 4h8.5a4 4 0 0 0 4-4v-8.5a4 4 0 0 0-4-4zm8.88 1.5a1.12 1.12 0 1 1 0 2.25 1.12 1.12 0 0 1 0-2.25zM12 6.5A5.5 5.5 0 1 1 6.5 12 5.5 5.5 0 0 1 12 6.5zm0 1.75A3.75 3.75 0 1 0 15.75 12 3.75 3.75 0 0 0 12 8.25z"></path>
+        </svg>
+      </span>
+      <span class="footer-social-icon" aria-label="Twitter placeholder" title="Twitter link coming soon">
+        <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+          <path d="M18.9 2H22l-6.77 7.74L23 22h-6.1l-4.78-6.27L6.64 22H3.53l7.24-8.27L1.5 2h6.25l4.31 5.68L18.9 2zm-1.08 18h1.72L6.82 3.9H4.98z"></path>
+        </svg>
+      </span>
+      <a class="footer-social-link" href="https://wa.me/919089080505" target="_blank" rel="noreferrer" aria-label="WhatsApp">
+        <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+          <path d="M19.05 4.94A9.82 9.82 0 0 0 12.04 2C6.63 2 2.24 6.39 2.24 11.8c0 1.73.45 3.42 1.31 4.91L2 22l5.45-1.51a9.75 9.75 0 0 0 4.58 1.16h.01c5.4 0 9.8-4.39 9.8-9.8a9.73 9.73 0 0 0-2.79-6.91zm-7.01 15.06h-.01a8.13 8.13 0 0 1-4.14-1.13l-.3-.18-3.24.9.87-3.16-.2-.32a8.13 8.13 0 0 1-1.25-4.32c0-4.48 3.64-8.13 8.13-8.13 2.17 0 4.2.84 5.73 2.38a8.06 8.06 0 0 1 2.38 5.75c0 4.48-3.65 8.11-8.13 8.11zm4.46-6.08c-.24-.12-1.41-.7-1.63-.77-.22-.08-.38-.12-.54.12-.16.24-.62.77-.76.93-.14.16-.28.18-.52.06-.24-.12-1.03-.38-1.95-1.21-.72-.64-1.2-1.44-1.34-1.68-.14-.24-.02-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.31-.74-1.79-.2-.48-.4-.42-.54-.43h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.68 2.57 4.06 3.61.57.24 1.01.39 1.36.5.57.18 1.08.15 1.49.09.45-.07 1.41-.58 1.61-1.14.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28z"></path>
+        </svg>
+      </a>
+    `;
+
+    const copy = container.querySelector(".footer-copy");
+    if (copy) {
+      copy.before(socials);
+    } else {
+      container.appendChild(socials);
+    }
+  });
 }
 
 function isFinancialQuestion(message) {
@@ -3424,6 +3460,7 @@ setupReviewForm();
 setupPageTransitions();
 setupPublicPageVisibility();
 setupFloatingWhatsApp();
+setupFooterSocials();
 setupHomePage();
 setupLogin();
 setupDashboardPages();

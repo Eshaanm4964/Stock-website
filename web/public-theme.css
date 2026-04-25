@@ -109,13 +109,14 @@ body.public-page .site-shell {
   height: 38px;
   place-items: center;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.16);
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(11, 139, 74, 0.12);
 }
 
 .floating-whatsapp-icon svg {
-  width: 27px;
-  height: 27px;
-  fill: currentColor;
+  width: 22px;
+  height: 22px;
+  fill: #0f9f55;
 }
 
 .floating-whatsapp-copy {
@@ -2150,6 +2151,43 @@ body.public-page .site-shell {
   margin: 0;
   color: var(--brand-text-secondary);
   line-height: 1.7;
+}
+
+.footer-socials {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.footer-social-link,
+.footer-social-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(17, 201, 108, 0.14);
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(241,250,245,0.98));
+  box-shadow: 0 10px 22px rgba(49, 96, 73, 0.06);
+}
+
+.footer-social-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(49, 96, 73, 0.1);
+}
+
+.footer-social-link svg,
+.footer-social-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: #0f8a55;
+}
+
+.footer-social-icon svg {
+  fill: #5b7c6d;
 }
 
 .footer-copy {
