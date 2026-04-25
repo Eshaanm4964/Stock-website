@@ -2658,11 +2658,6 @@ async function renderUserPortal() {
     const safeSoldHistory = Array.isArray(soldHistory) ? soldHistory : [];
     const totalInvested = rawPerformance.reduce((sum, item) => sum + Number(item.buy_price || 0) * Number(item.quantity || 0), 0);
     const overallPct = totalInvested ? (summary.total_profit_loss / totalInvested) * 100 : 0;
-    const symbols = [...new Set(rawPerformance.map((holding) => holding.symbol).filter(Boolean))];
-    const liveFeed = symbols.length
-      ? await api(`/stocks/feed?symbols=${encodeURIComponent(symbols.join(","))}`).catch(() => [])
-      : [];
-    const quoteMap = new Map((Array.isArray(liveFeed) ? liveFeed : []).map((quote) => [String(quote.symbol || "").toUpperCase(), quote]));
     const realizedMap = safeSoldHistory.reduce((map, entry) => {
       const key = String(entry.symbol || "").toUpperCase();
       map.set(key, (map.get(key) || 0) + Number(entry.profit_loss || 0));
@@ -2670,12 +2665,9 @@ async function renderUserPortal() {
     }, new Map());
     const performance = rawPerformance.map((holding) => {
       const symbolKey = String(holding.symbol || "").toUpperCase();
-      const quote = quoteMap.get(symbolKey);
-      const currentPrice = Number(quote?.price ?? holding.current_price ?? holding.buy_price ?? 0);
-      const changePercent = Number(quote?.change_percent ?? 0);
-      const previousClose = currentPrice && changePercent !== -100 ? currentPrice / (1 + changePercent / 100 || 1) : currentPrice;
       const quantity = Number(holding.quantity || 0);
-      const todayProfit = (currentPrice - previousClose) * quantity;
+      const currentPrice = Number(holding.current_price ?? holding.buy_price ?? 0);
+      const todayProfit = Number(holding.today_profit ?? 0);
       const realizedProfit = Number(realizedMap.get(symbolKey) || 0);
       return {
         ...holding,
@@ -3248,6 +3240,10 @@ function setupDashboardPages() {
       window.location.href = "./login.html";
       return;
     }
+    if (auth.role !== "admin") {
+      window.location.href = "./login.html";
+      return;
+    }
     renderAdminPortal().catch(() => {
       clearAuth();
       renderPortalError(
@@ -3260,6 +3256,10 @@ function setupDashboardPages() {
 
   if (isUserDashboardPage()) {
     if (!auth?.token) {
+      window.location.href = "./login.html";
+      return;
+    }
+    if (auth.role !== "user") {
       window.location.href = "./login.html";
       return;
     }
