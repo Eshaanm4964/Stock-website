@@ -2649,50 +2649,70 @@ async function renderUserPortal() {
   if (!mount) return;
   revealPortal(mount);
   try {
-    const [profile, holdings, summary] = await Promise.all([api("/auth/me"), api("/portfolio"), api("/portfolio/summary")]);
-    const performance = Array.isArray(summary.performance) ? summary.performance : [];
-    const totalInvested = performance.reduce((sum, item) => sum + Number(item.buy_price || 0) * Number(item.quantity || 0), 0);
+    const [profile, summary, soldHistory] = await Promise.all([
+      api("/auth/me"),
+      api("/portfolio/summary"),
+      api("/portfolio/sold-history").catch(() => [])
+    ]);
+    const rawPerformance = Array.isArray(summary.performance) ? summary.performance : [];
+    const safeSoldHistory = Array.isArray(soldHistory) ? soldHistory : [];
+    const totalInvested = rawPerformance.reduce((sum, item) => sum + Number(item.buy_price || 0) * Number(item.quantity || 0), 0);
     const overallPct = totalInvested ? (summary.total_profit_loss / totalInvested) * 100 : 0;
-    const symbols = [...new Set(performance.map((holding) => holding.symbol).filter(Boolean))];
+    const symbols = [...new Set(rawPerformance.map((holding) => holding.symbol).filter(Boolean))];
     const liveFeed = symbols.length
       ? await api(`/stocks/feed?symbols=${encodeURIComponent(symbols.join(","))}`).catch(() => [])
       : [];
-    const profitableCount = performance.filter((holding) => Number(holding.profit_loss || 0) > 0).length;
-    const topPerformer = performance.length
-      ? performance.slice().sort((a, b) => Number(b.profit_loss || 0) - Number(a.profit_loss || 0))[0]
-      : null;
-    const laggard = performance.length
-      ? performance.slice().sort((a, b) => Number(a.profit_loss || 0) - Number(b.profit_loss || 0))[0]
-      : null;
+    const quoteMap = new Map((Array.isArray(liveFeed) ? liveFeed : []).map((quote) => [String(quote.symbol || "").toUpperCase(), quote]));
+    const realizedMap = safeSoldHistory.reduce((map, entry) => {
+      const key = String(entry.symbol || "").toUpperCase();
+      map.set(key, (map.get(key) || 0) + Number(entry.profit_loss || 0));
+      return map;
+    }, new Map());
+    const performance = rawPerformance.map((holding) => {
+      const symbolKey = String(holding.symbol || "").toUpperCase();
+      const quote = quoteMap.get(symbolKey);
+      const currentPrice = Number(quote?.price ?? holding.current_price ?? holding.buy_price ?? 0);
+      const changePercent = Number(quote?.change_percent ?? 0);
+      const previousClose = currentPrice && changePercent !== -100 ? currentPrice / (1 + changePercent / 100 || 1) : currentPrice;
+      const quantity = Number(holding.quantity || 0);
+      const todayProfit = (currentPrice - previousClose) * quantity;
+      const realizedProfit = Number(realizedMap.get(symbolKey) || 0);
+      return {
+        ...holding,
+        current_price: currentPrice,
+        today_profit: todayProfit,
+        realized_profit: realizedProfit,
+        total_profit: Number(holding.profit_loss || 0) + realizedProfit
+      };
+    });
     const filteredPerformance = getFilteredUserPerformance(performance);
-    const totalVisibleValue = filteredPerformance.reduce((sum, holding) => sum + Number(holding.value || 0), 0);
+    const profitableCount = performance.filter((holding) => Number(holding.profit_loss || 0) > 0).length;
+    const filteredSoldHistory = safeSoldHistory.filter((entry) => {
+      const search = userUiState.search.trim().toLowerCase();
+      if (!search) return true;
+      return String(entry.symbol || "").toLowerCase().includes(search) || String(entry.exchange || "").toLowerCase().includes(search);
+    });
+    const totalVisibleValue = filteredPerformance.reduce((sum, holding) => sum + Number(holding.current_price || holding.value || 0) * Number(holding.quantity || 0), 0);
     const gainRate = performance.length ? (profitableCount / performance.length) * 100 : 0;
-    const exposureEntries = Object.entries(summary.sector_exposure || {})
-      .sort((a, b) => Number(b[1]) - Number(a[1]))
-      .slice(0, 5);
-    const tickerMarkup = (Array.isArray(liveFeed) ? liveFeed : [])
-      .map(
-        (quote) => `
-          <article>
-            <strong>${escapeHtml(quote.symbol)}</strong>
-            <small>${escapeHtml(quote.short_name || quote.symbol)}</small>
-            <small class="${quote.change_percent >= 0 ? "profit" : "loss"}">${percent(quote.change_percent)}</small>
-          </article>
-        `
-      )
-      .join("");
+    const totalTodayProfit = filteredPerformance.reduce((sum, holding) => sum + Number(holding.today_profit || 0), 0);
+    const totalRealizedProfit = filteredPerformance.reduce((sum, holding) => sum + Number(holding.realized_profit || 0), 0);
+    const totalCombinedProfit = filteredPerformance.reduce((sum, holding) => sum + Number(holding.total_profit || 0), 0);
+    const totalUnrealizedProfit = filteredPerformance.reduce((sum, holding) => sum + Number(holding.profit_loss || 0), 0);
+    const filteredTotalQuantity = filteredPerformance.reduce((sum, holding) => sum + Number(holding.quantity || 0), 0);
+    const filteredInvestedValue = filteredPerformance.reduce((sum, holding) => sum + Number(holding.buy_price || 0) * Number(holding.quantity || 0), 0);
+    const filteredCurrentValue = filteredPerformance.reduce((sum, holding) => sum + Number(holding.current_price || 0) * Number(holding.quantity || 0), 0);
 
     mount.innerHTML = `
-    <section class="user-shell no-sidebar-shell">
-      <div class="user-shell-main">
-        <header class="user-topbar">
+    <section class="user-shell no-sidebar-shell user-clean-shell">
+      <div class="user-shell-main user-dashboard-stack">
+        <header class="user-topbar user-clean-topbar">
           <div>
             <p class="eyebrow">Investor Workspace</p>
             <h2>${profile.full_name}</h2>
-            <p class="helper-text">Track live holdings, allocation, returns, and recent portfolio moves in one clean view.</p>
+            <p class="helper-text">Track your live holdings and lifetime realised profit in one clear portfolio workspace.</p>
           </div>
           <div class="user-topbar-actions">
-            <input class="user-search" id="userPortfolioSearch" type="text" placeholder="Search holdings or sectors" />
+            <input class="user-search" id="userPortfolioSearch" type="text" placeholder="Search holdings by stock or sector" />
             <select class="user-search" id="userPortfolioStatusFilter" style="max-width:180px;">
               <option value="all">All holdings</option>
               <option value="profit">In profit</option>
@@ -2704,215 +2724,152 @@ async function renderUserPortal() {
           </div>
         </header>
 
-        <section class="simple-summary-strip">
+        <section class="simple-summary-strip user-summary-strip">
           <span><strong>${currency(summary.total_portfolio_value)}</strong> Portfolio Value</span>
-          <span class="${summary.total_profit_loss >= 0 ? "profit" : "loss"}"><strong>${currency(summary.total_profit_loss)}</strong> Total P&amp;L</span>
+          <span class="${summary.total_profit_loss >= 0 ? "profit" : "loss"}"><strong>${currency(summary.total_profit_loss)}</strong> Unrealised P&amp;L</span>
+          <span class="${totalRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalRealizedProfit)}</strong> Lifetime Realised P&amp;L</span>
           <span><strong>${performance.length}</strong> Active Positions</span>
-          <span><strong>${summary.risk_level || "Moderate"}</strong> Risk Profile</span>
         </section>
 
-        <div class="user-ticker-strip">
-          ${tickerMarkup || `<article><strong>Market feed</strong><small>No tracked symbols yet</small><small>Add a stock to begin</small></article>`}
-        </div>
-
-        <article class="user-app-card portfolio-ledger-card">
-          <div class="portfolio-ledger-tabs">
-            <button class="active" type="button">Overview</button>
-            <button type="button">Performance</button>
-            <button type="button">Allocation</button>
-            <button type="button">Activity</button>
-          </div>
+        <article class="user-app-card portfolio-ledger-card user-ledger-card">
           <div class="portfolio-ledger-metrics">
             <article>
               <span>Total Invested</span>
-              <strong>${currency(totalInvested)}</strong>
+              <strong>${currency(filteredInvestedValue || totalInvested)}</strong>
               <small>Capital deployed so far</small>
             </article>
-            <article class="${summary.total_profit_loss >= 0 ? "profit" : "loss"}">
+            <article class="${totalCombinedProfit >= 0 ? "profit" : "loss"}">
               <span>Total P&amp;L</span>
-              <strong>${currency(summary.total_profit_loss)}</strong>
+              <strong>${currency(totalCombinedProfit)}</strong>
               <small>${percent(overallPct)} overall return</small>
             </article>
             <article>
-              <span>Visible Value</span>
+              <span>Current Value</span>
               <strong>${currency(totalVisibleValue || summary.total_portfolio_value)}</strong>
               <small>Based on current filters</small>
             </article>
             <article>
-              <span>Winning Positions</span>
-              <strong>${profitableCount}/${performance.length || 0}</strong>
-              <small>${gainRate.toFixed(0)}% in profit</small>
+              <span>Today&apos;s P&amp;L</span>
+              <strong class="${totalTodayProfit >= 0 ? "profit" : "loss"}">${currency(totalTodayProfit)}</strong>
+              <small>Live mark-to-market move</small>
             </article>
             <article>
               <span>Client ID</span>
               <strong>${escapeHtml(profile.fixed_user_id || profile.username)}</strong>
-              <small>${escapeHtml(profile.phone_number || "Client access")}</small>
+              <small>${gainRate.toFixed(0)}% positions in profit</small>
             </article>
           </div>
         </article>
 
-        <div class="user-app-grid">
-          <article class="user-app-card" id="userPerformanceCard">
-            <div class="panel-head">
-              <h3>Portfolio Performance</h3>
-              <div class="chart-range">
-                <span>1D</span>
-                <span>1M</span>
-                <span class="active">1Y</span>
-                <span>All</span>
-              </div>
+        <article class="table-card full-span-card user-holdings-card">
+          <div class="panel-head">
+            <div>
+              <h3>Portfolio Holdings</h3>
+              <p class="helper-text">Your live holdings mirror the protected admin portfolio view, without sell controls.</p>
             </div>
-            <div class="chart-card-main">
-              <div class="chart-metric-panel">
-                <div class="chart-figure">
-                  <span>Your portfolio is <strong class="${summary.total_profit_loss >= 0 ? "profit" : "loss"}">${summary.total_profit_loss >= 0 ? "up" : "down"} ${Math.abs(overallPct).toFixed(1)}%</strong> overall</span>
-                  <strong class="chart-value">${currency(summary.total_portfolio_value)}</strong>
-                  <small>Current investment value across tracked holdings</small>
-                </div>
-                <article class="mini-stat-box">
-                  <strong class="${summary.total_profit_loss >= 0 ? "profit" : "loss"}">${currency(summary.total_profit_loss)}</strong>
-                  <small>Total profit and loss</small>
-                </article>
-                <div class="chart-inline-grid">
-                  <article>
-                    <strong>${currency(totalInvested)}</strong>
-                    <small>Total invested</small>
-                  </article>
-                  <article>
-                    <strong>${currency(totalVisibleValue || summary.total_portfolio_value)}</strong>
-                    <small>Visible value</small>
-                  </article>
-                  <article>
-                    <strong>${performance.length}</strong>
-                    <small>Active positions</small>
-                  </article>
-                  <article>
-                    <strong>${gainRate.toFixed(0)}%</strong>
-                    <small>Positions in profit</small>
-                  </article>
-                </div>
-              </div>
-              <div class="chart-display">
-                <svg viewBox="0 0 700 360" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="userPerformanceFill" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stop-color="rgba(15,159,98,0.28)" />
-                      <stop offset="100%" stop-color="rgba(15,159,98,0.03)" />
-                    </linearGradient>
-                  </defs>
-                  <path d="M0,230 C40,210 70,240 110,214 C160,182 190,132 236,148 C278,162 312,82 362,96 C404,108 426,196 472,202 C520,208 540,120 584,116 C626,112 658,76 700,66 L700,360 L0,360 Z" fill="url(#userPerformanceFill)"></path>
-                  <path d="M0,230 C40,210 70,240 110,214 C160,182 190,132 236,148 C278,162 312,82 362,96 C404,108 426,196 472,202 C520,208 540,120 584,116 C626,112 658,76 700,66" fill="none" stroke="#22b573" stroke-width="4" stroke-linecap="round"></path>
-                </svg>
-                <div class="chart-tooltip">
-                  <small>${topPerformer ? escapeHtml(topPerformer.symbol) : "Portfolio View"}</small>
-                  <strong>${topPerformer ? currency(topPerformer.value) : currency(summary.total_portfolio_value)}</strong>
-                  <small>${topPerformer ? percent(topPerformer.percent_change) : percent(overallPct)}</small>
-                </div>
-              </div>
-            </div>
-          </article>
+            <span class="badge green">Live Portfolio</span>
+          </div>
+          <div class="table-wrap admin-position-table-wrap" id="userPositionsTableWrap">
+            <table class="admin-position-table user-position-table" id="userPositionsTable">
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th>Purchase Date</th>
+                  <th>Qty</th>
+                  <th>Avg Price</th>
+                  <th>Invested Value</th>
+                  <th>Current Value</th>
+                  <th>Unrealised P&amp;L</th>
+                  <th>Today&apos;s P&amp;L</th>
+                  <th>Realised P&amp;L</th>
+                  <th>Total P&amp;L</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filteredPerformance.length
+                  ? filteredPerformance
+                      .map(
+                        (holding) => `
+                          <tr>
+                            <td>
+                              <strong>${escapeHtml(holding.symbol)}</strong><br />
+                              <small>${escapeHtml(holding.exchange || "NSE")}</small>
+                            </td>
+                            <td>${formatDate(holding.created_at)}</td>
+                            <td>${Number(holding.quantity || 0).toFixed(2)}</td>
+                            <td>${currency(holding.buy_price)}</td>
+                            <td>${currency(Number(holding.buy_price || 0) * Number(holding.quantity || 0))}</td>
+                            <td>${currency(Number(holding.current_price || 0) * Number(holding.quantity || 0))}</td>
+                            <td class="${Number(holding.profit_loss) >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
+                            <td class="${Number(holding.today_profit) >= 0 ? "profit" : "loss"}">${currency(holding.today_profit)}</td>
+                            <td class="${Number(holding.realized_profit) >= 0 ? "profit" : "loss"}">${currency(holding.realized_profit)}</td>
+                            <td class="${Number(holding.total_profit) >= 0 ? "profit" : "loss"}">${currency(holding.total_profit)}</td>
+                          </tr>
+                        `
+                      )
+                      .join("")
+                  : `<tr><td colspan="10"><span class="helper-text">${performance.length ? "No holdings match the active filters." : "No portfolio holdings are available yet."}</span></td></tr>`}
+              </tbody>
+              <tfoot>
+                <tr class="admin-total-row">
+                  <td colspan="2"><strong>Totals</strong></td>
+                  <td><strong>${filteredTotalQuantity.toFixed(2)}</strong></td>
+                  <td>—</td>
+                  <td><strong>${currency(filteredInvestedValue)}</strong></td>
+                  <td><strong>${currency(filteredCurrentValue)}</strong></td>
+                  <td class="${summary.total_profit_loss >= 0 ? "profit" : "loss"}"><strong>${currency(filteredPerformance.reduce((sum, holding) => sum + Number(holding.profit_loss || 0), 0))}</strong></td>
+                  <td class="${totalTodayProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalTodayProfit)}</strong></td>
+                  <td class="${totalRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalRealizedProfit)}</strong></td>
+                  <td class="${totalCombinedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalCombinedProfit)}</strong></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <div class="admin-table-bottom-scroll" id="userPositionsTableScroller" aria-label="Scroll portfolio holdings table horizontally">
+            <div class="admin-table-bottom-scroll-inner"></div>
+          </div>
+        </article>
 
-          <article class="user-app-card" id="userAllocationCard">
-            <div class="panel-head"><h3>Portfolio Allocation</h3><span class="badge">Sector View</span></div>
-            <div class="allocation-summary-bar">
-              ${exposureEntries.length
-                ? exposureEntries.map(([, value]) => `<span style="width:${Math.max(Number(value), 8)}%"></span>`).join("")
-                : `<span style="width:100%"></span>`}
+        <article class="table-card full-span-card user-lifetime-card">
+          <div class="panel-head">
+            <div>
+              <h3>Lifetime P&amp;L</h3>
+              <p class="helper-text">Every admin sale is reflected here with the original buy date and realised profit or loss.</p>
             </div>
-            <div class="allocation-grid">
-              ${exposureEntries.length
-                ? exposureEntries
-                    .map(
-                      ([sector, value]) => `
-                        <article class="allocation-pill">
-                          <strong>${escapeHtml(sector)}</strong>
-                          <span>${Number(value).toFixed(0)}%</span>
-                          <small>Estimated portfolio exposure</small>
-                        </article>
-                      `
-                    )
-                    .join("")
-                : `<article class="allocation-pill"><strong>No allocation data</strong><small>Add a stock to populate your sector mix.</small></article>`}
-            </div>
-          </article>
-        </div>
-
-        <div class="user-app-grid">
-          <article class="user-app-card" id="userPortfolioCard">
-            <div class="panel-head"><h3>Portfolio Holdings</h3><span class="badge green">Live</span></div>
-            <div class="table-wrap">
-              <table class="compact-table">
-                <thead><tr><th>Asset</th><th>Invested</th><th>Live Value</th><th>P&amp;L</th><th>Action</th></tr></thead>
-                <tbody>
-                  ${filteredPerformance.length
-                    ? filteredPerformance
-                        .map(
-                          (holding) => `
-                            <tr>
-                              <td>${holding.symbol}<br /><small>${holding.sector || "Tracked holding"}</small></td>
-                              <td>${currency(holding.buy_price * holding.quantity)}</td>
-                              <td>${currency(holding.value)}</td>
-                              <td><strong class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}</strong><br /><small>${percent(holding.percent_change)}</small></td>
-                              <td><button class="secondary-btn compact-btn" type="button" data-delete-holding="${holding.holding_id}" data-symbol="${holding.symbol}">Remove</button></td>
-                            </tr>
-                          `
-                        )
-                        .join("")
-                    : `<tr><td colspan="5"><span class="helper-text">${performance.length ? "No holdings match the active filters." : "No stocks added yet. Use the form to build the portfolio."}</span></td></tr>`}
-                </tbody>
-              </table>
-            </div>
-          </article>
-
-          <article class="user-app-card">
-            <div class="panel-head"><h3>Add To Portfolio</h3><span class="badge">Manual</span></div>
-            <form id="portfolioForm" class="portfolio-form">
-              <label><span>Stock Symbol</span><input name="symbol" type="text" required /></label>
-              <label><span>Quantity</span><input name="quantity" type="number" min="1" required /></label>
-              <label><span>Buy Price</span><input name="buyPrice" type="number" min="1" step="0.01" required /></label>
-              <label><span>Exchange</span><input name="exchange" type="text" value="NSE" required /></label>
-              <button class="primary-btn" type="submit">Add Stock</button>
-            </form>
-          </article>
-        </div>
-
-        <div class="user-app-grid">
-          <article class="user-app-card" id="userSignalsCard">
-            <div class="panel-head"><h3>Performance Signals</h3><span class="badge">Insights</span></div>
-            <div class="performance-grid">
-              <article class="note-card">
-                <strong>Best performer</strong>
-                <span>${topPerformer ? topPerformer.symbol : "Pending"}</span>
-                <small class="${topPerformer && topPerformer.profit_loss >= 0 ? "profit" : ""}">${topPerformer ? `${currency(topPerformer.profit_loss)} · ${percent(topPerformer.percent_change)}` : "No data yet"}</small>
-              </article>
-              <article class="note-card">
-                <strong>Needs attention</strong>
-                <span>${laggard ? laggard.symbol : "Pending"}</span>
-                <small class="${laggard && laggard.profit_loss < 0 ? "loss" : ""}">${laggard ? `${currency(laggard.profit_loss)} · ${percent(laggard.percent_change)}` : "No data yet"}</small>
-              </article>
-              <article class="note-card">
-                <strong>Risk level</strong>
-                <span>${summary.risk_level || "Moderate"}</span>
-                <small>${summary.diversification_analysis || "Diversification insight will appear here."}</small>
-              </article>
-              <article class="note-card">
-                <strong>Winning positions</strong>
-                <span>${profitableCount}/${performance.length || 0}</span>
-                <small>${gainRate.toFixed(0)}% of tracked holdings are in profit.</small>
-              </article>
-            </div>
-          </article>
-
-          <article class="user-app-card" id="userActivityCard">
-            <div class="panel-head"><h3>Recent Activity</h3><span class="badge">Timeline</span></div>
-            <div class="stack-list">
-              ${buildRecentActivityMarkup(performance)}
-            </div>
-            <div class="actions-row" style="margin-top:14px;">
-              <button class="download-btn" type="button" id="userPrintBtn">Download Dashboard</button>
-            </div>
-          </article>
-        </div>
+            <span class="badge ${filteredSoldHistory.length ? "green" : ""}">${filteredSoldHistory.length} Records</span>
+          </div>
+          <div class="table-wrap admin-position-table-wrap">
+            <table class="admin-position-table user-lifetime-table">
+              <thead>
+                <tr>
+                  <th>Stock Name</th>
+                  <th>Date of Purchase</th>
+                  <th>Date of Profit</th>
+                  <th>P&amp;L</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filteredSoldHistory.length
+                  ? filteredSoldHistory
+                      .map(
+                        (entry) => `
+                          <tr>
+                            <td>
+                              <strong>${escapeHtml(entry.symbol)}</strong><br />
+                              <small>${escapeHtml(entry.exchange || "NSE")}</small>
+                            </td>
+                            <td>${formatDate(entry.created_at)}</td>
+                            <td>${formatDateTime(entry.sold_at)}</td>
+                            <td class="${Number(entry.profit_loss) >= 0 ? "profit" : "loss"}">${currency(entry.profit_loss)}</td>
+                          </tr>
+                        `
+                      )
+                      .join("")
+                  : `<tr><td colspan="4"><span class="helper-text">No realised profit or loss entries are available yet.</span></td></tr>`}
+              </tbody>
+            </table>
+          </div>
+        </article>
       </div>
     </section>
   `;
@@ -2920,10 +2877,8 @@ async function renderUserPortal() {
     revealPortal(mount);
     activeRole = "user";
     activeUserId = profile.id;
-    document.getElementById("userPrintBtn").addEventListener("click", () => window.print());
-    setupPortfolioForm();
-    setupHoldingDeleteButtons();
     setupUserPortfolioFilters();
+    setupScrollSync("userPositionsTableWrap", "userPositionsTableScroller");
     setupPortalActions();
   } catch (error) {
     renderPortalError(mount, "User Dashboard", `Login succeeded, but portfolio data could not load yet. ${formatError(error)}`);
