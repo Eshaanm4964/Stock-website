@@ -660,6 +660,25 @@ function setupReviewForm() {
 }
 
 function setupPageTransitions() {
+  let overlay = document.getElementById("pageTransitionOverlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "pageTransitionOverlay";
+    overlay.className = "page-transition-overlay";
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.innerHTML = `
+      <div class="page-transition-card">
+        <span class="page-transition-logo" aria-hidden="true">
+          <img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" />
+        </span>
+        <strong>Loading AssetYantra...</strong>
+        <p>Please wait while we move you to the next page.</p>
+        <div class="page-transition-bar" aria-hidden="true"><span></span></div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  }
+
   document.body.classList.add("page-enter");
 
   window.requestAnimationFrame(() => {
@@ -683,10 +702,12 @@ function setupPageTransitions() {
       if (url.href === window.location.href) return;
 
       event.preventDefault();
+      overlay.classList.add("is-visible");
+      overlay.setAttribute("aria-hidden", "false");
       document.body.classList.add("page-transitioning");
       window.setTimeout(() => {
         window.location.href = url.href;
-      }, 220);
+      }, 260);
     });
   });
 }
