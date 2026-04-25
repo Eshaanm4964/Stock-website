@@ -259,8 +259,8 @@ function showDashboardLoading(title, text) {
   const overlay = ensureDashboardLoadingOverlay();
   const titleNode = document.getElementById("dashboardLoadingTitle");
   const textNode = document.getElementById("dashboardLoadingText");
-  if (titleNode) titleNode.textContent = title || "Refreshing dashboard...";
-  if (textNode) textNode.textContent = text || "Please wait while we update your holdings and realised profit.";
+  if (titleNode) titleNode.textContent = title || "Opening user dashboard...";
+  if (textNode) textNode.textContent = text || "Loading your holdings, returns, and portfolio summary.";
   overlay.classList.remove("hidden");
   overlay.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
@@ -513,7 +513,12 @@ function setupUserPortfolioFilters() {
     statusFilter.value = userUiState.status;
     statusFilter.addEventListener("change", async () => {
       userUiState.status = statusFilter.value;
-      await renderUserPortal({ showLoading: true, silent: true });
+      await renderUserPortal({
+        showLoading: true,
+        silent: true,
+        loadingTitle: "Opening user dashboard...",
+        loadingText: "Loading your holdings, returns, and portfolio summary."
+      });
     });
   }
 }
@@ -2692,12 +2697,12 @@ async function renderUserPortal(options = {}) {
   if (!mount) return;
   if (userRenderInFlight) return;
   userRenderInFlight = true;
-  const { showLoading = false, silent = false } = options;
+  const { showLoading = false, silent = false, loadingTitle, loadingText } = options;
   if (!silent) {
     revealPortal(mount);
   }
   if (showLoading) {
-    showDashboardLoading("Updating portfolio...", "Refreshing your filtered holdings and realised profit.");
+    showDashboardLoading(loadingTitle, loadingText);
   }
   try {
     const [profile, summary, soldHistory] = await Promise.all([
@@ -3254,7 +3259,7 @@ function setupLogin() {
     if (activeRole === "admin" && isAdminDashboardPage()) {
       await renderAdminPortal().catch(() => {});
     }
-  }, 2000);
+  }, 3000);
 }
 
 function setupDashboardPages() {
