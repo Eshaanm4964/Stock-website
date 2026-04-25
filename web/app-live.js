@@ -3337,6 +3337,39 @@ function setupPublicPageVisibility() {
   document.querySelectorAll(".fade-up").forEach((node) => node.classList.add("in-view"));
 }
 
+function setupFloatingWhatsApp() {
+  const publicPages = new Set(["home", "about", "products", "contact", "trust-safety", "legal"]);
+  const page = document.body?.dataset?.page;
+  const existing = document.querySelector(".floating-whatsapp");
+
+  if (!publicPages.has(page)) {
+    existing?.remove();
+    return;
+  }
+
+  if (existing) return;
+
+  const anchor = document.createElement("a");
+  anchor.className = "floating-whatsapp";
+  anchor.href = "https://wa.me/919089080505";
+  anchor.target = "_blank";
+  anchor.rel = "noreferrer";
+  anchor.setAttribute("aria-label", "Chat with AssetYantra on WhatsApp");
+  anchor.innerHTML = `
+    <span class="floating-whatsapp-icon" aria-hidden="true">
+      <svg viewBox="0 0 32 32" role="presentation" focusable="false">
+        <path d="M19.11 17.33c-.29-.15-1.71-.84-1.97-.94-.26-.1-.45-.15-.64.15-.19.29-.74.94-.9 1.13-.16.19-.33.22-.62.07-.29-.15-1.23-.45-2.35-1.44-.87-.77-1.46-1.72-1.63-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.33.43-.49.14-.17.19-.29.29-.49.1-.19.05-.37-.02-.52-.07-.15-.64-1.54-.87-2.1-.23-.56-.47-.49-.64-.49l-.54-.01c-.19 0-.49.07-.74.33-.26.26-.98.96-.98 2.34s1 2.71 1.14 2.9c.14.19 1.96 2.99 4.75 4.19.66.29 1.18.46 1.58.59.66.21 1.25.18 1.72.11.52-.08 1.71-.7 1.95-1.38.24-.68.24-1.26.17-1.38-.07-.12-.26-.19-.55-.34z"></path>
+        <path d="M16.03 3.2c-6.96 0-12.61 5.65-12.61 12.61 0 2.21.58 4.36 1.68 6.25L3.2 28.8l6.92-1.82c1.8.98 3.83 1.49 5.91 1.49h.01c6.95 0 12.6-5.65 12.6-12.61 0-3.37-1.31-6.54-3.7-8.92A12.55 12.55 0 0 0 16.03 3.2zm0 22.95h-.01a10.3 10.3 0 0 1-5.25-1.44l-.38-.22-4.11 1.08 1.1-4-.24-.41a10.27 10.27 0 0 1-1.57-5.41c0-5.67 4.61-10.28 10.29-10.28 2.74 0 5.31 1.07 7.25 3.02a10.2 10.2 0 0 1 3.01 7.26c0 5.67-4.61 10.29-10.29 10.29z"></path>
+      </svg>
+    </span>
+    <span class="floating-whatsapp-copy">
+      <strong>WhatsApp</strong>
+      <small>Chat now</small>
+    </span>
+  `;
+  document.body.appendChild(anchor);
+}
+
 function isFinancialQuestion(message) {
   const text = message.toLowerCase();
   const keywords = [
@@ -3390,6 +3423,7 @@ loadSiteControls().catch(() => {});
 setupReviewForm();
 setupPageTransitions();
 setupPublicPageVisibility();
+setupFloatingWhatsApp();
 setupHomePage();
 setupLogin();
 setupDashboardPages();
