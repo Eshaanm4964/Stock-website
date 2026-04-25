@@ -7,6 +7,7 @@ from app.models.user import UserRole
 
 
 IdentifierStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=120)]
+OptionalIdentifierStr = Annotated[str, StringConstraints(strip_whitespace=True, max_length=120)]
 PhoneStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=10, max_length=20)]
 PasswordStr = Annotated[str, StringConstraints(min_length=8, max_length=128)]
 OtpStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=6, max_length=6, pattern=r"^\d{6}$")]
@@ -27,7 +28,7 @@ class SignupOtpRequest(BaseModel):
 
 class OtpRequest(BaseModel):
     role: UserRole
-    identifier: IdentifierStr
+    identifier: OptionalIdentifierStr | None = None
     password: PasswordStr
     phone_number: PhoneStr
 
@@ -39,7 +40,7 @@ class OtpResponse(BaseModel):
 
 class LoginRequest(BaseModel):
     role: UserRole
-    identifier: IdentifierStr
+    identifier: OptionalIdentifierStr | None = None
     password: PasswordStr
     phone_number: PhoneStr
     otp: OtpStr

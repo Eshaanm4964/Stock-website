@@ -7,6 +7,7 @@ let activeUserId = null;
 let liveTickerTimer = null;
 let adminRefreshTimer = null;
 let homeHeroTimer = null;
+let userRenderInFlight = false;
 let adminUiState = {
   search: "",
   clientFilter: "",
@@ -219,6 +220,54 @@ function showAuthLoading(title, text) {
 
 function hideAuthLoading() {
   const overlay = document.getElementById("authLoadingOverlay");
+  if (!overlay) return;
+  overlay.classList.add("hidden");
+  overlay.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+
+function ensureDashboardLoadingOverlay() {
+  let overlay = document.getElementById("dashboardLoadingOverlay");
+  if (overlay) return overlay;
+  overlay = document.createElement("div");
+  overlay.id = "dashboardLoadingOverlay";
+  overlay.className = "auth-loading-overlay hidden";
+  overlay.setAttribute("aria-hidden", "true");
+  overlay.innerHTML = `
+    <div class="auth-loading-card">
+      <div class="auth-loading-brand">AssetYantra Portfolio Sync</div>
+      <div class="auth-orbit-loader" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" />
+      </div>
+      <h2 id="dashboardLoadingTitle">Refreshing dashboard...</h2>
+      <p id="dashboardLoadingText">Please wait while we update your holdings and realised profit.</p>
+      <div class="auth-loading-progress"><span></span></div>
+      <div class="auth-loading-steps">
+        <span>Portfolio</span>
+        <span>Pricing</span>
+        <span>History</span>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+function showDashboardLoading(title, text) {
+  const overlay = ensureDashboardLoadingOverlay();
+  const titleNode = document.getElementById("dashboardLoadingTitle");
+  const textNode = document.getElementById("dashboardLoadingText");
+  if (titleNode) titleNode.textContent = title || "Refreshing dashboard...";
+  if (textNode) textNode.textContent = text || "Please wait while we update your holdings and realised profit.";
+  overlay.classList.remove("hidden");
+  overlay.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+}
+
+function hideDashboardLoading() {
+  const overlay = document.getElementById("dashboardLoadingOverlay");
   if (!overlay) return;
   overlay.classList.add("hidden");
   overlay.setAttribute("aria-hidden", "true");
@@ -464,7 +513,7 @@ function setupUserPortfolioFilters() {
     statusFilter.value = userUiState.status;
     statusFilter.addEventListener("change", async () => {
       userUiState.status = statusFilter.value;
-      await renderUserPortal();
+      await renderUserPortal({ showLoading: true, silent: true });
     });
   }
 }
@@ -2638,10 +2687,18 @@ async function renderAdminPortal() {
   }
 }
 
-async function renderUserPortal() {
+async function renderUserPortal(options = {}) {
   const mount = document.getElementById("userPortal");
   if (!mount) return;
-  revealPortal(mount);
+  if (userRenderInFlight) return;
+  userRenderInFlight = true;
+  const { showLoading = false, silent = false } = options;
+  if (!silent) {
+    revealPortal(mount);
+  }
+  if (showLoading) {
+    showDashboardLoading("Updating portfolio...", "Refreshing your filtered holdings and realised profit.");
+  }
   try {
     const [profile, summary, soldHistory] = await Promise.all([
       api("/auth/me"),
@@ -2695,6 +2752,7 @@ async function renderUserPortal() {
           <div>
             <p class="eyebrow">Investor Portfolio</p>
             <h2>${profile.full_name}</h2>
+            <p class="helper-text">Client ID: ${escapeHtml(profile.fixed_user_id || profile.username || "Not assigned")}</p>
           </div>
           <div class="user-topbar-actions">
             <select class="user-search user-holdings-filter" id="userPortfolioStatusFilter">
@@ -2837,6 +2895,9 @@ async function renderUserPortal() {
     if (retry) {
       retry.addEventListener("click", () => renderUserPortal());
     }
+  } finally {
+    hideDashboardLoading();
+    userRenderInFlight = false;
   }
 }
 
@@ -3028,14 +3089,14 @@ function setupLogin() {
           document.getElementById("adminOtpHint").textContent = response.otp_preview ? `Testing OTP: ${response.otp_preview}` : response.message;
           document.getElementById("adminError").textContent = "";
         } else {
-          if (!hasRequiredFields(userForm, ["userId", "password", "phone"])) {
-            document.getElementById("userError").textContent = "Fill user ID, password, and phone number before requesting verification code.";
+          if (!hasRequiredFields(userForm, ["password", "phone"])) {
+            document.getElementById("userError").textContent = "Fill password and phone number before requesting verification code. Client ID is optional.";
             return;
           }
           hidePortalMounts();
           const payload = {
             role: "user",
-            identifier: String(userForm.querySelector('[name="userId"]').value).trim().toUpperCase(),
+            identifier: String(userForm.querySelector('[name="userId"]').value || "").trim().toUpperCase(),
             password: String(userForm.querySelector('[name="password"]').value),
             phone_number: String(userForm.querySelector('[name="phone"]').value).trim()
           };
@@ -3095,8 +3156,8 @@ function setupLogin() {
     const submitButton = userForm.querySelector('button[type="submit"]');
     const stopLoading = setButtonLoading(submitButton, "Opening Dashboard...");
     try {
-      if (!hasRequiredFields(userForm, ["userId", "password", "phone", "otp"])) {
-        document.getElementById("userError").textContent = "Complete user ID, password, phone number, and verification code before opening the dashboard.";
+      if (!hasRequiredFields(userForm, ["password", "phone", "otp"])) {
+        document.getElementById("userError").textContent = "Complete password, phone number, and verification code before opening the dashboard. Client ID is optional.";
         return;
       }
       const data = new FormData(userForm);
@@ -3106,7 +3167,7 @@ function setupLogin() {
         method: "POST",
         body: JSON.stringify({
           role: "user",
-          identifier: String(data.get("userId")).trim().toUpperCase(),
+          identifier: String(data.get("userId") || "").trim().toUpperCase(),
           password: String(data.get("password")),
           phone_number: String(data.get("phone")).trim(),
           otp: String(data.get("otp")).trim()
@@ -3187,7 +3248,7 @@ function setupLogin() {
   liveTickerTimer = setInterval(async () => {
     if (document.hidden) return;
     if (activeRole === "user" && activeUserId && isUserDashboardPage()) {
-      await renderUserPortal().catch(() => {});
+      await renderUserPortal({ silent: true }).catch(() => {});
       return;
     }
     if (activeRole === "admin" && isAdminDashboardPage()) {

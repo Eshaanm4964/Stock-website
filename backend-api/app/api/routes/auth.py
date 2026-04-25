@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy import delete, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
@@ -41,13 +41,19 @@ def _normalize_datetime(value: datetime) -> datetime:
 
 
 async def _find_user_for_login(
-    role: UserRole, identifier: str, db: AsyncSession
+    role: UserRole, identifier: str, phone_number: str, db: AsyncSession
 ) -> User | None:
     statement = select(User).where(User.role == role)
     if role == UserRole.ADMIN:
         statement = statement.where(User.username == identifier)
     else:
-        statement = statement.where(User.fixed_user_id == identifier.upper())
+        normalized_phone = _normalize_phone_or_raw(phone_number)
+        if identifier:
+            statement = statement.where(
+                or_(User.fixed_user_id == identifier.upper(), User.phone_number == normalized_phone)
+            )
+        else:
+            statement = statement.where(User.phone_number == normalized_phone)
     return (await db.execute(statement)).scalar_one_or_none()
 
 
@@ -85,23 +91,27 @@ async def request_login_otp(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> OtpResponse:
-    identifier = payload.identifier if payload.role == UserRole.ADMIN else payload.identifier.upper()
+    raw_identifier = (payload.identifier or "").strip()
+    if payload.role == UserRole.ADMIN and not raw_identifier:
+        raise HTTPException(status_code=400, detail="Username is required for admin login")
+    identifier = raw_identifier if payload.role == UserRole.ADMIN else raw_identifier.upper()
+    rate_identifier = identifier or payload.phone_number
     client_ip = request.client.host if request.client else None
     await enforce_rate_limit(
         db,
         stage="request_otp",
-        identifier=identifier,
+        identifier=rate_identifier,
         role=payload.role.value,
         phone_number=payload.phone_number,
         ip_address=client_ip,
     )
-    user = await _find_user_for_login(payload.role, identifier, db)
+    user = await _find_user_for_login(payload.role, identifier, payload.phone_number, db)
     if not user or not verify_password(payload.password, user.hashed_password):
         await log_auth_attempt(
             db,
             stage="request_otp",
             role=payload.role.value,
-            identifier=identifier,
+            identifier=rate_identifier,
             phone_number=payload.phone_number,
             ip_address=client_ip,
             success=False,
@@ -114,7 +124,7 @@ async def request_login_otp(
             db,
             stage="request_otp",
             role=payload.role.value,
-            identifier=identifier,
+            identifier=rate_identifier,
             user_id=user.id,
             phone_number=payload.phone_number,
             ip_address=client_ip,
@@ -127,7 +137,7 @@ async def request_login_otp(
             db,
             stage="request_otp",
             role=payload.role.value,
-            identifier=identifier,
+            identifier=rate_identifier,
             user_id=user.id,
             phone_number=payload.phone_number,
             ip_address=client_ip,
@@ -151,7 +161,7 @@ async def request_login_otp(
             db,
             stage="request_otp",
             role=payload.role.value,
-            identifier=identifier,
+            identifier=rate_identifier,
             user_id=user.id,
             phone_number=payload.phone_number,
             ip_address=client_ip,
@@ -177,7 +187,7 @@ async def request_login_otp(
             db,
             stage="request_otp",
             role=payload.role.value,
-            identifier=identifier,
+            identifier=rate_identifier,
             user_id=user.id,
             phone_number=payload.phone_number,
             ip_address=client_ip,
@@ -208,7 +218,7 @@ async def request_login_otp(
             db,
             stage="request_otp",
             role=payload.role.value,
-            identifier=identifier,
+            identifier=rate_identifier,
             user_id=user.id,
             phone_number=payload.phone_number,
             ip_address=client_ip,
@@ -223,7 +233,7 @@ async def request_login_otp(
         db,
         stage="request_otp",
         role=payload.role.value,
-        identifier=identifier,
+        identifier=rate_identifier,
         user_id=user.id,
         phone_number=payload.phone_number,
         ip_address=client_ip,
@@ -245,23 +255,27 @@ async def login(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> TokenResponse:
-    identifier = payload.identifier if payload.role == UserRole.ADMIN else payload.identifier.upper()
+    raw_identifier = (payload.identifier or "").strip()
+    if payload.role == UserRole.ADMIN and not raw_identifier:
+        raise HTTPException(status_code=400, detail="Username is required for admin login")
+    identifier = raw_identifier if payload.role == UserRole.ADMIN else raw_identifier.upper()
+    rate_identifier = identifier or payload.phone_number
     client_ip = request.client.host if request.client else None
     await enforce_rate_limit(
         db,
         stage="login",
-        identifier=identifier,
+        identifier=rate_identifier,
         role=payload.role.value,
         phone_number=payload.phone_number,
         ip_address=client_ip,
     )
-    user = await _find_user_for_login(payload.role, identifier, db)
+    user = await _find_user_for_login(payload.role, identifier, payload.phone_number, db)
     if not user or not verify_password(payload.password, user.hashed_password):
         await log_auth_attempt(
             db,
             stage="login",
             role=payload.role.value,
-            identifier=identifier,
+            identifier=rate_identifier,
             phone_number=payload.phone_number,
             ip_address=client_ip,
             success=False,
@@ -274,7 +288,7 @@ async def login(
             db,
             stage="login",
             role=payload.role.value,
-            identifier=identifier,
+            identifier=rate_identifier,
             user_id=user.id,
             phone_number=payload.phone_number,
             ip_address=client_ip,
@@ -288,7 +302,7 @@ async def login(
             db,
             stage="login",
             role=payload.role.value,
-            identifier=identifier,
+            identifier=rate_identifier,
             user_id=user.id,
             phone_number=payload.phone_number,
             ip_address=client_ip,
@@ -315,7 +329,7 @@ async def login(
             db,
             stage="login",
             role=payload.role.value,
-            identifier=identifier,
+            identifier=rate_identifier,
             user_id=user.id,
             phone_number=payload.phone_number,
             ip_address=client_ip,
@@ -328,7 +342,7 @@ async def login(
             db,
             stage="login",
             role=payload.role.value,
-            identifier=identifier,
+            identifier=rate_identifier,
             user_id=user.id,
             phone_number=payload.phone_number,
             ip_address=client_ip,
@@ -341,7 +355,7 @@ async def login(
             db,
             stage="login",
             role=payload.role.value,
-            identifier=identifier,
+            identifier=rate_identifier,
             user_id=user.id,
             phone_number=payload.phone_number,
             ip_address=client_ip,
@@ -356,7 +370,7 @@ async def login(
         db,
         stage="login",
         role=payload.role.value,
-        identifier=identifier,
+        identifier=rate_identifier,
         user_id=user.id,
         phone_number=payload.phone_number,
         ip_address=client_ip,
