@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -9,7 +9,7 @@ from app.models.review import Review
 from app.models.user import User, UserRole
 
 
-DEMO_FIXED_USER_IDS = ("CLIENT-1001", "CLIENT-2002", "CLIENT-3003")
+DEMO_FIXED_USER_IDS = ("AAR101", "MEE202", "ROH303")
 
 
 async def ensure_admin_user(db: AsyncSession) -> None:
@@ -47,27 +47,36 @@ async def ensure_demo_users(db: AsyncSession) -> None:
         {
             "username": "client_1001",
             "email": "aarav@example.com",
-            "fixed_user_id": "CLIENT-1001",
+            "fixed_user_id": "AAR101",
             "full_name": "Aarav Mehta",
             "phone_number": "9123456780",
         },
         {
             "username": "client_2002",
             "email": "meera@example.com",
-            "fixed_user_id": "CLIENT-2002",
+            "fixed_user_id": "MEE202",
             "full_name": "Meera Kapoor",
             "phone_number": "9234567890",
         },
         {
             "username": "client_3003",
             "email": "rohan@example.com",
-            "fixed_user_id": "CLIENT-3003",
+            "fixed_user_id": "ROH303",
             "full_name": "Rohan Iyer",
             "phone_number": "9345678901",
         },
     ]
     for payload in demo_users:
-        existing = await db.execute(select(User).where(User.fixed_user_id == payload["fixed_user_id"]))
+        existing = await db.execute(
+            select(User).where(
+                User.role == UserRole.USER,
+                or_(
+                    User.fixed_user_id == payload["fixed_user_id"],
+                    User.username == payload["username"],
+                    User.email == payload["email"],
+                ),
+            )
+        )
         user = existing.scalar_one_or_none()
         if user:
             user.username = payload["username"]
@@ -100,17 +109,17 @@ async def ensure_demo_users(db: AsyncSession) -> None:
             continue
 
         seeded_holdings = {
-            "CLIENT-1001": [
+            "AAR101": [
                 {"symbol": "INFY", "quantity": 80, "buy_price": 1420},
                 {"symbol": "SBIN", "quantity": 150, "buy_price": 710},
                 {"symbol": "TATAMOTORS", "quantity": 75, "buy_price": 945},
             ],
-            "CLIENT-2002": [
+            "MEE202": [
                 {"symbol": "HDFCBANK", "quantity": 100, "buy_price": 1570},
                 {"symbol": "RELIANCE", "quantity": 64, "buy_price": 2845},
                 {"symbol": "LT", "quantity": 40, "buy_price": 3530},
             ],
-            "CLIENT-3003": [
+            "ROH303": [
                 {"symbol": "ICICIBANK", "quantity": 130, "buy_price": 1086},
                 {"symbol": "TCS", "quantity": 38, "buy_price": 3720},
                 {"symbol": "SUNPHARMA", "quantity": 55, "buy_price": 1655},

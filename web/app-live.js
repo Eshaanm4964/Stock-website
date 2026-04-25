@@ -155,7 +155,13 @@ function stopAdminRefresh() {
 
 function startAdminRefresh() {
   stopAdminRefresh();
-  return;
+  adminRefreshTimer = window.setInterval(async () => {
+    if (document.hidden) return;
+    if (isAdminDashboardPage() && activeRole === "admin") {
+      await renderAdminPortal().catch(() => {});
+    }
+  }, 2000);
+  return adminRefreshTimer;
 }
 
 function setButtonLoading(button, loadingText) {
@@ -1446,20 +1452,6 @@ function setupPortalActions() {
     });
   });
 
-  document.querySelectorAll("[data-refresh-user]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      button.disabled = true;
-      const originalText = button.textContent;
-      button.textContent = "Refreshing...";
-      try {
-        await renderUserPortal();
-      } finally {
-        button.disabled = false;
-        button.textContent = originalText || "Refresh";
-      }
-    });
-  });
-
   document.querySelectorAll("[data-admin-action-nav]").forEach((select) => {
     select.addEventListener("change", () => {
       if (!select.value) return;
@@ -1895,7 +1887,7 @@ async function renderAdminPortal() {
       <header class="user-topbar admin-compact-topbar admin-simple-topbar">
         <div class="admin-toolbar-left">
           <input class="user-search admin-universal-search" id="adminUniversalSearch" type="text" placeholder="Search user, client ID, or stock" />
-          <p class="live-price-status admin-auto-refresh-label">Auto-refresh every 5 seconds</p>
+          <p class="live-price-status admin-auto-refresh-label">Live sync enabled</p>
         </div>
         <div class="user-topbar-actions admin-toolbar-right">
           <select class="user-search admin-action-select" data-admin-action-nav="true">
@@ -2711,7 +2703,6 @@ async function renderUserPortal() {
               <option value="loss">In loss</option>
               <option value="flat">Flat</option>
             </select>
-            <button class="secondary-btn" type="button" data-refresh-user="true">Refresh</button>
             <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
           </div>
         </header>
@@ -3226,10 +3217,15 @@ function setupLogin() {
   checkBackendStatus();
 
   liveTickerTimer = setInterval(async () => {
-    if (activeRole === "user" && activeUserId) {
-      await renderUserPortal();
+    if (document.hidden) return;
+    if (activeRole === "user" && activeUserId && isUserDashboardPage()) {
+      await renderUserPortal().catch(() => {});
+      return;
     }
-  }, 15000);
+    if (activeRole === "admin" && isAdminDashboardPage()) {
+      await renderAdminPortal().catch(() => {});
+    }
+  }, 2000);
 }
 
 function setupDashboardPages() {
