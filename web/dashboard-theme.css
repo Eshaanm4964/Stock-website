@@ -1077,6 +1077,7 @@ body.dashboard-page {
   background:
     radial-gradient(circle at top right, rgba(15, 138, 85, 0.14), transparent 42%),
     linear-gradient(180deg, rgba(245,252,247,0.98) 0%, rgba(237,248,240,0.98) 100%);
+  border-color: rgba(15, 138, 85, 0.16);
 }
 
 .user-summary-strip span.loss {
@@ -1084,6 +1085,7 @@ body.dashboard-page {
   background:
     radial-gradient(circle at top right, rgba(194, 65, 58, 0.12), transparent 42%),
     linear-gradient(180deg, rgba(255,250,249,0.98) 0%, rgba(254,242,240,0.98) 100%);
+  border-color: rgba(194, 65, 58, 0.16);
 }
 
 .user-summary-strip span::after {
@@ -1130,12 +1132,33 @@ body.dashboard-page {
 }
 
 .user-invested-cell {
-  color: #445a50;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .user-current-cell {
   font-weight: 900;
+}
+
+.user-position-table td.user-invested-cell.profit,
+.user-position-table td.user-current-cell.profit {
+  color: #0f8a55;
+  background: linear-gradient(180deg, rgba(241, 251, 245, 0.9) 0%, rgba(232, 247, 237, 0.9) 100%);
+}
+
+.user-position-table td.user-invested-cell.loss,
+.user-position-table td.user-current-cell.loss {
+  color: #c2413a;
+  background: linear-gradient(180deg, rgba(255, 248, 247, 0.92) 0%, rgba(252, 238, 236, 0.92) 100%);
+}
+
+.user-position-table td.profit,
+.user-lifetime-table td.profit {
+  color: #0f8a55;
+}
+
+.user-position-table td.loss,
+.user-lifetime-table td.loss {
+  color: #c2413a;
 }
 
 .user-lifetime-table {

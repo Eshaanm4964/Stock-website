@@ -1,5 +1,5 @@
 const STORAGE_KEY = "stock_trader_auth";
-const APP_LIVE_VERSION = "2026-04-24-admin-task-fix";
+const APP_LIVE_VERSION = "2026-04-25-user-dashboard-refresh";
 const SITE_CONTROL_KEY = "stock_trader_site_controls";
 const REVIEW_STORAGE_KEY = "stock_trader_reviews";
 let activeRole = null;
@@ -2554,7 +2554,7 @@ async function renderAdminPortal() {
                   <td colspan="3"><strong>Totals</strong></td>
                   <td><strong>${filteredTotalQuantity.toFixed(2)}</strong></td>
                   <td>—</td>
-                  <td><strong>${currency(filteredInvestedValue)}</strong></td>
+                  <td class="${filteredCurrentValue >= filteredInvestedValue ? "profit" : "loss"}"><strong>${currency(filteredInvestedValue)}</strong></td>
                   <td><strong>${currency(filteredCurrentValue)}</strong></td>
                   <td class="${filteredUnrealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredUnrealizedProfit)}</strong></td>
                   <td class="${filteredTodayProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredTodayProfit)}</strong></td>
@@ -2693,12 +2693,12 @@ async function renderUserPortal() {
       <div class="user-shell-main user-dashboard-stack">
         <header class="user-topbar user-clean-topbar">
           <div>
-            <p class="eyebrow">Portfolio Dashboard</p>
+            <p class="eyebrow">Investor Portfolio</p>
             <h2>${profile.full_name}</h2>
           </div>
           <div class="user-topbar-actions">
             <select class="user-search user-holdings-filter" id="userPortfolioStatusFilter">
-              <option value="all">All holdings</option>
+              <option value="all">All Holdings</option>
               <option value="profit">In profit</option>
               <option value="loss">In loss</option>
               <option value="flat">Flat</option>
@@ -2708,8 +2708,8 @@ async function renderUserPortal() {
         </header>
 
         <section class="simple-summary-strip user-summary-strip">
-          <span><strong>${currency(summary.total_portfolio_value)}</strong> Portfolio Value</span>
-          <span class="${summary.total_profit_loss >= 0 ? "profit" : "loss"}"><strong>${currency(summary.total_profit_loss)}</strong> Unrealised P&amp;L</span>
+          <span class="${filteredCurrentValue >= filteredInvestedValue ? "profit" : "loss"}"><strong>${currency(filteredCurrentValue)}</strong> Portfolio Value</span>
+          <span class="${totalUnrealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalUnrealizedProfit)}</strong> Unrealised P&amp;L</span>
           <span class="${totalRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalRealizedProfit)}</strong> Lifetime Realised P&amp;L</span>
           <span class="${totalTodayProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalTodayProfit)}</strong> Today&apos;s P&amp;L</span>
         </section>
@@ -2744,15 +2744,15 @@ async function renderUserPortal() {
                         (holding) => {
                           const investedValue = Number(holding.buy_price || 0) * Number(holding.quantity || 0);
                           const currentValue = Number(holding.current_price || 0) * Number(holding.quantity || 0);
-                          const currentValueClass = currentValue >= investedValue ? "profit" : "loss";
+                          const valueStateClass = currentValue >= investedValue ? "profit" : "loss";
                           return `
                           <tr>
                             <td><strong>${escapeHtml(holding.symbol)}</strong></td>
                             <td>${formatDate(holding.created_at)}</td>
                             <td>${Number(holding.quantity || 0).toFixed(2)}</td>
                             <td>${currency(holding.buy_price)}</td>
-                            <td class="user-invested-cell">${currency(investedValue)}</td>
-                            <td class="${currentValueClass} user-current-cell">${currency(currentValue)}</td>
+                            <td class="${valueStateClass} user-invested-cell">${currency(investedValue)}</td>
+                            <td class="${valueStateClass} user-current-cell">${currency(currentValue)}</td>
                             <td class="${Number(holding.profit_loss) >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
                             <td class="${Number(holding.today_profit) >= 0 ? "profit" : "loss"}">${currency(holding.today_profit)}</td>
                             <td class="${Number(holding.realized_profit) >= 0 ? "profit" : "loss"}">${currency(holding.realized_profit)}</td>
