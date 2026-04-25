@@ -1048,6 +1048,12 @@ body.dashboard-page {
     radial-gradient(circle at top right, rgba(196, 154, 67, 0.1), transparent 28%),
     linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(250,252,249,0.98) 100%);
   box-shadow: 0 18px 42px rgba(16, 37, 29, 0.06);
+  align-items: center;
+}
+
+.user-clean-topbar .user-topbar-actions {
+  margin-left: auto;
+  justify-content: flex-end;
 }
 
 .user-summary-strip span {
@@ -1064,6 +1070,20 @@ body.dashboard-page {
     radial-gradient(circle at top left, rgba(15, 138, 85, 0.08), transparent 28%),
     linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(249,252,249,0.98) 100%);
   box-shadow: 0 16px 32px rgba(16, 37, 29, 0.05);
+}
+
+.user-summary-strip span.profit {
+  color: #0f8a55;
+  background:
+    radial-gradient(circle at top right, rgba(15, 138, 85, 0.14), transparent 42%),
+    linear-gradient(180deg, rgba(245,252,247,0.98) 0%, rgba(237,248,240,0.98) 100%);
+}
+
+.user-summary-strip span.loss {
+  color: #c2413a;
+  background:
+    radial-gradient(circle at top right, rgba(194, 65, 58, 0.12), transparent 42%),
+    linear-gradient(180deg, rgba(255,250,249,0.98) 0%, rgba(254,242,240,0.98) 100%);
 }
 
 .user-summary-strip span::after {
@@ -1091,13 +1111,31 @@ body.dashboard-page {
     linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(249,252,248,0.98) 100%);
 }
 
+.user-holdings-filter {
+  min-width: 180px;
+  max-width: 180px;
+}
+
 .user-position-table {
   min-width: 1280px;
+}
+
+.user-position-table tbody tr:hover {
+  background: linear-gradient(180deg, rgba(248,252,248,0.96) 0%, rgba(255,252,245,0.96) 100%);
 }
 
 .user-position-table td strong,
 .user-lifetime-table td strong {
   color: #133225;
+}
+
+.user-invested-cell {
+  color: #445a50;
+  font-weight: 700;
+}
+
+.user-current-cell {
+  font-weight: 900;
 }
 
 .user-lifetime-table {
@@ -1117,5 +1155,15 @@ body.dashboard-page {
 @media (max-width: 760px) {
   .user-summary-strip {
     grid-template-columns: 1fr;
+  }
+
+  .user-clean-topbar .user-topbar-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .user-holdings-filter {
+    max-width: none;
+    width: 100%;
   }
 }

@@ -456,6 +456,8 @@ function setupUserPortfolioFilters() {
       userUiState.search = searchInput.value;
       await renderUserPortal();
     });
+  } else {
+    userUiState.search = "";
   }
 
   if (statusFilter) {
@@ -2691,13 +2693,11 @@ async function renderUserPortal() {
       <div class="user-shell-main user-dashboard-stack">
         <header class="user-topbar user-clean-topbar">
           <div>
-            <p class="eyebrow">Investor Workspace</p>
+            <p class="eyebrow">Portfolio Dashboard</p>
             <h2>${profile.full_name}</h2>
-            <p class="helper-text">Track your live holdings and lifetime realised profit in one clear portfolio workspace.</p>
           </div>
           <div class="user-topbar-actions">
-            <input class="user-search" id="userPortfolioSearch" type="text" placeholder="Search holdings by stock or sector" />
-            <select class="user-search" id="userPortfolioStatusFilter" style="max-width:180px;">
+            <select class="user-search user-holdings-filter" id="userPortfolioStatusFilter">
               <option value="all">All holdings</option>
               <option value="profit">In profit</option>
               <option value="loss">In loss</option>
@@ -2711,44 +2711,13 @@ async function renderUserPortal() {
           <span><strong>${currency(summary.total_portfolio_value)}</strong> Portfolio Value</span>
           <span class="${summary.total_profit_loss >= 0 ? "profit" : "loss"}"><strong>${currency(summary.total_profit_loss)}</strong> Unrealised P&amp;L</span>
           <span class="${totalRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalRealizedProfit)}</strong> Lifetime Realised P&amp;L</span>
-          <span><strong>${performance.length}</strong> Active Positions</span>
+          <span class="${totalTodayProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalTodayProfit)}</strong> Today&apos;s P&amp;L</span>
         </section>
-
-        <article class="user-app-card portfolio-ledger-card user-ledger-card">
-          <div class="portfolio-ledger-metrics">
-            <article>
-              <span>Total Invested</span>
-              <strong>${currency(filteredInvestedValue || totalInvested)}</strong>
-              <small>Capital deployed so far</small>
-            </article>
-            <article class="${totalCombinedProfit >= 0 ? "profit" : "loss"}">
-              <span>Total P&amp;L</span>
-              <strong>${currency(totalCombinedProfit)}</strong>
-              <small>${percent(overallPct)} overall return</small>
-            </article>
-            <article>
-              <span>Current Value</span>
-              <strong>${currency(totalVisibleValue || summary.total_portfolio_value)}</strong>
-              <small>Based on current filters</small>
-            </article>
-            <article>
-              <span>Today&apos;s P&amp;L</span>
-              <strong class="${totalTodayProfit >= 0 ? "profit" : "loss"}">${currency(totalTodayProfit)}</strong>
-              <small>Live mark-to-market move</small>
-            </article>
-            <article>
-              <span>Client ID</span>
-              <strong>${escapeHtml(profile.fixed_user_id || profile.username)}</strong>
-              <small>${gainRate.toFixed(0)}% positions in profit</small>
-            </article>
-          </div>
-        </article>
 
         <article class="table-card full-span-card user-holdings-card">
           <div class="panel-head">
             <div>
               <h3>Portfolio Holdings</h3>
-              <p class="helper-text">Your live holdings mirror the protected admin portfolio view, without sell controls.</p>
             </div>
             <span class="badge green">Live Portfolio</span>
           </div>
@@ -2772,23 +2741,25 @@ async function renderUserPortal() {
                 ${filteredPerformance.length
                   ? filteredPerformance
                       .map(
-                        (holding) => `
+                        (holding) => {
+                          const investedValue = Number(holding.buy_price || 0) * Number(holding.quantity || 0);
+                          const currentValue = Number(holding.current_price || 0) * Number(holding.quantity || 0);
+                          const currentValueClass = currentValue >= investedValue ? "profit" : "loss";
+                          return `
                           <tr>
-                            <td>
-                              <strong>${escapeHtml(holding.symbol)}</strong><br />
-                              <small>${escapeHtml(holding.exchange || "NSE")}</small>
-                            </td>
+                            <td><strong>${escapeHtml(holding.symbol)}</strong></td>
                             <td>${formatDate(holding.created_at)}</td>
                             <td>${Number(holding.quantity || 0).toFixed(2)}</td>
                             <td>${currency(holding.buy_price)}</td>
-                            <td>${currency(Number(holding.buy_price || 0) * Number(holding.quantity || 0))}</td>
-                            <td>${currency(Number(holding.current_price || 0) * Number(holding.quantity || 0))}</td>
+                            <td class="user-invested-cell">${currency(investedValue)}</td>
+                            <td class="${currentValueClass} user-current-cell">${currency(currentValue)}</td>
                             <td class="${Number(holding.profit_loss) >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
                             <td class="${Number(holding.today_profit) >= 0 ? "profit" : "loss"}">${currency(holding.today_profit)}</td>
                             <td class="${Number(holding.realized_profit) >= 0 ? "profit" : "loss"}">${currency(holding.realized_profit)}</td>
                             <td class="${Number(holding.total_profit) >= 0 ? "profit" : "loss"}">${currency(holding.total_profit)}</td>
                           </tr>
-                        `
+                        `;
+                        }
                       )
                       .join("")
                   : `<tr><td colspan="10"><span class="helper-text">${performance.length ? "No holdings match the active filters." : "No portfolio holdings are available yet."}</span></td></tr>`}
@@ -2799,8 +2770,8 @@ async function renderUserPortal() {
                   <td><strong>${filteredTotalQuantity.toFixed(2)}</strong></td>
                   <td>—</td>
                   <td><strong>${currency(filteredInvestedValue)}</strong></td>
-                  <td><strong>${currency(filteredCurrentValue)}</strong></td>
-                  <td class="${summary.total_profit_loss >= 0 ? "profit" : "loss"}"><strong>${currency(filteredPerformance.reduce((sum, holding) => sum + Number(holding.profit_loss || 0), 0))}</strong></td>
+                  <td class="${filteredCurrentValue >= filteredInvestedValue ? "profit" : "loss"}"><strong>${currency(filteredCurrentValue)}</strong></td>
+                  <td class="${filteredPerformance.reduce((sum, holding) => sum + Number(holding.profit_loss || 0), 0) >= 0 ? "profit" : "loss"}"><strong>${currency(filteredPerformance.reduce((sum, holding) => sum + Number(holding.profit_loss || 0), 0))}</strong></td>
                   <td class="${totalTodayProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalTodayProfit)}</strong></td>
                   <td class="${totalRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalRealizedProfit)}</strong></td>
                   <td class="${totalCombinedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalCombinedProfit)}</strong></td>
@@ -2837,10 +2808,7 @@ async function renderUserPortal() {
                       .map(
                         (entry) => `
                           <tr>
-                            <td>
-                              <strong>${escapeHtml(entry.symbol)}</strong><br />
-                              <small>${escapeHtml(entry.exchange || "NSE")}</small>
-                            </td>
+                            <td><strong>${escapeHtml(entry.symbol)}</strong></td>
                             <td>${formatDate(entry.created_at)}</td>
                             <td>${formatDateTime(entry.sold_at)}</td>
                             <td class="${Number(entry.profit_loss) >= 0 ? "profit" : "loss"}">${currency(entry.profit_loss)}</td>
