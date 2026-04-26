@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from redis.asyncio import Redis
-from sqlalchemy import delete, distinct, func, select, text
+from sqlalchemy import delete, distinct, func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_admin_user
 from app.core.config import get_settings
+from app.core.security import get_password_hash
 from app.db.session import get_db, get_redis
 from app.models.admin_setting import AdminSetting
 from app.models.admin_audit_log import AdminAuditLog
@@ -18,6 +19,7 @@ from app.models.sold_history import SoldHistory
 from app.models.user import User, UserRole
 from app.schemas.admin import (
     AdminAuditLogResponse,
+    AdminAddFundsRequest,
     AdminBulkUserActionRequest,
     AdminBulkUserActionResponse,
     AdminDashboardResponse,
@@ -30,6 +32,7 @@ from app.schemas.admin import (
     AdminSoldHistoryItem,
     AdminStockConcentrationItem,
     AdminSystemStatusResponse,
+    AdminUserCreateRequest,
     AdminUserActivityItem,
     AdminUserDashboardResponse,
     AdminUserStatusUpdateRequest,
@@ -39,7 +42,9 @@ from app.schemas.admin import (
 from app.schemas.review import ReviewResponse
 from app.services.portfolio_service import build_portfolio_summary
 from app.services.security_service import log_admin_action
+from app.services.sms_service import SmsDeliveryError, normalize_indian_mobile
 from app.services.stock_service import fetch_quote
+from app.utils.client_ids import generate_unique_client_id
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 settings = get_settings()
@@ -99,6 +104,8 @@ async def admin_users(
                     created_at=user.created_at,
                     portfolio_value=portfolio.total_portfolio_value,
                     total_holdings=len(holdings),
+                    initial_funds=float(user.initial_funds or 0),
+                    balance_funds=float(user.balance_funds or 0),
                 )
             )
         except Exception:
@@ -115,9 +122,92 @@ async def admin_users(
                     created_at=user.created_at,
                     portfolio_value=0.0,
                     total_holdings=0,
+                    initial_funds=float(user.initial_funds or 0),
+                    balance_funds=float(user.balance_funds or 0),
                 )
             )
     return summaries
+
+
+@router.post("/users", response_model=AdminUserSummary, status_code=status.HTTP_201_CREATED)
+async def admin_create_user(
+    payload: AdminUserCreateRequest,
+    request: Request,
+    current_admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+    redis: Redis = Depends(get_redis),
+) -> AdminUserSummary:
+    normalized_email = payload.email.strip().lower()
+    try:
+        normalized_phone = normalize_indian_mobile(payload.phone_number)
+    except SmsDeliveryError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    existing_user = (
+        await db.execute(
+            select(User).where(
+                or_(
+                    User.email == normalized_email,
+                    User.username == normalized_email,
+                    User.phone_number == normalized_phone,
+                )
+            )
+        )
+    ).scalar_one_or_none()
+    if existing_user:
+        raise HTTPException(status_code=409, detail="A user with this email or phone number already exists")
+
+    fixed_user_id = await generate_unique_client_id(db)
+    user = User(
+        username=normalized_email,
+        email=normalized_email,
+        fixed_user_id=fixed_user_id,
+        full_name=payload.full_name.strip(),
+        phone_number=normalized_phone,
+        hashed_password=get_password_hash(payload.password),
+        role=UserRole.USER,
+        is_active=True,
+        is_demo=False,
+        initial_funds=float(payload.initial_funds),
+        balance_funds=float(payload.balance_funds),
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+
+    holdings = list(
+        (await db.execute(select(PortfolioHolding).where(PortfolioHolding.user_id == user.id))).scalars().all()
+    )
+    portfolio = await build_portfolio_summary(holdings, redis)
+    await log_admin_action(
+        db,
+        admin_user=current_admin,
+        action="create_user",
+        entity_type="user",
+        entity_id=str(user.id),
+        ip_address=request.client.host if request.client else None,
+        details={
+            "fixed_user_id": user.fixed_user_id,
+            "full_name": user.full_name,
+            "initial_funds": float(user.initial_funds),
+            "balance_funds": float(user.balance_funds),
+        },
+    )
+    return AdminUserSummary(
+        user_id=user.id,
+        username=user.username,
+        fixed_user_id=user.fixed_user_id,
+        full_name=user.full_name,
+        phone_number=user.phone_number,
+        role=user.role.value,
+        is_active=user.is_active,
+        is_demo=user.is_demo,
+        created_at=user.created_at,
+        portfolio_value=portfolio.total_portfolio_value,
+        total_holdings=len(holdings),
+        initial_funds=float(user.initial_funds or 0),
+        balance_funds=float(user.balance_funds or 0),
+    )
 
 
 @router.get("/users/{user_id}/dashboard", response_model=AdminUserDashboardResponse)
@@ -162,6 +252,8 @@ async def admin_user_dashboard(
         total_portfolio_value=portfolio.total_portfolio_value,
         total_profit_loss=portfolio.total_profit_loss,
         total_holdings=len(holdings),
+        initial_funds=float(user.initial_funds or 0),
+        balance_funds=float(user.balance_funds or 0),
         holdings=snapshots,
     )
     if audit:
@@ -219,6 +311,60 @@ async def update_admin_user_status(
         created_at=user.created_at,
         portfolio_value=portfolio.total_portfolio_value,
         total_holdings=len(holdings),
+        initial_funds=float(user.initial_funds or 0),
+        balance_funds=float(user.balance_funds or 0),
+    )
+
+
+@router.post("/users/{user_id}/funds", response_model=AdminUserSummary)
+async def admin_add_funds(
+    user_id: int,
+    payload: AdminAddFundsRequest,
+    request: Request,
+    current_admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+    redis: Redis = Depends(get_redis),
+) -> AdminUserSummary:
+    user = (await db.execute(select(User).where(User.id == user_id, User.role == UserRole.USER))).scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.balance_funds = float(user.balance_funds or 0) + float(payload.amount)
+    await db.commit()
+    await db.refresh(user)
+
+    holdings = list(
+        (await db.execute(select(PortfolioHolding).where(PortfolioHolding.user_id == user.id))).scalars().all()
+    )
+    portfolio = await build_portfolio_summary(holdings, redis)
+    await log_admin_action(
+        db,
+        admin_user=current_admin,
+        action="add_funds",
+        entity_type="user",
+        entity_id=str(user.id),
+        ip_address=request.client.host if request.client else None,
+        details={
+            "fixed_user_id": user.fixed_user_id,
+            "amount": float(payload.amount),
+            "new_balance_funds": float(user.balance_funds or 0),
+            "note": payload.note,
+        },
+    )
+    return AdminUserSummary(
+        user_id=user.id,
+        username=user.username,
+        fixed_user_id=user.fixed_user_id,
+        full_name=user.full_name,
+        phone_number=user.phone_number,
+        role=user.role.value,
+        is_active=user.is_active,
+        is_demo=user.is_demo,
+        created_at=user.created_at,
+        portfolio_value=portfolio.total_portfolio_value,
+        total_holdings=len(holdings),
+        initial_funds=float(user.initial_funds or 0),
+        balance_funds=float(user.balance_funds or 0),
     )
 
 

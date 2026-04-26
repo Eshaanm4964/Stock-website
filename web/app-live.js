@@ -153,6 +153,10 @@ function isAdminDatabasePage() {
   return document.body?.dataset?.page === "admin-database";
 }
 
+function isAdminFundsPage() {
+  return document.body?.dataset?.page === "admin-add-funds";
+}
+
 function stopAdminRefresh() {
   if (adminRefreshTimer) {
     window.clearInterval(adminRefreshTimer);
@@ -863,6 +867,8 @@ function buildAdminDatabaseExcelHtml(users = [], userDashboards = []) {
           <td>${escapeHtml(user.fixed_user_id || "")}</td>
           <td>${escapeHtml(user.username || "")}</td>
           <td>${escapeHtml(user.phone_number || "")}</td>
+          <td>${escapeHtml(currency(user.initial_funds || 0))}</td>
+          <td>${escapeHtml(currency(user.balance_funds || 0))}</td>
           <td>${escapeHtml(user.role || "user")}</td>
           <td>${user.is_active ? "Active" : "Inactive"}</td>
           <td>${user.is_demo ? "Demo" : "Live"}</td>
@@ -920,6 +926,8 @@ function buildAdminDatabaseExcelHtml(users = [], userDashboards = []) {
               <th>Client ID</th>
               <th>Username / Email</th>
               <th>Phone Number</th>
+              <th>Initial Funds</th>
+              <th>Balance Funds</th>
               <th>Role</th>
               <th>Status</th>
               <th>Mode</th>
@@ -929,7 +937,7 @@ function buildAdminDatabaseExcelHtml(users = [], userDashboards = []) {
               <th>Total P&amp;L</th>
             </tr>
           </thead>
-          <tbody>${userRows || `<tr><td colspan="11">No investors found.</td></tr>`}</tbody>
+          <tbody>${userRows || `<tr><td colspan="13">No investors found.</td></tr>`}</tbody>
         </table>
         <h2>Portfolio Holdings</h2>
         <table>
@@ -1414,14 +1422,19 @@ async function setupAdminCustomerForm() {
         full_name: String(data.get("full_name") || "").trim(),
         email: String(data.get("email") || "").trim(),
         phone_number: String(data.get("phone_number") || "").trim(),
-        password: String(data.get("password") || "")
+        password: String(data.get("password") || ""),
+        initial_funds: Number(data.get("initial_funds") || 0),
+        balance_funds: Number(data.get("balance_funds") || 0)
       };
 
       if (!payload.full_name || !payload.email || !payload.phone_number || !payload.password) {
         throw new Error("Complete all customer fields before creating the account.");
       }
+      if (payload.initial_funds < 0 || payload.balance_funds < 0) {
+        throw new Error("Initial funds and balance funds must be zero or more.");
+      }
 
-      await api("/auth/signup", {
+      await api("/admin/users", {
         method: "POST",
         body: JSON.stringify(payload)
       });
@@ -1648,6 +1661,41 @@ async function setupAdminDealForm() {
   });
 }
 
+async function setupAdminFundsForm() {
+  const form = document.getElementById("adminFundsForm");
+  const status = document.getElementById("adminFundsStatus");
+  if (!form) return;
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const submitButton = form.querySelector('button[type="submit"]');
+    const stopLoading = setButtonLoading(submitButton, "Adding...");
+    try {
+      const data = new FormData(form);
+      const userId = String(data.get("customer_id") || "").trim();
+      const amount = Number(data.get("amount") || 0);
+      const note = String(data.get("note") || "").trim();
+      if (!userId || amount <= 0) {
+        throw new Error("Select an investor and enter a valid fund amount.");
+      }
+
+      const updatedUser = await api(`/admin/users/${userId}/funds`, {
+        method: "POST",
+        body: JSON.stringify({ amount, note })
+      });
+
+      if (status) {
+        status.textContent = `Funds added successfully. New balance funds: ${currency(updatedUser.balance_funds || 0)}.`;
+      }
+      form.reset();
+    } catch (error) {
+      if (status) status.textContent = formatError(error);
+    } finally {
+      stopLoading();
+    }
+  });
+}
+
 function setupPortalActions() {
   document.querySelectorAll("[data-logout]").forEach((button) => {
     button.addEventListener("click", () => logoutAndResetPortals());
@@ -1736,7 +1784,7 @@ function buildAdminActionToolbar(selectedValue = "") {
           <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
           <span class="public-brand-copy">
             <strong class="brand-wordmark">AssetYantra</strong>
-            <small class="brand-tagline">${selectedValue === "customer" ? "Add Customer" : "Add Deal"}</small>
+            <small class="brand-tagline">${selectedValue === "customer" ? "Add Customer" : selectedValue === "funds" ? "Add Funds" : "Add Deal"}</small>
           </span>
         </div>
       </div>
@@ -1748,6 +1796,7 @@ function buildAdminActionToolbar(selectedValue = "") {
             <div class="admin-dropdown-links">
               <a class="secondary-btn compact-btn" href="./admin-add-customer.html"><strong>Add Customer</strong><small>Open the dedicated registration page</small></a>
               <a class="secondary-btn compact-btn" href="./admin-add-deal.html"><strong>Add Deal</strong><small>Open the separate deal entry page</small></a>
+              <a class="secondary-btn compact-btn" href="./admin-add-funds.html"><strong>Add Funds</strong><small>Top up balance funds for an investor</small></a>
             </div>
           </div>
         </details>
@@ -1779,6 +1828,8 @@ async function renderAdminCustomerPage() {
           <label><span>Email</span><input name="email" type="email" placeholder="client@email.com" required /></label>
           <label><span>Phone</span><input name="phone_number" type="tel" placeholder="Phone number" required /></label>
           <label><span>Password</span><input name="password" type="password" placeholder="Minimum 8 characters" required /></label>
+          <label><span>Initial Funds</span><input name="initial_funds" type="number" min="0" step="0.01" placeholder="500000" /></label>
+          <label><span>Balance Funds</span><input name="balance_funds" type="number" min="0" step="0.01" placeholder="500000" /></label>
           <button class="primary-btn" type="submit">Create Customer</button>
         </form>
         <p class="helper-text" id="adminCustomerStatus">Client ID will be generated after the customer account is created.</p>
@@ -1862,6 +1913,56 @@ async function renderAdminDealPage() {
   await setupAdminDealForm();
 }
 
+async function renderAdminFundsPage() {
+  const mount = document.getElementById("adminPortal");
+  if (!mount) return;
+  revealPortal(mount);
+
+  let users = [];
+  try {
+    users = await api("/admin/users");
+  } catch {
+    users = [];
+  }
+
+  mount.innerHTML = `
+    <section class="dashboard-stack admin-dashboard-stack">
+      ${buildAdminActionToolbar("funds")}
+      <article class="dashboard-card full-span-card admin-form-page-card">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Funds Desk</p>
+            <h3>Add Funds</h3>
+            <p class="helper-text">Top up balance funds for an investor. Initial funds stay as the original opening amount.</p>
+          </div>
+          <span class="badge">Balance Update</span>
+        </div>
+        <form id="adminFundsForm" class="admin-inline-form">
+          <label>
+            <span>Investor</span>
+            <select name="customer_id">
+              <option value="">Select investor</option>
+              ${(Array.isArray(users) ? users : [])
+                .map((user) => `<option value="${user.user_id}">${escapeHtml(user.full_name)} (${escapeHtml(user.fixed_user_id || user.username || "")}) - Balance ${currency(user.balance_funds || 0)}</option>`)
+                .join("")}
+            </select>
+          </label>
+          <label><span>Fund Amount</span><input name="amount" type="number" min="0.01" step="0.01" placeholder="100000" required /></label>
+          <label><span>Note</span><input name="note" type="text" placeholder="Optional note for this top-up" /></label>
+          <button class="primary-btn" type="submit">Add Funds</button>
+        </form>
+        <p class="helper-text" id="adminFundsStatus">Choose an investor and enter the amount to top up balance funds.</p>
+      </article>
+    </section>
+  `;
+
+  revealPortal(mount);
+  activeRole = "admin";
+  activeUserId = null;
+  setupPortalActions();
+  await setupAdminFundsForm();
+}
+
 async function renderAdminDatabasePage(options = {}) {
   const mount = document.getElementById("adminPortal");
   if (!mount) return;
@@ -1902,6 +2003,7 @@ async function renderAdminDatabasePage(options = {}) {
             <div class="user-topbar-actions admin-toolbar-right admin-database-toolbar-right">
               <a class="secondary-btn compact-btn" href="./admin-dashboard.html">Back to Dashboard</a>
               <button class="secondary-btn compact-btn" type="button" id="adminDatabaseExportBtn">Download Excel</button>
+              <a class="secondary-btn compact-btn" href="./admin-add-funds.html">Add Funds</a>
               <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
             </div>
           </header>
@@ -1918,6 +2020,8 @@ async function renderAdminDatabasePage(options = {}) {
               <span><strong>${safeUsers.length}</strong> Investors</span>
               <span><strong>${safeUsers.filter((user) => user.is_active).length}</strong> Active</span>
               <span><strong>${totalHoldings}</strong> Holdings</span>
+              <span><strong>${currency(safeUsers.reduce((sum, user) => sum + Number(user.initial_funds || 0), 0))}</strong> Initial Funds</span>
+              <span><strong>${currency(safeUsers.reduce((sum, user) => sum + Number(user.balance_funds || 0), 0))}</strong> Balance Funds</span>
               <span><strong>${currency(totalPortfolioValue)}</strong> Portfolio Value</span>
               <span class="${totalProfitLoss >= 0 ? "profit" : "loss"}"><strong>${currency(totalProfitLoss)}</strong> Total P&amp;L</span>
             </div>
@@ -1930,6 +2034,8 @@ async function renderAdminDatabasePage(options = {}) {
                     <th>Client ID</th>
                     <th>Username / Email</th>
                     <th>Phone Number</th>
+                    <th>Initial Funds</th>
+                    <th>Balance Funds</th>
                     <th>Status</th>
                     <th>Role</th>
                     <th>Mode</th>
@@ -1951,6 +2057,8 @@ async function renderAdminDatabasePage(options = {}) {
                               <td>${escapeHtml(user.fixed_user_id || "")}</td>
                               <td>${escapeHtml(user.username || "")}</td>
                               <td>${escapeHtml(user.phone_number || "")}</td>
+                              <td>${currency(user.initial_funds || 0)}</td>
+                              <td>${currency(user.balance_funds || 0)}</td>
                               <td><span class="badge ${user.is_active ? "green" : "red"}">${user.is_active ? "Active" : "Inactive"}</span></td>
                               <td>${escapeHtml((user.role || "user").toUpperCase())}</td>
                               <td>${user.is_demo ? "Demo" : "Live"}</td>
@@ -1962,7 +2070,7 @@ async function renderAdminDatabasePage(options = {}) {
                           `;
                         })
                         .join("")
-                    : `<tr><td colspan="11"><span class="helper-text">No investors found in the database.</span></td></tr>`}
+                    : `<tr><td colspan="13"><span class="helper-text">No investors found in the database.</span></td></tr>`}
                 </tbody>
               </table>
             </div>
@@ -2073,6 +2181,11 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
         <article><strong>${user.total_holdings}</strong><span>Live Stocks</span></article>
         <article><strong>${currency(user.total_portfolio_value)}</strong><span>Current Value</span></article>
         <article><strong class="${user.total_profit_loss >= 0 ? "profit" : "loss"}">${percent((user.total_profit_loss / Math.max(user.total_portfolio_value - user.total_profit_loss, 1)) * 100)}</strong><span>Total Return</span></article>
+      </div>
+      <div class="detail-stat-grid">
+        <article><strong>${currency(user.initial_funds || 0)}</strong><span>Initial Funds</span></article>
+        <article><strong>${currency(user.balance_funds || 0)}</strong><span>Balance Funds</span></article>
+        <article><strong>${currency((user.initial_funds || 0) + (user.balance_funds || 0))}</strong><span>Available Capital Snapshot</span></article>
       </div>
       <div class="dashboard-grid detail-grid">
         <article class="table-card">
@@ -2907,6 +3020,7 @@ async function renderAdminPortal(options = {}) {
               </div>
             </details>
             <a class="secondary-btn compact-btn" href="./admin-database.html">View Database</a>
+            <a class="secondary-btn compact-btn" href="./admin-add-funds.html">Add Funds</a>
             <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
           </div>
         </header>
@@ -3626,7 +3740,7 @@ function setupLogin() {
     hideAuthLoading();
   } else {
     const auth = getAuth();
-    if (!auth?.token && (isAdminDashboardPage() || isAdminCustomerPage() || isAdminDealPage() || isAdminDatabasePage() || isUserDashboardPage())) {
+    if (!auth?.token && (isAdminDashboardPage() || isAdminCustomerPage() || isAdminDealPage() || isAdminDatabasePage() || isAdminFundsPage() || isUserDashboardPage())) {
       window.location.href = "./login.html";
     }
   }
@@ -3702,7 +3816,7 @@ function setupDashboardPages() {
     });
   }
 
-  if (isAdminCustomerPage() || isAdminDealPage()) {
+  if (isAdminCustomerPage() || isAdminDealPage() || isAdminFundsPage()) {
     if (!auth?.token) {
       window.location.href = "./login.html";
       return;
@@ -3726,6 +3840,15 @@ function setupDashboardPages() {
           document.getElementById("adminPortal"),
           "Add Deal",
           "The add deal page could not load yet. Please try again."
+        );
+      });
+    }
+    if (isAdminFundsPage()) {
+      renderAdminFundsPage().catch(() => {
+        renderPortalError(
+          document.getElementById("adminPortal"),
+          "Add Funds",
+          "The add funds page could not load yet. Please try again."
         );
       });
     }

@@ -66,4 +66,6 @@ class UserResponse(BaseModel):
     role: UserRole
     is_active: bool
     is_demo: bool
+    initial_funds: float
+    balance_funds: float
     created_at: datetime

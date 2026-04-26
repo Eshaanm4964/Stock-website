@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 
 
 class AdminDashboardResponse(BaseModel):
@@ -22,6 +22,8 @@ class AdminUserSummary(BaseModel):
     created_at: datetime
     portfolio_value: float
     total_holdings: int
+    initial_funds: float
+    balance_funds: float
 
 
 class AdminHoldingSnapshot(BaseModel):
@@ -59,7 +61,23 @@ class AdminUserDashboardResponse(BaseModel):
     total_portfolio_value: float
     total_profit_loss: float
     total_holdings: int
+    initial_funds: float
+    balance_funds: float
     holdings: list[AdminHoldingSnapshot]
+
+
+class AdminUserCreateRequest(BaseModel):
+    full_name: str
+    email: EmailStr
+    phone_number: str
+    password: str
+    initial_funds: float = Field(default=0.0, ge=0)
+    balance_funds: float = Field(default=0.0, ge=0)
+
+
+class AdminAddFundsRequest(BaseModel):
+    amount: float = Field(ge=0.01)
+    note: str | None = None
 
 
 class AdminAuditLogResponse(BaseModel):

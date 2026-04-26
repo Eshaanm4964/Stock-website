@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from jose import jwt
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from app.api.router import api_router
 from app.core.config import get_settings
@@ -83,6 +83,8 @@ async def stock_broadcast() -> None:
 async def lifespan(_: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS initial_funds DOUBLE PRECISION NOT NULL DEFAULT 0"))
+        await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS balance_funds DOUBLE PRECISION NOT NULL DEFAULT 0"))
     async with AsyncSessionLocal() as session:
         await ensure_admin_user(session)
         await ensure_demo_users(session)
