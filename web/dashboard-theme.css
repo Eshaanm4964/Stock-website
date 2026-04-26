@@ -685,6 +685,11 @@ body.dashboard-page {
   flex: 1 1 auto;
 }
 
+.admin-database-toolbar-right {
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .admin-universal-search {
   min-width: min(520px, 50vw);
 }
@@ -771,6 +776,10 @@ body.dashboard-page {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
+.admin-database-summary-strip span {
+  min-height: 78px;
+}
+
 .admin-summary-strip span {
   min-height: 84px;
   justify-content: center;
@@ -814,6 +823,10 @@ body.dashboard-page {
 
 .admin-position-table {
   min-width: 1450px;
+}
+
+.admin-database-table {
+  min-width: 1680px;
 }
 
 .admin-position-table thead th {
@@ -889,6 +902,34 @@ body.dashboard-page {
   background: linear-gradient(180deg, #f8fcf8 0%, #f8f3e9 100%);
   border-top: 2px solid rgba(196, 154, 67, 0.24);
   font-weight: 800;
+}
+
+.admin-database-card {
+  overflow: hidden;
+}
+
+.admin-database-holding-list {
+  display: grid;
+  gap: 10px;
+  min-width: 340px;
+}
+
+.admin-database-holding-pill {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid rgba(16, 37, 29, 0.08);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,252,249,0.98) 100%);
+  box-shadow: 0 10px 20px rgba(16, 37, 29, 0.04);
+}
+
+.admin-database-holding-pill strong {
+  color: #113225;
+}
+
+.admin-database-holding-pill small {
+  color: #566860;
 }
 
 .admin-form-page-card {

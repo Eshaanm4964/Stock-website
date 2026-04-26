@@ -1,5 +1,5 @@
 const STORAGE_KEY = "stock_trader_auth";
-const APP_LIVE_VERSION = "2026-04-25-user-dashboard-refresh";
+const APP_LIVE_VERSION = "2026-04-26-admin-database-view";
 const SITE_CONTROL_KEY = "stock_trader_site_controls";
 const REVIEW_STORAGE_KEY = "stock_trader_reviews";
 let activeRole = null;
@@ -147,6 +147,10 @@ function isAdminDealPage() {
   return document.body?.dataset?.page === "admin-add-deal";
 }
 
+function isAdminDatabasePage() {
+  return document.body?.dataset?.page === "admin-database";
+}
+
 function stopAdminRefresh() {
   if (adminRefreshTimer) {
     window.clearInterval(adminRefreshTimer);
@@ -156,12 +160,18 @@ function stopAdminRefresh() {
 
 function startAdminRefresh() {
   stopAdminRefresh();
+  const intervalMs = isAdminDatabasePage() ? 10000 : 2000;
   adminRefreshTimer = window.setInterval(async () => {
     if (document.hidden) return;
-    if (isAdminDashboardPage() && activeRole === "admin") {
+    if (activeRole !== "admin") return;
+    if (isAdminDashboardPage()) {
       await renderAdminPortal().catch(() => {});
+      return;
     }
-  }, 2000);
+    if (isAdminDatabasePage()) {
+      await renderAdminDatabasePage().catch(() => {});
+    }
+  }, intervalMs);
   return adminRefreshTimer;
 }
 
@@ -830,6 +840,118 @@ function downloadHtmlFile(filename, html) {
   URL.revokeObjectURL(link.href);
 }
 
+function downloadExcelFile(filename, html) {
+  const blob = new Blob([html], { type: "application/vnd.ms-excel" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function buildAdminDatabaseExcelHtml(users = [], userDashboards = []) {
+  const dashboardMap = new Map(userDashboards.map((dashboard) => [String(dashboard.user_id), dashboard]));
+  const userRows = users
+    .map((user) => {
+      const dashboard = dashboardMap.get(String(user.user_id));
+      return `
+        <tr>
+          <td>${escapeHtml(user.full_name || "Unknown User")}</td>
+          <td>${escapeHtml(user.fixed_user_id || "")}</td>
+          <td>${escapeHtml(user.username || "")}</td>
+          <td>${escapeHtml(user.phone_number || "")}</td>
+          <td>${escapeHtml(user.role || "user")}</td>
+          <td>${user.is_active ? "Active" : "Inactive"}</td>
+          <td>${user.is_demo ? "Demo" : "Live"}</td>
+          <td>${escapeHtml(formatDateTime(user.created_at))}</td>
+          <td>${escapeHtml(currency(dashboard?.total_portfolio_value ?? user.portfolio_value ?? 0))}</td>
+          <td>${escapeHtml(String(dashboard?.total_holdings ?? user.total_holdings ?? 0))}</td>
+          <td>${escapeHtml(currency(dashboard?.total_profit_loss ?? 0))}</td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  const holdingRows = userDashboards
+    .flatMap((dashboard) =>
+      (dashboard.holdings || []).map((holding) => `
+        <tr>
+          <td>${escapeHtml(dashboard.full_name || "Unknown User")}</td>
+          <td>${escapeHtml(dashboard.fixed_user_id || "")}</td>
+          <td>${escapeHtml(holding.symbol || "")}</td>
+          <td>${escapeHtml(holding.exchange || "NSE")}</td>
+          <td>${escapeHtml(String(holding.quantity ?? ""))}</td>
+          <td>${escapeHtml(currency(holding.buy_price || 0))}</td>
+          <td>${escapeHtml(currency(holding.current_price || 0))}</td>
+          <td>${escapeHtml(currency(holding.value || 0))}</td>
+          <td>${escapeHtml(currency(holding.profit_loss || 0))}</td>
+          <td>${escapeHtml(percent(holding.percent_change || 0))}</td>
+          <td>${escapeHtml(formatDateTime(holding.created_at))}</td>
+        </tr>
+      `)
+    )
+    .join("");
+
+  return `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office"
+          xmlns:x="urn:schemas-microsoft-com:office:excel"
+          xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="UTF-8" />
+        <style>
+          body { font-family: Arial, sans-serif; color: #10251d; }
+          table { border-collapse: collapse; width: 100%; margin-bottom: 24px; }
+          th, td { border: 1px solid #d5dfd9; padding: 8px 10px; text-align: left; }
+          th { background: #edf6ef; }
+          h1, h2 { margin: 0 0 12px; }
+        </style>
+      </head>
+      <body>
+        <h1>AssetYantra Database Export</h1>
+        <p>Generated on ${escapeHtml(formatDateTime(new Date().toISOString()))}</p>
+        <h2>User Credentials</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Full Name</th>
+              <th>Client ID</th>
+              <th>Username / Email</th>
+              <th>Phone Number</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Mode</th>
+              <th>Created At</th>
+              <th>Portfolio Value</th>
+              <th>Total Holdings</th>
+              <th>Total P&amp;L</th>
+            </tr>
+          </thead>
+          <tbody>${userRows || `<tr><td colspan="11">No users found.</td></tr>`}</tbody>
+        </table>
+        <h2>Portfolio Holdings</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Full Name</th>
+              <th>Client ID</th>
+              <th>Symbol</th>
+              <th>Exchange</th>
+              <th>Quantity</th>
+              <th>Avg Price</th>
+              <th>Current Price</th>
+              <th>Current Value</th>
+              <th>Unrealised P&amp;L</th>
+              <th>P&amp;L %</th>
+              <th>Purchase Date</th>
+            </tr>
+          </thead>
+          <tbody>${holdingRows || `<tr><td colspan="11">No holdings found.</td></tr>`}</tbody>
+        </table>
+      </body>
+    </html>
+  `;
+}
+
 function logoutAndResetPortals() {
   stopAdminRefresh();
   clearAuth();
@@ -1258,7 +1380,20 @@ async function refreshAdminCurrentPage() {
     await renderAdminDealPage();
     return;
   }
+  if (isAdminDatabasePage()) {
+    await renderAdminDatabasePage();
+    return;
+  }
   await renderAdminPortal();
+}
+
+function setupAdminDatabaseExport(users = [], userDashboards = []) {
+  const button = document.getElementById("adminDatabaseExportBtn");
+  if (!button) return;
+  button.addEventListener("click", () => {
+    const html = buildAdminDatabaseExcelHtml(users, userDashboards);
+    downloadExcelFile(`assetyantra-database-${new Date().toISOString().slice(0, 10)}.xls`, html);
+  });
 }
 
 async function setupAdminCustomerForm() {
@@ -1718,6 +1853,139 @@ async function renderAdminDealPage() {
   activeUserId = null;
   setupPortalActions();
   await setupAdminDealForm();
+}
+
+async function renderAdminDatabasePage() {
+  const mount = document.getElementById("adminPortal");
+  if (!mount) return;
+
+  try {
+    const users = await api("/admin/users");
+    const safeUsers = Array.isArray(users) ? users : [];
+    const userDashboards = await safeAdminUserDashboards(safeUsers);
+    const dashboardMap = new Map(userDashboards.map((dashboard) => [String(dashboard.user_id), dashboard]));
+    const totalPortfolioValue = userDashboards.reduce((sum, dashboard) => sum + Number(dashboard.total_portfolio_value || 0), 0);
+    const totalProfitLoss = userDashboards.reduce((sum, dashboard) => sum + Number(dashboard.total_profit_loss || 0), 0);
+    const totalHoldings = userDashboards.reduce((sum, dashboard) => sum + Number(dashboard.total_holdings || 0), 0);
+
+    mount.innerHTML = `
+      <section class="user-shell admin-simple-shell no-sidebar-shell">
+        <div class="user-shell-main admin-simple-main dashboard-stack admin-dashboard-stack">
+          <header class="user-topbar admin-compact-topbar admin-simple-topbar">
+            <div class="admin-toolbar-left admin-toolbar-left--compact">
+              <div class="brand admin-dashboard-brand">
+                <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
+                <span class="public-brand-copy">
+                  <strong class="brand-wordmark">AssetYantra</strong>
+                  <small class="brand-tagline">Database View</small>
+                </span>
+              </div>
+            </div>
+            <div class="user-topbar-actions admin-toolbar-right admin-database-toolbar-right">
+              <a class="secondary-btn compact-btn" href="./admin-dashboard.html">Back to Dashboard</a>
+              <button class="secondary-btn compact-btn" type="button" id="adminDatabaseExportBtn">Download Excel</button>
+              <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
+            </div>
+          </header>
+
+          <section class="simple-summary-strip admin-summary-strip admin-database-summary-strip">
+            <span><strong>${safeUsers.length}</strong> Total Clients</span>
+            <span><strong>${safeUsers.filter((user) => user.is_active).length}</strong> Active Clients</span>
+            <span><strong>${totalHoldings}</strong> Total Holdings</span>
+            <span class="${totalProfitLoss >= 0 ? "profit" : "loss"}"><strong>${currency(totalProfitLoss)}</strong> Combined P&amp;L</span>
+            <span><strong>${currency(totalPortfolioValue)}</strong> Portfolio Value</span>
+          </section>
+
+          <article class="table-card admin-database-card full-span-card">
+            <div class="panel-head">
+              <div>
+                <h3>User Credentials &amp; Portfolio Database</h3>
+                <p class="helper-text admin-positions-helper">This view shows every user detail except passwords, plus each portfolio. It refreshes automatically every 10 seconds.</p>
+              </div>
+              <span class="badge green">${safeUsers.length} Users</span>
+            </div>
+            <div class="table-wrap admin-position-table-wrap" id="adminDatabaseTableWrap">
+              <table class="admin-position-table admin-database-table" id="adminDatabaseTable">
+                <thead>
+                  <tr>
+                    <th>Full Name</th>
+                    <th>Client ID</th>
+                    <th>Username / Email</th>
+                    <th>Phone Number</th>
+                    <th>Status</th>
+                    <th>Role</th>
+                    <th>Mode</th>
+                    <th>Created At</th>
+                    <th>Portfolio Value</th>
+                    <th>Total Holdings</th>
+                    <th>Portfolio Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${safeUsers.length
+                    ? safeUsers
+                        .map((user) => {
+                          const dashboard = dashboardMap.get(String(user.user_id));
+                          const holdings = Array.isArray(dashboard?.holdings) ? dashboard.holdings : [];
+                          return `
+                            <tr>
+                              <td><strong>${escapeHtml(user.full_name || "Unknown User")}</strong></td>
+                              <td>${escapeHtml(user.fixed_user_id || "")}</td>
+                              <td>${escapeHtml(user.username || "")}</td>
+                              <td>${escapeHtml(user.phone_number || "")}</td>
+                              <td><span class="badge ${user.is_active ? "green" : "red"}">${user.is_active ? "Active" : "Inactive"}</span></td>
+                              <td>${escapeHtml((user.role || "user").toUpperCase())}</td>
+                              <td>${user.is_demo ? "Demo" : "Live"}</td>
+                              <td>${formatDateTime(user.created_at)}</td>
+                              <td>${currency(dashboard?.total_portfolio_value ?? user.portfolio_value ?? 0)}</td>
+                              <td>${dashboard?.total_holdings ?? user.total_holdings ?? 0}</td>
+                              <td>
+                                ${holdings.length
+                                  ? `<div class="admin-database-holding-list">
+                                      ${holdings
+                                        .map(
+                                          (holding) => `
+                                            <article class="admin-database-holding-pill">
+                                              <strong>${escapeHtml(holding.symbol || "Stock")}</strong>
+                                              <small>Qty: ${escapeHtml(String(holding.quantity ?? 0))} | Avg: ${escapeHtml(currency(holding.buy_price || 0))}</small>
+                                              <small>Current: ${escapeHtml(currency(holding.current_price || 0))} | P&amp;L: <span class="${Number(holding.profit_loss || 0) >= 0 ? "profit" : "loss"}">${escapeHtml(currency(holding.profit_loss || 0))}</span></small>
+                                            </article>
+                                          `
+                                        )
+                                        .join("")}
+                                    </div>`
+                                  : `<span class="helper-text">No holdings yet.</span>`}
+                              </td>
+                            </tr>
+                          `;
+                        })
+                        .join("")
+                    : `<tr><td colspan="11"><span class="helper-text">No users found in the database.</span></td></tr>`}
+                </tbody>
+              </table>
+            </div>
+            <div class="admin-table-bottom-scroll" id="adminDatabaseTableScroller" aria-label="Scroll database table horizontally">
+              <div class="admin-table-bottom-scroll-inner"></div>
+            </div>
+          </article>
+        </div>
+      </section>
+    `;
+
+    revealPortal(mount);
+    activeRole = "admin";
+    activeUserId = null;
+    startAdminRefresh();
+    setupPortalActions();
+    setupScrollSync("adminDatabaseTableWrap", "adminDatabaseTableScroller");
+    setupAdminDatabaseExport(safeUsers, userDashboards);
+  } catch (error) {
+    renderPortalError(mount, "Database View", `The database view could not load yet. ${formatError(error)}`);
+    const retry = document.getElementById("retryPortalBtn");
+    if (retry) {
+      retry.addEventListener("click", () => renderAdminDatabasePage());
+    }
+  }
 }
 
 function buildAdminClientDetail(user) {
@@ -2554,6 +2822,7 @@ async function renderAdminPortal() {
                 <p class="helper-text admin-filter-summary">Filtered P&amp;L window: <strong class="${filteredPeriodProfit >= 0 ? "profit" : "loss"}">${currency(filteredPeriodProfit)}</strong></p>
               </div>
             </details>
+            <a class="secondary-btn compact-btn" href="./admin-database.html">View Database</a>
             <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
           </div>
         </header>
@@ -3263,7 +3532,7 @@ function setupLogin() {
     hideAuthLoading();
   } else {
     const auth = getAuth();
-    if (!auth?.token && (isAdminDashboardPage() || isAdminCustomerPage() || isAdminDealPage() || isUserDashboardPage())) {
+    if (!auth?.token && (isAdminDashboardPage() || isAdminCustomerPage() || isAdminDealPage() || isAdminDatabasePage() || isUserDashboardPage())) {
       window.location.href = "./login.html";
     }
   }
@@ -3279,6 +3548,10 @@ function setupLogin() {
     }
     if (activeRole === "admin" && isAdminDashboardPage()) {
       await renderAdminPortal().catch(() => {});
+      return;
+    }
+    if (activeRole === "admin" && isAdminDatabasePage()) {
+      await renderAdminDatabasePage().catch(() => {});
     }
   }, 3000);
 }
@@ -3320,6 +3593,24 @@ function setupDashboardPages() {
         document.getElementById("userPortal"),
         "User Dashboard",
         "The portfolio could not load yet. Please check that the backend is running and try again."
+      );
+    });
+  }
+
+  if (isAdminDatabasePage()) {
+    if (!auth?.token) {
+      window.location.href = "./login.html";
+      return;
+    }
+    if (auth.role !== "admin") {
+      window.location.href = "./login.html";
+      return;
+    }
+    renderAdminDatabasePage().catch(() => {
+      renderPortalError(
+        document.getElementById("adminPortal"),
+        "Database View",
+        "The database view could not load yet. Please check that the backend is running and try again."
       );
     });
   }
