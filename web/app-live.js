@@ -859,7 +859,7 @@ function buildAdminDatabaseExcelHtml(users = [], userDashboards = []) {
       const dashboard = dashboardMap.get(String(user.user_id));
       return `
         <tr>
-          <td>${escapeHtml(user.full_name || "Unknown User")}</td>
+          <td>${escapeHtml(user.full_name || "Unknown Investor")}</td>
           <td>${escapeHtml(user.fixed_user_id || "")}</td>
           <td>${escapeHtml(user.username || "")}</td>
           <td>${escapeHtml(user.phone_number || "")}</td>
@@ -879,7 +879,7 @@ function buildAdminDatabaseExcelHtml(users = [], userDashboards = []) {
     .flatMap((dashboard) =>
       (dashboard.holdings || []).map((holding) => `
         <tr>
-          <td>${escapeHtml(dashboard.full_name || "Unknown User")}</td>
+          <td>${escapeHtml(dashboard.full_name || "Unknown Investor")}</td>
           <td>${escapeHtml(dashboard.fixed_user_id || "")}</td>
           <td>${escapeHtml(holding.symbol || "")}</td>
           <td>${escapeHtml(holding.exchange || "NSE")}</td>
@@ -912,11 +912,11 @@ function buildAdminDatabaseExcelHtml(users = [], userDashboards = []) {
       <body>
         <h1>AssetYantra Database Export</h1>
         <p>Generated on ${escapeHtml(formatDateTime(new Date().toISOString()))}</p>
-        <h2>User Credentials</h2>
+        <h2>Investor Credentials</h2>
         <table>
           <thead>
             <tr>
-              <th>Full Name</th>
+              <th>Investor Name</th>
               <th>Client ID</th>
               <th>Username / Email</th>
               <th>Phone Number</th>
@@ -929,13 +929,13 @@ function buildAdminDatabaseExcelHtml(users = [], userDashboards = []) {
               <th>Total P&amp;L</th>
             </tr>
           </thead>
-          <tbody>${userRows || `<tr><td colspan="11">No users found.</td></tr>`}</tbody>
+          <tbody>${userRows || `<tr><td colspan="11">No investors found.</td></tr>`}</tbody>
         </table>
         <h2>Portfolio Holdings</h2>
         <table>
           <thead>
             <tr>
-              <th>Full Name</th>
+              <th>Investor Name</th>
               <th>Client ID</th>
               <th>Symbol</th>
               <th>Exchange</th>
@@ -1909,13 +1909,13 @@ async function renderAdminDatabasePage(options = {}) {
           <article class="table-card admin-database-card full-span-card">
             <div class="panel-head">
               <div>
-                <h3>User Credentials &amp; Portfolio Database</h3>
-                <p class="helper-text admin-positions-helper">Simple database view of user records and portfolio rows. Passwords are excluded. Refreshes every 10 seconds.</p>
+                <h3>Investor Credentials &amp; Portfolio Database</h3>
+                <p class="helper-text admin-positions-helper">Simple database view of investor records and portfolio rows. Passwords are excluded. Refreshes every 10 seconds.</p>
               </div>
-              <span class="badge green">${safeUsers.length} Users / ${totalHoldings} Holdings</span>
+              <span class="badge green">${safeUsers.length} Investors / ${totalHoldings} Holdings</span>
             </div>
             <div class="admin-database-statline">
-              <span><strong>${safeUsers.length}</strong> Users</span>
+              <span><strong>${safeUsers.length}</strong> Investors</span>
               <span><strong>${safeUsers.filter((user) => user.is_active).length}</strong> Active</span>
               <span><strong>${totalHoldings}</strong> Holdings</span>
               <span><strong>${currency(totalPortfolioValue)}</strong> Portfolio Value</span>
@@ -1926,7 +1926,7 @@ async function renderAdminDatabasePage(options = {}) {
               <table class="admin-position-table admin-database-table" id="adminDatabaseUsersTable">
                 <thead>
                   <tr>
-                    <th>Full Name</th>
+                    <th>Investor Name</th>
                     <th>Client ID</th>
                     <th>Username / Email</th>
                     <th>Phone Number</th>
@@ -1947,7 +1947,7 @@ async function renderAdminDatabasePage(options = {}) {
                           const holdings = Array.isArray(dashboard?.holdings) ? dashboard.holdings : [];
                           return `
                             <tr>
-                              <td><strong>${escapeHtml(user.full_name || "Unknown User")}</strong></td>
+                              <td><strong>${escapeHtml(user.full_name || "Unknown Investor")}</strong></td>
                               <td>${escapeHtml(user.fixed_user_id || "")}</td>
                               <td>${escapeHtml(user.username || "")}</td>
                               <td>${escapeHtml(user.phone_number || "")}</td>
@@ -1962,7 +1962,7 @@ async function renderAdminDatabasePage(options = {}) {
                           `;
                         })
                         .join("")
-                    : `<tr><td colspan="11"><span class="helper-text">No users found in the database.</span></td></tr>`}
+                    : `<tr><td colspan="11"><span class="helper-text">No investors found in the database.</span></td></tr>`}
                 </tbody>
               </table>
             </div>
@@ -1981,7 +1981,7 @@ async function renderAdminDatabasePage(options = {}) {
               <table class="admin-position-table admin-database-table admin-database-holdings-table" id="adminDatabaseHoldingsTable">
                 <thead>
                   <tr>
-                    <th>Full Name</th>
+                    <th>Investor Name</th>
                     <th>Client ID</th>
                     <th>Username / Email</th>
                     <th>Symbol</th>
@@ -2001,7 +2001,7 @@ async function renderAdminDatabasePage(options = {}) {
                         .map(
                           (holding) => `
                             <tr>
-                              <td>${escapeHtml(holding.full_name || "Unknown User")}</td>
+                              <td>${escapeHtml(holding.full_name || "Unknown Investor")}</td>
                               <td>${escapeHtml(holding.fixed_user_id || "")}</td>
                               <td>${escapeHtml(holding.username || "")}</td>
                               <td>${escapeHtml(holding.symbol || "")}</td>
@@ -2058,7 +2058,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
     <article class="dashboard-card detail-card">
       <div class="panel-head">
         <div>
-          <p class="eyebrow">Client Detail</p>
+          <p class="eyebrow">Investor Detail</p>
           <h3>${user.full_name}</h3>
           <p class="detail-subtitle">${user.fixed_user_id || user.username}</p>
         </div>
@@ -2114,7 +2114,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
                       <td class="${Number(entry.sell_price) >= Number(entry.buy_price) ? "profit" : "loss"}">${percent((((Number(entry.sell_price) - Number(entry.buy_price)) / Math.max(Number(entry.buy_price), 1)) * 100))}</td>
                     </tr>
                   `).join("")
-                  : `<tr><td colspan="8"><span class="helper-text">No sold history for this client yet.</span></td></tr>`}
+                  : `<tr><td colspan="8"><span class="helper-text">No sold history for this investor yet.</span></td></tr>`}
               </tbody>
             </table>
           </div>
@@ -2133,18 +2133,18 @@ function buildAdminStockDetail(symbol, holdings) {
         <div>
           <p class="eyebrow">Stock Detail</p>
           <h3>${symbol}</h3>
-          <p class="detail-subtitle">Clients currently holding this stock</p>
+          <p class="detail-subtitle">Investors currently holding this stock</p>
         </div>
         <span class="badge">${holdings.length} Holders</span>
       </div>
       <div class="detail-stat-grid">
-        <article><strong>${holdings.length}</strong><span>Total Clients</span></article>
+        <article><strong>${holdings.length}</strong><span>Total Investors</span></article>
         <article><strong>${totalQty}</strong><span>Total Quantity</span></article>
         <article><strong class="${totalPnl >= 0 ? "profit" : "loss"}">${currency(totalPnl)}</strong><span>Combined P&amp;L</span></article>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Customer</th><th>Client ID</th><th>Purchase Date</th><th>Qty</th><th>Avg Price</th><th>Live Price</th><th>P&amp;L</th></tr></thead>
+          <thead><tr><th>Investor</th><th>Client ID</th><th>Purchase Date</th><th>Qty</th><th>Avg Price</th><th>Live Price</th><th>P&amp;L</th></tr></thead>
           <tbody>
             ${holdings.map((holding) => `
               <tr>
@@ -2326,7 +2326,7 @@ async function renderAdminPortal() {
       </header>
       <div id="adminOverviewCard">
     <div class="metrics-grid admin-simple-metrics">
-      <article class="metric-card"><strong>${dashboard?.total_users ?? safeUsers.length}</strong><span>Clients</span><small>Persisted registered users</small></article>
+      <article class="metric-card"><strong>${dashboard?.total_users ?? safeUsers.length}</strong><span>Investors</span><small>Persisted registered users</small></article>
       <article class="metric-card"><strong>${dashboard?.newly_registered_users ?? 0}</strong><span>New This Week</span><small>Non-demo client registrations</small></article>
       <article class="metric-card"><strong>${dashboard?.total_holdings ?? baseHoldings.length}</strong><span>Total Holdings</span><small>Stocks stored in the database</small></article>
       <article class="metric-card"><strong class="${todayProfit >= 0 ? "profit" : "loss"}">${currency(todayProfit)}</strong><span>Today Profit</span><small>Intraday movement across tracked holdings</small></article>
@@ -2349,14 +2349,14 @@ async function renderAdminPortal() {
     <div class="dashboard-grid">
       <article class="table-card">
         <div class="panel-head">
-          <h3>All Client Positions</h3>
+          <h3>All Investor Positions</h3>
           <div class="table-actions">
             <span class="badge">Admin View</span>
           </div>
         </div>
         <div class="admin-filter-bar">
           <select class="user-search admin-filter-select" id="adminClientFilter">
-            <option value="">All Clients</option>
+            <option value="">All Investors</option>
             ${safeUsers
               .map((user) => `<option value="${escapeHtml(user.fixed_user_id || String(user.user_id))}" ${String(adminUiState.clientFilter) === String(user.fixed_user_id || user.user_id) ? "selected" : ""}>${escapeHtml(user.full_name)} (${escapeHtml(user.fixed_user_id || user.username)})</option>`)
               .join("")}
@@ -2373,7 +2373,7 @@ async function renderAdminPortal() {
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Customer</th><th>Stock</th><th>Purchase Date</th><th>Qty</th><th>Avg Price</th><th>Invested Value</th><th>Live Price</th><th>Current Value</th><th>Unrealised P&amp;L</th><th>Action</th></tr></thead>
+            <thead><tr><th>Investor</th><th>Stock</th><th>Purchase Date</th><th>Qty</th><th>Avg Price</th><th>Invested Value</th><th>Live Price</th><th>Current Value</th><th>Unrealised P&amp;L</th><th>Action</th></tr></thead>
             <tbody>
               ${filteredHoldings.length
                 ? filteredHoldings
@@ -2400,7 +2400,7 @@ async function renderAdminPortal() {
                   `
                 )
                 .join("")
-                : `<tr><td colspan="10"><span class="helper-text">No client or stock matched this search.</span></td></tr>`}
+                : `<tr><td colspan="10"><span class="helper-text">No investor or stock matched this search.</span></td></tr>`}
             </tbody>
             <tfoot>
               <tr class="admin-total-row">
@@ -2418,7 +2418,7 @@ async function renderAdminPortal() {
         </div>
       </article>
       <article class="dashboard-card" id="adminClientOpsCard">
-        <div class="panel-head"><h3>Client Downloads</h3><span class="badge green">Export</span></div>
+        <div class="panel-head"><h3>Investor Downloads</h3><span class="badge green">Export</span></div>
         <div class="stack-list">
           ${userDashboards
             .map(
@@ -2523,7 +2523,7 @@ async function renderAdminPortal() {
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th></th><th>Client</th><th>Status</th><th>Joined</th><th>Value</th><th>Actions</th></tr></thead>
+          <thead><tr><th></th><th>Investor</th><th>Status</th><th>Joined</th><th>Value</th><th>Actions</th></tr></thead>
             <tbody>
               ${filteredUsers.length
                 ? filteredUsers
@@ -2641,7 +2641,7 @@ async function renderAdminPortal() {
                     <article class="stack-item stack-item-compact">
                       <div>
                         <strong>${item.symbol}</strong>
-                        <small>${item.client_count} client(s) holding this stock</small>
+                <small>${item.client_count} investor(s) holding this stock</small>
                       </div>
                       <div>
                         <strong>${currency(item.invested_value)}</strong>
@@ -2877,9 +2877,9 @@ async function renderAdminPortal(options = {}) {
                 <p class="admin-dropdown-section-label">Filters</p>
                 <div class="admin-dropdown-filters">
                   <label class="toolbar-field">
-                    <span>Client</span>
+                    <span>Investor</span>
                     <select class="user-search admin-filter-select" id="adminClientFilter">
-                      <option value="">All Clients</option>
+                      <option value="">All Investors</option>
                       ${safeUsers
                         .map((user) => `<option value="${escapeHtml(user.fixed_user_id || String(user.user_id))}" ${String(adminUiState.clientFilter) === String(user.fixed_user_id || user.user_id) ? "selected" : ""}>${escapeHtml(user.full_name)} (${escapeHtml(user.fixed_user_id || user.username)})</option>`)
                         .join("")}
@@ -2922,7 +2922,7 @@ async function renderAdminPortal(options = {}) {
         <article class="table-card admin-positions-card full-span-card">
           <div class="panel-head">
             <div>
-              <h3>All Client Positions</h3>
+              <h3>All Investor Positions</h3>
               <p class="helper-text admin-positions-helper">Filters are available from the dropdown above. Stock names remain masked until you reveal them.</p>
             </div>
             <span class="badge">Protected View</span>
@@ -2931,7 +2931,7 @@ async function renderAdminPortal(options = {}) {
             <table class="admin-position-table" id="adminPositionsTable">
               <thead>
                 <tr>
-                  <th>Client</th>
+                  <th>Investor</th>
                   <th>Symbol</th>
                   <th>Purchase Date</th>
                   <th>Qty</th>
@@ -2978,7 +2978,7 @@ async function renderAdminPortal(options = {}) {
                       `;
                       })
                       .join("")
-                  : `<tr><td colspan="12"><span class="helper-text">No client or stock matched this search.</span></td></tr>`}
+                  : `<tr><td colspan="12"><span class="helper-text">No investor or stock matched this search.</span></td></tr>`}
               </tbody>
               <tfoot>
                 <tr class="admin-total-row">
