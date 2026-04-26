@@ -8,6 +8,7 @@ let liveTickerTimer = null;
 let adminRefreshTimer = null;
 let homeHeroTimer = null;
 let userRenderInFlight = false;
+let adminRenderInFlight = false;
 let adminUiState = {
   search: "",
   clientFilter: "",
@@ -165,11 +166,11 @@ function startAdminRefresh() {
     if (document.hidden) return;
     if (activeRole !== "admin") return;
     if (isAdminDashboardPage()) {
-      await renderAdminPortal().catch(() => {});
+      await renderAdminPortal({ silent: true }).catch(() => {});
       return;
     }
     if (isAdminDatabasePage()) {
-      await renderAdminDatabasePage().catch(() => {});
+      await renderAdminDatabasePage({ silent: true }).catch(() => {});
     }
   }, intervalMs);
   return adminRefreshTimer;
@@ -1855,9 +1856,12 @@ async function renderAdminDealPage() {
   await setupAdminDealForm();
 }
 
-async function renderAdminDatabasePage() {
+async function renderAdminDatabasePage(options = {}) {
   const mount = document.getElementById("adminPortal");
   if (!mount) return;
+  if (adminRenderInFlight) return;
+  adminRenderInFlight = true;
+  const { silent = false } = options;
 
   try {
     const users = await api("/admin/users");
@@ -2019,7 +2023,11 @@ async function renderAdminDatabasePage() {
       </section>
     `;
 
-    revealPortal(mount);
+    if (!silent) {
+      revealPortal(mount);
+    } else {
+      mount.classList.remove("hidden");
+    }
     activeRole = "admin";
     activeUserId = null;
     startAdminRefresh();
@@ -2033,6 +2041,8 @@ async function renderAdminDatabasePage() {
     if (retry) {
       retry.addEventListener("click", () => renderAdminDatabasePage());
     }
+  } finally {
+    adminRenderInFlight = false;
   }
 }
 
@@ -2718,9 +2728,12 @@ async function renderAdminPortal() {
   }
 }
 
-async function renderAdminPortal() {
+async function renderAdminPortal(options = {}) {
   const mount = document.getElementById("adminPortal");
   if (!mount) return;
+  if (adminRenderInFlight) return;
+  adminRenderInFlight = true;
+  const { silent = false } = options;
   try {
     const [users, soldHistory] = await Promise.all([
       api("/admin/users"),
@@ -3012,7 +3025,11 @@ async function renderAdminPortal() {
     </section>
   `;
 
-    revealPortal(mount);
+    if (!silent) {
+      revealPortal(mount);
+    } else {
+      mount.classList.remove("hidden");
+    }
     activeRole = "admin";
     activeUserId = null;
     startAdminRefresh();
@@ -3027,6 +3044,8 @@ async function renderAdminPortal() {
     if (retry) {
       retry.addEventListener("click", () => renderAdminPortal());
     }
+  } finally {
+    adminRenderInFlight = false;
   }
 }
 
@@ -3593,13 +3612,6 @@ function setupLogin() {
     if (activeRole === "user" && activeUserId && isUserDashboardPage()) {
       await renderUserPortal({ silent: true }).catch(() => {});
       return;
-    }
-    if (activeRole === "admin" && isAdminDashboardPage()) {
-      await renderAdminPortal().catch(() => {});
-      return;
-    }
-    if (activeRole === "admin" && isAdminDatabasePage()) {
-      await renderAdminDatabasePage().catch(() => {});
     }
   }, 3000);
 }
