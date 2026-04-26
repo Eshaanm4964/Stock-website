@@ -2932,6 +2932,9 @@ async function renderAdminPortal(options = {}) {
                 ${filteredHoldings.length
                   ? filteredHoldings
                       .map((holding) => {
+                        const investedValue = Number(holding.buy_price || 0) * Number(holding.quantity || 0);
+                        const currentValue = Number(holding.current_price || 0) * Number(holding.quantity || 0);
+                        const valueClass = currentValue >= investedValue ? "profit" : "loss";
                         const realizedProfit = realizedMap.get(`${holding.user_id}::${String(holding.symbol || "").toUpperCase()}`) || 0;
                         const totalProfit = Number(holding.profit_loss || 0) + Number(realizedProfit || 0);
                         return `
@@ -2947,8 +2950,8 @@ async function renderAdminPortal(options = {}) {
                           <td>${formatDate(holding.created_at)}</td>
                           <td>${holding.quantity}</td>
                           <td>${currency(holding.buy_price)}</td>
-                          <td>${currency(Number(holding.buy_price || 0) * Number(holding.quantity || 0))}</td>
-                          <td>${currency(Number(holding.current_price || 0) * Number(holding.quantity || 0))}</td>
+                          <td class="${valueClass}">${currency(investedValue)}</td>
+                          <td class="${valueClass}">${currency(currentValue)}</td>
                           <td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
                           <td class="${Number(holding.today_profit) >= 0 ? "profit" : "loss"}">${currency(holding.today_profit)}</td>
                           <td class="${Number(realizedProfit) >= 0 ? "profit" : "loss"}">${currency(realizedProfit)}</td>
@@ -2966,7 +2969,7 @@ async function renderAdminPortal(options = {}) {
                   <td><strong>${filteredTotalQuantity.toFixed(2)}</strong></td>
                   <td>—</td>
                   <td class="${filteredCurrentValue >= filteredInvestedValue ? "profit" : "loss"}"><strong>${currency(filteredInvestedValue)}</strong></td>
-                  <td><strong>${currency(filteredCurrentValue)}</strong></td>
+                  <td class="${filteredCurrentValue >= filteredInvestedValue ? "profit" : "loss"}"><strong>${currency(filteredCurrentValue)}</strong></td>
                   <td class="${filteredUnrealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredUnrealizedProfit)}</strong></td>
                   <td class="${filteredTodayProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredTodayProfit)}</strong></td>
                   <td class="${filteredRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredRealizedProfit)}</strong></td>
@@ -3001,8 +3004,8 @@ async function renderAdminPortal(options = {}) {
                             </td>
                             <td>${formatDate(entry.created_at)}</td>
                             <td>${entry.quantity}</td>
-                            <td>${currency(entry.buy_price)}</td>
-                            <td>${currency(entry.sell_price)}</td>
+                            <td class="${Number(entry.sell_price) >= Number(entry.buy_price) ? "profit" : "loss"}">${currency(entry.buy_price)}</td>
+                            <td class="${Number(entry.sell_price) >= Number(entry.buy_price) ? "profit" : "loss"}">${currency(entry.sell_price)}</td>
                             <td class="${Number(entry.profit_loss) >= 0 ? "profit" : "loss"}">${currency(entry.profit_loss)}</td>
                             <td>${formatDateTime(entry.sold_at)}</td>
                             <td><small>${escapeHtml(entry.sold_by_identifier || entry.sold_by_role || "System")}</small></td>
