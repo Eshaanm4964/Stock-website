@@ -1867,6 +1867,14 @@ async function renderAdminDatabasePage() {
     const totalPortfolioValue = userDashboards.reduce((sum, dashboard) => sum + Number(dashboard.total_portfolio_value || 0), 0);
     const totalProfitLoss = userDashboards.reduce((sum, dashboard) => sum + Number(dashboard.total_profit_loss || 0), 0);
     const totalHoldings = userDashboards.reduce((sum, dashboard) => sum + Number(dashboard.total_holdings || 0), 0);
+    const holdingsRows = userDashboards.flatMap((dashboard) =>
+      (dashboard.holdings || []).map((holding) => ({
+        full_name: dashboard.full_name,
+        fixed_user_id: dashboard.fixed_user_id,
+        username: dashboard.username,
+        ...holding
+      }))
+    );
 
     mount.innerHTML = `
       <section class="user-shell admin-simple-shell no-sidebar-shell">
@@ -1888,24 +1896,24 @@ async function renderAdminDatabasePage() {
             </div>
           </header>
 
-          <section class="simple-summary-strip admin-summary-strip admin-database-summary-strip">
-            <span><strong>${safeUsers.length}</strong> Total Clients</span>
-            <span><strong>${safeUsers.filter((user) => user.is_active).length}</strong> Active Clients</span>
-            <span><strong>${totalHoldings}</strong> Total Holdings</span>
-            <span class="${totalProfitLoss >= 0 ? "profit" : "loss"}"><strong>${currency(totalProfitLoss)}</strong> Combined P&amp;L</span>
-            <span><strong>${currency(totalPortfolioValue)}</strong> Portfolio Value</span>
-          </section>
-
           <article class="table-card admin-database-card full-span-card">
             <div class="panel-head">
               <div>
                 <h3>User Credentials &amp; Portfolio Database</h3>
-                <p class="helper-text admin-positions-helper">This view shows every user detail except passwords, plus each portfolio. It refreshes automatically every 10 seconds.</p>
+                <p class="helper-text admin-positions-helper">Simple database view of user records and portfolio rows. Passwords are excluded. Refreshes every 10 seconds.</p>
               </div>
-              <span class="badge green">${safeUsers.length} Users</span>
+              <span class="badge green">${safeUsers.length} Users / ${totalHoldings} Holdings</span>
             </div>
-            <div class="table-wrap admin-position-table-wrap" id="adminDatabaseTableWrap">
-              <table class="admin-position-table admin-database-table" id="adminDatabaseTable">
+            <div class="admin-database-statline">
+              <span><strong>${safeUsers.length}</strong> Users</span>
+              <span><strong>${safeUsers.filter((user) => user.is_active).length}</strong> Active</span>
+              <span><strong>${totalHoldings}</strong> Holdings</span>
+              <span><strong>${currency(totalPortfolioValue)}</strong> Portfolio Value</span>
+              <span class="${totalProfitLoss >= 0 ? "profit" : "loss"}"><strong>${currency(totalProfitLoss)}</strong> Total P&amp;L</span>
+            </div>
+
+            <div class="table-wrap admin-position-table-wrap admin-database-table-wrap" id="adminDatabaseUsersWrap">
+              <table class="admin-position-table admin-database-table" id="adminDatabaseUsersTable">
                 <thead>
                   <tr>
                     <th>Full Name</th>
@@ -1918,7 +1926,7 @@ async function renderAdminDatabasePage() {
                     <th>Created At</th>
                     <th>Portfolio Value</th>
                     <th>Total Holdings</th>
-                    <th>Portfolio Details</th>
+                    <th>Total P&amp;L</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1939,23 +1947,7 @@ async function renderAdminDatabasePage() {
                               <td>${formatDateTime(user.created_at)}</td>
                               <td>${currency(dashboard?.total_portfolio_value ?? user.portfolio_value ?? 0)}</td>
                               <td>${dashboard?.total_holdings ?? user.total_holdings ?? 0}</td>
-                              <td>
-                                ${holdings.length
-                                  ? `<div class="admin-database-holding-list">
-                                      ${holdings
-                                        .map(
-                                          (holding) => `
-                                            <article class="admin-database-holding-pill">
-                                              <strong>${escapeHtml(holding.symbol || "Stock")}</strong>
-                                              <small>Qty: ${escapeHtml(String(holding.quantity ?? 0))} | Avg: ${escapeHtml(currency(holding.buy_price || 0))}</small>
-                                              <small>Current: ${escapeHtml(currency(holding.current_price || 0))} | P&amp;L: <span class="${Number(holding.profit_loss || 0) >= 0 ? "profit" : "loss"}">${escapeHtml(currency(holding.profit_loss || 0))}</span></small>
-                                            </article>
-                                          `
-                                        )
-                                        .join("")}
-                                    </div>`
-                                  : `<span class="helper-text">No holdings yet.</span>`}
-                              </td>
+                              <td class="${Number(dashboard?.total_profit_loss || 0) >= 0 ? "profit" : "loss"}">${currency(dashboard?.total_profit_loss || 0)}</td>
                             </tr>
                           `;
                         })
@@ -1964,7 +1956,62 @@ async function renderAdminDatabasePage() {
                 </tbody>
               </table>
             </div>
-            <div class="admin-table-bottom-scroll" id="adminDatabaseTableScroller" aria-label="Scroll database table horizontally">
+            <div class="admin-table-bottom-scroll" id="adminDatabaseUsersScroller" aria-label="Scroll users table horizontally">
+              <div class="admin-table-bottom-scroll-inner"></div>
+            </div>
+
+            <div class="panel-head admin-database-subhead">
+              <div>
+                <h3>Portfolio Holdings</h3>
+                <p class="helper-text admin-positions-helper">Each row below represents one live holding in the database.</p>
+              </div>
+              <span class="badge">${holdingsRows.length} Rows</span>
+            </div>
+            <div class="table-wrap admin-position-table-wrap admin-database-table-wrap" id="adminDatabaseHoldingsWrap">
+              <table class="admin-position-table admin-database-table admin-database-holdings-table" id="adminDatabaseHoldingsTable">
+                <thead>
+                  <tr>
+                    <th>Full Name</th>
+                    <th>Client ID</th>
+                    <th>Username / Email</th>
+                    <th>Symbol</th>
+                    <th>Exchange</th>
+                    <th>Purchase Date</th>
+                    <th>Qty</th>
+                    <th>Avg Price</th>
+                    <th>Current Price</th>
+                    <th>Current Value</th>
+                    <th>Unrealised P&amp;L</th>
+                    <th>P&amp;L %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${holdingsRows.length
+                    ? holdingsRows
+                        .map(
+                          (holding) => `
+                            <tr>
+                              <td>${escapeHtml(holding.full_name || "Unknown User")}</td>
+                              <td>${escapeHtml(holding.fixed_user_id || "")}</td>
+                              <td>${escapeHtml(holding.username || "")}</td>
+                              <td>${escapeHtml(holding.symbol || "")}</td>
+                              <td>${escapeHtml(holding.exchange || "NSE")}</td>
+                              <td>${formatDateTime(holding.created_at)}</td>
+                              <td>${escapeHtml(String(holding.quantity ?? 0))}</td>
+                              <td>${currency(holding.buy_price || 0)}</td>
+                              <td>${currency(holding.current_price || 0)}</td>
+                              <td>${currency(holding.value || 0)}</td>
+                              <td class="${Number(holding.profit_loss || 0) >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss || 0)}</td>
+                              <td class="${Number(holding.percent_change || 0) >= 0 ? "profit" : "loss"}">${percent(holding.percent_change || 0)}</td>
+                            </tr>
+                          `
+                        )
+                        .join("")
+                    : `<tr><td colspan="12"><span class="helper-text">No portfolio holdings found.</span></td></tr>`}
+                </tbody>
+              </table>
+            </div>
+            <div class="admin-table-bottom-scroll" id="adminDatabaseHoldingsScroller" aria-label="Scroll holdings table horizontally">
               <div class="admin-table-bottom-scroll-inner"></div>
             </div>
           </article>
@@ -1977,7 +2024,8 @@ async function renderAdminDatabasePage() {
     activeUserId = null;
     startAdminRefresh();
     setupPortalActions();
-    setupScrollSync("adminDatabaseTableWrap", "adminDatabaseTableScroller");
+    setupScrollSync("adminDatabaseUsersWrap", "adminDatabaseUsersScroller");
+    setupScrollSync("adminDatabaseHoldingsWrap", "adminDatabaseHoldingsScroller");
     setupAdminDatabaseExport(safeUsers, userDashboards);
   } catch (error) {
     renderPortalError(mount, "Database View", `The database view could not load yet. ${formatError(error)}`);

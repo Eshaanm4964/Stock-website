@@ -780,6 +780,29 @@ body.dashboard-page {
   min-height: 78px;
 }
 
+.admin-database-statline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-database-statline span {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 14px;
+  border: 1px solid rgba(16, 37, 29, 0.08);
+  border-radius: 12px;
+  background: #ffffff;
+  color: #31453d;
+  font-weight: 700;
+}
+
+.admin-database-statline strong {
+  color: #113225;
+}
+
 .admin-summary-strip span {
   min-height: 84px;
   justify-content: center;
@@ -827,6 +850,27 @@ body.dashboard-page {
 
 .admin-database-table {
   min-width: 1680px;
+}
+
+.admin-database-table-wrap {
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.admin-database-table thead th,
+.admin-database-holdings-table thead th {
+  background: #f3f6f4;
+  color: #44544d;
+}
+
+.admin-database-table td,
+.admin-database-table th {
+  border-right: 1px solid rgba(17, 35, 63, 0.05);
+}
+
+.admin-database-table td:last-child,
+.admin-database-table th:last-child {
+  border-right: 0;
 }
 
 .admin-position-table thead th {
@@ -908,28 +952,8 @@ body.dashboard-page {
   overflow: hidden;
 }
 
-.admin-database-holding-list {
-  display: grid;
-  gap: 10px;
-  min-width: 340px;
-}
-
-.admin-database-holding-pill {
-  display: grid;
-  gap: 4px;
-  padding: 12px 14px;
-  border: 1px solid rgba(16, 37, 29, 0.08);
-  border-radius: 16px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,252,249,0.98) 100%);
-  box-shadow: 0 10px 20px rgba(16, 37, 29, 0.04);
-}
-
-.admin-database-holding-pill strong {
-  color: #113225;
-}
-
-.admin-database-holding-pill small {
-  color: #566860;
+.admin-database-subhead {
+  margin-top: 18px;
 }
 
 .admin-form-page-card {
