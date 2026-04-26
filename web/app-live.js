@@ -2052,7 +2052,8 @@ async function renderAdminDatabasePage(options = {}) {
   }
 }
 
-function buildAdminClientDetail(user) {
+function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
+  const userSoldHistory = soldHistory.filter((entry) => Number(entry.user_id) === Number(user.user_id));
   return `
     <article class="dashboard-card detail-card">
       <div class="panel-head">
@@ -2062,6 +2063,11 @@ function buildAdminClientDetail(user) {
           <p class="detail-subtitle">${user.fixed_user_id || user.username}</p>
         </div>
         <span class="badge ${user.total_profit_loss >= 0 ? "green" : "red"}">${currency(user.total_profit_loss)}</span>
+      </div>
+      <div class="detail-stat-grid">
+        <article><strong>${escapeHtml(user.phone_number || "No phone")}</strong><span>Phone Number</span></article>
+        <article><strong>${escapeHtml(user.username || "No username")}</strong><span>Username / Email</span></article>
+        <article><strong>${user.is_active ? "Active" : "Inactive"}</strong><span>Account Status</span></article>
       </div>
       <div class="detail-stat-grid">
         <article><strong>${user.total_holdings}</strong><span>Live Stocks</span></article>
@@ -2076,7 +2082,7 @@ function buildAdminClientDetail(user) {
               <thead><tr><th>Stock</th><th>Purchase Date</th><th>Qty</th><th>Avg Price</th><th>Live Price</th><th>P&amp;L</th></tr></thead>
               <tbody>
                 ${user.holdings.map((holding) => `
-                  <tr>
+                  <tr ${focusSymbol && String(holding.symbol || "").toUpperCase() === String(focusSymbol || "").toUpperCase() ? 'class="admin-detail-highlight-row"' : ""}>
                     <td>${isAdminStockRevealed(holding.symbol) ? holding.symbol : maskStockSymbol(holding.symbol)}<br /><small>${holding.sector || "Tracked holding"}</small></td>
                     <td>${formatDate(holding.created_at)}</td>
                     <td>${holding.quantity}</td>
@@ -2090,20 +2096,25 @@ function buildAdminClientDetail(user) {
           </div>
         </article>
         <article class="table-card">
-          <div class="panel-head"><h3>Old Stock History</h3><span class="badge green">Purchase Records</span></div>
+          <div class="panel-head"><h3>Sold History</h3><span class="badge ${userSoldHistory.length ? "green" : ""}">${userSoldHistory.length} Record(s)</span></div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Date</th><th>Stock</th><th>Qty</th><th>Avg Price</th><th>Status</th></tr></thead>
+              <thead><tr><th>Purchase Date</th><th>Sold Date</th><th>Stock</th><th>Qty</th><th>Avg Price</th><th>Sell Price</th><th>Realised P&amp;L</th><th>P&amp;L %</th></tr></thead>
               <tbody>
-                ${user.holdings.map((holding) => `
-                  <tr>
-                    <td>${formatDate(holding.created_at)}</td>
-                    <td>${isAdminStockRevealed(holding.symbol) ? holding.symbol : maskStockSymbol(holding.symbol)}</td>
-                    <td>${holding.quantity}</td>
-                    <td>${currency(holding.buy_price)}</td>
-                    <td>${holding.current_price >= holding.buy_price ? "In Profit" : "Under Watch"}</td>
-                  </tr>
-                `).join("")}
+                ${userSoldHistory.length
+                  ? userSoldHistory.map((entry) => `
+                    <tr>
+                      <td>${formatDate(entry.created_at)}</td>
+                      <td>${formatDateTime(entry.sold_at)}</td>
+                      <td>${isAdminStockRevealed(entry.symbol) ? escapeHtml(entry.symbol) : maskStockSymbol(entry.symbol)}</td>
+                      <td>${entry.quantity}</td>
+                      <td>${currency(entry.buy_price)}</td>
+                      <td>${currency(entry.sell_price)}</td>
+                      <td class="${Number(entry.profit_loss) >= 0 ? "profit" : "loss"}">${currency(entry.profit_loss)}</td>
+                      <td class="${Number(entry.sell_price) >= Number(entry.buy_price) ? "profit" : "loss"}">${percent((((Number(entry.sell_price) - Number(entry.buy_price)) / Math.max(Number(entry.buy_price), 1)) * 100))}</td>
+                    </tr>
+                  `).join("")
+                  : `<tr><td colspan="8"><span class="helper-text">No sold history for this client yet.</span></td></tr>`}
               </tbody>
             </table>
           </div>
@@ -2153,7 +2164,7 @@ function buildAdminStockDetail(symbol, holdings) {
   `;
 }
 
-function setupAdminDrilldowns(userDashboards, allHoldings) {
+function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
   const detailMount = document.getElementById("adminDetailMount");
   if (!detailMount) return;
 
@@ -2162,7 +2173,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings) {
       const userId = Number(button.dataset.userDetail);
       const user = userDashboards.find((entry) => Number(entry.user_id) === userId);
       if (!user) return;
-      detailMount.innerHTML = buildAdminClientDetail(user);
+      detailMount.innerHTML = buildAdminClientDetail(user, soldHistory);
       detailMount.classList.remove("hidden");
       detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
     });
@@ -2171,9 +2182,15 @@ function setupAdminDrilldowns(userDashboards, allHoldings) {
   document.querySelectorAll("[data-stock-detail]").forEach((button) => {
     button.addEventListener("click", () => {
       const symbol = String(button.dataset.stockDetail || "").toUpperCase();
-      const holdings = allHoldings.filter((entry) => entry.symbol === symbol);
-      if (!holdings.length) return;
-      detailMount.innerHTML = buildAdminStockDetail(symbol, holdings);
+      const userId = Number(button.dataset.stockUserId || 0);
+      const user = userDashboards.find((entry) => Number(entry.user_id) === userId);
+      if (user) {
+        detailMount.innerHTML = buildAdminClientDetail(user, soldHistory, symbol);
+      } else {
+        const holdings = allHoldings.filter((entry) => entry.symbol === symbol);
+        if (!holdings.length) return;
+        detailMount.innerHTML = buildAdminStockDetail(symbol, holdings);
+      }
       detailMount.classList.remove("hidden");
       detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
     });
@@ -2723,7 +2740,7 @@ async function renderAdminPortal() {
     setupDownloadButtons(userDashboards);
     setupWebsiteControlButtons();
     setupAdminManagementButtons();
-    setupAdminDrilldowns(userDashboards, allHoldings);
+    setupAdminDrilldowns(userDashboards, allHoldings, filteredSoldHistory);
     setupPortalActions();
   } catch (error) {
     renderPortalError(mount, "Admin Dashboard", `Login succeeded, but admin dashboard data could not load yet. ${formatError(error)}`);
@@ -2943,7 +2960,7 @@ async function renderAdminPortal(options = {}) {
                           <td>
                             <div class="admin-stock-cell">
                               <button class="admin-eye-btn ${isAdminStockRevealed(holding.symbol) ? "is-active" : ""}" type="button" data-stock-visibility-toggle="${escapeHtml(String(holding.symbol || "").toUpperCase())}" aria-label="${isAdminStockRevealed(holding.symbol) ? "Hide stock name" : "Show stock name"}">&#128065;</button>
-                              <button class="table-link" type="button" data-stock-detail="${holding.symbol}" data-stock-label="${escapeHtml(String(holding.symbol || "").toUpperCase())}">${isAdminStockRevealed(holding.symbol) ? holding.symbol : maskStockSymbol(holding.symbol)}</button>
+                              <button class="table-link" type="button" data-stock-detail="${holding.symbol}" data-stock-user-id="${holding.user_id}" data-stock-label="${escapeHtml(String(holding.symbol || "").toUpperCase())}">${isAdminStockRevealed(holding.symbol) ? holding.symbol : maskStockSymbol(holding.symbol)}</button>
                             </div>
                             <small>${holding.exchange || "NSE"}</small>
                           </td>
@@ -2988,7 +3005,7 @@ async function renderAdminPortal(options = {}) {
           <div class="panel-head"><h3>Sold History</h3><span class="badge ${filteredSoldHistory.length ? "green" : ""}">${filteredSoldHistory.length} Records</span></div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>User</th><th>Stock</th><th>Purchase Date</th><th>Qty Sold</th><th>Avg Price</th><th>Sell Price</th><th>Realised P&amp;L</th><th>Sold At (IST)</th><th>Sold By</th></tr></thead>
+              <thead><tr><th>User</th><th>Stock</th><th>Purchase Date</th><th>Qty Sold</th><th>Avg Price</th><th>Sell Price</th><th>Realised P&amp;L</th><th>P&amp;L %</th><th>Sold At (IST)</th><th>Sold By</th></tr></thead>
               <tbody>
                 ${filteredSoldHistory.length
                   ? filteredSoldHistory
@@ -3007,13 +3024,14 @@ async function renderAdminPortal(options = {}) {
                             <td class="${Number(entry.sell_price) >= Number(entry.buy_price) ? "profit" : "loss"}">${currency(entry.buy_price)}</td>
                             <td class="${Number(entry.sell_price) >= Number(entry.buy_price) ? "profit" : "loss"}">${currency(entry.sell_price)}</td>
                             <td class="${Number(entry.profit_loss) >= 0 ? "profit" : "loss"}">${currency(entry.profit_loss)}</td>
+                            <td class="${Number(entry.sell_price) >= Number(entry.buy_price) ? "profit" : "loss"}">${percent((((Number(entry.sell_price) - Number(entry.buy_price)) / Math.max(Number(entry.buy_price), 1)) * 100))}</td>
                             <td>${formatDateTime(entry.sold_at)}</td>
                             <td><small>${escapeHtml(entry.sold_by_identifier || entry.sold_by_role || "System")}</small></td>
                           </tr>
                         `
                       )
                       .join("")
-                  : `<tr><td colspan="9"><span class="helper-text">No sold history for the selected filters yet.</span></td></tr>`}
+                  : `<tr><td colspan="10"><span class="helper-text">No sold history for the selected filters yet.</span></td></tr>`}
               </tbody>
               <tfoot>
                 <tr class="admin-total-row">
