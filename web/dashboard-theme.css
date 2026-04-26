@@ -897,6 +897,20 @@ body.dashboard-page {
   color: #173126;
 }
 
+.admin-position-table td.profit,
+.admin-position-table td.profit strong,
+.admin-position-table td.profit small,
+.admin-position-table .profit {
+  color: #0f8a55;
+}
+
+.admin-position-table td.loss,
+.admin-position-table td.loss strong,
+.admin-position-table td.loss small,
+.admin-position-table .loss {
+  color: #c62828;
+}
+
 .admin-stock-cell {
   display: inline-flex;
   align-items: center;
