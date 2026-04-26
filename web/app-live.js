@@ -15,7 +15,8 @@ let adminUiState = {
   stockFilter: "",
   dateFrom: "",
   dateTo: "",
-  revealedStocks: []
+  revealedStocks: [],
+  actionsMenuOpen: false
 };
 let userUiState = {
   search: "",
@@ -165,6 +166,7 @@ function startAdminRefresh() {
   adminRefreshTimer = window.setInterval(async () => {
     if (document.hidden) return;
     if (activeRole !== "admin") return;
+    if (adminUiState.actionsMenuOpen) return;
     if (isAdminDashboardPage()) {
       await renderAdminPortal({ silent: true }).catch(() => {});
       return;
@@ -1676,6 +1678,10 @@ function setupPortalActions() {
     if (dropdown.dataset.outsideCloseBound === "true") return;
     dropdown.dataset.outsideCloseBound = "true";
 
+    dropdown.addEventListener("toggle", () => {
+      adminUiState.actionsMenuOpen = dropdown.open;
+    });
+
     const closeDropdown = () => dropdown.removeAttribute("open");
 
     document.addEventListener("click", (event) => {
@@ -1735,7 +1741,7 @@ function buildAdminActionToolbar(selectedValue = "") {
         </div>
       </div>
       <div class="user-topbar-actions admin-toolbar-right">
-        <details class="admin-dropdown-menu">
+        <details class="admin-dropdown-menu" ${adminUiState.actionsMenuOpen ? "open" : ""}>
           <summary class="secondary-btn compact-btn">Admin Actions</summary>
           <div class="admin-dropdown-panel">
             <p class="admin-dropdown-section-label">Quick Actions</p>
@@ -2843,7 +2849,7 @@ async function renderAdminPortal(options = {}) {
           </div>
           <div class="user-topbar-actions admin-toolbar-right">
             <input class="user-search admin-universal-search" id="adminUniversalSearch" type="text" placeholder="Search user, client ID, or stock" />
-            <details class="admin-dropdown-menu">
+            <details class="admin-dropdown-menu" ${adminUiState.actionsMenuOpen ? "open" : ""}>
               <summary class="secondary-btn compact-btn">Actions & Filters</summary>
               <div class="admin-dropdown-panel">
                 <p class="admin-dropdown-section-label">Quick Actions</p>
