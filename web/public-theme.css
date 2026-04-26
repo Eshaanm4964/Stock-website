@@ -2868,11 +2868,19 @@ body.public-page .site-shell {
   }
 
   .public-navbar.nav-open .site-nav.public-nav {
+    display: grid;
+    gap: 10px;
     padding-top: 8px;
   }
 
   .public-navbar.nav-open .header-actions.public-actions {
     padding-bottom: 4px;
+  }
+
+  .public-navbar.nav-open .site-nav.public-nav a,
+  .public-navbar.nav-open .header-actions.public-actions .nav-cta {
+    width: 100%;
+    justify-content: center;
   }
 
   .products-grid,
@@ -2954,6 +2962,16 @@ body.public-page .site-shell {
 
   .hero-carousel-copy {
     margin: 0 auto;
+    max-width: 100%;
+  }
+
+  .hero-carousel-copy h1 {
+    font-size: clamp(2rem, 7vw, 3rem);
+  }
+
+  .hero-carousel-copy p {
+    font-size: 1rem;
+    line-height: 1.7;
   }
 
   .hero-carousel-prev {
@@ -2993,5 +3011,198 @@ body.public-page .site-shell {
   .floating-whatsapp-icon {
     width: 42px;
     height: 42px;
+  }
+}
+
+@media (max-width: 560px) {
+  body.public-page .site-shell {
+    width: calc(100% - 14px);
+    padding-bottom: 28px;
+  }
+
+  .site-header.public-navbar {
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 0 0 18px 18px;
+  }
+
+  .brand.public-brand {
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .brand-mark.brand-logo.brand-logo-lg {
+    width: 48px;
+    height: 48px;
+    padding: 6px;
+    border-radius: 14px;
+  }
+
+  .public-brand-copy {
+    min-width: 0;
+  }
+
+  .brand-wordmark {
+    font-size: 0.98rem;
+  }
+
+  .brand-tagline {
+    font-size: 0.68rem;
+    line-height: 1.25;
+  }
+
+  .public-main {
+    gap: 18px;
+    margin-top: 18px;
+  }
+
+  .section-card,
+  .stats-shell,
+  .footer-shell,
+  .hero-shell,
+  .auth-panel,
+  .auth-form-zone,
+  .auth-shell {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .home-hero-carousel,
+  .hero-carousel-stage {
+    min-height: 500px;
+    border-radius: 22px;
+  }
+
+  .hero-carousel-slide {
+    min-height: 500px;
+    padding: 28px 18px 64px;
+    gap: 18px;
+  }
+
+  .hero-carousel-image {
+    min-height: 180px;
+  }
+
+  .hero-carousel-image img {
+    width: min(100%, 280px);
+    max-height: 180px;
+    object-fit: contain;
+  }
+
+  .hero-carousel-copy h1 {
+    font-size: clamp(1.55rem, 8vw, 2.25rem);
+    line-height: 1.08;
+  }
+
+  .hero-carousel-copy p {
+    font-size: 0.94rem;
+    line-height: 1.6;
+  }
+
+  .hero-carousel-btn {
+    width: 42px;
+    height: 42px;
+    font-size: 1.25rem;
+  }
+
+  .hero-carousel-prev {
+    left: 8px;
+  }
+
+  .hero-carousel-next {
+    right: 8px;
+  }
+
+  .hero-carousel-dots {
+    bottom: 18px;
+  }
+
+  .hero-ticker-wrap {
+    overflow: hidden;
+  }
+
+  .section-head h2,
+  .expected-returns-head h2 {
+    font-size: clamp(1.55rem, 8vw, 2.15rem);
+    line-height: 1.12;
+  }
+
+  .section-head p,
+  .expected-returns-head p,
+  .hero-copy p,
+  .product-card p,
+  .fundcellence-strip p,
+  .usp-grid p {
+    font-size: 0.94rem;
+    line-height: 1.65;
+  }
+
+  .returns-tier-card {
+    border-radius: 22px;
+  }
+
+  .returns-tier-top,
+  .returns-tier-body {
+    padding: 18px;
+  }
+
+  .returns-tier-highlight {
+    padding: 14px;
+  }
+
+  .returns-tier-capital {
+    font-size: clamp(1.8rem, 8vw, 2.4rem);
+  }
+
+  .returns-tier-cta {
+    width: 100%;
+    min-height: 48px;
+    font-size: 0.92rem;
+  }
+
+  .stats-shell {
+    gap: 0;
+  }
+
+  .stat-card {
+    padding: 18px 14px;
+  }
+
+  .stat-number {
+    font-size: clamp(1.4rem, 8vw, 2rem);
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .comparison-table {
+    min-width: 620px;
+  }
+
+  .footer-shell {
+    gap: 16px;
+  }
+
+  .footer-socials {
+    flex-wrap: wrap;
+  }
+
+  .floating-whatsapp {
+    right: 12px;
+    bottom: 12px;
+    padding: 8px;
+    box-shadow: 0 14px 32px rgba(17, 201, 108, 0.24);
+  }
+
+  .floating-whatsapp-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .floating-whatsapp-icon svg {
+    width: 20px;
+    height: 20px;
   }
 }
