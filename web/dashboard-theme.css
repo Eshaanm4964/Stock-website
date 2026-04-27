@@ -772,6 +772,42 @@ body.dashboard-page {
   color: #7c6b3b;
 }
 
+.admin-view-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.admin-view-list-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms;
+}
+
+.admin-view-list-btn:hover {
+  background: rgba(16, 37, 29, 0.06);
+}
+
+.admin-view-list-btn small {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #70809c;
+}
+
 .admin-summary-strip {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }

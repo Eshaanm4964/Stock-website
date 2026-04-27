@@ -9,6 +9,11 @@ let adminRefreshTimer = null;
 let homeHeroTimer = null;
 let userRenderInFlight = false;
 let adminRenderInFlight = false;
+let chatNudgeTimer = null;
+let adminSearchRenderTimer = null;
+let liveDashboardPriceTimer = null;
+let adminDashboardRefreshTimer = null;
+const marketSymbolSearchCache = new Map();
 let adminUiState = {
   search: "",
   clientFilter: "",
@@ -135,6 +140,14 @@ function isLoginPage() {
 
 function isAdminDashboardPage() {
   return document.body?.dataset?.page === "admin-dashboard";
+}
+
+function isAdminCustomerPage() {
+  return document.body?.dataset?.page === "admin-add-customer";
+}
+
+function isAdminDealPage() {
+  return document.body?.dataset?.page === "admin-add-deal";
 }
 
 function isUserDashboardPage() {
@@ -968,6 +981,9 @@ function logoutAndResetPortals() {
   clearAuth();
   activeRole = null;
   activeUserId = null;
+  window.clearInterval(adminDashboardRefreshTimer);
+  adminDashboardRefreshTimer = null;
+  stopLiveDashboardPrices();
   hidePortalMounts();
   hideAuthLoading();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -2244,9 +2260,9 @@ function buildAdminStockDetail(symbol, holdings) {
     <article class="dashboard-card detail-card">
       <div class="panel-head">
         <div>
-          <p class="eyebrow">Stock Detail</p>
-          <h3>${symbol}</h3>
-          <p class="detail-subtitle">Investors currently holding this stock</p>
+          <p class="eyebrow">Stock Investor Breakdown</p>
+          <h3>${escapeHtml(symbol)}</h3>
+          <p class="detail-subtitle">Click any investor name to open their dashboard. The table shows each investor's buy value, live value, and return on this stock.</p>
         </div>
         <span class="badge">${holdings.length} Holders</span>
       </div>
@@ -2277,6 +2293,11 @@ function buildAdminStockDetail(symbol, holdings) {
   `;
 }
 
+function closeAdminViewDropdown(dropdownId) {
+  const el = document.getElementById(dropdownId);
+  if (el) el.removeAttribute("open");
+}
+
 function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
   const detailMount = document.getElementById("adminDetailMount");
   if (!detailMount) return;
@@ -2286,6 +2307,8 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       const userId = Number(button.dataset.userDetail);
       const user = userDashboards.find((entry) => Number(entry.user_id) === userId);
       if (!user) return;
+      const dropdownId = button.dataset.closeViewDropdown;
+      if (dropdownId) closeAdminViewDropdown(dropdownId);
       detailMount.innerHTML = buildAdminClientDetail(user, soldHistory);
       detailMount.classList.remove("hidden");
       detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2295,12 +2318,14 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
   document.querySelectorAll("[data-stock-detail]").forEach((button) => {
     button.addEventListener("click", () => {
       const symbol = String(button.dataset.stockDetail || "").toUpperCase();
+      const dropdownId = button.dataset.closeViewDropdown;
+      if (dropdownId) closeAdminViewDropdown(dropdownId);
       const userId = Number(button.dataset.stockUserId || 0);
       const user = userDashboards.find((entry) => Number(entry.user_id) === userId);
       if (user) {
         detailMount.innerHTML = buildAdminClientDetail(user, soldHistory, symbol);
       } else {
-        const holdings = allHoldings.filter((entry) => entry.symbol === symbol);
+        const holdings = allHoldings.filter((entry) => String(entry.symbol || "").toUpperCase() === symbol);
         if (!holdings.length) return;
         detailMount.innerHTML = buildAdminStockDetail(symbol, holdings);
       }
@@ -2308,6 +2333,147 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
+}
+
+function stopLiveDashboardPrices() {
+  if (!liveDashboardPriceTimer) return;
+  window.clearInterval(liveDashboardPriceTimer);
+  liveDashboardPriceTimer = null;
+}
+
+function startAdminDashboardAutoRefresh() {
+  if (!isAdminDashboardPage() || activeRole !== "admin") return;
+  window.clearInterval(adminDashboardRefreshTimer);
+  adminDashboardRefreshTimer = window.setInterval(() => {
+    if (document.hidden) return;
+    if (document.activeElement?.matches?.("input, select, textarea")) return;
+    renderAdminPortal().catch(() => {});
+  }, 5000);
+}
+
+async function refreshAdminCurrentView() {
+  if (isAdminCustomerPage()) {
+    await renderAdminCustomerPage();
+    return;
+  }
+  if (isAdminDealPage()) {
+    await renderAdminDealPage();
+    return;
+  }
+  if (isAdminDashboardPage()) {
+    await renderAdminPortal();
+  }
+}
+
+function buildAdminActionPageShell({
+  title,
+  subtitle,
+  badge,
+  bodyMarkup,
+  backHref = "./admin-dashboard.html"
+}) {
+  return `
+    <section class="user-shell admin-shell admin-simple-shell no-sidebar-shell">
+      <div class="user-shell-main admin-simple-main">
+        <header class="user-topbar admin-simple-topbar admin-action-topbar">
+          <div class="admin-action-topbar-copy">
+            <p class="eyebrow">Admin Workspace</p>
+            <h2>${title}</h2>
+            <p class="detail-subtitle">${subtitle}</p>
+          </div>
+          <div class="admin-toolbar-row">
+            <a class="secondary-btn" href="${backHref}">Back to Dashboard</a>
+            <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
+          </div>
+        </header>
+        <article class="dashboard-card full-span-card admin-deal-card admin-action-page-card">
+          <div class="panel-head">
+            <div>
+              <h3>${title}</h3>
+              <p class="detail-subtitle">${subtitle}</p>
+            </div>
+            <span class="badge green">${badge}</span>
+          </div>
+          ${bodyMarkup}
+        </article>
+      </div>
+    </section>
+  `;
+}
+
+async function renderAdminCustomerPage() {
+  const mount = document.getElementById("adminCustomerPortal");
+  if (!mount) return;
+  const adminCustomerStatus =
+    sessionStorage.getItem("assetyantra_admin_customer_status") ||
+    "Client ID will be generated like ABC123 and shown here.";
+  mount.innerHTML = buildAdminActionPageShell({
+    title: "Add Customer",
+    subtitle: "Create customer access from admin only. The generated client ID is used for user login.",
+    badge: "Admin Only",
+    bodyMarkup: `
+      <form id="adminCustomerForm" class="portfolio-form admin-customer-form admin-action-form">
+        <label><span>Customer Name</span><input name="full_name" type="text" placeholder="Customer full name" autocomplete="name" required /></label>
+        <label><span>Email</span><input name="email" type="email" placeholder="client@email.com" autocomplete="email" required /></label>
+        <label><span>Phone</span><input name="phone_number" type="tel" placeholder="Phone number" autocomplete="tel" required /></label>
+        <label><span>Password</span><input name="password" type="password" placeholder="Minimum 8 characters" autocomplete="new-password" required /></label>
+        <button class="primary-btn" type="submit">Create Customer</button>
+        <p class="helper-text admin-deal-status" id="adminCustomerStatus">${escapeHtml(adminCustomerStatus)}</p>
+      </form>
+    `
+  });
+  revealPortal(mount);
+  activeRole = "admin";
+  setupAdminCustomerForm();
+  setupPortalActions();
+}
+
+async function renderAdminDealPage() {
+  const mount = document.getElementById("adminDealPortal");
+  if (!mount) return;
+  const { userDashboards } = await loadAdminPortalData();
+  const liveUserDashboards = Array.isArray(userDashboards) ? userDashboards : [];
+  mount.innerHTML = buildAdminActionPageShell({
+    title: "Add Deal",
+    subtitle: "Add a stock position directly to a customer portfolio.",
+    badge: "Deal Entry",
+    bodyMarkup: `
+      <form id="adminDealForm" class="portfolio-form admin-deal-form admin-action-form">
+        <label>
+          <span>Customer</span>
+          <select name="userId" required ${liveUserDashboards.length ? "" : "disabled"}>
+            <option value="">Select customer</option>
+            ${liveUserDashboards
+              .slice()
+              .sort((a, b) => String(a.full_name || "").localeCompare(String(b.full_name || "")))
+              .map((user) => `<option value="${user.user_id}">${escapeHtml(user.full_name)} (${escapeHtml(user.fixed_user_id || user.username || "Client")})</option>`)
+              .join("")}
+          </select>
+        </label>
+        <label class="portfolio-symbol-wrap">
+          <span>Stock Name / Symbol</span>
+          <input name="symbol" type="text" placeholder="Type 3 letters" autocomplete="off" required />
+          <div id="adminDealSymbolSuggestions" class="symbol-suggestion-list"></div>
+        </label>
+        <label><span>Quantity</span><input name="quantity" type="number" min="1" step="1" placeholder="100" required /></label>
+        <label><span>Buy Price</span><input name="buyPrice" type="number" min="1" step="0.01" placeholder="1500" required /></label>
+        <label>
+          <span>Exchange</span>
+          <select name="exchange" required>
+            <option value="NSE" selected>NSE</option>
+            <option value="BSE">BSE</option>
+          </select>
+        </label>
+        <button class="primary-btn" type="submit" ${liveUserDashboards.length ? "" : "disabled"}>Add Deal</button>
+        <p class="helper-text admin-deal-status" id="adminDealStatus">${liveUserDashboards.length ? "Choose customer, stock, quantity, and buy price." : "Create a customer first, then add a deal."}</p>
+      </form>
+    `
+  });
+  revealPortal(mount);
+  activeRole = "admin";
+  setupAdminDealForm();
+  setupAdminDealSymbolSuggestions();
+  setupPortalActions();
 }
 
 async function renderAdminPortal() {
@@ -3021,6 +3187,34 @@ async function renderAdminPortal(options = {}) {
             </details>
             <a class="secondary-btn compact-btn" href="./admin-database.html">View Database</a>
             <a class="secondary-btn compact-btn" href="./admin-add-funds.html">Add Funds</a>
+            <details class="admin-dropdown-menu" id="adminInvestorViewDropdown">
+              <summary class="secondary-btn compact-btn">Investor View</summary>
+              <div class="admin-dropdown-panel">
+                <p class="admin-dropdown-section-label">Jump to Investor</p>
+                <div class="admin-view-list">
+                  ${safeUsers.length
+                    ? safeUsers
+                        .slice()
+                        .sort((a, b) => String(a.full_name || "").localeCompare(String(b.full_name || "")))
+                        .map((user) => `<button class="admin-view-list-btn" type="button" data-user-detail="${user.user_id}" data-close-view-dropdown="adminInvestorViewDropdown">${escapeHtml(user.full_name)}<small>${escapeHtml(user.fixed_user_id || user.username || "")}</small></button>`)
+                        .join("")
+                    : `<p class="helper-text">No investors yet.</p>`}
+                </div>
+              </div>
+            </details>
+            <details class="admin-dropdown-menu" id="adminStockViewDropdown">
+              <summary class="secondary-btn compact-btn">Stock View</summary>
+              <div class="admin-dropdown-panel">
+                <p class="admin-dropdown-section-label">Jump to Stock</p>
+                <div class="admin-view-list">
+                  ${availableStockOptions.length
+                    ? availableStockOptions
+                        .map((symbol) => `<button class="admin-view-list-btn" type="button" data-stock-detail="${escapeHtml(symbol)}" data-close-view-dropdown="adminStockViewDropdown">${escapeHtml(symbol)}</button>`)
+                        .join("")
+                    : `<p class="helper-text">No stocks yet.</p>`}
+                </div>
+              </div>
+            </details>
             <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
           </div>
         </header>
