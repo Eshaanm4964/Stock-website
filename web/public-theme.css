@@ -397,7 +397,7 @@ body.public-page .site-shell {
 
 .hero-carousel-slide {
   display: none;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   align-items: center;
   gap: 46px;
   min-height: 440px;
@@ -828,10 +828,10 @@ body.public-page .site-shell {
   display: grid;
   grid-template-rows: auto 1fr;
   overflow: hidden;
-  border: 1px solid rgba(196, 154, 67, 0.16);
+  border: 1px solid rgba(44, 144, 240, 0.2);
   border-radius: 26px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(249, 248, 242, 0.98));
-  box-shadow: 0 18px 44px rgba(74, 69, 48, 0.08);
+  background: linear-gradient(180deg, #ffffff, rgba(240, 248, 255, 0.98));
+  box-shadow: 0 18px 44px rgba(44, 100, 200, 0.08);
 }
 
 .returns-tier-top,
@@ -845,12 +845,12 @@ body.public-page .site-shell {
   gap: 8px;
   min-height: 188px;
   text-align: center;
-  border-bottom: 1px solid rgba(196, 154, 67, 0.12);
+  border-bottom: 1px solid rgba(44, 144, 240, 0.14);
 }
 
 .returns-tier-label {
   margin: 0;
-  color: #8e7a39;
+  color: #1a5cb8;
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.18em;
@@ -880,9 +880,9 @@ body.public-page .site-shell {
   place-items: center;
   min-height: 96px;
   padding: 18px;
-  border: 1px solid rgba(44, 144, 240, 0.18);
+  border: 1px solid rgba(44, 144, 240, 0.22);
   border-radius: 18px;
-  background: linear-gradient(135deg, rgba(236, 249, 241, 0.96), rgba(255, 255, 255, 0.98));
+  background: linear-gradient(135deg, rgba(224, 240, 255, 0.98), rgba(255, 255, 255, 0.98));
   text-align: center;
 }
 
@@ -895,19 +895,19 @@ body.public-page .site-shell {
 }
 
 .returns-tier-highlight span {
-  color: #746f60;
+  color: #4a6488;
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
 
 .premium-highlight {
-  border-color: rgba(196, 154, 67, 0.26);
-  background: linear-gradient(135deg, rgba(255, 248, 228, 0.98), rgba(255, 255, 255, 0.98));
+  border-color: rgba(44, 144, 240, 0.22);
+  background: linear-gradient(135deg, rgba(224, 240, 255, 0.98), rgba(255, 255, 255, 0.98));
 }
 
 .premium-highlight strong {
-  color: #c49a43;
+  color: #1565c0;
 }
 
 .returns-tier-metrics {
@@ -921,7 +921,7 @@ body.public-page .site-shell {
   justify-content: space-between;
   gap: 16px;
   padding-bottom: 10px;
-  border-bottom: 1px solid rgba(196, 154, 67, 0.1);
+  border-bottom: 1px solid rgba(44, 144, 240, 0.1);
 }
 
 .returns-tier-metrics dt,
@@ -941,7 +941,7 @@ body.public-page .site-shell {
 }
 
 .returns-tier-metrics dd.profit {
-  color: #b0831e;
+  color: #1565c0;
 }
 
 .returns-tier-total dt,
@@ -955,9 +955,9 @@ body.public-page .site-shell {
   align-items: center;
   justify-content: center;
   min-height: 48px;
-  border: 1px solid rgba(196, 154, 67, 0.24);
+  border: 1px solid rgba(44, 144, 240, 0.24);
   border-radius: 12px;
-  background: linear-gradient(135deg, #5a7098 0%, #4a6288 100%);
+  background: linear-gradient(135deg, #1a75d4 0%, #2c90f0 100%);
   color: #ffffff;
   font-weight: 900;
   letter-spacing: 0.03em;
@@ -966,19 +966,19 @@ body.public-page .site-shell {
 
 .featured-tier {
   transform: translateY(-6px);
-  border-color: rgba(196, 154, 67, 0.28);
-  background: linear-gradient(180deg, rgba(45, 40, 22, 0.99), rgba(25, 23, 16, 0.99));
-  box-shadow: 0 26px 56px rgba(33, 29, 15, 0.2);
+  border-color: rgba(44, 144, 240, 0.4);
+  background: linear-gradient(180deg, #0f2040, #0a1830);
+  box-shadow: 0 26px 56px rgba(15, 32, 64, 0.28);
 }
 
 .featured-tier .returns-tier-top {
-  border-bottom-color: rgba(196, 154, 67, 0.18);
+  border-bottom-color: rgba(44, 144, 240, 0.2);
 }
 
 .featured-tier .returns-tier-label,
 .featured-tier .returns-tier-top span:last-child,
 .featured-tier .returns-tier-metrics dt {
-  color: rgba(243, 230, 183, 0.76);
+  color: rgba(147, 202, 255, 0.8);
 }
 
 .featured-tier .returns-tier-capital,
@@ -989,25 +989,25 @@ body.public-page .site-shell {
 }
 
 .featured-tier .returns-tier-highlight {
-  border-color: rgba(196, 154, 67, 0.25);
-  background: linear-gradient(135deg, rgba(63, 55, 28, 0.92), rgba(37, 33, 22, 0.96));
+  border-color: rgba(44, 144, 240, 0.28);
+  background: linear-gradient(135deg, rgba(26, 58, 107, 0.9), rgba(15, 40, 80, 0.96));
 }
 
 .featured-tier .returns-tier-highlight strong {
-  color: #f4cf61;
+  color: #93caff;
 }
 
 .featured-tier .returns-tier-cta {
-  background: linear-gradient(135deg, #c8a12f 0%, #b68a1e 100%);
+  background: linear-gradient(135deg, #2c90f0 0%, #1a75d4 100%);
   color: #ffffff;
 }
 
 .starter-tier .returns-tier-top {
-  background: linear-gradient(180deg, rgba(226, 245, 228, 0.98), rgba(236, 247, 236, 0.9));
+  background: linear-gradient(180deg, rgba(224, 240, 255, 0.98), rgba(236, 247, 255, 0.9));
 }
 
 .premium-tier .returns-tier-top {
-  background: linear-gradient(180deg, rgba(255, 249, 233, 0.98), rgba(252, 247, 238, 0.92));
+  background: linear-gradient(180deg, rgba(232, 243, 255, 0.98), rgba(240, 248, 255, 0.92));
 }
 
 .returns-tier-badge {
@@ -1020,8 +1020,8 @@ body.public-page .site-shell {
   justify-content: center;
   padding: 0 12px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #f2c84d, #f4de84);
-  color: #1e2438;
+  background: linear-gradient(135deg, #2c90f0, #1a75d4);
+  color: #ffffff;
   font-size: 0.7rem;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -1313,7 +1313,7 @@ body.public-page .site-shell {
 .product-tagline { margin: 0; font-size: 0.86rem; font-weight: 700; color: var(--brand-accent); }
 .product-icon-fx { background: linear-gradient(135deg, rgba(44,144,240,0.18), rgba(114,174,254,0.22)); font-family: "Space Mono", monospace; font-weight: 700; font-size: 1rem; color: #1a5cb8; }
 .product-icon-pms { background: linear-gradient(135deg, rgba(15,32,64,0.1), rgba(26,58,107,0.14)); font-family: "Space Mono", monospace; font-weight: 700; font-size: 1rem; color: #0f2040; }
-.home-product-cta { display: inline-block; margin-top: auto; font-size: 0.88rem; text-align: center; }
+.home-product-cta { display: flex; justify-content: center; align-items: center; width: 100%; margin-top: auto; font-size: 0.88rem; text-align: center; }
 .home-product-cta-outline { background: transparent; border: 2px solid #0f2040; color: #0f2040; }
 .home-product-cta-outline:hover { background: #0f2040; color: #ffffff; }
 
@@ -2388,6 +2388,23 @@ body.public-page .site-shell {
     aspect-ratio: 4/3;
     max-height: 280px;
   }
+}
+
+.about-showcase-section { padding: 0; }
+.about-showcase-wrap {
+  width: 100%;
+  border-radius: 24px;
+  overflow: hidden;
+  line-height: 0;
+}
+.about-showcase-img {
+  width: 100%;
+  height: auto;
+  max-height: 520px;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+  border-radius: 24px;
 }
 
 .service-card ul {
