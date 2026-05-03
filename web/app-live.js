@@ -3130,6 +3130,9 @@ async function renderAdminPortal(options = {}) {
       return map;
     }, new Map());
 
+    const prevDetailMount = document.getElementById("adminDetailMount");
+    const savedDetailHTML = silent && prevDetailMount && !prevDetailMount.classList.contains("hidden") ? prevDetailMount.innerHTML : null;
+
     mount.innerHTML = `
     <section class="user-shell admin-simple-shell no-sidebar-shell">
       <div class="user-shell-main admin-simple-main dashboard-stack admin-dashboard-stack">
@@ -3364,6 +3367,13 @@ async function renderAdminPortal(options = {}) {
       revealPortal(mount);
     } else {
       mount.classList.remove("hidden");
+    }
+    if (savedDetailHTML) {
+      const newDetailMount = document.getElementById("adminDetailMount");
+      if (newDetailMount) {
+        newDetailMount.innerHTML = savedDetailHTML;
+        newDetailMount.classList.remove("hidden");
+      }
     }
     activeRole = "admin";
     activeUserId = null;

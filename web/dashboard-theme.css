@@ -1,4 +1,4 @@
-body.dashboard-page {
+﻿body.dashboard-page {
   margin: 0;
   min-height: 100vh;
   background:
@@ -70,7 +70,7 @@ body.dashboard-page {
 .recommendation-card {
   border: 1px solid rgba(17, 35, 63, 0.08);
   border-radius: 16px;
-  background: #f8fbff;
+  background: #f5f9ff;
   color: #11203d;
 }
 
@@ -122,7 +122,7 @@ body.dashboard-page {
   align-items: center;
   min-height: 58px;
   padding: 12px 14px;
-  background: linear-gradient(135deg, #ffffff 0%, #f7fbf9 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f5f9ff 100%);
 }
 
 .symbol-suggestion-main,
@@ -145,7 +145,7 @@ body.dashboard-page {
 
 .symbol-suggestion-main small {
   max-width: 190px;
-  color: #58667e;
+  color: #4a6488;
 }
 
 .symbol-suggestion-meta {
@@ -154,12 +154,12 @@ body.dashboard-page {
 }
 
 .symbol-suggestion-meta strong {
-  color: #006b45;
+  color: #1a82e8;
 }
 
 .symbol-suggestion-btn.is-active {
   border-color: rgba(0, 107, 69, 0.34);
-  background: #edf7f2;
+  background: #e0f0ff;
 }
 
 .price-up,
@@ -266,15 +266,15 @@ body.dashboard-page {
   align-items: center;
   min-height: 74px;
   padding: 16px 18px;
-  border: 1px solid rgba(15, 118, 110, 0.16);
+  border: 1px solid rgba(44, 144, 240, 0.16);
   border-radius: 20px;
   background:
-    radial-gradient(circle at 98% 0%, rgba(15, 138, 85, 0.1), transparent 32%),
-    linear-gradient(135deg, rgba(15, 138, 85, 0.08), rgba(255, 255, 255, 0.98));
+    radial-gradient(circle at 98% 0%, rgba(44, 144, 240, 0.1), transparent 32%),
+    linear-gradient(135deg, rgba(44, 144, 240, 0.08), rgba(255, 255, 255, 0.98));
 }
 
 .portfolio-live-price-preview span {
-  color: #53645e;
+  color: #4a6488;
   font-size: 0.78rem;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -282,7 +282,7 @@ body.dashboard-page {
 }
 
 .portfolio-live-price-preview strong {
-  color: #10251d;
+  color: #0f2040;
   font-family: "Space Grotesk", sans-serif;
   font-size: 1.32rem;
   line-height: 1.1;
@@ -305,10 +305,10 @@ body.dashboard-page {
 
 /* Clean full-width dashboard skin */
 .dashboard-page {
-  --dash-bg: #eef3f0;
-  --dash-ink: #10251d;
-  --dash-line: #dbe5df;
-  --dash-accent: #0f766e;
+  --dash-bg: #e8f4ff;
+  --dash-ink: #0f2040;
+  --dash-line: #cce0f5;
+  --dash-accent: #2c90f0;
   --dash-profit: #0f8a55;
   --dash-loss: #c2413a;
 }
@@ -317,8 +317,8 @@ body.dashboard-page {
 .user-shell.no-sidebar-shell,
 .user-shell {
   background:
-    radial-gradient(circle at 8% 0%, rgba(15, 118, 110, 0.14), transparent 34%),
-    linear-gradient(180deg, #f7faf8 0%, var(--dash-bg) 100%);
+    radial-gradient(circle at 8% 0%, rgba(44, 144, 240, 0.14), transparent 34%),
+    linear-gradient(180deg, #f5f9ff 0%, var(--dash-bg) 100%);
 }
 
 .no-sidebar-shell {
@@ -342,8 +342,8 @@ body.dashboard-page {
 .no-sidebar-shell .user-app-card,
 .no-sidebar-shell .user-topbar {
   border: 1px solid var(--dash-line);
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbf9 100%);
-  box-shadow: 0 16px 40px rgba(16, 37, 29, 0.07);
+  background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+  box-shadow: 0 16px 40px rgba(15, 32, 64, 0.07);
 }
 
 .admin-simple-topbar h2,
@@ -368,17 +368,17 @@ body.dashboard-page {
   align-items: center;
   justify-content: center;
   padding: 13px 18px;
-  border: 1px solid rgba(16, 37, 29, 0.1);
+  border: 1px solid rgba(15, 32, 64, 0.1);
   border-radius: 24px;
-  color: #26362f;
-  background: linear-gradient(180deg, #ffffff 0%, #fbfdfc 100%);
-  box-shadow: 0 12px 30px rgba(16, 37, 29, 0.05);
+  color: #1a3a5c;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+  box-shadow: 0 12px 30px rgba(15, 32, 64, 0.05);
   font-size: clamp(1rem, 1.4vw, 1.18rem);
   font-weight: 800;
 }
 
 .simple-summary-strip strong {
-  color: #10251d;
+  color: #0f2040;
   font-size: clamp(1.08rem, 1.6vw, 1.28rem);
   font-weight: 950;
 }
@@ -407,14 +407,14 @@ body.dashboard-page {
   align-items: center;
   overflow-x: auto;
   padding: 0 4px 10px;
-  border-bottom: 1px solid rgba(16, 37, 29, 0.08);
+  border-bottom: 1px solid rgba(15, 32, 64, 0.08);
 }
 
 .portfolio-ledger-tabs button {
   position: relative;
   border: 0;
   padding: 8px 0;
-  color: #66756f;
+  color: #4a6488;
   background: transparent;
   cursor: pointer;
   font-weight: 900;
@@ -422,7 +422,7 @@ body.dashboard-page {
 }
 
 .portfolio-ledger-tabs button.active {
-  color: #10251d;
+  color: #0f2040;
 }
 
 .portfolio-ledger-tabs button.active::after {
@@ -433,7 +433,7 @@ body.dashboard-page {
   bottom: -11px;
   height: 3px;
   border-radius: 999px;
-  background: #10251d;
+  background: #0f2040;
 }
 
 .portfolio-ledger-metrics {
@@ -447,19 +447,19 @@ body.dashboard-page {
   gap: 8px;
   min-height: 92px;
   padding: 14px 16px;
-  border: 1px solid rgba(16, 37, 29, 0.08);
+  border: 1px solid rgba(15, 32, 64, 0.08);
   border-radius: 18px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbf9 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
 }
 
 .portfolio-ledger-metrics span {
-  color: #53635c;
+  color: #4a6488;
   font-size: 0.85rem;
   font-weight: 900;
 }
 
 .portfolio-ledger-metrics strong {
-  color: #10251d;
+  color: #0f2040;
   font-family: "Space Grotesk", sans-serif;
   font-size: clamp(1.25rem, 1.8vw, 1.7rem);
 }
@@ -511,12 +511,12 @@ body.dashboard-page {
 }
 
 .badge {
-  background: rgba(15, 118, 110, 0.1);
+  background: rgba(44, 144, 240, 0.1);
   color: var(--dash-accent);
 }
 
 .badge.green {
-  background: rgba(15, 138, 85, 0.12);
+  background: rgba(44, 144, 240, 0.12);
   color: var(--dash-profit);
 }
 
@@ -526,16 +526,16 @@ body.dashboard-page {
 }
 
 .download-btn {
-  background: linear-gradient(135deg, #0f766e 0%, #14532d 100%);
-  box-shadow: 0 10px 24px rgba(15, 118, 110, 0.18);
+  background: linear-gradient(135deg, #2c90f0 0%, #1a6fd6 100%);
+  box-shadow: 0 10px 24px rgba(44, 144, 240, 0.18);
 }
 
 .table-link {
-  color: #0f766e;
+  color: #2c90f0;
 }
 
 .table-link:hover {
-  color: #14532d;
+  color: #1a6fd6;
 }
 
 .admin-stock-cell {
@@ -550,21 +550,21 @@ body.dashboard-page {
   justify-content: center;
   width: 34px;
   height: 34px;
-  border: 1px solid rgba(15, 118, 110, 0.18);
+  border: 1px solid rgba(44, 144, 240, 0.18);
   border-radius: 12px;
-  background: linear-gradient(180deg, #ffffff 0%, #f5faf8 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f0f7ff 100%);
   cursor: pointer;
   font-size: 1rem;
 }
 
 .admin-eye-btn:hover {
-  border-color: rgba(15, 118, 110, 0.32);
-  background: #eef7f3;
+  border-color: rgba(44, 144, 240, 0.32);
+  background: #eef4fb;
 }
 
 .admin-total-row td {
-  background: #f4faf7;
-  border-top: 2px solid rgba(15, 118, 110, 0.14);
+  background: #eef4fb;
+  border-top: 2px solid rgba(44, 144, 240, 0.14);
   font-weight: 800;
 }
 
@@ -612,25 +612,25 @@ body.dashboard-page {
 /* Admin dashboard polish aligned to the public site colors */
 body.dashboard-page {
   background:
-    radial-gradient(circle at 14% 11%, rgba(15, 138, 85, 0.14), transparent 20%),
-    radial-gradient(circle at 87% 10%, rgba(196, 154, 67, 0.16), transparent 22%),
-    linear-gradient(180deg, #fffef8 0%, #f5fbf7 44%, #fcf7ec 100%);
+    radial-gradient(circle at 14% 11%, rgba(44, 144, 240, 0.14), transparent 20%),
+    radial-gradient(circle at 87% 10%, rgba(44, 144, 240, 0.16), transparent 22%),
+    linear-gradient(180deg, #f5f9ff 0%, #f0f7ff 44%, #e8f4ff 100%);
 }
 
 .dashboard-app-shell {
   background:
-    radial-gradient(circle at 10% 0%, rgba(15, 138, 85, 0.08), transparent 28%),
-    radial-gradient(circle at 92% 0%, rgba(196, 154, 67, 0.1), transparent 24%);
+    radial-gradient(circle at 10% 0%, rgba(44, 144, 240, 0.08), transparent 28%),
+    radial-gradient(circle at 92% 0%, rgba(44, 144, 240, 0.1), transparent 24%);
 }
 
 .admin-simple-topbar {
   align-items: center;
-  border: 1px solid rgba(16, 37, 29, 0.08);
+  border: 1px solid rgba(15, 32, 64, 0.08);
   background:
-    radial-gradient(circle at top left, rgba(15, 138, 85, 0.08), transparent 24%),
-    radial-gradient(circle at top right, rgba(196, 154, 67, 0.12), transparent 22%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(251, 253, 248, 0.98) 100%);
-  box-shadow: 0 24px 56px rgba(16, 37, 29, 0.08);
+    radial-gradient(circle at top left, rgba(44, 144, 240, 0.08), transparent 24%),
+    radial-gradient(circle at top right, rgba(44, 144, 240, 0.12), transparent 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 249, 255, 0.98) 100%);
+  box-shadow: 0 24px 56px rgba(15, 32, 64, 0.08);
 }
 
 .admin-toolbar-left {
@@ -657,9 +657,9 @@ body.dashboard-page {
   width: 56px;
   height: 56px;
   border-radius: 20px;
-  border: 1px solid rgba(15, 138, 85, 0.14);
-  background: linear-gradient(180deg, #ffffff 0%, #f8fcfa 100%);
-  box-shadow: 0 10px 24px rgba(15, 138, 85, 0.08);
+  border: 1px solid rgba(44, 144, 240, 0.14);
+  background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+  box-shadow: 0 10px 24px rgba(44, 144, 240, 0.08);
 }
 
 .admin-dashboard-brand .public-brand-copy {
@@ -670,12 +670,12 @@ body.dashboard-page {
 .admin-dashboard-brand .brand-wordmark {
   font-family: "Poppins", "Manrope", sans-serif;
   font-size: 1.9rem;
-  color: #113225;
+  color: #0f2040;
   letter-spacing: -0.03em;
 }
 
 .admin-dashboard-brand .brand-tagline {
-  color: #7a6a3b;
+  color: #2c74a8;
   font-weight: 800;
 }
 
@@ -715,12 +715,12 @@ body.dashboard-page {
   gap: 14px;
   width: min(540px, calc(100vw - 48px));
   padding: 18px;
-  border: 1px solid rgba(16, 37, 29, 0.08);
+  border: 1px solid rgba(15, 32, 64, 0.08);
   border-radius: 22px;
   background:
-    radial-gradient(circle at top right, rgba(196, 154, 67, 0.08), transparent 28%),
+    radial-gradient(circle at top right, rgba(44, 144, 240, 0.08), transparent 28%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.99) 0%, rgba(249, 252, 248, 0.99) 100%);
-  box-shadow: 0 24px 60px rgba(16, 37, 29, 0.1);
+  box-shadow: 0 24px 60px rgba(15, 32, 64, 0.1);
   transform-origin: top right;
   animation: adminDropdownIn 220ms ease;
 }
@@ -738,9 +738,9 @@ body.dashboard-page {
   min-height: 64px;
   padding: 14px 16px;
   text-align: left;
-  border: 1px solid rgba(16, 37, 29, 0.08);
-  background: linear-gradient(180deg, #ffffff 0%, #fbfdf9 100%);
-  box-shadow: 0 12px 24px rgba(16, 37, 29, 0.05);
+  border: 1px solid rgba(15, 32, 64, 0.08);
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+  box-shadow: 0 12px 24px rgba(15, 32, 64, 0.05);
 }
 
 .admin-dropdown-links .secondary-btn small {
@@ -749,8 +749,8 @@ body.dashboard-page {
 }
 
 .admin-dropdown-links .secondary-btn:hover {
-  border-color: rgba(196, 154, 67, 0.24);
-  background: linear-gradient(180deg, #fffdf8 0%, #f8f4e7 100%);
+  border-color: rgba(44, 144, 240, 0.24);
+  background: linear-gradient(180deg, #f5f9ff 0%, #eef4fb 100%);
 }
 
 .admin-dropdown-filters {
@@ -769,7 +769,7 @@ body.dashboard-page {
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #7c6b3b;
+  color: #2c74a8;
 }
 
 .admin-view-list {
@@ -799,7 +799,7 @@ body.dashboard-page {
 }
 
 .admin-view-list-btn:hover {
-  background: rgba(16, 37, 29, 0.06);
+  background: rgba(15, 32, 64, 0.06);
 }
 
 .admin-view-list-btn small {
@@ -828,15 +828,15 @@ body.dashboard-page {
   gap: 8px;
   align-items: center;
   padding: 10px 14px;
-  border: 1px solid rgba(16, 37, 29, 0.08);
+  border: 1px solid rgba(15, 32, 64, 0.08);
   border-radius: 12px;
   background: #ffffff;
-  color: #31453d;
+  color: #1a3a5c;
   font-weight: 700;
 }
 
 .admin-database-statline strong {
-  color: #113225;
+  color: #0f2040;
 }
 
 .admin-summary-strip span {
@@ -847,12 +847,12 @@ body.dashboard-page {
   gap: 6px;
   position: relative;
   overflow: hidden;
-  border-color: rgba(16, 37, 29, 0.08);
+  border-color: rgba(15, 32, 64, 0.08);
   background:
-    radial-gradient(circle at top right, rgba(196, 154, 67, 0.12), transparent 40%),
-    radial-gradient(circle at top left, rgba(15, 138, 85, 0.08), transparent 30%),
+    radial-gradient(circle at top right, rgba(44, 144, 240, 0.12), transparent 40%),
+    radial-gradient(circle at top left, rgba(44, 144, 240, 0.08), transparent 30%),
     linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(249,252,249,0.98) 100%);
-  box-shadow: 0 18px 34px rgba(16, 37, 29, 0.06);
+  box-shadow: 0 18px 34px rgba(15, 32, 64, 0.06);
 }
 
 .admin-summary-strip span::after {
@@ -861,7 +861,7 @@ body.dashboard-page {
   inset: auto 14px 0 14px;
   height: 3px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(15, 138, 85, 0.8), rgba(196, 154, 67, 0.72));
+  background: linear-gradient(90deg, rgba(44, 144, 240, 0.8), rgba(44, 144, 240, 0.72));
 }
 
 .admin-positions-helper {
@@ -874,9 +874,9 @@ body.dashboard-page {
   padding-bottom: 8px;
   border-radius: 20px;
   background:
-    radial-gradient(circle at top right, rgba(196, 154, 67, 0.06), transparent 24%),
+    radial-gradient(circle at top right, rgba(44, 144, 240, 0.06), transparent 24%),
     linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(250,252,251,0.98) 100%);
-  border: 1px solid rgba(16, 37, 29, 0.08);
+  border: 1px solid rgba(15, 32, 64, 0.08);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.88);
 }
 
@@ -895,8 +895,8 @@ body.dashboard-page {
 
 .admin-database-table thead th,
 .admin-database-holdings-table thead th {
-  background: #f3f6f4;
-  color: #44544d;
+  background: #eaf2ff;
+  color: #44526b;
 }
 
 .admin-database-table td,
@@ -913,12 +913,12 @@ body.dashboard-page {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: linear-gradient(180deg, #fffdf7 0%, #f1f7f1 100%);
-  color: #6d694f;
+  background: linear-gradient(180deg, #f5f9ff 0%, #eaf2ff 100%);
+  color: #44526b;
 }
 
 .admin-position-table tbody tr:hover {
-  background: #f8fcf7;
+  background: #f5f9ff;
 }
 
 .admin-position-table td,
@@ -930,7 +930,7 @@ body.dashboard-page {
 
 .admin-position-table td {
   background: rgba(255, 255, 255, 0.94);
-  color: #173126;
+  color: #0f2040;
 }
 
 .admin-position-table td.profit,
@@ -959,22 +959,22 @@ body.dashboard-page {
   justify-content: center;
   width: 34px;
   height: 34px;
-  border: 1px solid rgba(196, 154, 67, 0.22);
+  border: 1px solid rgba(44, 144, 240, 0.22);
   border-radius: 12px;
-  background: linear-gradient(180deg, #fffef8 0%, #f8f4e7 100%);
-  color: #7a6431;
+  background: linear-gradient(180deg, #f5f9ff 0%, #e8f4ff 100%);
+  color: #2c74a8;
   cursor: pointer;
-  box-shadow: 0 8px 18px rgba(196, 154, 67, 0.12);
+  box-shadow: 0 8px 18px rgba(44, 144, 240, 0.12);
 }
 
 .admin-eye-btn:hover {
-  border-color: rgba(15, 138, 85, 0.28);
-  background: #eef7f2;
+  border-color: rgba(44, 144, 240, 0.28);
+  background: #eef4fb;
 }
 
 .admin-eye-btn.is-active {
-  border-color: rgba(15, 138, 85, 0.3);
-  background: linear-gradient(180deg, #eef8f2 0%, #e5f4eb 100%);
+  border-color: rgba(44, 144, 240, 0.3);
+  background: linear-gradient(180deg, #eef4fb 0%, #e0f0ff 100%);
   color: #0f8a55;
 }
 
@@ -993,8 +993,8 @@ body.dashboard-page {
 }
 
 .admin-total-row td {
-  background: linear-gradient(180deg, #f8fcf8 0%, #f8f3e9 100%);
-  border-top: 2px solid rgba(196, 154, 67, 0.24);
+  background: linear-gradient(180deg, #f5f9ff 0%, #eef4fc 100%);
+  border-top: 2px solid rgba(44, 144, 240, 0.24);
   font-weight: 800;
 }
 
@@ -1028,16 +1028,16 @@ body.dashboard-page {
   margin-top: 12px;
   padding-bottom: 4px;
   border-radius: 999px;
-  border: 1px solid rgba(16, 37, 29, 0.08);
-  background: linear-gradient(180deg, #fffefb 0%, #f5f9f5 100%);
-  scrollbar-color: rgba(15, 138, 85, 0.6) rgba(17, 35, 63, 0.08);
+  border: 1px solid rgba(15, 32, 64, 0.08);
+  background: linear-gradient(180deg, #f5f9ff 0%, #f0f7ff 100%);
+  scrollbar-color: rgba(44, 144, 240, 0.6) rgba(17, 35, 63, 0.08);
 }
 
 .admin-table-bottom-scroll-inner {
   height: 14px;
   border-radius: 999px;
   background:
-    linear-gradient(90deg, rgba(15, 138, 85, 0.22) 0%, rgba(196, 154, 67, 0.24) 50%, rgba(15, 138, 85, 0.18) 100%);
+    linear-gradient(90deg, rgba(44, 144, 240, 0.22) 0%, rgba(44, 144, 240, 0.24) 50%, rgba(44, 144, 240, 0.18) 100%);
 }
 
 .admin-table-bottom-scroll::-webkit-scrollbar {
@@ -1051,7 +1051,7 @@ body.dashboard-page {
 
 .admin-table-bottom-scroll::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: linear-gradient(90deg, #0f8a55 0%, #c49a43 55%, #7b8f45 100%);
+  background: linear-gradient(90deg, #2c90f0 0%, #1a82e8 55%, #0d6fd6 100%);
 }
 
 .dashboard-card,
@@ -1059,32 +1059,32 @@ body.dashboard-page {
 .metric-card,
 .admin-form-page-card,
 .detail-card {
-  border: 1px solid rgba(16, 37, 29, 0.08);
+  border: 1px solid rgba(15, 32, 64, 0.08);
   background:
-    radial-gradient(circle at top right, rgba(196, 154, 67, 0.08), transparent 28%),
+    radial-gradient(circle at top right, rgba(44, 144, 240, 0.08), transparent 28%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(249, 252, 248, 0.98) 100%);
-  box-shadow: 0 20px 48px rgba(16, 37, 29, 0.07);
+  box-shadow: 0 20px 48px rgba(15, 32, 64, 0.07);
 }
 
 .panel-head h3,
 .table-card h3,
 .dashboard-card h3 {
-  color: #113225;
+  color: #0f2040;
 }
 
 .helper-text,
 .admin-positions-helper,
 .detail-subtitle,
 .dashboard-card p {
-  color: #566860;
+  color: #4a6488;
 }
 
 .admin-universal-search,
 .admin-filter-select,
 .admin-filter-date,
 .user-search {
-  border: 1px solid rgba(16, 37, 29, 0.1);
-  background: linear-gradient(180deg, #ffffff 0%, #fbfdf9 100%);
+  border: 1px solid rgba(15, 32, 64, 0.1);
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
@@ -1092,22 +1092,22 @@ body.dashboard-page {
 .admin-filter-select:focus,
 .admin-filter-date:focus,
 .user-search:focus {
-  border-color: rgba(15, 138, 85, 0.34);
-  box-shadow: 0 0 0 4px rgba(15, 138, 85, 0.08);
+  border-color: rgba(44, 144, 240, 0.34);
+  box-shadow: 0 0 0 4px rgba(44, 144, 240, 0.08);
 }
 
 .secondary-btn.compact-btn,
 .admin-dropdown-menu > summary {
-  border: 1px solid rgba(16, 37, 29, 0.1);
-  background: linear-gradient(180deg, #ffffff 0%, #f7fbf8 100%);
-  color: #143126;
-  box-shadow: 0 10px 24px rgba(16, 37, 29, 0.05);
+  border: 1px solid rgba(15, 32, 64, 0.1);
+  background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+  color: #0f2040;
+  box-shadow: 0 10px 24px rgba(15, 32, 64, 0.05);
 }
 
 .secondary-btn.compact-btn:hover,
 .admin-dropdown-menu > summary:hover {
-  border-color: rgba(196, 154, 67, 0.34);
-  background: linear-gradient(180deg, #fffdf6 0%, #f8f3e7 100%);
+  border-color: rgba(44, 144, 240, 0.34);
+  background: linear-gradient(180deg, #f5f9ff 0%, #eef4fb 100%);
 }
 
 @media (max-width: 1080px) {
@@ -1148,9 +1148,9 @@ body.dashboard-page {
 
 .user-clean-shell {
   background:
-    radial-gradient(circle at 8% 0%, rgba(15, 138, 85, 0.12), transparent 32%),
-    radial-gradient(circle at 92% 0%, rgba(196, 154, 67, 0.12), transparent 30%),
-    linear-gradient(180deg, #f7fcf8 0%, #eef5f0 100%);
+    radial-gradient(circle at 8% 0%, rgba(44, 144, 240, 0.12), transparent 32%),
+    radial-gradient(circle at 92% 0%, rgba(44, 144, 240, 0.12), transparent 30%),
+    linear-gradient(180deg, #f5f9ff 0%, #e8f4ff 100%);
 }
 
 .user-dashboard-stack {
@@ -1158,11 +1158,11 @@ body.dashboard-page {
 }
 
 .user-clean-topbar {
-  border: 1px solid rgba(16, 37, 29, 0.08);
+  border: 1px solid rgba(15, 32, 64, 0.08);
   background:
-    radial-gradient(circle at top right, rgba(196, 154, 67, 0.1), transparent 28%),
+    radial-gradient(circle at top right, rgba(44, 144, 240, 0.1), transparent 28%),
     linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(250,252,249,0.98) 100%);
-  box-shadow: 0 18px 42px rgba(16, 37, 29, 0.06);
+  box-shadow: 0 18px 42px rgba(15, 32, 64, 0.06);
   align-items: center;
 }
 
@@ -1179,20 +1179,20 @@ body.dashboard-page {
   gap: 6px;
   position: relative;
   overflow: hidden;
-  border-color: rgba(16, 37, 29, 0.08);
+  border-color: rgba(15, 32, 64, 0.08);
   background:
-    radial-gradient(circle at top right, rgba(196, 154, 67, 0.11), transparent 40%),
-    radial-gradient(circle at top left, rgba(15, 138, 85, 0.08), transparent 28%),
+    radial-gradient(circle at top right, rgba(44, 144, 240, 0.11), transparent 40%),
+    radial-gradient(circle at top left, rgba(44, 144, 240, 0.08), transparent 28%),
     linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(249,252,249,0.98) 100%);
-  box-shadow: 0 16px 32px rgba(16, 37, 29, 0.05);
+  box-shadow: 0 16px 32px rgba(15, 32, 64, 0.05);
 }
 
 .user-summary-strip span.profit {
   color: #0f8a55;
   background:
-    radial-gradient(circle at top right, rgba(15, 138, 85, 0.14), transparent 42%),
+    radial-gradient(circle at top right, rgba(44, 144, 240, 0.14), transparent 42%),
     linear-gradient(180deg, rgba(245,252,247,0.98) 0%, rgba(237,248,240,0.98) 100%);
-  border-color: rgba(15, 138, 85, 0.16);
+  border-color: rgba(44, 144, 240, 0.16);
 }
 
 .user-summary-strip span.loss {
@@ -1209,22 +1209,22 @@ body.dashboard-page {
   inset: auto 14px 0 14px;
   height: 3px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(15, 138, 85, 0.75), rgba(196, 154, 67, 0.72));
+  background: linear-gradient(90deg, rgba(44, 144, 240, 0.75), rgba(44, 144, 240, 0.72));
 }
 
 .user-ledger-card {
-  border: 1px solid rgba(16, 37, 29, 0.08);
+  border: 1px solid rgba(15, 32, 64, 0.08);
   background:
-    radial-gradient(circle at top left, rgba(15, 138, 85, 0.08), transparent 24%),
-    radial-gradient(circle at top right, rgba(196, 154, 67, 0.08), transparent 22%),
+    radial-gradient(circle at top left, rgba(44, 144, 240, 0.08), transparent 24%),
+    radial-gradient(circle at top right, rgba(44, 144, 240, 0.08), transparent 22%),
     linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(250,252,249,0.98) 100%);
 }
 
 .user-holdings-card,
 .user-lifetime-card {
-  border: 1px solid rgba(16, 37, 29, 0.08);
+  border: 1px solid rgba(15, 32, 64, 0.08);
   background:
-    radial-gradient(circle at top right, rgba(196, 154, 67, 0.08), transparent 30%),
+    radial-gradient(circle at top right, rgba(44, 144, 240, 0.08), transparent 30%),
     linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(249,252,248,0.98) 100%);
 }
 
@@ -1243,7 +1243,7 @@ body.dashboard-page {
 
 .user-position-table td strong,
 .user-lifetime-table td strong {
-  color: #133225;
+  color: #0f2040;
 }
 
 .user-invested-cell {
@@ -1283,11 +1283,11 @@ body.dashboard-page {
 .user-clean-shell .panel-head h3,
 .user-clean-shell .table-card h3,
 .user-clean-shell .dashboard-card h3 {
-  color: #103124;
+  color: #0f2040;
 }
 
 .user-clean-shell .helper-text {
-  color: #5a6e64;
+  color: #4a6488;
 }
 
 @media (max-width: 760px) {
