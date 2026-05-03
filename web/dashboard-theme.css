@@ -1351,3 +1351,116 @@ body.dashboard-page {
     width: 100%;
   }
 }
+
+/* ── Mobile dashboard fixes ─────────────────────────────────── */
+@media (max-width: 840px) {
+  body.dashboard-page {
+    overflow-x: hidden;
+  }
+
+  .dashboard-app-shell {
+    padding: 8px;
+  }
+
+  /* Admin topbar: stack vertically */
+  .admin-compact-topbar.admin-simple-topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: 18px;
+  }
+
+  .admin-toolbar-left,
+  .admin-toolbar-right {
+    flex: unset;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .admin-dashboard-brand .brand-wordmark {
+    font-size: 1.3rem;
+  }
+
+  .admin-search-wrap,
+  .admin-universal-search {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .admin-dropdown-menu {
+    width: 100%;
+  }
+
+  .admin-dropdown-panel {
+    left: 0;
+    right: 0;
+    width: 100%;
+  }
+
+  /* Admin cards: single column */
+  .admin-kpi-grid,
+  .admin-overview-grid,
+  .admin-positions-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Detail stat grid: 2 columns on mobile */
+  .detail-stat-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px;
+  }
+
+  /* Tables: horizontal scroll */
+  .table-wrap,
+  .admin-position-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .admin-position-table,
+  .admin-position-table th,
+  .admin-position-table td {
+    min-width: 80px;
+    white-space: nowrap;
+  }
+
+  /* Logout + action buttons full width */
+  .logout-btn,
+  .secondary-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Action page topbar */
+  .admin-action-topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .admin-toolbar-row {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  /* Form */
+  .admin-customer-form,
+  .admin-deal-card,
+  .admin-action-form {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* User topbar */
+  .user-topbar {
+    flex-direction: column !important;
+    align-items: stretch;
+  }
+
+  .user-topbar-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}

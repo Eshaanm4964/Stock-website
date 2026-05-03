@@ -65,6 +65,8 @@ body.public-page .ticker-price {
 
 body.public-page .site-shell {
   width: min(1280px, calc(100% - 32px));
+  max-width: 100%;
+  overflow-x: hidden;
   padding: 0 0 48px;
 }
 
@@ -395,7 +397,7 @@ body.public-page .site-shell {
 
 .hero-carousel-slide {
   display: none;
-  grid-template-columns: minmax(380px, 0.95fr) minmax(420px, 1.05fr);
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
   align-items: center;
   gap: 46px;
   min-height: 440px;
