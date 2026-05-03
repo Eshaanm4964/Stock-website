@@ -3370,7 +3370,7 @@ async function renderAdminPortal(options = {}) {
     startAdminRefresh();
     setupDownloadButtons(userDashboards);
     setupAdminManagementButtons();
-    setupAdminDrilldowns(userDashboards, allHoldings);
+    setupAdminDrilldowns(userDashboards, allHoldings, filteredSoldHistory);
     setupScrollSync("adminPositionsTableWrap", "adminPositionsTableScroller");
     setupPortalActions();
   } catch (error) {
