@@ -1,4 +1,4 @@
-const STORAGE_KEY = "stock_trader_auth";
+﻿const STORAGE_KEY = "stock_trader_auth";
 const APP_LIVE_VERSION = "2026-04-26-admin-database-view";
 const SITE_CONTROL_KEY = "stock_trader_site_controls";
 const REVIEW_STORAGE_KEY = "stock_trader_reviews";
@@ -23,6 +23,7 @@ let adminUiState = {
   revealedStocks: [],
   actionsMenuOpen: false
 };
+let adminSearchCache = { users: [], stocks: [] };
 let userUiState = {
   search: "",
   status: "all"
@@ -265,11 +266,11 @@ function ensureDashboardLoadingOverlay() {
   overlay.setAttribute("aria-hidden", "true");
   overlay.innerHTML = `
     <div class="auth-loading-card">
-      <div class="auth-loading-brand">AssetYantra Portfolio Sync</div>
+      <div class="auth-loading-brand">Asset Yantra Portfolio Sync</div>
       <div class="auth-orbit-loader" aria-hidden="true">
         <span></span>
         <span></span>
-        <img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" />
+        <img src="./assets/assetyantra-logo.svg" alt="Asset Yantra logo" />
       </div>
       <h2 id="dashboardLoadingTitle">Refreshing dashboard...</h2>
       <p id="dashboardLoadingText">Please wait while we update your holdings and realised profit.</p>
@@ -699,9 +700,9 @@ function setupPageTransitions() {
     overlay.innerHTML = `
       <div class="page-transition-card">
         <span class="page-transition-logo" aria-hidden="true">
-          <img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" />
+          <img src="./assets/assetyantra-logo.svg" alt="Asset Yantra logo" />
         </span>
-        <strong>Loading AssetYantra...</strong>
+        <strong>Loading Asset Yantra...</strong>
         <p>Please wait while we move you to the next page.</p>
         <div class="page-transition-bar" aria-hidden="true"><span></span></div>
       </div>
@@ -929,7 +930,7 @@ function buildAdminDatabaseExcelHtml(users = [], userDashboards = []) {
         </style>
       </head>
       <body>
-        <h1>AssetYantra Database Export</h1>
+        <h1>Asset Yantra Database Export</h1>
         <p>Generated on ${escapeHtml(formatDateTime(new Date().toISOString()))}</p>
         <h2>Investor Credentials</h2>
         <table>
@@ -1209,11 +1210,58 @@ function setupAdminManagementButtons() {
   const bulkActivate = document.getElementById("bulkActivateUsersBtn");
   const bulkDisable = document.getElementById("bulkDisableUsersBtn");
 
+  const searchDropdown = document.getElementById("adminSearchDropdown");
+  function hideSearchDropdown() {
+    if (searchDropdown) searchDropdown.hidden = true;
+  }
+  function showSearchSuggestions(query) {
+    if (!searchDropdown || !query) { hideSearchDropdown(); return; }
+    const q = query.toLowerCase();
+    const userMatches = adminSearchCache.users
+      .filter((u) => u.full_name?.toLowerCase().includes(q) || String(u.fixed_user_id || "").toLowerCase().includes(q))
+      .slice(0, 5)
+      .map((u) => ({ label: u.full_name, sub: u.fixed_user_id || u.username, value: u.full_name }));
+    const stockMatches = adminSearchCache.stocks
+      .filter((s) => s.toLowerCase().includes(q))
+      .slice(0, 4)
+      .map((s) => ({ label: s, sub: "Stock", value: s }));
+    const all = [...userMatches, ...stockMatches];
+    if (!all.length) { hideSearchDropdown(); return; }
+    searchDropdown.innerHTML = all.map((item) =>
+      `<button type="button" class="admin-search-suggestion" data-value="${escapeHtml(item.value)}">
+        <strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.sub)}</small>
+      </button>`
+    ).join("");
+    searchDropdown.hidden = false;
+    searchDropdown.querySelectorAll(".admin-search-suggestion").forEach((btn) => {
+      btn.addEventListener("mousedown", async (e) => {
+        e.preventDefault();
+        searchInput.value = btn.dataset.value;
+        adminUiState.search = btn.dataset.value;
+        hideSearchDropdown();
+        await renderAdminPortal();
+      });
+    });
+  }
   if (searchInput) {
     searchInput.value = adminUiState.search;
-    searchInput.addEventListener("input", async () => {
-      adminUiState.search = searchInput.value.trim();
-      await renderAdminPortal();
+    searchInput.addEventListener("input", () => {
+      showSearchSuggestions(searchInput.value.trim());
+    });
+    searchInput.addEventListener("keydown", async (e) => {
+      if (e.key === "Enter") {
+        adminUiState.search = searchInput.value.trim();
+        hideSearchDropdown();
+        await renderAdminPortal();
+      } else if (e.key === "Escape") {
+        hideSearchDropdown();
+      }
+    });
+    searchInput.addEventListener("blur", () => {
+      setTimeout(hideSearchDropdown, 150);
+    });
+    searchInput.addEventListener("focus", () => {
+      if (searchInput.value.trim()) showSearchSuggestions(searchInput.value.trim());
     });
   }
 
@@ -1797,9 +1845,9 @@ function buildAdminActionToolbar(selectedValue = "") {
     <header class="user-topbar admin-compact-topbar">
       <div class="admin-toolbar-left admin-toolbar-left--compact">
         <div class="brand admin-dashboard-brand admin-dashboard-brand--compact">
-          <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
+          <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="Asset Yantra logo" /></span>
           <span class="public-brand-copy">
-            <strong class="brand-wordmark">AssetYantra</strong>
+            <strong class="brand-wordmark">Asset Yantra</strong>
             <small class="brand-tagline">${selectedValue === "customer" ? "Add Customer" : selectedValue === "funds" ? "Add Funds" : "Add Deal"}</small>
           </span>
         </div>
@@ -2009,9 +2057,9 @@ async function renderAdminDatabasePage(options = {}) {
           <header class="user-topbar admin-compact-topbar admin-simple-topbar">
             <div class="admin-toolbar-left admin-toolbar-left--compact">
               <div class="brand admin-dashboard-brand">
-                <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
+                <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="Asset Yantra logo" /></span>
                 <span class="public-brand-copy">
-                  <strong class="brand-wordmark">AssetYantra</strong>
+                  <strong class="brand-wordmark">Asset Yantra</strong>
                   <small class="brand-tagline">Database View</small>
                 </span>
               </div>
@@ -2282,7 +2330,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
       <article class="table-card" style="margin-top:18px;">
         <div class="panel-head"><h3>Sold History</h3><span class="badge ${userSoldHistory.length ? "green" : ""}">${userSoldHistory.length} Record(s)</span></div>
         <div class="table-wrap">
-          <table>
+          <table class="admin-position-table">
             <thead>
               <tr><th>Stock</th><th>Purchase Date</th><th>Qty Sold</th><th>Avg Price</th><th>Sell Price</th><th>Sold Date</th><th>Realised P&amp;L</th><th>P&amp;L %</th></tr>
             </thead>
@@ -3198,6 +3246,8 @@ async function renderAdminPortal(options = {}) {
         [...allHoldings.map((holding) => String(holding.symbol || "").toUpperCase()), ...safeSoldHistory.map((entry) => String(entry.symbol || "").toUpperCase())].filter(Boolean)
       )
     ].sort();
+    adminSearchCache.users = safeUsers;
+    adminSearchCache.stocks = availableStockOptions;
     const realizedMap = safeSoldHistory.reduce((map, entry) => {
       const key = `${entry.user_id}::${String(entry.symbol || "").toUpperCase()}`;
       map.set(key, (map.get(key) || 0) + Number(entry.profit_loss || 0));
@@ -3213,15 +3263,18 @@ async function renderAdminPortal(options = {}) {
         <header class="user-topbar admin-compact-topbar admin-simple-topbar">
           <div class="admin-toolbar-left">
             <div class="brand admin-dashboard-brand">
-              <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="AssetYantra logo" /></span>
+              <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="Asset Yantra logo" /></span>
               <span class="public-brand-copy">
-                <strong class="brand-wordmark">AssetYantra</strong>
+                <strong class="brand-wordmark">Asset Yantra</strong>
                 <small class="brand-tagline">Admin Portfolio Dashboard</small>
               </span>
             </div>
           </div>
           <div class="user-topbar-actions admin-toolbar-right">
-            <input class="user-search admin-universal-search" id="adminUniversalSearch" type="text" placeholder="Search user, client ID, or stock" />
+            <div class="admin-search-wrap">
+              <input class="user-search admin-universal-search" id="adminUniversalSearch" type="text" placeholder="Search client or stock…" autocomplete="off" value="${escapeHtml(adminUiState.search)}" />
+              <div class="admin-search-dropdown" id="adminSearchDropdown" hidden></div>
+            </div>
             <details class="admin-dropdown-menu" ${adminUiState.actionsMenuOpen ? "open" : ""}>
               <summary class="secondary-btn compact-btn">Actions & Filters</summary>
               <div class="admin-dropdown-panel">
@@ -3447,7 +3500,7 @@ async function renderAdminPortal(options = {}) {
       if (newDetailMount) {
         newDetailMount.innerHTML = savedDetailHTML;
         newDetailMount.classList.remove("hidden");
-        newDetailMount.classList.add("portal-visible");
+        newDetailMount.classList.add("portal-stable");
       }
     }
     activeRole = "admin";
