@@ -2177,78 +2177,150 @@ async function renderAdminDatabasePage(options = {}) {
 }
 
 function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
+  const safeHoldings = Array.isArray(user.holdings) ? user.holdings : [];
   const userSoldHistory = soldHistory.filter((entry) => Number(entry.user_id) === Number(user.user_id));
+  const detailRealizedMap = userSoldHistory.reduce((map, entry) => {
+    const key = String(entry.symbol || "").toUpperCase();
+    map.set(key, (map.get(key) || 0) + Number(entry.profit_loss || 0));
+    return map;
+  }, new Map());
+
+  const totalInvested = safeHoldings.reduce((s, h) => s + Number(h.buy_price || 0) * Number(h.quantity || 0), 0);
+  const totalCurrent = safeHoldings.reduce((s, h) => s + Number(h.current_price || 0) * Number(h.quantity || 0), 0);
+  const totalUnrealized = safeHoldings.reduce((s, h) => s + Number(h.profit_loss || 0), 0);
+  const totalToday = safeHoldings.reduce((s, h) => s + Number(h.today_profit || 0), 0);
+  const totalRealized = userSoldHistory.reduce((s, e) => s + Number(e.profit_loss || 0), 0);
+  const totalPnl = totalUnrealized + totalRealized;
+  const totalQty = safeHoldings.reduce((s, h) => s + Number(h.quantity || 0), 0);
+  const soldTotalQty = userSoldHistory.reduce((s, e) => s + Number(e.quantity || 0), 0);
+
   return `
     <article class="dashboard-card detail-card">
       <div class="panel-head">
         <div>
           <p class="eyebrow">Investor Detail</p>
-          <h3>${user.full_name}</h3>
-          <p class="detail-subtitle">${user.fixed_user_id || user.username}</p>
+          <h3>${escapeHtml(user.full_name)}</h3>
+          <p class="detail-subtitle">${escapeHtml(user.fixed_user_id || user.username || "")}</p>
         </div>
         <span class="badge ${user.total_profit_loss >= 0 ? "green" : "red"}">${currency(user.total_profit_loss)}</span>
       </div>
       <div class="detail-stat-grid">
-        <article><strong>${escapeHtml(user.phone_number || "No phone")}</strong><span>Phone Number</span></article>
-        <article><strong>${escapeHtml(user.username || "No username")}</strong><span>Username / Email</span></article>
-        <article><strong>${user.is_active ? "Active" : "Inactive"}</strong><span>Account Status</span></article>
-      </div>
-      <div class="detail-stat-grid">
-        <article><strong>${user.total_holdings}</strong><span>Live Stocks</span></article>
+        <article><strong>${safeHoldings.length}</strong><span>Live Stocks</span></article>
         <article><strong>${currency(user.total_portfolio_value)}</strong><span>Current Value</span></article>
         <article><strong class="${user.total_profit_loss >= 0 ? "profit" : "loss"}">${percent((user.total_profit_loss / Math.max(user.total_portfolio_value - user.total_profit_loss, 1)) * 100)}</strong><span>Total Return</span></article>
-      </div>
-      <div class="detail-stat-grid">
         <article><strong>${currency(user.initial_funds || 0)}</strong><span>Initial Funds</span></article>
         <article><strong>${currency(user.balance_funds || 0)}</strong><span>Balance Funds</span></article>
-        <article><strong>${currency((user.initial_funds || 0) + (user.balance_funds || 0))}</strong><span>Available Capital Snapshot</span></article>
       </div>
-      <div class="dashboard-grid detail-grid">
-        <article class="table-card">
-          <div class="panel-head"><h3>Live Stock View</h3><span class="badge">Realtime</span></div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Stock</th><th>Purchase Date</th><th>Qty</th><th>Avg Price</th><th>Live Price</th><th>P&amp;L</th></tr></thead>
-              <tbody>
-                ${user.holdings.map((holding) => `
-                  <tr ${focusSymbol && String(holding.symbol || "").toUpperCase() === String(focusSymbol || "").toUpperCase() ? 'class="admin-detail-highlight-row"' : ""}>
-                    <td>${isAdminStockRevealed(holding.symbol) ? holding.symbol : maskStockSymbol(holding.symbol)}<br /><small>${holding.sector || "Tracked holding"}</small></td>
-                    <td>${formatDate(holding.created_at)}</td>
-                    <td>${holding.quantity}</td>
-                    <td>${currency(holding.buy_price)}</td>
-                    <td>${currency(holding.current_price)}</td>
-                    <td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}</td>
-                  </tr>
-                `).join("")}
-              </tbody>
-            </table>
-          </div>
-        </article>
-        <article class="table-card">
-          <div class="panel-head"><h3>Sold History</h3><span class="badge ${userSoldHistory.length ? "green" : ""}">${userSoldHistory.length} Record(s)</span></div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Purchase Date</th><th>Sold Date</th><th>Stock</th><th>Qty</th><th>Avg Price</th><th>Sell Price</th><th>Realised P&amp;L</th><th>P&amp;L %</th></tr></thead>
-              <tbody>
-                ${userSoldHistory.length
-                  ? userSoldHistory.map((entry) => `
+
+      <article class="table-card" style="margin-top:18px;">
+        <div class="panel-head"><h3>Live Positions</h3><span class="badge">Realtime</span></div>
+        <div class="table-wrap">
+          <table class="admin-position-table">
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Purchase Date</th>
+                <th>Qty</th>
+                <th>Avg Price</th>
+                <th>Invested Value</th>
+                <th>Current Value</th>
+                <th>Unrealised P&amp;L</th>
+                <th>Today&apos;s P&amp;L</th>
+                <th>Realised P&amp;L</th>
+                <th>Total P&amp;L</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${safeHoldings.length
+                ? safeHoldings.map((holding) => {
+                    const investedValue = Number(holding.buy_price || 0) * Number(holding.quantity || 0);
+                    const currentValue = Number(holding.current_price || 0) * Number(holding.quantity || 0);
+                    const valueClass = currentValue >= investedValue ? "profit" : "loss";
+                    const realizedProfit = detailRealizedMap.get(String(holding.symbol || "").toUpperCase()) || 0;
+                    const totalProfit = Number(holding.profit_loss || 0) + realizedProfit;
+                    const isFocus = focusSymbol && String(holding.symbol || "").toUpperCase() === String(focusSymbol || "").toUpperCase();
+                    return `
+                      <tr${isFocus ? ' class="admin-detail-highlight-row"' : ""}>
+                        <td>
+                          <div class="admin-stock-cell">
+                            <button class="admin-eye-btn ${isAdminStockRevealed(holding.symbol) ? "is-active" : ""}" type="button" data-stock-visibility-toggle="${escapeHtml(String(holding.symbol || "").toUpperCase())}" aria-label="Toggle stock name">&#128065;</button>
+                            <span data-stock-label="${escapeHtml(String(holding.symbol || "").toUpperCase())}">${isAdminStockRevealed(holding.symbol) ? escapeHtml(holding.symbol) : maskStockSymbol(holding.symbol)}</span>
+                          </div>
+                          <small>${escapeHtml(holding.exchange || "NSE")}</small>
+                        </td>
+                        <td>${formatDate(holding.created_at)}</td>
+                        <td>${holding.quantity}</td>
+                        <td>${currency(holding.buy_price)}</td>
+                        <td class="${valueClass}">${currency(investedValue)}</td>
+                        <td class="${valueClass}">${currency(currentValue)}</td>
+                        <td class="${Number(holding.profit_loss || 0) >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change || 0)}</small></td>
+                        <td class="${Number(holding.today_profit || 0) >= 0 ? "profit" : "loss"}">${currency(holding.today_profit || 0)}</td>
+                        <td class="${realizedProfit >= 0 ? "profit" : "loss"}">${currency(realizedProfit)}</td>
+                        <td class="${totalProfit >= 0 ? "profit" : "loss"}">${currency(totalProfit)}</td>
+                      </tr>
+                    `;
+                  }).join("")
+                : `<tr><td colspan="10"><span class="helper-text">No live positions for this investor.</span></td></tr>`}
+            </tbody>
+            <tfoot>
+              <tr class="admin-total-row">
+                <td colspan="2"><strong>Totals</strong></td>
+                <td><strong>${totalQty.toFixed(2)}</strong></td>
+                <td>—</td>
+                <td class="${totalCurrent >= totalInvested ? "profit" : "loss"}"><strong>${currency(totalInvested)}</strong></td>
+                <td class="${totalCurrent >= totalInvested ? "profit" : "loss"}"><strong>${currency(totalCurrent)}</strong></td>
+                <td class="${totalUnrealized >= 0 ? "profit" : "loss"}"><strong>${currency(totalUnrealized)}</strong></td>
+                <td class="${totalToday >= 0 ? "profit" : "loss"}"><strong>${currency(totalToday)}</strong></td>
+                <td class="${totalRealized >= 0 ? "profit" : "loss"}"><strong>${currency(totalRealized)}</strong></td>
+                <td class="${totalPnl >= 0 ? "profit" : "loss"}"><strong>${currency(totalPnl)}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </article>
+
+      <article class="table-card" style="margin-top:18px;">
+        <div class="panel-head"><h3>Sold History</h3><span class="badge ${userSoldHistory.length ? "green" : ""}">${userSoldHistory.length} Record(s)</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Stock</th><th>Purchase Date</th><th>Qty Sold</th><th>Avg Price</th><th>Sell Price</th><th>Sold Date</th><th>Realised P&amp;L</th><th>P&amp;L %</th></tr>
+            </thead>
+            <tbody>
+              ${userSoldHistory.length
+                ? userSoldHistory.map((entry) => `
                     <tr>
+                      <td>
+                        <div class="admin-stock-cell">
+                          <button class="admin-eye-btn ${isAdminStockRevealed(entry.symbol) ? "is-active" : ""}" type="button" data-stock-visibility-toggle="${escapeHtml(String(entry.symbol || "").toUpperCase())}" aria-label="Toggle stock name">&#128065;</button>
+                          <span data-stock-label="${escapeHtml(String(entry.symbol || "").toUpperCase())}">${isAdminStockRevealed(entry.symbol) ? escapeHtml(entry.symbol) : maskStockSymbol(entry.symbol)}</span>
+                        </div>
+                      </td>
                       <td>${formatDate(entry.created_at)}</td>
-                      <td>${formatDateTime(entry.sold_at)}</td>
-                      <td>${isAdminStockRevealed(entry.symbol) ? escapeHtml(entry.symbol) : maskStockSymbol(entry.symbol)}</td>
                       <td>${entry.quantity}</td>
-                      <td>${currency(entry.buy_price)}</td>
-                      <td>${currency(entry.sell_price)}</td>
+                      <td class="${Number(entry.sell_price) >= Number(entry.buy_price) ? "profit" : "loss"}">${currency(entry.buy_price)}</td>
+                      <td class="${Number(entry.sell_price) >= Number(entry.buy_price) ? "profit" : "loss"}">${currency(entry.sell_price)}</td>
+                      <td>${formatDate(entry.sold_at)}</td>
                       <td class="${Number(entry.profit_loss) >= 0 ? "profit" : "loss"}">${currency(entry.profit_loss)}</td>
                       <td class="${Number(entry.sell_price) >= Number(entry.buy_price) ? "profit" : "loss"}">${percent((((Number(entry.sell_price) - Number(entry.buy_price)) / Math.max(Number(entry.buy_price), 1)) * 100))}</td>
                     </tr>
                   `).join("")
-                  : `<tr><td colspan="8"><span class="helper-text">No sold history for this investor yet.</span></td></tr>`}
-              </tbody>
-            </table>
-          </div>
-        </article>
-      </div>
+                : `<tr><td colspan="8"><span class="helper-text">No sold history for this investor yet.</span></td></tr>`}
+            </tbody>
+            <tfoot>
+              <tr class="admin-total-row">
+                <td colspan="2"><strong>Totals</strong></td>
+                <td><strong>${soldTotalQty.toFixed(2)}</strong></td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+                <td class="${totalRealized >= 0 ? "profit" : "loss"}"><strong>${currency(totalRealized)}</strong></td>
+                <td>—</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </article>
     </article>
   `;
 }
