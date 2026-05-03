@@ -4135,11 +4135,27 @@ function setupDashboardPages() {
 }
 
 function setupPublicPageVisibility() {
-  document.querySelectorAll(".fade-up").forEach((node) => node.classList.add("in-view"));
+  const nodes = document.querySelectorAll(".fade-up");
+  if (!nodes.length) return;
+  if (!("IntersectionObserver" in window)) {
+    nodes.forEach((n) => n.classList.add("is-visible"));
+    return;
+  }
+  const io = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-visible");
+        io.unobserve(entry.target);
+      });
+    },
+    { threshold: 0.08, rootMargin: "0px 0px -40px 0px" }
+  );
+  nodes.forEach((n) => io.observe(n));
 }
 
 function setupFloatingWhatsApp() {
-  const publicPages = new Set(["home", "about", "products", "contact", "trust-safety", "legal"]);
+  const publicPages = new Set(["home", "about", "products", "contact", "trust-safety", "legal", "forex", "faq", "reviews"]);
   const page = document.body?.dataset?.page;
   const existing = document.querySelector(".floating-whatsapp");
 
@@ -4152,10 +4168,10 @@ function setupFloatingWhatsApp() {
 
   const anchor = document.createElement("a");
   anchor.className = "floating-whatsapp";
-  anchor.href = "https://wa.me/919089080505";
+  anchor.href = "https://wa.me/919885800023";
   anchor.target = "_blank";
   anchor.rel = "noreferrer";
-  anchor.setAttribute("aria-label", "Chat with AssetYantra on WhatsApp");
+  anchor.setAttribute("aria-label", "Chat with Asset Yantra on WhatsApp");
   anchor.innerHTML = `
     <span class="floating-whatsapp-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" role="presentation" focusable="false">
@@ -4191,7 +4207,7 @@ function setupFooterSocials() {
           <path d="M18.9 2H22l-6.77 7.74L23 22h-6.1l-4.78-6.27L6.64 22H3.53l7.24-8.27L1.5 2h6.25l4.31 5.68L18.9 2zm-1.08 18h1.72L6.82 3.9H4.98z"></path>
         </svg>
       </span>
-      <a class="footer-social-link" href="https://wa.me/919089080505" target="_blank" rel="noreferrer" aria-label="WhatsApp">
+      <a class="footer-social-link" href="https://wa.me/919885800023" target="_blank" rel="noreferrer" aria-label="WhatsApp">
         <svg viewBox="0 0 24 24" role="presentation" focusable="false">
           <path d="M19.05 4.94A9.82 9.82 0 0 0 12.04 2C6.63 2 2.24 6.39 2.24 11.8c0 1.73.45 3.42 1.31 4.91L2 22l5.45-1.51a9.75 9.75 0 0 0 4.58 1.16h.01c5.4 0 9.8-4.39 9.8-9.8a9.73 9.73 0 0 0-2.79-6.91zm-7.01 15.06h-.01a8.13 8.13 0 0 1-4.14-1.13l-.3-.18-3.24.9.87-3.16-.2-.32a8.13 8.13 0 0 1-1.25-4.32c0-4.48 3.64-8.13 8.13-8.13 2.17 0 4.2.84 5.73 2.38a8.06 8.06 0 0 1 2.38 5.75c0 4.48-3.65 8.11-8.13 8.11zm4.46-6.08c-.24-.12-1.41-.7-1.63-.77-.22-.08-.38-.12-.54.12-.16.24-.62.77-.76.93-.14.16-.28.18-.52.06-.24-.12-1.03-.38-1.95-1.21-.72-.64-1.2-1.44-1.34-1.68-.14-.24-.02-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.31-.74-1.79-.2-.48-.4-.42-.54-.43h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.68 2.57 4.06 3.61.57.24 1.01.39 1.36.5.57.18 1.08.15 1.49.09.45-.07 1.41-.58 1.61-1.14.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28z"></path>
         </svg>
