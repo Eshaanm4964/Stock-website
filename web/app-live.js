@@ -3764,9 +3764,11 @@ function setupPortfolioForm() {
 
 function setupLogin() {
   const adminForm = document.getElementById("adminForm");
-  const userForm = document.getElementById("userForm");
+  const userFormWrap = document.getElementById("userFormWrap");
+  const userFormIdPwd = document.getElementById("userFormIdPwd");
+  const userFormPhoneOtp = document.getElementById("userFormPhoneOtp");
   const registerForm = document.getElementById("registerForm");
-  if (!adminForm || !userForm) return;
+  if (!adminForm || !userFormWrap) return;
 
   const toggles = document.querySelectorAll(".role-toggle");
   const adminPortal = document.getElementById("adminPortal");
@@ -3889,12 +3891,23 @@ function setupLogin() {
     });
   }
 
+  // Method switcher within the user form (Client ID+Password vs Phone+OTP)
+  document.querySelectorAll("[data-user-method]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const method = btn.dataset.userMethod;
+      document.querySelectorAll("[data-user-method]").forEach((b) => b.classList.toggle("active", b === btn));
+      if (userFormIdPwd) userFormIdPwd.classList.toggle("hidden", method !== "id-password");
+      if (userFormPhoneOtp) userFormPhoneOtp.classList.toggle("hidden", method !== "phone-otp");
+    });
+  });
+
   toggles.forEach((toggle) => {
     toggle.addEventListener("click", () => {
       const role = toggle.dataset.roleTab;
+      if (!role) return;
       toggles.forEach((entry) => entry.classList.toggle("active", entry === toggle));
       adminForm.classList.toggle("hidden", role !== "admin");
-      userForm.classList.toggle("hidden", role !== "user");
+      userFormWrap.classList.toggle("hidden", role !== "user");
       if (registerForm) registerForm.classList.toggle("hidden", role !== "register");
       hidePortalMounts();
       hideAuthLoading();
@@ -3924,20 +3937,17 @@ function setupLogin() {
           document.getElementById("adminOtpHint").textContent = response.otp_preview ? `Testing OTP: ${response.otp_preview}` : response.message;
           document.getElementById("adminError").textContent = "";
         } else {
-          if (!hasRequiredFields(userForm, ["password", "phone"])) {
-            document.getElementById("userError").textContent = "Fill password and phone number before requesting verification code. Client ID is optional.";
+          const phoneInput = userFormPhoneOtp?.querySelector('[name="phone"]');
+          const phoneVal = phoneInput?.value?.trim() || "";
+          if (!phoneVal) {
+            document.getElementById("userPhoneOtpError").textContent = "Enter your registered phone number before requesting OTP.";
             return;
           }
           hidePortalMounts();
-          const payload = {
-            role: "user",
-            identifier: String(userForm.querySelector('[name="userId"]').value || "").trim().toUpperCase(),
-            password: String(userForm.querySelector('[name="password"]').value),
-            phone_number: String(userForm.querySelector('[name="phone"]').value).trim()
-          };
+          const payload = { role: "user", phone_number: phoneVal };
           const response = await api("/auth/request-otp", { method: "POST", body: JSON.stringify(payload) });
           document.getElementById("userOtpHint").textContent = response.otp_preview ? `Testing code: ${response.otp_preview}` : response.message;
-          document.getElementById("userError").textContent = "";
+          if (document.getElementById("userPhoneOtpError")) document.getElementById("userPhoneOtpError").textContent = "";
         }
       } catch (error) {
         if (button.dataset.sendOtp === "admin") {
@@ -3986,40 +3996,79 @@ function setupLogin() {
     }
   });
 
-  userForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const submitButton = userForm.querySelector('button[type="submit"]');
-    const stopLoading = setButtonLoading(submitButton, "Opening Dashboard...");
-    try {
-      if (!hasRequiredFields(userForm, ["password", "phone", "otp"])) {
-        document.getElementById("userError").textContent = "Complete password, phone number, and verification code before opening the dashboard. Client ID is optional.";
-        return;
+  // Method 1: Client ID + Password login
+  if (userFormIdPwd) {
+    userFormIdPwd.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const submitButton = userFormIdPwd.querySelector('button[type="submit"]');
+      const stopLoading = setButtonLoading(submitButton, "Opening Dashboard...");
+      const errEl = document.getElementById("userIdPwdError");
+      try {
+        if (!hasRequiredFields(userFormIdPwd, ["userId", "password"])) {
+          if (errEl) errEl.textContent = "Enter your Client ID and password to continue.";
+          return;
+        }
+        const data = new FormData(userFormIdPwd);
+        hidePortalMounts();
+        showAuthLoading("Opening user dashboard...", "Loading your holdings, returns, and portfolio summary.");
+        const response = await api("/auth/login", {
+          method: "POST",
+          body: JSON.stringify({
+            role: "user",
+            identifier: String(data.get("userId") || "").trim().toUpperCase(),
+            password: String(data.get("password"))
+          })
+        });
+        setAuth({ token: response.access_token, role: response.role });
+        if (errEl) errEl.textContent = "";
+        hideAuthLoading();
+        window.location.href = "./user-dashboard.html";
+      } catch (error) {
+        if (errEl) errEl.textContent = formatError(error);
+        hidePortalMounts();
+        hideAuthLoading();
+      } finally {
+        stopLoading();
       }
-      const data = new FormData(userForm);
-      hidePortalMounts();
-      showAuthLoading("Opening user dashboard...", "Loading your holdings, returns, and portfolio summary.");
-      const response = await api("/auth/login", {
-        method: "POST",
-        body: JSON.stringify({
-          role: "user",
-          identifier: String(data.get("userId") || "").trim().toUpperCase(),
-          password: String(data.get("password")),
-          phone_number: String(data.get("phone")).trim(),
-          otp: String(data.get("otp")).trim()
-        })
-      });
-      setAuth({ token: response.access_token, role: response.role });
-      document.getElementById("userError").textContent = "";
-      hideAuthLoading();
-      window.location.href = "./user-dashboard.html";
-    } catch (error) {
-      document.getElementById("userError").textContent = formatError(error);
-      hidePortalMounts();
-      hideAuthLoading();
-    } finally {
-      stopLoading();
-    }
-  });
+    });
+  }
+
+  // Method 2: Phone + OTP login
+  if (userFormPhoneOtp) {
+    userFormPhoneOtp.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const submitButton = userFormPhoneOtp.querySelector('button[type="submit"]');
+      const stopLoading = setButtonLoading(submitButton, "Opening Dashboard...");
+      const errEl = document.getElementById("userPhoneOtpError");
+      try {
+        if (!hasRequiredFields(userFormPhoneOtp, ["phone", "otp"])) {
+          if (errEl) errEl.textContent = "Enter your phone number and the OTP sent to it.";
+          return;
+        }
+        const data = new FormData(userFormPhoneOtp);
+        hidePortalMounts();
+        showAuthLoading("Opening user dashboard...", "Loading your holdings, returns, and portfolio summary.");
+        const response = await api("/auth/login", {
+          method: "POST",
+          body: JSON.stringify({
+            role: "user",
+            phone_number: String(data.get("phone")).trim(),
+            otp: String(data.get("otp")).trim()
+          })
+        });
+        setAuth({ token: response.access_token, role: response.role });
+        if (errEl) errEl.textContent = "";
+        hideAuthLoading();
+        window.location.href = "./user-dashboard.html";
+      } catch (error) {
+        if (errEl) errEl.textContent = formatError(error);
+        hidePortalMounts();
+        hideAuthLoading();
+      } finally {
+        stopLoading();
+      }
+    });
+  }
 
   if (registerForm) {
     registerForm.addEventListener("submit", async (event) => {

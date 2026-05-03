@@ -100,21 +100,34 @@
                 <button class="submit-btn" type="submit">Login</button>
               </form>
 
-              <form id="userForm" class="auth-form-card hidden" novalidate>
+              <div id="userFormWrap" class="hidden">
                 <p class="section-kicker">User Login</p>
-                <h2 class="auth-heading">Secure user workspace</h2>
-                <p class="auth-subtitle">Use password, phone number, and verification code to enter your dashboard. Client ID is optional if you remember it.</p>
-                <label><span>Client ID (Optional)</span><input name="userId" type="text" placeholder="ABC123" autocomplete="username" /></label>
-                <label><span>Password</span><input name="password" type="password" placeholder="password" autocomplete="current-password" required /></label>
-                <label><span>Phone Number</span><input name="phone" type="tel" placeholder="registered phone number" autocomplete="tel" required /></label>
-                <div class="split-row">
-                  <label><span>Verification Code</span><input name="otp" type="text" placeholder="6 digit code" required /></label>
-                  <button class="secondary-outline" type="button" data-send-otp="user">Send Code</button>
+                <h2 class="auth-heading">Your investor dashboard</h2>
+                <div class="auth-switcher-bar auth-method-switcher" style="margin-bottom:20px;">
+                  <button class="role-toggle active" type="button" data-user-method="id-password">Client ID &amp; Password</button>
+                  <button class="role-toggle" type="button" data-user-method="phone-otp">Phone &amp; OTP</button>
                 </div>
-                <p class="helper-text" id="userOtpHint">Verification status will appear here after request.</p>
-                <p class="error-text" id="userError"></p>
-                <button class="submit-btn" type="submit">Login</button>
-              </form>
+
+                <form id="userFormIdPwd" class="auth-form-card" novalidate style="padding:0;border:none;background:none;box-shadow:none;">
+                  <p class="auth-subtitle">Login with your Client ID and password.</p>
+                  <label><span>Client ID</span><input name="userId" type="text" placeholder="e.g. ABC123" autocomplete="username" required /></label>
+                  <label><span>Password</span><input name="password" type="password" placeholder="password" autocomplete="current-password" required /></label>
+                  <p class="error-text" id="userIdPwdError"></p>
+                  <button class="submit-btn" type="submit">Login</button>
+                </form>
+
+                <form id="userFormPhoneOtp" class="auth-form-card hidden" novalidate style="padding:0;border:none;background:none;box-shadow:none;">
+                  <p class="auth-subtitle">Login using your registered phone number and OTP.</p>
+                  <label><span>Phone Number</span><input name="phone" type="tel" placeholder="+91 98765 43210" autocomplete="tel" required /></label>
+                  <div class="split-row">
+                    <label><span>Verification Code</span><input name="otp" type="text" placeholder="6-digit code" required /></label>
+                    <button class="secondary-outline" type="button" data-send-otp="user">Send Code</button>
+                  </div>
+                  <p class="helper-text" id="userOtpHint">OTP will be sent to your registered number.</p>
+                  <p class="error-text" id="userPhoneOtpError"></p>
+                  <button class="submit-btn" type="submit">Login</button>
+                </form>
+              </div>
             </div>
           </section>
         </section>
