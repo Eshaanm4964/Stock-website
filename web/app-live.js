@@ -4298,6 +4298,23 @@ function setupPublicPageVisibility() {
   nodes.forEach((n) => io.observe(n));
 }
 
+function setupScrollToTop() {
+  if (!document.body.classList.contains("public-page")) return;
+  const btn = document.createElement("button");
+  btn.className = "scroll-top-btn";
+  btn.setAttribute("aria-label", "Scroll to top");
+  btn.innerHTML = "&#8963;";
+  document.body.appendChild(btn);
+
+  const onScroll = () => {
+    const pct = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
+    btn.classList.toggle("is-visible", pct > 0.55);
+  };
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  btn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+}
+
 function setupProgressBar() {
   if (!document.body.classList.contains("public-page")) return;
   const bar = document.getElementById("pageProgress");
@@ -4469,6 +4486,7 @@ setupFaq();
 loadSiteControls().catch(() => {});
 setupReviewForm();
 setupPageTransitions();
+setupScrollToTop();
 setupProgressBar();
 setupPublicPageVisibility();
 setupHeroSplitText();
