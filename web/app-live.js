@@ -4237,23 +4237,115 @@ function setupDashboardPages() {
 }
 
 function setupPublicPageVisibility() {
+  if (!document.body.classList.contains("public-page")) return;
   const nodes = document.querySelectorAll(".fade-up");
   if (!nodes.length) return;
+
+  const CHILD_SELECTORS = [
+    ".stat-card", ".product-card", ".team-card", ".testimonial-card",
+    ".returns-tier-card", ".story-step", ".feature-card", ".service-card",
+    ".safety-clean-card", ".algo-edge-card", ".algo-pricing-card",
+    ".values-grid > article", ".usp-grid > div", ".leader-card"
+  ].join(",");
+
+  // Inject skeleton shimmer into each section-card
+  nodes.forEach((n) => {
+    if (n.classList.contains("section-card") || n.classList.contains("hero-shell")) {
+      const skel = document.createElement("div");
+      skel.className = "card-skeleton";
+      n.style.position = n.style.position || "relative";
+      n.prepend(skel);
+    }
+  });
+
   if (!("IntersectionObserver" in window)) {
-    nodes.forEach((n) => n.classList.add("is-visible"));
+    nodes.forEach((n) => {
+      n.classList.add("is-visible");
+      n.querySelector(".card-skeleton")?.remove();
+    });
     return;
   }
+
   const io = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
-        entry.target.classList.add("is-visible");
-        io.unobserve(entry.target);
+        const el = entry.target;
+        el.classList.add("is-visible");
+
+        // Fade out and remove skeleton
+        const skel = el.querySelector(":scope > .card-skeleton");
+        if (skel) {
+          skel.classList.add("is-fading");
+          setTimeout(() => skel.remove(), 380);
+        }
+
+        // Stagger-animate direct child cards
+        const children = Array.from(el.querySelectorAll(CHILD_SELECTORS));
+        children.forEach((child, i) => {
+          if (!child.classList.contains("stagger-child")) {
+            child.style.setProperty("--child-delay", `${50 + i * 85}ms`);
+            child.classList.add("stagger-child");
+          }
+        });
+
+        io.unobserve(el);
       });
     },
-    { threshold: 0.08, rootMargin: "0px 0px -40px 0px" }
+    { threshold: 0.06, rootMargin: "0px 0px -32px 0px" }
   );
+
   nodes.forEach((n) => io.observe(n));
+}
+
+function setupProgressBar() {
+  if (!document.body.classList.contains("public-page")) return;
+  const bar = document.getElementById("pageProgress");
+  if (!bar) return;
+
+  // Sweep to 80% while page resources load
+  requestAnimationFrame(() => {
+    bar.style.transition = "width 700ms cubic-bezier(0.1, 0.9, 0.2, 1)";
+    bar.style.width = "80%";
+  });
+
+  const complete = () => {
+    bar.style.transition = "width 220ms ease";
+    bar.style.width = "100%";
+    setTimeout(() => {
+      bar.style.transition = "opacity 280ms ease";
+      bar.style.opacity = "0";
+      setTimeout(() => {
+        bar.style.width = "0%";
+        bar.style.opacity = "1";
+        bar.style.transition = "";
+      }, 320);
+    }, 260);
+  };
+
+  if (document.readyState === "complete") {
+    setTimeout(complete, 180);
+  } else {
+    window.addEventListener("load", complete, { once: true });
+  }
+}
+
+function setupHeroSplitText() {
+  if (!document.body.classList.contains("public-page")) return;
+  const h1 = document.querySelector(".hero-carousel-slide.is-active .hero-carousel-copy h1");
+  if (!h1) return;
+
+  const words = h1.textContent.trim().split(/\s+/);
+  h1.setAttribute("aria-label", h1.textContent.trim());
+  h1.innerHTML = words
+    .map((w, i) => `<span class="word-reveal" aria-hidden="true" style="--wi:${i}">${w}</span>`)
+    .join(" ");
+
+  setTimeout(() => {
+    h1.querySelectorAll(".word-reveal").forEach((span, i) => {
+      setTimeout(() => span.classList.add("is-revealed"), i * 65);
+    });
+  }, 90);
 }
 
 function setupFloatingWhatsApp() {
@@ -4377,7 +4469,9 @@ setupFaq();
 loadSiteControls().catch(() => {});
 setupReviewForm();
 setupPageTransitions();
+setupProgressBar();
 setupPublicPageVisibility();
+setupHeroSplitText();
 setupFloatingWhatsApp();
 setupFooterSocials();
 setupHomePage();
