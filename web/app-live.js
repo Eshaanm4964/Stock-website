@@ -2311,6 +2311,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       if (dropdownId) closeAdminViewDropdown(dropdownId);
       detailMount.innerHTML = buildAdminClientDetail(user, soldHistory);
       detailMount.classList.remove("hidden");
+      detailMount.classList.add("portal-visible");
       detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
@@ -2330,6 +2331,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
         detailMount.innerHTML = buildAdminStockDetail(symbol, holdings);
       }
       detailMount.classList.remove("hidden");
+      detailMount.classList.add("portal-visible");
       detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
@@ -3316,7 +3318,7 @@ async function renderAdminPortal(options = {}) {
           <div class="panel-head"><h3>Sold History</h3><span class="badge ${filteredSoldHistory.length ? "green" : ""}">${filteredSoldHistory.length} Records</span></div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>User</th><th>Stock</th><th>Purchase Date</th><th>Qty Sold</th><th>Avg Price</th><th>Sell Price</th><th>Realised P&amp;L</th><th>P&amp;L %</th><th>Sold At (IST)</th><th>Sold By</th></tr></thead>
+              <thead><tr><th>Investor Name</th><th>Stock</th><th>Purchase Date</th><th>Qty Sold</th><th>Avg Price</th><th>Sell Price</th><th>Sold Date</th><th>Realised P&amp;L</th><th>P&amp;L %</th></tr></thead>
               <tbody>
                 ${filteredSoldHistory.length
                   ? filteredSoldHistory
@@ -3334,15 +3336,14 @@ async function renderAdminPortal(options = {}) {
                             <td>${entry.quantity}</td>
                             <td class="${Number(entry.sell_price) >= Number(entry.buy_price) ? "profit" : "loss"}">${currency(entry.buy_price)}</td>
                             <td class="${Number(entry.sell_price) >= Number(entry.buy_price) ? "profit" : "loss"}">${currency(entry.sell_price)}</td>
+                            <td>${formatDate(entry.sold_at)}</td>
                             <td class="${Number(entry.profit_loss) >= 0 ? "profit" : "loss"}">${currency(entry.profit_loss)}</td>
                             <td class="${Number(entry.sell_price) >= Number(entry.buy_price) ? "profit" : "loss"}">${percent((((Number(entry.sell_price) - Number(entry.buy_price)) / Math.max(Number(entry.buy_price), 1)) * 100))}</td>
-                            <td>${formatDateTime(entry.sold_at)}</td>
-                            <td><small>${escapeHtml(entry.sold_by_identifier || entry.sold_by_role || "System")}</small></td>
                           </tr>
                         `
                       )
                       .join("")
-                  : `<tr><td colspan="10"><span class="helper-text">No sold history for the selected filters yet.</span></td></tr>`}
+                  : `<tr><td colspan="9"><span class="helper-text">No sold history for the selected filters yet.</span></td></tr>`}
               </tbody>
               <tfoot>
                 <tr class="admin-total-row">
@@ -3350,8 +3351,9 @@ async function renderAdminPortal(options = {}) {
                   <td><strong>${filteredSoldQuantity.toFixed(2)}</strong></td>
                   <td>—</td>
                   <td>—</td>
+                  <td>—</td>
                   <td class="${filteredRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredRealizedProfit)}</strong></td>
-                  <td colspan="2">—</td>
+                  <td>—</td>
                 </tr>
               </tfoot>
             </table>
@@ -3373,6 +3375,7 @@ async function renderAdminPortal(options = {}) {
       if (newDetailMount) {
         newDetailMount.innerHTML = savedDetailHTML;
         newDetailMount.classList.remove("hidden");
+        newDetailMount.classList.add("portal-visible");
       }
     }
     activeRole = "admin";
