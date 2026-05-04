@@ -456,6 +456,7 @@
         const mount = document.getElementById("algoPerformanceMount");
         if (!mount) return;
         mount.innerHTML = accounts.map(buildAccountCard).join("");
+        initCountUp();
       }
 
       async function tryLiveData() {
@@ -487,6 +488,42 @@
         } catch (_) {
           renderAccounts(STATIC_ACCOUNTS);
         }
+      }
+
+      function initCountUp() {
+        const elements = document.querySelectorAll(
+          '.algo-journey-val, .algo-stat-item strong'
+        );
+        const parseNum = str => {
+          const clean = str.replace(/[$,+%]/g, '').trim();
+          return isNaN(parseFloat(clean)) ? null : parseFloat(clean);
+        };
+        const formatLike = (original, val) => {
+          if (original.startsWith('$')) return '$' + Math.round(val).toLocaleString('en-US');
+          if (original.endsWith('%')) return val.toFixed(1) + '%';
+          if (original.includes(',')) return Math.round(val).toLocaleString('en-US');
+          return Math.round(val).toString();
+        };
+        const animate = el => {
+          const original = el.textContent.trim();
+          const target = parseNum(original);
+          if (target === null || target === 0) return;
+          const start = performance.now();
+          const dur = 1600;
+          const ease = t => 1 - Math.pow(1 - t, 3);
+          const tick = now => {
+            const p = Math.min((now - start) / dur, 1);
+            el.textContent = formatLike(original, target * ease(p));
+            if (p < 1) requestAnimationFrame(tick);
+            else el.textContent = original;
+          };
+          requestAnimationFrame(tick);
+        };
+        if (!('IntersectionObserver' in window)) { elements.forEach(animate); return; }
+        const obs = new IntersectionObserver(entries => {
+          entries.forEach(e => { if (e.isIntersecting) { animate(e.target); obs.unobserve(e.target); } });
+        }, { threshold: 0.3 });
+        elements.forEach(el => obs.observe(el));
       }
 
       if (document.readyState === "loading") {
