@@ -1232,39 +1232,52 @@ body.public-page .site-shell {
 .stats-shell {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
+  gap: 0;
   align-items: stretch;
 }
 
 .stat-card {
   position: relative;
-  display: grid;
-  gap: 12px;
-  padding: 18px 20px;
-  border-right: 1px solid rgba(105, 240, 174, 0.16);
-  border-radius: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+  padding: 28px 20px 24px;
+  border-right: 1px solid rgba(44, 144, 240, 0.12);
+  border-radius: 0;
   transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
 }
 
-.stat-card:last-child {
-  border-right: 0;
-}
+.stat-card:first-child { border-radius: 22px 0 0 22px; }
+.stat-card:last-child  { border-right: 0; border-radius: 0 22px 22px 0; }
 
 .stat-number {
   color: var(--brand-accent);
-  font-size: clamp(2rem, 4vw, 3rem);
+  font-size: clamp(2rem, 3.6vw, 2.8rem);
   font-weight: 700;
+  font-family: "IBM Plex Mono", monospace;
+  letter-spacing: -0.02em;
+  line-height: 1;
 }
 
 .stat-label {
-  color: var(--brand-text-secondary);
-  font-size: 0.98rem;
+  color: var(--brand-text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-top: 2px;
+}
+
+.stats-shell {
+  padding: 0;
+  overflow: hidden;
 }
 
 .stat-card:hover {
-  transform: translateY(-4px);
-  background: linear-gradient(135deg, rgba(44, 144, 240, 0.07), rgba(114, 174, 254, 0.08));
-  box-shadow: 0 14px 28px rgba(49, 96, 73, 0.08);
+  background: linear-gradient(135deg, rgba(44, 144, 240, 0.06), rgba(114, 174, 254, 0.07));
 }
 
 .products-grid,
@@ -2988,6 +3001,11 @@ body.public-page .site-shell {
   .stats-shell {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .stat-card:first-child  { border-radius: 22px 0 0 0; }
+  .stat-card:last-child   { border-radius: 0 0 22px 0; border-right: 0; }
+  .stat-card:nth-child(2) { border-radius: 0 22px 0 0; border-right: 0; }
+  .stat-card:nth-child(3) { border-right: 1px solid rgba(44,144,240,0.12); border-radius: 0 0 0 22px; border-top: 1px solid rgba(44,144,240,0.12); }
+  .stat-card:nth-child(4) { border-top: 1px solid rgba(44,144,240,0.12); }
 
   .returns-tier-grid {
     grid-template-columns: 1fr;
