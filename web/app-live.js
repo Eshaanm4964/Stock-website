@@ -743,6 +743,51 @@ function setupPageTransitions() {
   });
 }
 
+function setupMobileNav() {
+  const navbar = document.querySelector(".public-navbar");
+  if (!navbar) return;
+
+  const toggleBtn = navbar.querySelector("[data-nav-toggle]");
+  const navLinks = navbar.querySelectorAll(".site-nav a");
+  const dropdownToggle = navbar.querySelector("[data-login-dropdown-toggle]");
+  const dropdownContainer = dropdownToggle?.closest("[data-login-dropdown]");
+
+  function openNav() {
+    navbar.classList.add("nav-open");
+    if (toggleBtn) toggleBtn.setAttribute("aria-expanded", "true");
+  }
+  function closeNav() {
+    navbar.classList.remove("nav-open");
+    if (toggleBtn) toggleBtn.setAttribute("aria-expanded", "false");
+  }
+
+  if (toggleBtn) {
+    toggleBtn.setAttribute("aria-expanded", "false");
+    toggleBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      navbar.classList.contains("nav-open") ? closeNav() : openNav();
+    });
+  }
+
+  navLinks.forEach((link) => link.addEventListener("click", closeNav));
+
+  document.addEventListener("click", (e) => {
+    if (navbar.classList.contains("nav-open") && !navbar.contains(e.target)) closeNav();
+  });
+
+  if (dropdownToggle && dropdownContainer) {
+    dropdownToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = dropdownContainer.classList.contains("open");
+      document.querySelectorAll("[data-login-dropdown].open").forEach((d) => d.classList.remove("open"));
+      if (!isOpen) dropdownContainer.classList.add("open");
+    });
+    document.addEventListener("click", (e) => {
+      if (!dropdownContainer.contains(e.target)) dropdownContainer.classList.remove("open");
+    });
+  }
+}
+
 async function checkBackendStatus() {
   const statusText = document.getElementById("backendStatusText");
   const checkBtn = document.getElementById("checkBackendBtn");
@@ -4486,6 +4531,7 @@ setupFaq();
 loadSiteControls().catch(() => {});
 setupReviewForm();
 setupPageTransitions();
+setupMobileNav();
 setupScrollToTop();
 setupProgressBar();
 setupPublicPageVisibility();

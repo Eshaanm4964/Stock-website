@@ -319,14 +319,35 @@ body.public-page .site-shell {
   border-radius: 14px;
   background: rgba(44, 144, 240, 0.04);
   color: var(--brand-text);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  z-index: 110;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .nav-toggle span {
   display: block;
   width: 18px;
   height: 2px;
-  margin: 4px auto;
   background: currentColor;
+  border-radius: 2px;
+  transition: transform 200ms ease, opacity 200ms ease;
+  pointer-events: none;
+}
+
+.public-navbar.nav-open .nav-toggle span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+.public-navbar.nav-open .nav-toggle span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+.public-navbar.nav-open .nav-toggle span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
 }
 
 .public-main {
@@ -4333,4 +4354,550 @@ body.public-page .site-shell {
   display: block;
   object-fit: cover;
   min-height: 300px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GLOBAL MOBILE FOUNDATIONS
+   Applied at all widths — prevents overflow, makes media fluid
+═══════════════════════════════════════════════════════════════ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body.public-page {
+  overflow-x: hidden;
+}
+
+img,
+video,
+svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* All touch targets minimum 44×44 */
+.nav-cta,
+.pill-link,
+.role-toggle,
+.submit-btn,
+.secondary-outline,
+.returns-tier-cta,
+.hero-carousel-btn,
+.nav-toggle,
+.scroll-top-btn,
+.floating-whatsapp,
+button[type="button"],
+button[type="submit"],
+a.nav-cta,
+a.pill-link {
+  min-height: 44px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ≤ 1024px  (tablet landscape)
+═══════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .auth-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-panel {
+    display: none;
+  }
+
+  .footer-shell.footer-pro {
+    padding: 36px 28px 24px;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+  }
+
+  .algo-hero {
+    grid-template-columns: 1fr minmax(0, 340px);
+    gap: 28px;
+  }
+
+  .pms-strip {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .pms-strip .fundcellence-visual { order: -1; }
+
+  .phone-showcase-stage {
+    height: 340px;
+  }
+
+  .phone-mockup {
+    width: 145px;
+    height: 272px;
+  }
+
+  .phone-left,
+  .phone-right {
+    height: 240px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ≤ 768px  (tablet portrait / large phone)
+═══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* --- Nav --- */
+  .site-header.public-navbar {
+    grid-template-columns: auto auto;
+    justify-content: space-between;
+    padding: 12px 16px;
+  }
+
+  .nav-toggle { display: inline-flex; align-items: center; justify-content: center; }
+
+  .site-nav.public-nav,
+  .header-actions.public-actions {
+    display: none;
+  }
+
+  .public-navbar.nav-open .site-nav.public-nav,
+  .public-navbar.nav-open .header-actions.public-actions {
+    display: flex;
+    grid-column: 1 / -1;
+    width: 100%;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 0 4px;
+  }
+
+  .public-navbar.nav-open .site-nav.public-nav a,
+  .public-navbar.nav-open .header-actions.public-actions .nav-cta,
+  .public-navbar.nav-open .header-actions.public-actions .nav-login-btn {
+    width: 100%;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+  }
+
+  /* Login dropdown: full-width on mobile */
+  .nav-dropdown {
+    width: 100%;
+  }
+
+  .nav-dropdown-menu {
+    position: static;
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: none;
+    border-color: rgba(44,144,240,0.1);
+    margin-top: 6px;
+  }
+
+  .nav-login-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  /* --- Hero carousel --- */
+  .home-hero-carousel,
+  .hero-carousel-stage {
+    min-height: 480px;
+  }
+
+  .hero-carousel-slide {
+    grid-template-columns: 1fr !important;
+    min-height: 480px;
+    padding: 28px 20px 60px;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .hero-carousel-image {
+    order: -1;
+    min-height: 180px;
+  }
+
+  .hero-carousel-image img {
+    width: min(260px, 90%);
+    max-height: 180px;
+    object-fit: cover;
+    border-radius: 16px;
+    margin: 0 auto;
+  }
+
+  .hero-carousel-copy {
+    grid-column: 1;
+    grid-row: auto;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  .hero-carousel-copy h1 {
+    font-size: clamp(1.5rem, 6vw, 2.4rem);
+    line-height: 1.12;
+  }
+
+  /* --- Phone showcase: only show center phone --- */
+  .phone-showcase-stage {
+    height: auto;
+    padding: 0 0 24px;
+    gap: 0;
+    perspective: none;
+  }
+
+  .phone-left,
+  .phone-right {
+    display: none;
+  }
+
+  .phone-center {
+    width: 180px;
+    height: 320px;
+    margin: 0 auto;
+    animation: phoneFloatCenter 3.6s ease-in-out infinite;
+  }
+
+  /* --- Algo hero (Forex) --- */
+  .algo-hero {
+    grid-template-columns: 1fr;
+    text-align: center;
+    padding: 36px 20px 32px;
+    gap: 28px;
+  }
+
+  .algo-hero-stats { justify-content: center; }
+  .algo-hero-stat  { align-items: center; }
+  .algo-hero-cta   { justify-content: center; }
+  .algo-hero-desc  { margin: 0 auto 24px; }
+  .algo-anim-visual { margin: 0 auto; height: 280px; max-width: 320px; }
+
+  /* --- Auth / Login --- */
+  .auth-shell {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .auth-panel { display: none; }
+
+  .auth-form-zone {
+    border-radius: 22px;
+  }
+
+  .auth-switcher-bar {
+    gap: 6px;
+  }
+
+  .role-toggle {
+    font-size: 0.84rem;
+    padding: 9px 12px;
+    min-height: 44px;
+  }
+
+  .auth-form-card label {
+    font-size: 0.9rem;
+  }
+
+  .auth-form-card input {
+    min-height: 48px;
+    font-size: 1rem;
+  }
+
+  .split-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .split-row .secondary-outline {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .submit-btn {
+    width: 100%;
+    min-height: 52px;
+    font-size: 1rem;
+  }
+
+  /* --- Contact hero video --- */
+  .page-hero.contact-hero-wrap,
+  .page-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-video-panel {
+    min-height: 220px;
+    aspect-ratio: 16 / 9;
+    align-self: auto;
+  }
+
+  .contact-hero-video {
+    min-height: unset;
+  }
+
+  /* --- Footer --- */
+  .footer-shell.footer-pro {
+    padding: 28px 18px 20px;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .footer-bottom-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  /* --- General section padding --- */
+  .section-card,
+  .hero-shell,
+  .stats-shell {
+    padding: 20px 18px;
+  }
+
+  /* --- Data security --- */
+  .data-security-section { padding: 28px 18px; }
+  .data-security-wrap    { grid-template-columns: 1fr; gap: 20px; }
+  .data-security-video   { aspect-ratio: 16 / 9; min-height: unset; }
+
+  /* --- Tables scroll horizontally --- */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+
+  .comparison-table {
+    min-width: 560px;
+  }
+
+  /* --- Fixed floating buttons: stack clear of each other --- */
+  .floating-whatsapp {
+    right: 14px;
+    bottom: 14px;
+  }
+
+  .scroll-top-btn {
+    right: 14px;
+    bottom: 80px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ≤ 425px  (large phone)
+═══════════════════════════════════════════════════════════════ */
+@media (max-width: 425px) {
+  body.public-page .site-shell {
+    width: calc(100% - 12px);
+  }
+
+  .site-header.public-navbar {
+    padding: 10px 12px;
+  }
+
+  .brand-wordmark  { font-size: 0.95rem; }
+  .brand-tagline   { font-size: 0.66rem; }
+
+  .home-hero-carousel,
+  .hero-carousel-stage {
+    min-height: 430px;
+    border-radius: 20px;
+  }
+
+  .hero-carousel-slide {
+    min-height: 430px;
+    padding: 20px 14px 56px;
+  }
+
+  .hero-carousel-copy h1 {
+    font-size: clamp(1.3rem, 7.5vw, 1.9rem);
+    line-height: 1.1;
+  }
+
+  .hero-carousel-copy p {
+    font-size: 0.9rem;
+  }
+
+  .hero-carousel-image img {
+    width: min(220px, 88%);
+    max-height: 160px;
+  }
+
+  .phone-center {
+    width: 160px;
+    height: 290px;
+  }
+
+  .section-card,
+  .hero-shell,
+  .stats-shell {
+    padding: 16px 14px;
+    border-radius: 20px;
+  }
+
+  .section-head h2 {
+    font-size: clamp(1.35rem, 7.5vw, 1.9rem);
+  }
+
+  .nav-cta,
+  .pill-link {
+    font-size: 0.88rem;
+    padding: 10px 18px;
+  }
+
+  .auth-form-zone { padding: 16px; border-radius: 20px; }
+  .submit-btn     { min-height: 50px; }
+
+  .pms-tagline {
+    font-size: 0.76rem;
+    padding: 4px 12px;
+  }
+
+  .data-security-section { padding: 22px 14px; }
+
+  .floating-whatsapp {
+    right: 10px;
+    bottom: 10px;
+    padding: 8px;
+  }
+
+  .floating-whatsapp-copy { display: none; }
+  .floating-whatsapp-icon { width: 38px; height: 38px; }
+
+  .scroll-top-btn {
+    right: 10px;
+    bottom: 72px;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ≤ 375px  (standard phone)
+═══════════════════════════════════════════════════════════════ */
+@media (max-width: 375px) {
+  .home-hero-carousel,
+  .hero-carousel-stage {
+    min-height: 400px;
+  }
+
+  .hero-carousel-slide {
+    min-height: 400px;
+    padding: 18px 12px 52px;
+  }
+
+  .hero-carousel-copy h1 {
+    font-size: clamp(1.2rem, 7vw, 1.7rem);
+  }
+
+  .hero-carousel-image img {
+    width: min(190px, 85%);
+    max-height: 140px;
+  }
+
+  .hero-carousel-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 1.1rem;
+  }
+
+  .hero-carousel-prev { left: 6px; }
+  .hero-carousel-next { right: 6px; }
+
+  .phone-center {
+    width: 148px;
+    height: 270px;
+  }
+
+  .algo-anim-visual { height: 240px; }
+
+  .section-card,
+  .hero-shell,
+  .stats-shell {
+    padding: 14px 12px;
+    border-radius: 18px;
+  }
+
+  .returns-tier-top,
+  .returns-tier-body {
+    padding: 14px;
+  }
+
+  .auth-form-card input {
+    padding: 11px 14px;
+  }
+
+  .submit-btn {
+    min-height: 48px;
+    font-size: 0.95rem;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ≤ 320px  (smallest phones)
+═══════════════════════════════════════════════════════════════ */
+@media (max-width: 320px) {
+  body.public-page .site-shell {
+    width: calc(100% - 8px);
+  }
+
+  .brand-mark.brand-logo.brand-logo-lg {
+    width: 40px;
+    height: 40px;
+    padding: 5px;
+  }
+
+  .brand-wordmark { font-size: 0.88rem; }
+  .brand-tagline  { display: none; }
+
+  .hero-carousel-copy h1 {
+    font-size: clamp(1.1rem, 8vw, 1.55rem);
+  }
+
+  .hero-carousel-image img {
+    width: min(160px, 82%);
+    max-height: 120px;
+  }
+
+  .phone-center {
+    width: 136px;
+    height: 248px;
+  }
+
+  .section-card {
+    padding: 12px 10px;
+  }
+
+  .role-toggle {
+    font-size: 0.78rem;
+    padding: 8px 8px;
+  }
+
+  .auth-switcher-bar {
+    gap: 4px;
+  }
+
+  .nav-cta {
+    font-size: 0.82rem;
+    padding: 9px 14px;
+  }
+
+  .scroll-top-btn {
+    width: 42px;
+    height: 42px;
+    right: 8px;
+    bottom: 68px;
+  }
+
+  .floating-whatsapp {
+    right: 8px;
+    bottom: 8px;
+  }
 }
