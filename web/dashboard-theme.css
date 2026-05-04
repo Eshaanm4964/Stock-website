@@ -31,7 +31,7 @@
 .dashboard-loading strong {
   display: block;
   margin-bottom: 10px;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Playfair Display", serif;
   font-size: 1.6rem;
   color: #11203d;
 }
@@ -283,7 +283,7 @@
 
 .portfolio-live-price-preview strong {
   color: #0f2040;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Playfair Display", serif;
   font-size: 1.32rem;
   line-height: 1.1;
 }
@@ -460,7 +460,7 @@
 
 .portfolio-ledger-metrics strong {
   color: #0f2040;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Playfair Display", serif;
   font-size: clamp(1.25rem, 1.8vw, 1.7rem);
 }
 
@@ -710,7 +710,7 @@ body.dashboard-page {
 }
 
 .admin-dashboard-brand .brand-wordmark {
-  font-family: "Poppins", "Manrope", sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 1.9rem;
   color: #0f2040;
   letter-spacing: -0.03em;
