@@ -1464,3 +1464,169 @@ body.dashboard-page {
     flex-wrap: wrap;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   SELL MODAL — Custom overlay replaces window.prompt
+═══════════════════════════════════════════════════════════════ */
+.sell-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(10, 18, 40, 0.62);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.sell-modal-overlay.sell-modal-visible { opacity: 1; }
+
+.sell-modal {
+  background: #ffffff;
+  border-radius: 22px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 32px 80px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(17, 35, 63, 0.08);
+  overflow: hidden;
+  transform: translateY(16px) scale(0.97);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sell-modal-overlay.sell-modal-visible .sell-modal {
+  transform: translateY(0) scale(1);
+}
+
+.sell-modal-header {
+  padding: 24px 28px 20px;
+  background: linear-gradient(135deg, #0f203d 0%, #1a3a6c 100%);
+  color: #ffffff;
+}
+.sell-modal-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  margin-bottom: 10px;
+}
+.sell-modal-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 4px;
+  font-family: "IBM Plex Mono", monospace;
+}
+.sell-modal-owner {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.6);
+  margin: 0;
+}
+
+.sell-modal-info {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid rgba(17, 35, 63, 0.08);
+}
+.sell-modal-info-item {
+  flex: 1;
+  padding: 14px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-right: 1px solid rgba(17, 35, 63, 0.08);
+}
+.sell-modal-info-item:last-child { border-right: none; }
+.sell-modal-info-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #68758b;
+}
+.sell-modal-info-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f203d;
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.sell-modal-body {
+  padding: 24px 28px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.sell-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+}
+.sell-modal-input {
+  padding: 11px 14px;
+  border: 1.5px solid rgba(17, 35, 63, 0.15);
+  border-radius: 10px;
+  font-size: 1rem;
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 600;
+  color: #0f203d;
+  background: #f8faff;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+.sell-modal-input:focus {
+  border-color: #4d6bff;
+  box-shadow: 0 0 0 3px rgba(77, 107, 255, 0.12);
+  background: #fff;
+}
+.sell-modal-error {
+  font-size: 0.8rem;
+  color: #dc2626;
+  font-weight: 600;
+  min-height: 18px;
+  margin: 0;
+}
+
+.sell-modal-actions {
+  display: flex;
+  gap: 12px;
+  padding: 16px 28px 24px;
+}
+.sell-modal-cancel {
+  flex: 1;
+  padding: 12px 20px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(17, 35, 63, 0.15);
+  background: #ffffff;
+  color: #374151;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+.sell-modal-cancel:hover { background: #f3f4f6; border-color: rgba(17,35,63,0.25); }
+.sell-modal-confirm {
+  flex: 2;
+  padding: 12px 20px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: opacity 160ms ease, transform 160ms ease;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3);
+}
+.sell-modal-confirm:hover { opacity: 0.92; transform: translateY(-1px); }
+.sell-modal-confirm:active { transform: translateY(0); }

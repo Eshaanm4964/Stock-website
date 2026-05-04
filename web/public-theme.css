@@ -882,10 +882,11 @@ body.public-page .site-shell {
 
 .returns-tier-capital {
   color: #121212;
-  font-family: "Playfair Display", serif;
+  font-family: "IBM Plex Mono", monospace;
   font-size: clamp(2.4rem, 4.5vw, 3.7rem);
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1;
+  letter-spacing: -0.03em;
 }
 
 .returns-tier-top span:last-child {

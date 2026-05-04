@@ -423,6 +423,75 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+function showSellModal({ symbol, owner, availableQuantity, averageBuyPrice }) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "sell-modal-overlay";
+    overlay.innerHTML = `
+      <div class="sell-modal" role="dialog" aria-modal="true" aria-labelledby="sellModalTitle">
+        <div class="sell-modal-header">
+          <div class="sell-modal-badge">SELL ORDER</div>
+          <h3 id="sellModalTitle" class="sell-modal-title">${escapeHtml(symbol)}</h3>
+          <p class="sell-modal-owner">${escapeHtml(owner)}</p>
+        </div>
+        <div class="sell-modal-info">
+          <div class="sell-modal-info-item">
+            <span class="sell-modal-info-label">Available Qty</span>
+            <span class="sell-modal-info-value">${availableQuantity}</span>
+          </div>
+          <div class="sell-modal-info-item">
+            <span class="sell-modal-info-label">Avg Buy Price</span>
+            <span class="sell-modal-info-value">₹${Number(averageBuyPrice).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>
+          </div>
+        </div>
+        <div class="sell-modal-body">
+          <label class="sell-modal-field">
+            <span>Quantity to Sell</span>
+            <input id="sellModalQty" type="number" min="1" max="${availableQuantity}" value="${availableQuantity}" placeholder="Enter quantity" class="sell-modal-input" />
+          </label>
+          <label class="sell-modal-field">
+            <span>Sell Price (₹ per share)</span>
+            <input id="sellModalPrice" type="number" min="0.01" step="0.01" value="${averageBuyPrice ? averageBuyPrice.toFixed(2) : ""}" placeholder="Enter sell price" class="sell-modal-input" />
+          </label>
+          <p class="sell-modal-error" id="sellModalError"></p>
+        </div>
+        <div class="sell-modal-actions">
+          <button class="sell-modal-cancel" id="sellModalCancel" type="button">Cancel</button>
+          <button class="sell-modal-confirm" id="sellModalConfirm" type="button">Confirm Sell</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add("sell-modal-visible"));
+
+    const qtyInput = overlay.querySelector("#sellModalQty");
+    const priceInput = overlay.querySelector("#sellModalPrice");
+    const errorEl = overlay.querySelector("#sellModalError");
+    const confirmBtn = overlay.querySelector("#sellModalConfirm");
+    const cancelBtn = overlay.querySelector("#sellModalCancel");
+
+    function close(result) {
+      overlay.classList.remove("sell-modal-visible");
+      setTimeout(() => overlay.remove(), 220);
+      resolve(result);
+    }
+
+    cancelBtn.addEventListener("click", () => close(null));
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) close(null); });
+
+    confirmBtn.addEventListener("click", () => {
+      const qty = Number(qtyInput.value);
+      const price = Number(priceInput.value);
+      if (!Number.isFinite(qty) || qty <= 0) { errorEl.textContent = "Enter a valid quantity."; return; }
+      if (qty > availableQuantity) { errorEl.textContent = `Cannot exceed available quantity of ${availableQuantity}.`; return; }
+      if (!Number.isFinite(price) || price <= 0) { errorEl.textContent = "Enter a valid sell price."; return; }
+      close({ sellQuantity: qty, sellPrice: price });
+    });
+
+    qtyInput.focus();
+  });
+}
+
 function getHoldingState(holding) {
   const profitLoss = Number(holding?.profit_loss || 0);
   if (profitLoss > 0) return "profit";
@@ -1441,33 +1510,10 @@ function setupAdminManagementButtons() {
       const owner = button.dataset.owner || "this customer";
       const availableQuantity = Number(button.dataset.quantity || 0);
       const averageBuyPrice = Number(button.dataset.buyPrice || 0);
-      const quantityInput = window.prompt(
-        `Enter quantity to sell for ${symbol} (${owner}). Available quantity: ${availableQuantity}`,
-        String(availableQuantity)
-      );
-      if (quantityInput === null) return;
 
-      const sellQuantity = Number(quantityInput);
-      if (!Number.isFinite(sellQuantity) || sellQuantity <= 0) {
-        if (statusMessage) statusMessage.textContent = "Enter a valid quantity to sell.";
-        return;
-      }
-      if (sellQuantity > availableQuantity) {
-        if (statusMessage) statusMessage.textContent = "Sell quantity cannot exceed the available holding quantity.";
-        return;
-      }
-
-      const sellPriceInput = window.prompt(
-        `Enter the sell price for ${symbol}. Average buy price: ${currency(averageBuyPrice)}`,
-        averageBuyPrice ? averageBuyPrice.toFixed(2) : ""
-      );
-      if (sellPriceInput === null) return;
-
-      const sellPrice = Number(sellPriceInput);
-      if (!Number.isFinite(sellPrice) || sellPrice <= 0) {
-        if (statusMessage) statusMessage.textContent = "Enter a valid sell price.";
-        return;
-      }
+      const result = await showSellModal({ symbol, owner, availableQuantity, averageBuyPrice });
+      if (!result) return;
+      const { sellQuantity, sellPrice } = result;
 
       const stopLoading = setButtonLoading(button, "Selling...");
       try {
@@ -1898,6 +1944,7 @@ function buildAdminActionToolbar(selectedValue = "") {
         </div>
       </div>
       <div class="user-topbar-actions admin-toolbar-right">
+        <a class="secondary-btn compact-btn" href="./admin-dashboard.html">← Dashboard</a>
         <details class="admin-dropdown-menu" ${adminUiState.actionsMenuOpen ? "open" : ""}>
           <summary class="secondary-btn compact-btn">Admin Actions</summary>
           <div class="admin-dropdown-panel">
