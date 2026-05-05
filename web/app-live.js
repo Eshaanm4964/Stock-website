@@ -1093,7 +1093,7 @@ function logoutAndResetPortals() {
   stopLiveDashboardPrices();
   hidePortalMounts();
   hideAuthLoading();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  window.location.href = "./login.html";
 }
 
 async function renderTicker(elementId, symbols) {
@@ -2552,6 +2552,7 @@ function startAdminDashboardAutoRefresh() {
   window.clearInterval(adminDashboardRefreshTimer);
   adminDashboardRefreshTimer = window.setInterval(() => {
     if (document.hidden) return;
+    if (activeRole !== "admin") return;
     if (document.activeElement?.matches?.("input, select, textarea")) return;
     renderAdminPortal().catch(() => {});
   }, 5000);
