@@ -15,7 +15,7 @@ from app.models.alert import Alert
 from app.models.notification import Notification
 from app.services.notification_service import build_notification_payload
 from app.services.stock_service import fetch_market_feed, fetch_quote
-from app.utils.bootstrap import ensure_admin_user, ensure_demo_users, ensure_seed_reviews, ensure_site_settings
+from app.utils.bootstrap import ensure_admin_user, ensure_demo_users, remove_demo_users, ensure_seed_reviews, ensure_site_settings
 from app.websocket.manager import manager
 
 settings = get_settings()
@@ -87,7 +87,10 @@ async def lifespan(_: FastAPI):
         await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS balance_funds DOUBLE PRECISION NOT NULL DEFAULT 0"))
     async with AsyncSessionLocal() as session:
         await ensure_admin_user(session)
-        await ensure_demo_users(session)
+        if settings.demo_mode:
+            await ensure_demo_users(session)
+        else:
+            await remove_demo_users(session)
         await ensure_site_settings(session)
         await ensure_seed_reviews(session)
     alert_task = asyncio.create_task(alert_monitor())
