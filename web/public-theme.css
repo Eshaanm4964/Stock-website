@@ -912,7 +912,7 @@ body.public-page .site-shell {
 
 .returns-tier-highlight strong {
   color: #1565c0;
-  font-family: "Playfair Display", serif;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 2.35rem;
   font-weight: 600;
   line-height: 1;
