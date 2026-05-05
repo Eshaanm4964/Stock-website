@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     )
     cache_ttl_seconds: int = 10
     alert_poll_interval_seconds: int = 60
-    otp_expire_minutes: int = 5
+    otp_expire_minutes: int = 3
     otp_debug_mode: bool = Field(default=True, alias="OTP_DEBUG_MODE")
     demo_otp_enabled: bool = Field(default=False, alias="DEMO_OTP_ENABLED")
     demo_otp_code: str = Field(default="123456", alias="DEMO_OTP_CODE")
@@ -53,7 +53,7 @@ class Settings(BaseSettings):
         default="9392970534,9623143374,9885800073,7893744128",
         alias="ADMIN_ALLOWED_PHONE_NUMBERS",
     )
-    admin_password: str = Field(default="Admin@123", alias="ADMIN_PASSWORD")
+    admin_password: str = Field(default="admin123", alias="ADMIN_PASSWORD")
 
     model_config = SettingsConfigDict(
         env_file=".env",

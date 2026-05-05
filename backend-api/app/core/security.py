@@ -1,21 +1,26 @@
 from datetime import datetime, timedelta, timezone
 from secrets import randbelow
 from typing import Any
+import hashlib
+import os
 
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from app.core.config import get_settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    # Use PBKDF2 for verification (built-in, no bcrypt dependency)
+    salt, hash_value = hashed_password.split("$")
+    computed_hash = hashlib.pbkdf2_hmac("sha256", plain_password.encode(), salt.encode(), 100000)
+    return computed_hash.hex() == hash_value
 
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    # Use PBKDF2 instead of bcrypt (no version conflicts)
+    salt = os.urandom(16).hex()
+    hash_obj = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 100000)
+    return f"{salt}${hash_obj.hex()}"
 
 
 def create_access_token(subject: str, role: str, username: str) -> str:

@@ -1630,3 +1630,46 @@ body.dashboard-page {
 }
 .sell-modal-confirm:hover { opacity: 0.92; transform: translateY(-1px); }
 .sell-modal-confirm:active { transform: translateY(0); }
+
+/* ── Dashboard loader overlay ─────────────────────── */
+.dash-loader-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: linear-gradient(135deg, #0a1628 0%, #0f2040 55%, #1a3a6c 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.4s ease;
+}
+.dash-loader-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+.dash-loader-gear {
+  font-size: 4.5rem;
+  color: #c9a84c;
+  display: block;
+  animation: dashGearSpin 2.2s linear infinite;
+  filter: drop-shadow(0 0 18px rgba(201, 168, 76, 0.5));
+}
+@keyframes dashGearSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.dash-loader-label {
+  color: rgba(255, 255, 255, 0.72);
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+/* ── OTP countdown hint ───────────────────────────── */
+.otp-countdown-active {
+  color: #1565c0;
+  font-weight: 600;
+}

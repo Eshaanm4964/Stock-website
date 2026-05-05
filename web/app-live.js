@@ -13,6 +13,7 @@ let chatNudgeTimer = null;
 let adminSearchRenderTimer = null;
 let liveDashboardPriceTimer = null;
 let adminDashboardRefreshTimer = null;
+let otpCountdownTimer = null;
 const marketSymbolSearchCache = new Map();
 let adminUiState = {
   search: "",
@@ -1094,6 +1095,32 @@ function logoutAndResetPortals() {
   hidePortalMounts();
   hideAuthLoading();
   window.location.href = "./login.html";
+}
+
+function startOtpCountdown(elementId, minutes) {
+  if (otpCountdownTimer) clearInterval(otpCountdownTimer);
+  let remaining = minutes * 60;
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  el.textContent = `OTP sent — expires in ${fmt(remaining)}`;
+  otpCountdownTimer = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      clearInterval(otpCountdownTimer);
+      otpCountdownTimer = null;
+      el.textContent = "OTP expired. Request a new one.";
+      return;
+    }
+    el.textContent = `OTP sent — expires in ${fmt(remaining)}`;
+  }, 1000);
+}
+
+function hideDashLoader() {
+  const loader = document.getElementById("dashboardLoader");
+  if (!loader) return;
+  loader.style.opacity = "0";
+  setTimeout(() => loader.remove(), 400);
 }
 
 async function renderTicker(elementId, symbols) {
@@ -4019,7 +4046,11 @@ function setupLogin() {
             phone_number: String(adminForm.querySelector('[name="phone"]').value).trim()
           };
           const response = await api("/auth/request-otp", { method: "POST", body: JSON.stringify(payload) });
-          document.getElementById("adminOtpHint").textContent = response.otp_preview ? `Testing OTP: ${response.otp_preview}` : response.message;
+          if (response.otp_preview) {
+            document.getElementById("adminOtpHint").textContent = `Testing OTP: ${response.otp_preview}`;
+          } else {
+            startOtpCountdown("adminOtpHint", 3);
+          }
           document.getElementById("adminError").textContent = "";
         } else {
           const phoneInput = userFormPhoneOtp?.querySelector('[name="phone"]');
@@ -4031,7 +4062,11 @@ function setupLogin() {
           hidePortalMounts();
           const payload = { role: "user", phone_number: phoneVal };
           const response = await api("/auth/request-otp", { method: "POST", body: JSON.stringify(payload) });
-          document.getElementById("userOtpHint").textContent = response.otp_preview ? `Testing code: ${response.otp_preview}` : response.message;
+          if (response.otp_preview) {
+            document.getElementById("userOtpHint").textContent = `Testing code: ${response.otp_preview}`;
+          } else {
+            startOtpCountdown("userOtpHint", 3);
+          }
           if (document.getElementById("userPhoneOtpError")) document.getElementById("userPhoneOtpError").textContent = "";
         }
       } catch (error) {
@@ -4235,7 +4270,8 @@ function setupDashboardPages() {
       window.location.href = "./login.html";
       return;
     }
-    renderAdminPortal().catch(() => {
+    renderAdminPortal().then(hideDashLoader).catch(() => {
+      hideDashLoader();
       clearAuth();
       renderPortalError(
         document.getElementById("adminPortal"),
@@ -4254,7 +4290,8 @@ function setupDashboardPages() {
       window.location.href = "./login.html";
       return;
     }
-    renderUserPortal().catch(() => {
+    renderUserPortal().then(hideDashLoader).catch(() => {
+      hideDashLoader();
       clearAuth();
       renderPortalError(
         document.getElementById("userPortal"),
@@ -4273,7 +4310,8 @@ function setupDashboardPages() {
       window.location.href = "./login.html";
       return;
     }
-    renderAdminDatabasePage().catch(() => {
+    renderAdminDatabasePage().then(hideDashLoader).catch(() => {
+      hideDashLoader();
       renderPortalError(
         document.getElementById("adminPortal"),
         "Database View",
@@ -4292,7 +4330,8 @@ function setupDashboardPages() {
       return;
     }
     if (isAdminCustomerPage()) {
-      renderAdminCustomerPage().catch(() => {
+      renderAdminCustomerPage().then(hideDashLoader).catch(() => {
+        hideDashLoader();
         renderPortalError(
           document.getElementById("adminPortal"),
           "Add Customer",
@@ -4301,7 +4340,8 @@ function setupDashboardPages() {
       });
     }
     if (isAdminDealPage()) {
-      renderAdminDealPage().catch(() => {
+      renderAdminDealPage().then(hideDashLoader).catch(() => {
+        hideDashLoader();
         renderPortalError(
           document.getElementById("adminPortal"),
           "Add Deal",
@@ -4310,7 +4350,8 @@ function setupDashboardPages() {
       });
     }
     if (isAdminFundsPage()) {
-      renderAdminFundsPage().catch(() => {
+      renderAdminFundsPage().then(hideDashLoader).catch(() => {
+        hideDashLoader();
         renderPortalError(
           document.getElementById("adminPortal"),
           "Add Funds",
