@@ -155,14 +155,6 @@ function isUserDashboardPage() {
   return document.body?.dataset?.page === "user-dashboard";
 }
 
-function isAdminCustomerPage() {
-  return document.body?.dataset?.page === "admin-add-customer";
-}
-
-function isAdminDealPage() {
-  return document.body?.dataset?.page === "admin-add-deal";
-}
-
 function isAdminDatabasePage() {
   return document.body?.dataset?.page === "admin-database";
 }
