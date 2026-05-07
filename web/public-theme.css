@@ -57,12 +57,17 @@ body.public-page .auth-heading {
 }
 
 body.public-page .metric-value,
-body.public-page .stat-number,
 body.public-page .mock-number,
 body.public-page .ticker-price {
   font-family: "IBM Plex Mono", monospace;
   font-variant-numeric: normal;
   font-feature-settings: "zero" 0;
+}
+
+body.public-page .stat-number {
+  font-family: "DM Sans", sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 
 body.public-page .site-shell {
