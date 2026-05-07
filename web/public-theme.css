@@ -3547,6 +3547,13 @@ body.public-page .site-shell {
 
 .footer-contact-item:hover { color: var(--brand-accent); }
 
+.footer-contact-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  fill: currentColor;
+}
+
 .footer-nav-col {
   display: flex;
   flex-direction: column;
@@ -3577,6 +3584,15 @@ body.public-page .site-shell {
   font-size: 0.79rem;
   color: var(--brand-text-muted);
   line-height: 1.55;
+}
+
+[data-page="trust-safety"] .footer-disclaimer {
+  color: #991b1b;
+  background: rgba(185,28,28,0.07);
+  border: 1px solid rgba(185,28,28,0.28);
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-weight: 500;
 }
 
 .footer-bottom-row {
