@@ -6915,30 +6915,12 @@ a.pill-link {
   transition: opacity 0.65s cubic-bezier(0.16,1,0.3,1), transform 0.65s cubic-bezier(0.16,1,0.3,1), box-shadow 0.45s ease;
 }
 
-/* Animated gradient border */
-.cs-card-glow-border {
-  position: absolute;
-  inset: -2px;
-  border-radius: 24px;
-  z-index: -1;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  background-size: 300% 300%;
-  animation: csBorderRotate 4s linear infinite;
-}
-.cs-card-1 .cs-card-glow-border { background: linear-gradient(135deg, #7c3aed, #2c90f0, #7c3aed, #2c90f0); }
-.cs-card-2 .cs-card-glow-border { background: linear-gradient(135deg, #2c90f0, #06b6d4, #2c90f0, #06b6d4); }
-.cs-card-3 .cs-card-glow-border { background: linear-gradient(135deg, #059669, #2c90f0, #059669, #2c90f0); }
-@keyframes csBorderRotate {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-.cs-card:hover .cs-card-glow-border { opacity: 1; }
+.cs-card-glow-border { display: none; }
+
 .cs-card:hover {
+  transform: scale(1.03);
   box-shadow:
-    0 24px 56px rgba(44,144,240,0.16),
-    0 8px 20px rgba(14,30,80,0.09),
+    0 8px 32px rgba(14,30,80,0.1),
     inset 0 1px 0 rgba(255,255,255,0.95);
 }
 

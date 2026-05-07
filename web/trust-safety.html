@@ -525,18 +525,6 @@
         });
       }
 
-      /* ── Mouse-tilt on cards ── */
-      document.querySelectorAll('.cs-card').forEach(function (card) {
-        card.addEventListener('mousemove', function (e) {
-          const r = card.getBoundingClientRect();
-          const x = (e.clientX - r.left) / r.width  - 0.5;
-          const y = (e.clientY - r.top)  / r.height - 0.5;
-          card.style.transform = 'perspective(900px) rotateY(' + (x * 8) + 'deg) rotateX(' + (-y * 6) + 'deg) translateY(-10px) scale(1.02)';
-        });
-        card.addEventListener('mouseleave', function () {
-          card.style.transform = '';
-        });
-      });
 
       /* ── Scroll reveal ── */
       var io = new IntersectionObserver(function (entries) {
