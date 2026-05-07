@@ -51,7 +51,7 @@ async def _send_2factor_otp(api_key: str, mobile: str, otp_code: str, template_n
 
     try:
         async with httpx.AsyncClient(timeout=timeout_seconds) as client:
-            response = await client.post(url)
+            response = await client.get(url)
     except httpx.HTTPError as exc:
         raise SmsDeliveryError("Could not connect to the SMS provider.") from exc
 
