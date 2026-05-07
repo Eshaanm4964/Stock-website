@@ -1,9 +1,12 @@
+import logging
 import re
 from urllib.parse import quote
 
 import httpx
 
 from app.core.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 
 class SmsDeliveryError(RuntimeError):
@@ -44,6 +47,7 @@ async def _send_2factor_otp(api_key: str, mobile: str, otp_code: str, template_n
     encoded_otp = quote(otp_code, safe="")
     encoded_template = quote(template_name.strip(), safe="")
     url = f"https://2factor.in/API/V1/{encoded_key}/SMS/{encoded_mobile}/{encoded_otp}/{encoded_template}"
+    logger.info("2factor request URL (key redacted): /API/V1/****/SMS/%s/%s/%s", encoded_mobile, encoded_otp, encoded_template)
 
     try:
         async with httpx.AsyncClient(timeout=timeout_seconds) as client:
@@ -56,6 +60,7 @@ async def _send_2factor_otp(api_key: str, mobile: str, otp_code: str, template_n
     except ValueError as exc:
         raise SmsDeliveryError("SMS provider returned an invalid response.") from exc
 
+    logger.info("2factor response status=%s body=%s", response.status_code, body)
     if response.status_code >= 400 or str(body.get("Status", "")).lower() != "success":
         detail = body.get("Details") or body.get("ErrorMessage") or body.get("Message")
         raise SmsDeliveryError(str(detail or "2Factor could not send the OTP."))
