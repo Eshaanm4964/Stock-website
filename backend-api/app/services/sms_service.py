@@ -33,17 +33,17 @@ async def send_login_otp(phone_number: str, otp_code: str) -> str | None:
 
     mobile = normalize_indian_mobile(phone_number)
     if provider in {"2factor", "twofactor"}:
-        return await _send_2factor_otp(settings.sms_api_key, mobile, otp_code, settings.sms_timeout_seconds)
+        return await _send_2factor_otp(settings.sms_api_key, mobile, otp_code, settings.sms_template_name, settings.sms_timeout_seconds)
 
     return await _send_fast2sms_otp(settings.sms_api_key, mobile, otp_code, settings.sms_timeout_seconds)
 
 
-async def _send_2factor_otp(api_key: str, mobile: str, otp_code: str, timeout_seconds: float) -> str | None:
-    # 2Factor OTP API uses a generated OTP from our app and returns Status=Success on delivery request acceptance.
+async def _send_2factor_otp(api_key: str, mobile: str, otp_code: str, template_name: str, timeout_seconds: float) -> str | None:
     encoded_key = quote(api_key.strip(), safe="")
     encoded_mobile = quote(mobile, safe="")
     encoded_otp = quote(otp_code, safe="")
-    url = f"https://2factor.in/API/V1/{encoded_key}/SMS/{encoded_mobile}/{encoded_otp}"
+    encoded_template = quote(template_name.strip(), safe="")
+    url = f"https://2factor.in/API/V1/{encoded_key}/SMS/{encoded_mobile}/{encoded_otp}/{encoded_template}"
 
     try:
         async with httpx.AsyncClient(timeout=timeout_seconds) as client:
