@@ -61,6 +61,8 @@ body.public-page .stat-number,
 body.public-page .mock-number,
 body.public-page .ticker-price {
   font-family: "IBM Plex Mono", monospace;
+  font-variant-numeric: normal;
+  font-feature-settings: "zero" 0;
 }
 
 body.public-page .site-shell {
@@ -415,6 +417,35 @@ body.public-page .site-shell {
   min-height: 440px;
 }
 
+.home-hero-static {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  align-items: center;
+  gap: 46px;
+  min-height: 440px;
+  padding: 48px 82px 58px;
+  position: relative;
+  z-index: 1;
+  border: 1px solid rgba(44, 144, 240, 0.12);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 16% 13%, rgba(255, 196, 36, 0.16) 0 2px, transparent 2px 100%),
+    repeating-radial-gradient(ellipse at 100% 50%, rgba(114, 174, 254, 0.09) 0 2px, transparent 2px 14px),
+    linear-gradient(120deg, #ffffff 0%, #ffffff 44%, #eef7ff 100%);
+  background-size: 220px 220px, 100% 100%, 100% 100%;
+  box-shadow: 0 24px 58px rgba(49, 96, 73, 0.08);
+}
+
+@media (max-width: 860px) {
+  .home-hero-static {
+    grid-template-columns: 1fr;
+    padding: 36px 28px 40px;
+    text-align: center;
+    min-height: unset;
+  }
+  .home-hero-static .hero-carousel-image { display: none; }
+}
+
 .hero-carousel-slide {
   display: none;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
@@ -460,9 +491,9 @@ body.public-page .site-shell {
 .hero-carousel-copy h1 {
   margin: 0 0 18px;
   color: #0877d9;
-  font-size: clamp(2.1rem, 3.15vw, 3.45rem);
-  line-height: 1.12;
-  letter-spacing: 0.01em;
+  font-size: clamp(1.7rem, 2.6vw, 2.65rem);
+  line-height: 1.18;
+  letter-spacing: -0.02em;
 }
 
 .hero-carousel-copy p {
@@ -887,6 +918,8 @@ body.public-page .site-shell {
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.03em;
+  font-variant-numeric: normal;
+  font-feature-settings: "zero" 0;
 }
 
 .returns-tier-top span:last-child {
@@ -916,6 +949,9 @@ body.public-page .site-shell {
   font-size: 2.35rem;
   font-weight: 600;
   line-height: 1;
+  letter-spacing: 0;
+  font-variant-numeric: normal;
+  font-feature-settings: "zero" 0;
 }
 
 .returns-tier-highlight span {
@@ -1433,15 +1469,22 @@ body.public-page .site-shell {
 }
 
 .section-head h2,
-.page-hero-copy h1,
 .split-section h2,
 .auth-panel h1,
 .footer-brand h3 {
   margin: 0;
   color: var(--brand-text);
-  font-size: clamp(2rem, 4vw, 3.25rem);
-  line-height: 1.05;
-  letter-spacing: -0.04em;
+  font-size: clamp(1.45rem, 2.2vw, 2rem);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+.page-hero-copy h1 {
+  margin: 0;
+  color: var(--brand-text);
+  font-size: clamp(1.55rem, 2.5vw, 2.2rem);
+  line-height: 1.18;
+  letter-spacing: -0.025em;
 }
 
 .section-head p {
@@ -2057,9 +2100,9 @@ body.public-page .site-shell {
 
 .competitive-edge-section .section-head h2,
 .testimonials-section .section-head h2 {
-  font-size: clamp(2.4rem, 5vw, 4.6rem);
+  font-size: clamp(1.45rem, 2.3vw, 2.05rem);
   color: #063c70;
-  letter-spacing: 0.04em;
+  letter-spacing: -0.02em;
 }
 
 .competitive-edge-section .section-head p,
@@ -3151,7 +3194,7 @@ body.public-page .site-shell {
   }
 
   .hero-carousel-copy h1 {
-    font-size: clamp(2rem, 7vw, 3rem);
+    font-size: clamp(1.5rem, 5.5vw, 2.4rem);
   }
 
   .hero-carousel-copy p {
@@ -6573,11 +6616,18 @@ a.pill-link {
 }
 .legal-section-head h2 {
   margin: 6px 0 0;
+  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+  letter-spacing: -0.01em;
 }
 .legal-body {
   max-width: 780px;
   line-height: 1.82;
-  color: #2a3a50;
+  color: #1a2a40;
+}
+.legal-body p,
+.legal-list li {
+  color: #1a2a40;
+  font-size: 0.97rem;
 }
 .legal-body h4 {
   font-size: 1rem;
