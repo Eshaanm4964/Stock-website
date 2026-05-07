@@ -490,7 +490,8 @@ body.public-page .site-shell {
 
 .hero-carousel-copy h1 {
   margin: 0 0 18px;
-  color: #0877d9;
+  color: var(--brand-text);
+  font-family: "Playfair Display", serif;
   font-size: clamp(1.7rem, 2.6vw, 2.65rem);
   line-height: 1.18;
   letter-spacing: -0.02em;
@@ -766,11 +767,11 @@ body.public-page .site-shell {
 
 .section-kicker {
   margin: 0;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--brand-accent-soft);
+  color: var(--brand-text-secondary);
 }
 
 .gradient-heading {
@@ -912,14 +913,12 @@ body.public-page .site-shell {
 }
 
 .returns-tier-capital {
-  color: #121212;
-  font-family: "IBM Plex Mono", monospace;
+  color: #0a1f44;
+  font-family: "DM Sans", sans-serif;
   font-size: clamp(2.4rem, 4.5vw, 3.7rem);
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1;
-  letter-spacing: -0.03em;
-  font-variant-numeric: normal;
-  font-feature-settings: "zero" 0;
+  letter-spacing: -0.04em;
 }
 
 .returns-tier-top span:last-child {
@@ -944,14 +943,12 @@ body.public-page .site-shell {
 }
 
 .returns-tier-highlight strong {
-  color: #1565c0;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 2.35rem;
-  font-weight: 600;
+  color: #0a1f44;
+  font-family: "DM Sans", sans-serif;
+  font-size: 2.6rem;
+  font-weight: 800;
   line-height: 1;
-  letter-spacing: 0;
-  font-variant-numeric: normal;
-  font-feature-settings: "zero" 0;
+  letter-spacing: -0.03em;
 }
 
 .returns-tier-highlight span {
@@ -1474,6 +1471,7 @@ body.public-page .site-shell {
 .footer-brand h3 {
   margin: 0;
   color: var(--brand-text);
+  font-family: "Playfair Display", serif;
   font-size: clamp(1.45rem, 2.2vw, 2rem);
   line-height: 1.15;
   letter-spacing: -0.025em;
@@ -1482,6 +1480,7 @@ body.public-page .site-shell {
 .page-hero-copy h1 {
   margin: 0;
   color: var(--brand-text);
+  font-family: "Playfair Display", serif;
   font-size: clamp(1.55rem, 2.5vw, 2.2rem);
   line-height: 1.18;
   letter-spacing: -0.025em;
