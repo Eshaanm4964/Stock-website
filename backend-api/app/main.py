@@ -1,5 +1,8 @@
 import asyncio
+import logging
 from contextlib import asynccontextmanager
+
+logging.getLogger("app.services.sms_service").setLevel(logging.INFO)
 
 from fastapi import Depends, FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
