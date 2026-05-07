@@ -9,7 +9,6 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
-COPY sql_schema.sql ./sql_schema.sql
 COPY .env.example ./.env.example
 
 EXPOSE 8000
