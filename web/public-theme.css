@@ -173,13 +173,11 @@ body.public-page .site-shell {
 }
 
 .brand-mark.brand-logo.brand-logo-lg {
-  width: 58px;
-  height: 58px;
-  padding: 8px;
-  border-radius: 18px;
-  border: 1px solid rgba(44, 144, 240, 0.14);
-  background: linear-gradient(180deg, #ffffff, #eef7ff);
-  box-shadow: 0 10px 24px rgba(49, 96, 73, 0.08);
+  width: 80px;
+  height: 80px;
+  padding: 4px;
+  border-radius: 14px;
+  background: transparent;
 }
 .brand-mark.brand-logo.brand-logo-lg img {
   width: 100%;
