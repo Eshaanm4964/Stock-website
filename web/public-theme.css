@@ -493,9 +493,8 @@ body.public-page .site-shell {
 .hero-carousel-image img {
   display: block;
   width: min(500px, 100%);
-  height: auto;
-  max-height: 340px;
-  object-fit: contain;
+  height: 340px;
+  object-fit: cover;
   object-position: center;
   border-radius: 22px;
   box-shadow: 0 24px 48px rgba(44, 100, 200, 0.14);
