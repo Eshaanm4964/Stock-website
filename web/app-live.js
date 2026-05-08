@@ -263,7 +263,7 @@ function ensureDashboardLoadingOverlay() {
       <div class="auth-orbit-loader" aria-hidden="true">
         <span></span>
         <span></span>
-        <img src="./assets/assetyantra-logo.svg" alt="Asset Yantra logo" />
+        <img src="./assets/Nobglogo.png" alt="Asset Yantra logo" />
       </div>
       <h2 id="dashboardLoadingTitle">Refreshing dashboard...</h2>
       <p id="dashboardLoadingText">Please wait while we update your holdings and realised profit.</p>
@@ -762,7 +762,7 @@ function setupPageTransitions() {
     overlay.innerHTML = `
       <div class="page-transition-card">
         <span class="page-transition-logo" aria-hidden="true">
-          <img src="./assets/assetyantra-logo.svg" alt="Asset Yantra logo" />
+          <img src="./assets/Nobglogo.png" alt="Asset Yantra logo" />
         </span>
         <strong>Loading Asset Yantra...</strong>
         <p>Please wait while we move you to the next page.</p>
@@ -1955,7 +1955,7 @@ function buildAdminActionToolbar(selectedValue = "") {
     <header class="user-topbar admin-compact-topbar">
       <div class="admin-toolbar-left admin-toolbar-left--compact">
         <div class="brand admin-dashboard-brand admin-dashboard-brand--compact">
-          <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="Asset Yantra logo" /></span>
+          <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/Nobglogo.png" alt="Asset Yantra logo" /></span>
           <span class="public-brand-copy">
             <strong class="brand-wordmark">Asset Yantra</strong>
             <small class="brand-tagline">${selectedValue === "customer" ? "Add Customer" : selectedValue === "funds" ? "Add Funds" : "Add Deal"}</small>
@@ -2168,7 +2168,7 @@ async function renderAdminDatabasePage(options = {}) {
           <header class="user-topbar admin-compact-topbar admin-simple-topbar">
             <div class="admin-toolbar-left admin-toolbar-left--compact">
               <div class="brand admin-dashboard-brand">
-                <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="Asset Yantra logo" /></span>
+                <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/Nobglogo.png" alt="Asset Yantra logo" /></span>
                 <span class="public-brand-copy">
                   <strong class="brand-wordmark">Asset Yantra</strong>
                   <small class="brand-tagline">Database View</small>
@@ -3375,7 +3375,7 @@ async function renderAdminPortal(options = {}) {
         <header class="user-topbar admin-compact-topbar admin-simple-topbar">
           <div class="admin-toolbar-left">
             <div class="brand admin-dashboard-brand">
-              <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/assetyantra-logo.svg" alt="Asset Yantra logo" /></span>
+              <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/Nobglogo.png" alt="Asset Yantra logo" /></span>
               <span class="public-brand-copy">
                 <strong class="brand-wordmark">Asset Yantra</strong>
                 <small class="brand-tagline">Admin Portfolio Dashboard</small>
