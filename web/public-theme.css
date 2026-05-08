@@ -2879,13 +2879,13 @@ body.public-page .site-shell {
 
 .auth-switcher-bar {
   display: inline-flex;
-  gap: 10px;
+  gap: 6px;
   align-self: start;
-  padding: 8px;
-  border: 1px solid rgba(44, 144, 240, 0.12);
+  padding: 6px;
+  border: 1px solid rgba(44, 144, 240, 0.14);
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(240, 250, 244, 0.98), rgba(232, 246, 238, 0.98));
-  box-shadow: 0 12px 22px rgba(49, 96, 73, 0.06);
+  background: rgba(240, 246, 255, 0.9);
+  box-shadow: 0 4px 14px rgba(44, 144, 240, 0.08);
 }
 
 .role-toggle {
@@ -2893,14 +2893,18 @@ body.public-page .site-shell {
   padding: 0 22px;
   border: 1px solid transparent;
   background: transparent;
-  color: var(--brand-text-secondary);
-  font-weight: 700;
+  color: #64748b;
+  font-weight: 600;
+  border-radius: 999px;
+  transition: all 0.2s ease;
 }
 
 .role-toggle.active {
-  background: linear-gradient(135deg, rgba(44, 144, 240, 0.96), rgba(114, 174, 254, 0.58));
-  color: #082040;
-  box-shadow: 0 10px 18px rgba(44, 144, 240, 0.16);
+  background: #fff;
+  color: #0a1f44;
+  font-weight: 700;
+  border: 1px solid rgba(44, 144, 240, 0.22);
+  box-shadow: 0 2px 12px rgba(44, 144, 240, 0.18);
 }
 
 .auth-form-card {
