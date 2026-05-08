@@ -175,9 +175,9 @@ body.public-page .site-shell {
 .brand-mark.brand-logo.brand-logo-lg {
   width: 80px;
   height: 80px;
-  padding: 4px;
+  padding: 6px;
   border-radius: 14px;
-  background: transparent;
+  background: #0a1f44;
 }
 .brand-mark.brand-logo.brand-logo-lg img {
   width: 100%;
