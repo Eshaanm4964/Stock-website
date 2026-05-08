@@ -173,10 +173,10 @@ body.public-page .site-shell {
 }
 
 .brand-mark.brand-logo.brand-logo-lg {
-  width: 80px;
-  height: 80px;
-  padding: 6px;
-  border-radius: 14px;
+  width: 46px;
+  height: 46px;
+  padding: 5px;
+  border-radius: 10px;
   background: #0a1f44;
 }
 .brand-mark.brand-logo.brand-logo-lg img {
