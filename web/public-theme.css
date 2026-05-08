@@ -181,6 +181,12 @@ body.public-page .site-shell {
   background: linear-gradient(180deg, #ffffff, #eef7ff);
   box-shadow: 0 10px 24px rgba(49, 96, 73, 0.08);
 }
+.brand-mark.brand-logo.brand-logo-lg img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
 
 .public-brand-copy {
   display: grid;
