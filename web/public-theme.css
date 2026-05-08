@@ -452,6 +452,19 @@ body.public-page .site-shell {
     text-align: center;
     min-height: unset;
   }
+  .home-hero-static .hero-carousel-image {
+    display: grid;
+    min-height: 220px;
+    margin-top: 12px;
+  }
+  .home-hero-static .hero-carousel-image img {
+    max-height: 220px;
+    width: min(100%, 380px);
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 520px) {
   .home-hero-static .hero-carousel-image { display: none; }
 }
 
