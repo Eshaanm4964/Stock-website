@@ -2970,7 +2970,11 @@ body.public-page .site-shell {
 
 .auth-orbit-loader img {
   position: absolute;
-  inset: 24px;
+  inset: 20px;
+  border-radius: 10px;
+  background: #0a1f44;
+  padding: 5px;
+  object-fit: contain;
 }
 
 .auth-orbit-loader span {
