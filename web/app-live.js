@@ -1911,10 +1911,14 @@ async function refreshTableLivePrices() {
   cells.forEach((cell) => {
     const [symbol, exchange = "NSE"] = cell.dataset.livePriceCell.split("::");
     const price = priceMap.get(`${symbol}::${exchange.toUpperCase()}`);
+    const avgPrice = parseFloat(cell.dataset.avgPrice) || 0;
     cell.classList.remove("live-price-fetching");
     if (price != null && price > 0) {
       cell.textContent = currency(price);
       cell.classList.add("live-price-loaded");
+      if (avgPrice > 0) {
+        cell.classList.add(price >= avgPrice ? "profit" : "loss");
+      }
     } else {
       cell.textContent = "—";
     }
@@ -3419,6 +3423,7 @@ async function renderAdminPortal(options = {}) {
         [...allHoldings.map((holding) => String(holding.symbol || "").toUpperCase()), ...safeSoldHistory.map((entry) => String(entry.symbol || "").toUpperCase())].filter(Boolean)
       )
     ].sort();
+    const activeStockOptions = [...new Set(allHoldings.map((h) => String(h.symbol || "").toUpperCase()).filter(Boolean))].sort();
     adminSearchCache.users = safeUsers;
     adminSearchCache.stocks = availableStockOptions;
     const realizedMap = safeSoldHistory.reduce((map, entry) => {
@@ -3515,8 +3520,8 @@ async function renderAdminPortal(options = {}) {
               <div class="admin-dropdown-panel">
                 <p class="admin-dropdown-section-label">Jump to Stock</p>
                 <div class="admin-view-list">
-                  ${availableStockOptions.length
-                    ? availableStockOptions
+                  ${activeStockOptions.length
+                    ? activeStockOptions
                         .map((symbol) => `<button class="admin-view-list-btn" type="button" data-stock-detail="${escapeHtml(symbol)}" data-close-view-dropdown="adminStockViewDropdown">${escapeHtml(symbol)}</button>`)
                         .join("")
                     : `<p class="helper-text">No stocks yet.</p>`}
@@ -3584,7 +3589,7 @@ async function renderAdminPortal(options = {}) {
                           <td>${formatDate(holding.created_at)}</td>
                           <td>${holding.quantity}</td>
                           <td>${currency(holding.buy_price)}</td>
-                          <td data-live-price-cell="${escapeHtml(String(holding.symbol || "").toUpperCase())}::${escapeHtml(holding.exchange || "NSE")}" class="live-price-fetching">—</td>
+                          <td data-live-price-cell="${escapeHtml(String(holding.symbol || "").toUpperCase())}::${escapeHtml(holding.exchange || "NSE")}" data-avg-price="${Number(holding.buy_price || 0)}" class="live-price-fetching">—</td>
                           <td class="${valueClass}">${currency(investedValue)}</td>
                           <td class="${valueClass}">${currency(currentValue)}</td>
                           <td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
