@@ -173,7 +173,7 @@ function stopAdminRefresh() {
 
 function startAdminRefresh() {
   stopAdminRefresh();
-  const intervalMs = isAdminDatabasePage() ? 10000 : 2000;
+  const intervalMs = isAdminDatabasePage() ? 30000 : 15000;
   adminRefreshTimer = window.setInterval(async () => {
     if (document.hidden) return;
     if (activeRole !== "admin") return;
@@ -2924,7 +2924,7 @@ async function renderAdminPortal() {
                   `
                 )
                 .join("")
-                : `<tr><td colspan="10"><span class="helper-text">No investor or stock matched this search.</span></td></tr>`}
+                : `<tr><td colspan="10"><span class="helper-text">${searchText || adminUiState.clientFilter || adminUiState.stockFilter ? `No current holdings match the active filter. Check the Sold History section below, or clear the search.` : `No holdings have been added yet. Use Add Deal to record positions.`}</span></td></tr>`}
             </tbody>
             <tfoot>
               <tr class="admin-total-row">
@@ -3539,7 +3539,7 @@ async function renderAdminPortal(options = {}) {
                       `;
                       })
                       .join("")
-                  : `<tr><td colspan="12"><span class="helper-text">No investor or stock matched this search.</span></td></tr>`}
+                  : `<tr><td colspan="12"><span class="helper-text">${searchText || adminUiState.clientFilter || adminUiState.stockFilter ? `No current holdings match the active filter. Try clearing the search or checking Sold History below.` : `No holdings have been added yet. Use Add Deal to record investor positions.`}</span></td></tr>`}
               </tbody>
               <tfoot>
                 <tr class="admin-total-row">

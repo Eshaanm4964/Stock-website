@@ -702,6 +702,14 @@ body.dashboard-page {
   border: 1px solid rgba(44, 144, 240, 0.14);
   background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
   box-shadow: 0 10px 24px rgba(44, 144, 240, 0.08);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.admin-dashboard-brand .brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .admin-dashboard-brand .public-brand-copy {
@@ -1114,6 +1122,41 @@ body.dashboard-page {
 .table-card h3,
 .dashboard-card h3 {
   color: #0f2040;
+}
+
+/* ── Investor / Stock detail stat grid ── */
+.detail-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+.detail-stat-grid article {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  border: 1px solid rgba(15, 32, 64, 0.08);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+  box-shadow: 0 8px 20px rgba(15, 32, 64, 0.05);
+}
+.detail-stat-grid article strong {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 1.28rem;
+  font-weight: 700;
+  color: #0f2040;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.detail-stat-grid article strong.profit { color: #0f8a55; }
+.detail-stat-grid article strong.loss   { color: #c2413a; }
+.detail-stat-grid article span {
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6a7d9a;
 }
 
 .helper-text,
