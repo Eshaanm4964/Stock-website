@@ -2665,8 +2665,13 @@ async function renderAdminCustomerPage() {
 async function renderAdminDealPage() {
   const mount = document.getElementById("adminDealPortal");
   if (!mount) return;
-  const { userDashboards } = await loadAdminPortalData();
-  const liveUserDashboards = Array.isArray(userDashboards) ? userDashboards : [];
+  let liveUserDashboards = [];
+  try {
+    const users = await api("/admin/users");
+    liveUserDashboards = Array.isArray(users) ? users : [];
+  } catch {
+    liveUserDashboards = [];
+  }
   mount.innerHTML = buildAdminActionPageShell({
     title: "Add Deal",
     subtitle: "Add a stock position directly to a customer portfolio.",

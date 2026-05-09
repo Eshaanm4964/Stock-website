@@ -104,12 +104,12 @@ body.page-transitioning .site-shell {
 }
 
 .page-transition-logo {
-  width: 66px;
-  height: 66px;
-  padding: 6px;
+  width: 140px;
+  height: 56px;
+  padding: 0;
   border-radius: 12px;
-  background: #0a1f44;
-  box-shadow: 0 14px 28px rgba(10, 31, 68, 0.25);
+  background: transparent;
+  box-shadow: none;
 }
 
 .page-transition-logo img {
