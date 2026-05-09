@@ -263,7 +263,7 @@ function ensureDashboardLoadingOverlay() {
       <div class="auth-orbit-loader" aria-hidden="true">
         <span></span>
         <span></span>
-        <img src="./assets/Nobglogo.png" alt="Asset Yantra logo" />
+        <img src="./assets/loading_logo.png" alt="Asset Yantra logo" />
       </div>
       <h2 id="dashboardLoadingTitle">Refreshing dashboard...</h2>
       <p id="dashboardLoadingText">Please wait while we update your holdings and realised profit.</p>
@@ -762,7 +762,7 @@ function setupPageTransitions() {
     overlay.innerHTML = `
       <div class="page-transition-card">
         <span class="page-transition-logo" aria-hidden="true">
-          <img src="./assets/Nobglogo.png" alt="Asset Yantra logo" />
+          <img src="./assets/loading_logo.png" alt="Asset Yantra logo" />
         </span>
         <strong>Loading Asset Yantra...</strong>
         <p>Please wait while we move you to the next page.</p>
@@ -1955,7 +1955,7 @@ function buildAdminActionToolbar(selectedValue = "") {
     <header class="user-topbar admin-compact-topbar">
       <div class="admin-toolbar-left admin-toolbar-left--compact">
         <div class="brand admin-dashboard-brand admin-dashboard-brand--compact">
-          <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/Nobglogo.png" alt="Asset Yantra logo" /></span>
+          <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/updated_logo.png" alt="Asset Yantra logo" /></span>
           <span class="public-brand-copy">
             <strong class="brand-wordmark">Asset Yantra</strong>
             <small class="brand-tagline">${selectedValue === "customer" ? "Add Customer" : selectedValue === "funds" ? "Add Funds" : "Add Deal"}</small>
@@ -2168,7 +2168,7 @@ async function renderAdminDatabasePage(options = {}) {
           <header class="user-topbar admin-compact-topbar admin-simple-topbar">
             <div class="admin-toolbar-left admin-toolbar-left--compact">
               <div class="brand admin-dashboard-brand">
-                <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/Nobglogo.png" alt="Asset Yantra logo" /></span>
+                <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/updated_logo.png" alt="Asset Yantra logo" /></span>
                 <span class="public-brand-copy">
                   <strong class="brand-wordmark">Asset Yantra</strong>
                   <small class="brand-tagline">Database View</small>
@@ -2675,7 +2675,7 @@ async function renderAdminDealPage() {
       <form id="adminDealForm" class="portfolio-form admin-deal-form admin-action-form">
         <label>
           <span>Customer</span>
-          <select name="userId" required ${liveUserDashboards.length ? "" : "disabled"}>
+          <select name="customer_id" required ${liveUserDashboards.length ? "" : "disabled"}>
             <option value="">Select customer</option>
             ${liveUserDashboards
               .slice()
@@ -2686,18 +2686,25 @@ async function renderAdminDealPage() {
         </label>
         <label class="portfolio-symbol-wrap">
           <span>Stock Name / Symbol</span>
-          <input name="symbol" type="text" placeholder="Type 3 letters" autocomplete="off" required />
-          <div id="adminDealSymbolSuggestions" class="symbol-suggestion-list"></div>
+          <input name="symbol" type="text" placeholder="Type 3 letters to search NSE / BSE" autocomplete="off" required />
+          <input type="hidden" name="selected_exchange" id="adminDealSelectedExchange" value="" />
+          <div id="adminDealSuggestions" class="symbol-suggestion-list"></div>
         </label>
         <label><span>Quantity</span><input name="quantity" type="number" min="1" step="1" placeholder="100" required /></label>
-        <label><span>Buy Price</span><input name="buyPrice" type="number" min="1" step="0.01" placeholder="1500" required /></label>
+        <label><span>Buy Price</span><input name="buy_price" type="number" min="1" step="0.01" placeholder="1500" required /></label>
         <label>
-          <span>Exchange</span>
+          <span>Search Market</span>
           <select name="exchange" required>
+            <option value="ALL">All NSE / BSE</option>
             <option value="NSE" selected>NSE</option>
             <option value="BSE">BSE</option>
           </select>
         </label>
+        <div class="portfolio-live-price-preview" id="adminDealLivePricePreview" data-state="idle">
+          <span>Live price preview</span>
+          <strong>Waiting for a stock selection</strong>
+          <small>Type at least 3 letters and choose a stock from the live search list.</small>
+        </div>
         <button class="primary-btn" type="submit" ${liveUserDashboards.length ? "" : "disabled"}>Add Deal</button>
         <p class="helper-text admin-deal-status" id="adminDealStatus">${liveUserDashboards.length ? "Choose customer, stock, quantity, and buy price." : "Create a customer first, then add a deal."}</p>
       </form>
@@ -2706,7 +2713,6 @@ async function renderAdminDealPage() {
   revealPortal(mount);
   activeRole = "admin";
   setupAdminDealForm();
-  setupAdminDealSymbolSuggestions();
   setupPortalActions();
 }
 
@@ -3375,7 +3381,7 @@ async function renderAdminPortal(options = {}) {
         <header class="user-topbar admin-compact-topbar admin-simple-topbar">
           <div class="admin-toolbar-left">
             <div class="brand admin-dashboard-brand">
-              <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/Nobglogo.png" alt="Asset Yantra logo" /></span>
+              <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/updated_logo.png" alt="Asset Yantra logo" /></span>
               <span class="public-brand-copy">
                 <strong class="brand-wordmark">Asset Yantra</strong>
                 <small class="brand-tagline">Admin Portfolio Dashboard</small>
@@ -4343,7 +4349,7 @@ function setupDashboardPages() {
       renderAdminDealPage().then(hideDashLoader).catch(() => {
         hideDashLoader();
         renderPortalError(
-          document.getElementById("adminPortal"),
+          document.getElementById("adminDealPortal"),
           "Add Deal",
           "The add deal page could not load yet. Please try again."
         );
