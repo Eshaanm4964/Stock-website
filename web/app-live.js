@@ -4082,7 +4082,8 @@ function setupLogin() {
         if (button.dataset.sendOtp === "admin") {
           document.getElementById("adminError").textContent = formatError(error);
         } else {
-          document.getElementById("userError").textContent = formatError(error);
+          const errEl = document.getElementById("userPhoneOtpError");
+          if (errEl) errEl.textContent = formatError(error);
         }
       } finally {
         stopLoading();
