@@ -328,9 +328,11 @@ function formatError(error) {
     error instanceof TypeError &&
     /(fetch|network|load|failed|offline|connection)/i.test(error.message || "")
   ) {
-    return "Unable to reach the backend server. Start the API and check the API Base URL.";
+    return "Unable to reach the backend server. Check your connection and try again.";
   }
-  return error.message || "Something went wrong.";
+  const msg = error.message || "";
+  if (!msg || msg === "[object Object]") return "Something went wrong. Please try again.";
+  return msg;
 }
 
 function updateBackendStatus(message, state = "neutral") {
@@ -378,7 +380,11 @@ async function api(path, options = {}) {
   }
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error(data.detail || "Request failed");
+    const detail = data.detail;
+    const msg = Array.isArray(detail)
+      ? detail.map((d) => d.msg || d.message || JSON.stringify(d)).join("; ")
+      : (typeof detail === "string" ? detail : null);
+    throw new Error(msg || "Request failed");
   }
   if (response.status === 204) {
     return null;
@@ -1685,6 +1691,10 @@ async function setupAdminDealForm() {
         meta: companyName || quote.short_name || symbol,
         exchange: quote.exchange || exchange || "NSE"
       });
+      const buyPriceInput = form?.querySelector('[name="buy_price"]');
+      if (buyPriceInput && Number(quote.price) > 0) {
+        buyPriceInput.value = Number(quote.price).toFixed(2);
+      }
     } catch {
       if (activeToken !== quoteToken) return;
       setLivePricePreview({
@@ -3359,7 +3369,7 @@ async function renderAdminPortal(options = {}) {
     const filteredTodayProfit = filteredHoldings.reduce((sum, holding) => sum + Number(holding.today_profit || 0), 0);
     const filteredRealizedProfit = filteredSoldHistory.reduce((sum, entry) => sum + Number(entry.profit_loss || 0), 0);
     const filteredPeriodProfit = filteredUnrealizedProfit + filteredRealizedProfit;
-    const filteredTotalProfit = filteredTodayProfit + filteredRealizedProfit;
+    const filteredTotalProfit = filteredUnrealizedProfit + filteredRealizedProfit;
     const filteredTotalQuantity = filteredHoldings.reduce((sum, holding) => sum + Number(holding.quantity || 0), 0);
     const filteredSoldQuantity = filteredSoldHistory.reduce((sum, entry) => sum + Number(entry.quantity || 0), 0);
     const availableStockOptions = [
@@ -3495,6 +3505,7 @@ async function renderAdminPortal(options = {}) {
                   <th>Purchase Date</th>
                   <th>Qty</th>
                   <th>Avg Price</th>
+                  <th>Live Price</th>
                   <th>Invested Value</th>
                   <th>Current Value</th>
                   <th>Unrealised P&amp;L</th>
@@ -3526,6 +3537,7 @@ async function renderAdminPortal(options = {}) {
                           <td>${formatDate(holding.created_at)}</td>
                           <td>${holding.quantity}</td>
                           <td>${currency(holding.buy_price)}</td>
+                          <td>${currency(holding.current_price)}</td>
                           <td class="${valueClass}">${currency(investedValue)}</td>
                           <td class="${valueClass}">${currency(currentValue)}</td>
                           <td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
@@ -3537,12 +3549,13 @@ async function renderAdminPortal(options = {}) {
                       `;
                       })
                       .join("")
-                  : `<tr><td colspan="12"><span class="helper-text">${searchText || adminUiState.clientFilter || adminUiState.stockFilter ? `No current holdings match the active filter. Try clearing the search or checking Sold History below.` : `No holdings have been added yet. Use Add Deal to record investor positions.`}</span></td></tr>`}
+                  : `<tr><td colspan="13"><span class="helper-text">${searchText || adminUiState.clientFilter || adminUiState.stockFilter ? `No current holdings match the active filter. Try clearing the search or checking Sold History below.` : `No holdings have been added yet. Use Add Deal to record investor positions.`}</span></td></tr>`}
               </tbody>
               <tfoot>
                 <tr class="admin-total-row">
                   <td colspan="3"><strong>Totals</strong></td>
                   <td><strong>${filteredTotalQuantity.toFixed(2)}</strong></td>
+                  <td>—</td>
                   <td>—</td>
                   <td class="${filteredCurrentValue >= filteredInvestedValue ? "profit" : "loss"}"><strong>${currency(filteredInvestedValue)}</strong></td>
                   <td class="${filteredCurrentValue >= filteredInvestedValue ? "profit" : "loss"}"><strong>${currency(filteredCurrentValue)}</strong></td>
@@ -4071,12 +4084,13 @@ function setupLogin() {
           hidePortalMounts();
           const payload = { role: "user", phone_number: phoneVal };
           const response = await api("/auth/request-otp", { method: "POST", body: JSON.stringify(payload) });
+          startOtpCountdown("userOtpHint", 3);
           if (response.otp_preview) {
-            document.getElementById("userOtpHint").textContent = `Testing code: ${response.otp_preview}`;
-          } else {
-            startOtpCountdown("userOtpHint", 3);
+            const hint = document.getElementById("userOtpHint");
+            if (hint) hint.textContent += ` (Test code: ${response.otp_preview})`;
           }
-          if (document.getElementById("userPhoneOtpError")) document.getElementById("userPhoneOtpError").textContent = "";
+          const userErrEl = document.getElementById("userPhoneOtpError");
+          if (userErrEl) userErrEl.textContent = "";
         }
       } catch (error) {
         if (button.dataset.sendOtp === "admin") {
