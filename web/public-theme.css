@@ -446,6 +446,27 @@ body.public-page .site-shell {
   box-shadow: 0 24px 58px rgba(49, 96, 73, 0.08);
 }
 
+.home-hero-static .hero-carousel-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  grid-column: auto;
+  grid-row: auto;
+  width: 100%;
+  min-height: unset;
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+.home-hero-static .hero-carousel-image img {
+  width: 100%;
+  height: auto;
+  max-height: 380px;
+  object-fit: cover;
+  border-radius: 18px;
+  display: block;
+}
+
 @media (max-width: 860px) {
   .home-hero-static {
     grid-template-columns: 1fr;

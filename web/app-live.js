@@ -764,8 +764,6 @@ function setupPageTransitions() {
         <span class="page-transition-logo" aria-hidden="true">
           <img src="./assets/loading_logo.png" alt="Asset Yantra logo" />
         </span>
-        <strong>Loading Asset Yantra...</strong>
-        <p>Please wait while we move you to the next page.</p>
         <div class="page-transition-bar" aria-hidden="true"><span></span></div>
       </div>
     `;

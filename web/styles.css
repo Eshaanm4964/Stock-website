@@ -91,21 +91,21 @@ body.page-transitioning .site-shell {
 }
 
 .page-transition-card {
-  width: min(360px, calc(100% - 32px));
+  width: min(400px, calc(100% - 32px));
   display: grid;
-  gap: 16px;
+  gap: 20px;
   justify-items: center;
-  padding: 26px 24px 24px;
+  padding: 36px 32px 32px;
   border: 1px solid rgba(17, 35, 63, 0.08);
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.97);
   box-shadow: 0 24px 58px rgba(15, 24, 48, 0.1);
   text-align: center;
 }
 
 .page-transition-logo {
-  width: 140px;
-  height: 56px;
+  width: 200px;
+  height: 80px;
   padding: 0;
   border-radius: 12px;
   background: transparent;
@@ -117,18 +117,6 @@ body.page-transitioning .site-shell {
   height: 100%;
   display: block;
   object-fit: contain;
-}
-
-.page-transition-card strong {
-  font-family: "Playfair Display", serif;
-  font-size: 1.35rem;
-  color: #10251d;
-}
-
-.page-transition-card p {
-  margin: 0;
-  color: #5f6f69;
-  line-height: 1.6;
 }
 
 .page-transition-bar {
