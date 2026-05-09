@@ -480,20 +480,51 @@ async def fetch_quote(symbol: str, exchange: str = "NSE", redis: Redis | None = 
     except Exception:
         pass
 
+    yahoo_symbol = _normalize_symbol(symbol, exchange)
+    alt_symbol = _normalize_symbol(symbol, "BSE" if exchange.upper() == "NSE" else "NSE")
+
+    # Attempt 1: ticker.info (most detail but sometimes empty for Indian stocks)
     try:
-        ticker = yf.Ticker(_normalize_symbol(symbol, exchange))
-        info = ticker.info
+        info = yf.Ticker(yahoo_symbol).info
     except Exception:
-        info = FALLBACK_QUOTES.get(symbol.upper(), {})
-        source = "fallback"
-        is_fallback = True
+        info = {}
+
     price = info.get("currentPrice") or info.get("regularMarketPrice") or info.get("price") or 0.0
+
+    # Attempt 2: fast_info.last_price (reliable for most listed stocks)
     if not price:
-        info = FALLBACK_QUOTES.get(symbol.upper(), {})
-        source = "fallback"
-        is_fallback = True
-        if not info:
-            info = {"price": 100.0, "shortName": symbol.upper(), "currency": "INR"}
+        for sym in (yahoo_symbol, alt_symbol):
+            try:
+                lp = yf.Ticker(sym).fast_info.last_price
+                if lp and lp > 0:
+                    price = float(lp)
+                    info = {**info, "currentPrice": price, "shortName": info.get("shortName") or symbol.upper(), "currency": "INR"}
+                    source = "yfinance"
+                    break
+            except Exception:
+                continue
+
+    # Attempt 3: recent history close price
+    if not price:
+        for sym in (yahoo_symbol, alt_symbol):
+            try:
+                hist = yf.Ticker(sym).history(period="5d")
+                if not hist.empty:
+                    price = float(hist["Close"].iloc[-1])
+                    info = {**info, "currentPrice": price, "shortName": info.get("shortName") or symbol.upper(), "currency": "INR"}
+                    source = "yfinance"
+                    break
+            except Exception:
+                continue
+
+    # Attempt 4: named fallback quotes
+    if not price:
+        fb = FALLBACK_QUOTES.get(symbol.upper(), {})
+        if fb:
+            info = fb
+            source = "fallback"
+            is_fallback = True
+
     quote = _build_quote(symbol, exchange, info, source=source, is_fallback=is_fallback)
     if redis:
         await set_cached_json(redis, cache_key, _serialize_quote(quote), settings.cache_ttl_seconds)

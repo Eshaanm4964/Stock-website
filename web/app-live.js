@@ -1882,29 +1882,41 @@ async function refreshTableLivePrices() {
   const cells = document.querySelectorAll("[data-live-price-cell]");
   if (!cells.length) return;
 
-  const symbolSet = new Set();
+  // Group cells by exchange so each batch request uses the correct exchange
+  const byExchange = new Map();
   cells.forEach((cell) => {
-    const symbol = cell.dataset.livePriceCell.split("::")[0];
-    if (symbol) symbolSet.add(symbol);
+    const [symbol, exchange = "NSE"] = cell.dataset.livePriceCell.split("::");
+    if (!symbol) return;
+    const key = exchange.toUpperCase();
+    if (!byExchange.has(key)) byExchange.set(key, { symbols: new Set(), cells: [] });
+    byExchange.get(key).symbols.add(symbol.toUpperCase());
+    byExchange.get(key).cells.push(cell);
   });
 
-  const feed = await api(`/stocks/feed?symbols=${encodeURIComponent([...symbolSet].join(","))}`).catch(() => []);
+  // Fetch prices per exchange group in parallel
   const priceMap = new Map();
-  (Array.isArray(feed) ? feed : []).forEach((q) => {
-    if (q?.symbol && q?.price != null) {
-      priceMap.set(String(q.symbol).toUpperCase(), Number(q.price));
-    }
-  });
+  await Promise.all(
+    [...byExchange.entries()].map(async ([exchange, { symbols }]) => {
+      const feed = await api(
+        `/stocks/feed?symbols=${encodeURIComponent([...symbols].join(","))}&exchange=${encodeURIComponent(exchange)}`
+      ).catch(() => []);
+      (Array.isArray(feed) ? feed : []).forEach((q) => {
+        if (q?.symbol && q?.price != null && q.price > 0) {
+          priceMap.set(`${String(q.symbol).toUpperCase()}::${exchange}`, Number(q.price));
+        }
+      });
+    })
+  );
 
   cells.forEach((cell) => {
-    const symbol = cell.dataset.livePriceCell.split("::")[0];
-    const price = priceMap.get(symbol);
+    const [symbol, exchange = "NSE"] = cell.dataset.livePriceCell.split("::");
+    const price = priceMap.get(`${symbol}::${exchange.toUpperCase()}`);
     cell.classList.remove("live-price-fetching");
     if (price != null && price > 0) {
       cell.textContent = currency(price);
       cell.classList.add("live-price-loaded");
     } else {
-      cell.textContent = currency(0);
+      cell.textContent = "—";
     }
   });
 }

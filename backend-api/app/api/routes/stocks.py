@@ -17,7 +17,7 @@ async def market_feed(
     redis: Redis = Depends(get_redis),
 ) -> list[StockQuote]:
     selected = [item.strip() for item in symbols.split(",")] if symbols else DEFAULT_SYMBOLS
-    return await fetch_market_feed(selected, "NSE", redis)
+    return await fetch_market_feed(selected, exchange, redis)
 
 
 @router.get("/market/news")
@@ -40,7 +40,7 @@ async def stock_detail(
     exchange: str = Query(default="NSE"),
     redis: Redis = Depends(get_redis),
 ) -> StockDetailResponse:
-    quote = await fetch_quote(symbol, "NSE", redis)
+    quote = await fetch_quote(symbol, exchange, redis)
     news = await fetch_news(symbol, redis)
-    indicators = await fetch_indicator_bundle(symbol, "NSE")
+    indicators = await fetch_indicator_bundle(symbol, exchange)
     return StockDetailResponse(quote=quote, news=news, indicators=indicators)
