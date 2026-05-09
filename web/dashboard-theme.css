@@ -283,9 +283,11 @@
 
 .portfolio-live-price-preview strong {
   color: #0f2040;
-  font-family: "Playfair Display", serif;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 1.32rem;
+  font-weight: 700;
   line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
 .portfolio-live-price-preview small {

@@ -3369,7 +3369,6 @@ async function renderAdminPortal(options = {}) {
     const filteredTodayProfit = filteredHoldings.reduce((sum, holding) => sum + Number(holding.today_profit || 0), 0);
     const filteredRealizedProfit = filteredSoldHistory.reduce((sum, entry) => sum + Number(entry.profit_loss || 0), 0);
     const filteredPeriodProfit = filteredUnrealizedProfit + filteredRealizedProfit;
-    const filteredTotalProfit = filteredUnrealizedProfit + filteredRealizedProfit;
     const filteredTotalQuantity = filteredHoldings.reduce((sum, holding) => sum + Number(holding.quantity || 0), 0);
     const filteredSoldQuantity = filteredSoldHistory.reduce((sum, entry) => sum + Number(entry.quantity || 0), 0);
     const availableStockOptions = [
@@ -3384,6 +3383,11 @@ async function renderAdminPortal(options = {}) {
       map.set(key, (map.get(key) || 0) + Number(entry.profit_loss || 0));
       return map;
     }, new Map());
+
+    const filteredPositionsRealizedProfit = filteredHoldings.reduce((sum, h) => {
+      return sum + (realizedMap.get(`${h.user_id}::${String(h.symbol || "").toUpperCase()}`) || 0);
+    }, 0);
+    const filteredPositionsTotalProfit = filteredUnrealizedProfit + filteredPositionsRealizedProfit;
 
     const prevDetailMount = document.getElementById("adminDetailMount");
     const savedDetailHTML = silent && prevDetailMount && !prevDetailMount.classList.contains("hidden") ? prevDetailMount.innerHTML : null;
@@ -3561,8 +3565,8 @@ async function renderAdminPortal(options = {}) {
                   <td class="${filteredCurrentValue >= filteredInvestedValue ? "profit" : "loss"}"><strong>${currency(filteredCurrentValue)}</strong></td>
                   <td class="${filteredUnrealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredUnrealizedProfit)}</strong></td>
                   <td class="${filteredTodayProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredTodayProfit)}</strong></td>
-                  <td class="${filteredRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredRealizedProfit)}</strong></td>
-                  <td class="${filteredTotalProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredTotalProfit)}</strong></td>
+                  <td class="${filteredPositionsRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredPositionsRealizedProfit)}</strong></td>
+                  <td class="${filteredPositionsTotalProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredPositionsTotalProfit)}</strong></td>
                   <td>—</td>
                 </tr>
               </tfoot>
