@@ -1709,6 +1709,9 @@ async function setupAdminDealForm() {
 
   const applySuggestion = (result) => {
     if (!symbolInput || !exchangeInput) return;
+    // Cancel any pending debounced search so it doesn't reopen the dropdown
+    if (searchTimer) { window.clearTimeout(searchTimer); searchTimer = null; }
+    ++requestToken; // invalidate any in-flight search responses
     symbolInput.value = result.symbol;
     if (selectedExchangeInput) selectedExchangeInput.value = result.exchange || "NSE";
     exchangeInput.value = result.exchange || "NSE";
@@ -1743,11 +1746,17 @@ async function setupAdminDealForm() {
       .join("");
 
     suggestionsList.querySelectorAll("[data-symbol-pick]").forEach((button) => {
+      // mousedown fires before blur so we can guard against dropdown closing prematurely
+      button.addEventListener("mousedown", () => {
+        pickingFromDropdown = true;
+      });
       button.addEventListener("click", () => {
+        pickingFromDropdown = false;
         applySuggestion({
           symbol: button.dataset.symbolPick || "",
           exchange: button.dataset.exchangePick || "NSE",
         });
+        if (symbolInput) symbolInput.blur();
       });
     });
   };
@@ -1779,15 +1788,30 @@ async function setupAdminDealForm() {
     }
   };
 
+  // Track whether user is mid-click on a suggestion so blur doesn't kill it first
+  let pickingFromDropdown = false;
+
+  const closeSuggestionsOnBlur = () => {
+    // Delay so a mousedown on a suggestion button can set pickingFromDropdown first
+    window.setTimeout(() => {
+      if (!pickingFromDropdown) clearSuggestions();
+    }, 150);
+  };
+
   if (symbolInput) {
+    symbolInput.setAttribute("autocomplete", "off");
+    symbolInput.setAttribute("autocorrect", "off");
+    symbolInput.setAttribute("autocapitalize", "off");
+    symbolInput.setAttribute("spellcheck", "false");
+
     symbolInput.addEventListener("input", () => {
       if (selectedExchangeInput) selectedExchangeInput.value = "";
       if (searchTimer) window.clearTimeout(searchTimer);
-      searchTimer = window.setTimeout(runSearch, 220);
+      searchTimer = window.setTimeout(runSearch, 280);
     });
-    symbolInput.addEventListener("focus", () => {
-      void runSearch();
-    });
+
+    // Close on blur only — no focus-triggered search (that caused the reopen flicker)
+    symbolInput.addEventListener("blur", closeSuggestionsOnBlur);
   }
 
   if (exchangeInput) {
@@ -1802,11 +1826,8 @@ async function setupAdminDealForm() {
     });
   }
 
-  document.addEventListener("click", (event) => {
-    if (!form.contains(event.target)) {
-      clearSuggestions();
-    }
-  });
+  // Single outside-click handler — use the form's own blur instead of document listener
+  // to avoid stacking handlers across refresh cycles
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
