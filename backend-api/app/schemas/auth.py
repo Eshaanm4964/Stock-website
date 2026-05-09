@@ -29,7 +29,7 @@ class SignupOtpRequest(BaseModel):
 class OtpRequest(BaseModel):
     role: UserRole
     identifier: OptionalIdentifierStr | None = None
-    password: PasswordStr
+    password: PasswordStr | None = None  # required for admin, omitted for user phone-OTP flow
     phone_number: PhoneStr
 
 
@@ -41,7 +41,7 @@ class OtpResponse(BaseModel):
 class LoginRequest(BaseModel):
     role: UserRole
     identifier: OptionalIdentifierStr | None = None
-    password: PasswordStr
+    password: PasswordStr | None = None  # required for admin, omitted for user phone-OTP flow
     phone_number: PhoneStr
     otp: OtpStr
 

@@ -106,7 +106,10 @@ async def request_login_otp(
         ip_address=client_ip,
     )
     user = await _find_user_for_login(payload.role, identifier, payload.phone_number, db)
-    if not user or not verify_password(payload.password, user.hashed_password):
+    # Admin always requires password; user phone-OTP flow sends no password (skip check)
+    needs_password_check = payload.role == UserRole.ADMIN or payload.password is not None
+    password_valid = (not needs_password_check) or (user is not None and verify_password(payload.password or "", user.hashed_password))
+    if not user or not password_valid:
         await log_auth_attempt(
             db,
             stage="request_otp",
@@ -270,7 +273,9 @@ async def login(
         ip_address=client_ip,
     )
     user = await _find_user_for_login(payload.role, identifier, payload.phone_number, db)
-    if not user or not verify_password(payload.password, user.hashed_password):
+    needs_password_check = payload.role == UserRole.ADMIN or payload.password is not None
+    password_valid = (not needs_password_check) or (user is not None and verify_password(payload.password or "", user.hashed_password))
+    if not user or not password_valid:
         await log_auth_attempt(
             db,
             stage="login",
