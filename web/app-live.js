@@ -1878,6 +1878,37 @@ async function setupAdminFundsForm() {
   });
 }
 
+async function refreshTableLivePrices() {
+  const cells = document.querySelectorAll("[data-live-price-cell]");
+  if (!cells.length) return;
+
+  const symbolSet = new Set();
+  cells.forEach((cell) => {
+    const symbol = cell.dataset.livePriceCell.split("::")[0];
+    if (symbol) symbolSet.add(symbol);
+  });
+
+  const feed = await api(`/stocks/feed?symbols=${encodeURIComponent([...symbolSet].join(","))}`).catch(() => []);
+  const priceMap = new Map();
+  (Array.isArray(feed) ? feed : []).forEach((q) => {
+    if (q?.symbol && q?.price != null) {
+      priceMap.set(String(q.symbol).toUpperCase(), Number(q.price));
+    }
+  });
+
+  cells.forEach((cell) => {
+    const symbol = cell.dataset.livePriceCell.split("::")[0];
+    const price = priceMap.get(symbol);
+    cell.classList.remove("live-price-fetching");
+    if (price != null && price > 0) {
+      cell.textContent = currency(price);
+      cell.classList.add("live-price-loaded");
+    } else {
+      cell.textContent = currency(0);
+    }
+  });
+}
+
 function setupPortalActions() {
   document.querySelectorAll("[data-logout]").forEach((button) => {
     button.addEventListener("click", () => logoutAndResetPortals());
@@ -3541,7 +3572,7 @@ async function renderAdminPortal(options = {}) {
                           <td>${formatDate(holding.created_at)}</td>
                           <td>${holding.quantity}</td>
                           <td>${currency(holding.buy_price)}</td>
-                          <td>${currency(holding.current_price)}</td>
+                          <td data-live-price-cell="${escapeHtml(String(holding.symbol || "").toUpperCase())}::${escapeHtml(holding.exchange || "NSE")}" class="live-price-fetching">—</td>
                           <td class="${valueClass}">${currency(investedValue)}</td>
                           <td class="${valueClass}">${currency(currentValue)}</td>
                           <td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
@@ -3649,6 +3680,7 @@ async function renderAdminPortal(options = {}) {
     setupAdminDrilldowns(userDashboards, allHoldings, filteredSoldHistory);
     setupScrollSync("adminPositionsTableWrap", "adminPositionsTableScroller");
     setupPortalActions();
+    void refreshTableLivePrices();
   } catch (error) {
     renderPortalError(mount, "Admin Dashboard", `Login succeeded, but admin dashboard data could not load yet. ${formatError(error)}`);
     const retry = document.getElementById("retryPortalBtn");
