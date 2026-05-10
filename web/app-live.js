@@ -3610,6 +3610,14 @@ async function renderAdminPortal(options = {}) {
       return matchesSearch && matchesClient && matchesStock && matchesDate;
     });
 
+    const sortKey = adminUiState.sortBy || "recent";
+    filteredHoldings.sort((a, b) => {
+      if (sortKey === "alpha") return String(a.owner || "").localeCompare(String(b.owner || ""));
+      if (sortKey === "investment") return (Number(b.buy_price || 0) * Number(b.quantity || 0)) - (Number(a.buy_price || 0) * Number(a.quantity || 0));
+      if (sortKey === "profit") return Number(b.profit_loss || 0) - Number(a.profit_loss || 0);
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+    });
+
     const filteredSoldHistory = safeSoldHistory.filter((entry) => {
       const soldAt = entry.sold_at ? new Date(entry.sold_at) : null;
       const matchesSearch =
