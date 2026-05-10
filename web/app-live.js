@@ -422,6 +422,49 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+function showBalanceWarningPopup({ investorName, clientId, shortfall, investedValue, totalInvestment }) {
+  const existing = document.getElementById("balanceWarningOverlay");
+  if (existing) existing.remove();
+
+  const overlay = document.createElement("div");
+  overlay.id = "balanceWarningOverlay";
+  overlay.className = "sell-modal-overlay";
+  overlay.innerHTML = `
+    <div class="sell-modal balance-warning-modal" role="alertdialog" aria-modal="true" aria-labelledby="balanceWarnTitle">
+      <div class="sell-modal-header balance-warning-header">
+        <div class="sell-modal-badge" style="background:#e65100;">⚠ BALANCE ALERT</div>
+        <h3 id="balanceWarnTitle" class="sell-modal-title">${escapeHtml(investorName)}</h3>
+        <p class="sell-modal-owner">${escapeHtml(clientId)}</p>
+      </div>
+      <div class="sell-modal-body balance-warning-body">
+        <p class="balance-warning-msg">This investor's <strong>Invested Value exceeds their Total Investment</strong>. The Balance Fund has gone negative.</p>
+        <div class="balance-warning-row">
+          <span>Total Investment</span><strong>${currency(totalInvestment)}</strong>
+        </div>
+        <div class="balance-warning-row">
+          <span>Invested Value</span><strong class="loss">${currency(investedValue)}</strong>
+        </div>
+        <div class="balance-warning-row balance-warning-row--alert">
+          <span>Balance Shortfall</span><strong class="loss">${currency(shortfall)}</strong>
+        </div>
+        <p class="balance-warning-action">Please add funds for this investor or reduce their holdings to restore a positive balance.</p>
+      </div>
+      <div class="sell-modal-actions">
+        <button class="sell-modal-confirm" id="balanceWarnClose" type="button" style="background:#e65100;">Understood</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add("sell-modal-visible"));
+
+  const close = () => {
+    overlay.classList.remove("sell-modal-visible");
+    setTimeout(() => overlay.remove(), 220);
+  };
+  overlay.querySelector("#balanceWarnClose").addEventListener("click", close);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+}
+
 function showSellModal({ symbol, owner, availableQuantity, averageBuyPrice }) {
   return new Promise((resolve) => {
     const overlay = document.createElement("div");
@@ -2504,6 +2547,22 @@ async function renderAdminDatabasePage(options = {}) {
   }
 }
 
+function maybeShowBalanceWarning(user) {
+  const holdings = Array.isArray(user.holdings) ? user.holdings : [];
+  const totalInvestment = Number(user.balance_funds || 0);
+  const totalInvested = holdings.reduce((s, h) => s + Number(h.buy_price || 0) * Number(h.quantity || 0), 0);
+  const balanceFund = totalInvestment - totalInvested;
+  if (balanceFund < 0) {
+    showBalanceWarningPopup({
+      investorName: user.full_name || "This investor",
+      clientId: user.fixed_user_id || user.username || "",
+      shortfall: Math.abs(balanceFund),
+      investedValue: totalInvested,
+      totalInvestment,
+    });
+  }
+}
+
 function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
   const safeHoldings = Array.isArray(user.holdings) ? user.holdings : [];
   const userSoldHistory = soldHistory.filter((entry) => Number(entry.user_id) === Number(user.user_id));
@@ -2545,6 +2604,10 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
         <article><strong class="${totalReturn >= 0 ? "profit" : "loss"}">${currency(totalReturn)}</strong><span>Total Return</span></article>
         <article><strong class="${totalReturnPct >= 0 ? "profit" : "loss"}">${percent(totalReturnPct)}</strong><span>Total Return %</span></article>
       </div>
+      ${balanceFund < 0 ? `
+      <div class="balance-negative-banner">
+        ⚠ <strong>Balance Fund is negative.</strong> Invested value (${currency(totalInvested)}) exceeds Total Investment (${currency(totalInvestment)}) by ${currency(Math.abs(balanceFund))}. Please add funds or reduce holdings.
+      </div>` : ""}
 
       <article class="table-card" style="margin-top:18px;">
         <div class="panel-head"><h3>Live Positions</h3><span class="badge">Realtime</span></div>
@@ -2719,6 +2782,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       detailMount.classList.remove("hidden");
       detailMount.classList.add("portal-visible");
       detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
+      maybeShowBalanceWarning(user);
     });
   });
 
@@ -2731,6 +2795,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       const user = userDashboards.find((entry) => Number(entry.user_id) === userId);
       if (user) {
         detailMount.innerHTML = buildAdminClientDetail(user, soldHistory, symbol);
+        maybeShowBalanceWarning(user);
       } else {
         const holdings = allHoldings.filter((entry) => String(entry.symbol || "").toUpperCase() === symbol);
         if (!holdings.length) return;
