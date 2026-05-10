@@ -1545,13 +1545,14 @@ function setupAdminManagementButtons() {
     });
   }
 
-  const adminSortSelect = document.getElementById("adminSortSelect");
-  if (adminSortSelect) {
-    adminSortSelect.addEventListener("change", async () => {
-      adminUiState.sortBy = adminSortSelect.value;
+  document.querySelectorAll("[data-sort-by]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      adminUiState.sortBy = btn.dataset.sortBy;
+      const dropdown = document.getElementById("adminSortDropdown");
+      if (dropdown) dropdown.removeAttribute("open");
       await renderAdminPortal();
     });
-  }
+  });
 
   document.querySelectorAll("[data-stock-visibility-toggle]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -3668,12 +3669,18 @@ async function renderAdminPortal(options = {}) {
             </div>
           </div>
           <div class="user-topbar-actions admin-toolbar-right">
-            <select class="user-search admin-sort-select" id="adminSortSelect">
-              <option value="recent"  ${adminUiState.sortBy === "recent"     ? "selected" : ""}>⇅ Recent Investment</option>
-              <option value="alpha"   ${adminUiState.sortBy === "alpha"      ? "selected" : ""}>⇅ Alphabetically</option>
-              <option value="investment" ${adminUiState.sortBy === "investment" ? "selected" : ""}>⇅ Total Investment</option>
-              <option value="profit"  ${adminUiState.sortBy === "profit"     ? "selected" : ""}>⇅ Most Profit</option>
-            </select>
+            <details class="admin-dropdown-menu" id="adminSortDropdown">
+              <summary class="secondary-btn compact-btn">Order By</summary>
+              <div class="admin-dropdown-panel admin-sort-panel">
+                <p class="admin-dropdown-section-label">Sort Positions By</p>
+                <div class="admin-sort-options">
+                  <button class="admin-sort-option-btn${adminUiState.sortBy === "recent"     ? " is-active" : ""}" type="button" data-sort-by="recent">Recent Investment</button>
+                  <button class="admin-sort-option-btn${adminUiState.sortBy === "alpha"      ? " is-active" : ""}" type="button" data-sort-by="alpha">Alphabetically</button>
+                  <button class="admin-sort-option-btn${adminUiState.sortBy === "investment" ? " is-active" : ""}" type="button" data-sort-by="investment">Total Investment</button>
+                  <button class="admin-sort-option-btn${adminUiState.sortBy === "profit"     ? " is-active" : ""}" type="button" data-sort-by="profit">Most Profit</button>
+                </div>
+              </div>
+            </details>
             <div class="admin-search-wrap">
               <input class="user-search admin-universal-search" id="adminUniversalSearch" type="text" placeholder="Search client or stock…" autocomplete="off" value="${escapeHtml(adminUiState.search)}" />
               <div class="admin-search-dropdown" id="adminSearchDropdown" hidden></div>

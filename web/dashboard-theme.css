@@ -1363,17 +1363,38 @@ body.dashboard-page {
   box-shadow: 0 0 0 4px rgba(44, 144, 240, 0.08);
 }
 
-.admin-sort-select {
-  min-width: 160px;
-  height: 38px;
-  padding: 0 10px;
-  border-radius: 8px;
+.admin-sort-panel {
+  min-width: 180px;
+}
+
+.admin-sort-options {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-sort-option-btn {
+  width: 100%;
+  text-align: left;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
   font-size: 0.85rem;
-  font-weight: 500;
   color: #0f2040;
   cursor: pointer;
-  appearance: auto;
-  flex-shrink: 0;
+  transition: background 120ms;
+}
+
+.admin-sort-option-btn:hover {
+  background: #f0f6ff;
+}
+
+.admin-sort-option-btn.is-active {
+  background: #e8f3ff;
+  border-color: rgba(44, 144, 240, 0.3);
+  color: #1a6bbf;
+  font-weight: 600;
 }
 
 .secondary-btn.compact-btn,
