@@ -2537,13 +2537,13 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
           <h3>${escapeHtml(user.full_name)}</h3>
           <p class="detail-subtitle">${escapeHtml(user.fixed_user_id || user.username || "")}</p>
         </div>
-        <span class="badge ${totalReturn >= 0 ? "green" : "red"}">${currency(totalReturn)} (${percent(totalReturnPct)})</span>
       </div>
-      <div class="detail-stat-grid detail-stat-grid--4">
+      <div class="detail-stat-grid detail-stat-grid--5">
         <article><strong>${currency(totalInvestment)}</strong><span>Total Investment</span></article>
         <article><strong class="${balanceFund >= 0 ? "" : "loss"}">${currency(balanceFund)}</strong><span>Balance Fund</span></article>
         <article><strong>${currency(currentFunds)}</strong><span>Current Funds</span></article>
-        <article><strong class="${totalReturn >= 0 ? "profit" : "loss"}">${currency(totalReturn)}<br/><small>${percent(totalReturnPct)}</small></strong><span>Total Return</span></article>
+        <article><strong class="${totalReturn >= 0 ? "profit" : "loss"}">${currency(totalReturn)}</strong><span>Total Return</span></article>
+        <article><strong class="${totalReturnPct >= 0 ? "profit" : "loss"}">${percent(totalReturnPct)}</strong><span>Total Return %</span></article>
       </div>
 
       <article class="table-card" style="margin-top:18px;">

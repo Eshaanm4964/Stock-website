@@ -244,6 +244,10 @@
   grid-template-columns: repeat(4, 1fr);
 }
 
+.detail-stat-grid--5 {
+  grid-template-columns: repeat(5, 1fr);
+}
+
 .logout-btn {
   display: inline-flex;
   align-items: center;
