@@ -1363,6 +1363,19 @@ body.dashboard-page {
   box-shadow: 0 0 0 4px rgba(44, 144, 240, 0.08);
 }
 
+.admin-sort-select {
+  min-width: 160px;
+  height: 38px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #0f2040;
+  cursor: pointer;
+  appearance: auto;
+  flex-shrink: 0;
+}
+
 .secondary-btn.compact-btn,
 .admin-dropdown-menu > summary {
   border: 1px solid rgba(15, 32, 64, 0.1);
