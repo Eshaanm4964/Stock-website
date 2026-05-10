@@ -3516,7 +3516,7 @@ async function renderAdminPortal(options = {}) {
                     <input class="user-search admin-filter-date" id="adminDateTo" type="date" value="${escapeHtml(adminUiState.dateTo)}" />
                   </label>
                 </div>
-                <p class="helper-text admin-filter-summary">Filtered P&amp;L window: <strong class="${filteredPeriodProfit >= 0 ? "profit" : "loss"}">${currency(filteredPeriodProfit)}</strong></p>
+                <p class="helper-text admin-filter-summary">Filtered P&amp;L window: <strong class="${filteredPositionsTotalProfit >= 0 ? "profit" : "loss"}">${currency(filteredPositionsTotalProfit)}</strong></p>
               </div>
             </details>
             <a class="secondary-btn compact-btn" href="./admin-database.html">View Database</a>
@@ -3558,7 +3558,7 @@ async function renderAdminPortal(options = {}) {
           <span><strong>${currency(filteredCurrentValue)}</strong> Current Value</span>
           <span class="${filteredUnrealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredUnrealizedProfit)}</strong> Unrealised P&amp;L</span>
           <span class="${filteredTodayProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredTodayProfit)}</strong> Today&apos;s P&amp;L</span>
-          <span class="${filteredRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredRealizedProfit)}</strong> Realised P&amp;L</span>
+          <span class="${filteredPositionsRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredPositionsRealizedProfit)}</strong> Realised P&amp;L</span>
         </section>
 
         <article class="table-card admin-positions-card full-span-card">
