@@ -491,6 +491,71 @@ function showSellModal({ symbol, owner, availableQuantity, averageBuyPrice }) {
   });
 }
 
+function showEditHoldingModal({ symbol, owner, currentQty, currentBuyPrice, currentDate }) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "sell-modal-overlay";
+    const dateVal = currentDate ? currentDate.split("T")[0] : "";
+    overlay.innerHTML = `
+      <div class="sell-modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+        <div class="sell-modal-header">
+          <div class="sell-modal-badge" style="background:#2c90f0;">EDIT HOLDING</div>
+          <h3 id="editModalTitle" class="sell-modal-title">${escapeHtml(symbol)}</h3>
+          <p class="sell-modal-owner">${escapeHtml(owner)}</p>
+        </div>
+        <div class="sell-modal-body">
+          <label class="sell-modal-field">
+            <span>Quantity</span>
+            <input id="editModalQty" type="number" min="0.01" step="0.01" value="${Number(currentQty).toFixed(2)}" class="sell-modal-input" />
+          </label>
+          <label class="sell-modal-field">
+            <span>Avg Buy Price (₹)</span>
+            <input id="editModalPrice" type="number" min="0.01" step="0.01" value="${Number(currentBuyPrice).toFixed(2)}" class="sell-modal-input" />
+          </label>
+          <label class="sell-modal-field">
+            <span>Purchase Date</span>
+            <input id="editModalDate" type="date" value="${escapeHtml(dateVal)}" class="sell-modal-input" />
+          </label>
+          <p class="sell-modal-error" id="editModalError"></p>
+        </div>
+        <div class="sell-modal-actions">
+          <button class="sell-modal-cancel" id="editModalCancel" type="button">Cancel</button>
+          <button class="sell-modal-confirm" id="editModalConfirm" type="button" style="background:#2c90f0;">Save Changes</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add("sell-modal-visible"));
+
+    const qtyInput = overlay.querySelector("#editModalQty");
+    const priceInput = overlay.querySelector("#editModalPrice");
+    const dateInput = overlay.querySelector("#editModalDate");
+    const errorEl = overlay.querySelector("#editModalError");
+    const confirmBtn = overlay.querySelector("#editModalConfirm");
+    const cancelBtn = overlay.querySelector("#editModalCancel");
+
+    function close(result) {
+      overlay.classList.remove("sell-modal-visible");
+      setTimeout(() => overlay.remove(), 220);
+      resolve(result);
+    }
+
+    cancelBtn.addEventListener("click", () => close(null));
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) close(null); });
+
+    confirmBtn.addEventListener("click", () => {
+      const qty = Number(qtyInput.value);
+      const price = Number(priceInput.value);
+      if (!Number.isFinite(qty) || qty <= 0) { errorEl.textContent = "Quantity must be greater than 0."; return; }
+      if (!Number.isFinite(price) || price <= 0) { errorEl.textContent = "Avg price must be greater than 0."; return; }
+      const dateStr = dateInput.value ? new Date(dateInput.value).toISOString() : null;
+      close({ quantity: qty, buy_price: price, created_at: dateStr });
+    });
+
+    qtyInput.focus();
+  });
+}
+
 function getHoldingState(holding) {
   const profitLoss = Number(holding?.profit_loss || 0);
   if (profitLoss > 0) return "profit";
@@ -992,8 +1057,8 @@ function buildAdminDatabaseExcelHtml(users = [], userDashboards = []) {
           <td>${escapeHtml(user.fixed_user_id || "")}</td>
           <td>${escapeHtml(user.username || "")}</td>
           <td>${escapeHtml(user.phone_number || "")}</td>
-          <td>${escapeHtml(currency(user.initial_funds || 0))}</td>
           <td>${escapeHtml(currency(user.balance_funds || 0))}</td>
+          <td>${escapeHtml(currency(Math.max(0, Number(user.balance_funds || 0) - (Array.isArray(dashboard?.holdings) ? dashboard.holdings : []).reduce((s, h) => s + Number(h.buy_price || 0) * Number(h.quantity || 0), 0))))}</td>
           <td>${escapeHtml(user.role || "user")}</td>
           <td>${user.is_active ? "Active" : "Inactive"}</td>
           <td>${user.is_demo ? "Demo" : "Live"}</td>
@@ -1051,8 +1116,8 @@ function buildAdminDatabaseExcelHtml(users = [], userDashboards = []) {
               <th>Client ID</th>
               <th>Username / Email</th>
               <th>Phone Number</th>
-              <th>Initial Funds</th>
-              <th>Balance Funds</th>
+              <th>Total Investment</th>
+              <th>Balance Fund</th>
               <th>Role</th>
               <th>Status</th>
               <th>Mode</th>
@@ -1558,6 +1623,36 @@ function setupAdminManagementButtons() {
       }
     });
   });
+
+  document.querySelectorAll("[data-admin-edit-holding]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const holdingId = button.dataset.adminEditHolding;
+      const symbol = button.dataset.symbol || "this stock";
+      const owner = button.dataset.owner || "this customer";
+      const currentQty = Number(button.dataset.quantity || 0);
+      const currentBuyPrice = Number(button.dataset.buyPrice || 0);
+      const currentDate = button.dataset.createdAt || "";
+
+      const result = await showEditHoldingModal({ symbol, owner, currentQty, currentBuyPrice, currentDate });
+      if (!result) return;
+
+      const stopLoading = setButtonLoading(button, "Saving...");
+      try {
+        await api(`/admin/holdings/${holdingId}`, {
+          method: "PATCH",
+          body: JSON.stringify(result)
+        });
+        if (statusMessage) {
+          statusMessage.textContent = `${symbol} holding updated for ${owner}.`;
+        }
+        await renderAdminPortal();
+      } catch (error) {
+        if (statusMessage) statusMessage.textContent = formatError(error);
+      } finally {
+        stopLoading();
+      }
+    });
+  });
 }
 
 async function refreshAdminCurrentPage() {
@@ -1601,15 +1696,15 @@ async function setupAdminCustomerForm() {
         email: String(data.get("email") || "").trim(),
         phone_number: String(data.get("phone_number") || "").trim(),
         password: String(data.get("password") || ""),
-        initial_funds: Number(data.get("initial_funds") || 0),
+        initial_funds: 0,
         balance_funds: Number(data.get("balance_funds") || 0)
       };
 
       if (!payload.full_name || !payload.email || !payload.phone_number || !payload.password) {
         throw new Error("Complete all customer fields before creating the account.");
       }
-      if (payload.initial_funds < 0 || payload.balance_funds < 0) {
-        throw new Error("Initial funds and balance funds must be zero or more.");
+      if (payload.balance_funds < 0) {
+        throw new Error("Total Investment must be zero or more.");
       }
 
       await api("/admin/users", {
@@ -2079,8 +2174,7 @@ async function renderAdminCustomerPage() {
           <label><span>Email</span><input name="email" type="email" placeholder="client@email.com" required /></label>
           <label><span>Phone</span><input name="phone_number" type="tel" placeholder="Phone number" required /></label>
           <label><span>Password</span><input name="password" type="password" placeholder="Minimum 8 characters" required /></label>
-          <label><span>Initial Funds</span><input name="initial_funds" type="number" min="0" step="0.01" placeholder="500000" /></label>
-          <label><span>Balance Funds</span><input name="balance_funds" type="number" min="0" step="0.01" placeholder="500000" /></label>
+          <label><span>Total Investment</span><input name="balance_funds" type="number" min="0" step="0.01" placeholder="1000000" /></label>
           <button class="primary-btn" type="submit">Create Customer</button>
         </form>
         <p class="helper-text" id="adminCustomerStatus">Client ID will be generated after the customer account is created.</p>
@@ -2271,8 +2365,7 @@ async function renderAdminDatabasePage(options = {}) {
               <span><strong>${safeUsers.length}</strong> Investors</span>
               <span><strong>${safeUsers.filter((user) => user.is_active).length}</strong> Active</span>
               <span><strong>${totalHoldings}</strong> Holdings</span>
-              <span><strong>${currency(safeUsers.reduce((sum, user) => sum + Number(user.initial_funds || 0), 0))}</strong> Initial Funds</span>
-              <span><strong>${currency(safeUsers.reduce((sum, user) => sum + Number(user.balance_funds || 0), 0))}</strong> Balance Funds</span>
+              <span><strong>${currency(safeUsers.reduce((sum, user) => sum + Number(user.balance_funds || 0), 0))}</strong> Total Investment</span>
               <span><strong>${currency(totalPortfolioValue)}</strong> Portfolio Value</span>
               <span class="${totalProfitLoss >= 0 ? "profit" : "loss"}"><strong>${currency(totalProfitLoss)}</strong> Total P&amp;L</span>
             </div>
@@ -2285,8 +2378,8 @@ async function renderAdminDatabasePage(options = {}) {
                     <th>Client ID</th>
                     <th>Username / Email</th>
                     <th>Phone Number</th>
-                    <th>Initial Funds</th>
-                    <th>Balance Funds</th>
+                    <th>Total Investment</th>
+                    <th>Balance Fund</th>
                     <th>Status</th>
                     <th>Role</th>
                     <th>Mode</th>
@@ -2308,8 +2401,8 @@ async function renderAdminDatabasePage(options = {}) {
                               <td>${escapeHtml(user.fixed_user_id || "")}</td>
                               <td>${escapeHtml(user.username || "")}</td>
                               <td>${escapeHtml(user.phone_number || "")}</td>
-                              <td>${currency(user.initial_funds || 0)}</td>
                               <td>${currency(user.balance_funds || 0)}</td>
+                              <td>${currency(Math.max(0, Number(user.balance_funds || 0) - holdings.reduce((s, h) => s + Number(h.buy_price || 0) * Number(h.quantity || 0), 0)))}</td>
                               <td><span class="badge ${user.is_active ? "green" : "red"}">${user.is_active ? "Active" : "Inactive"}</span></td>
                               <td>${escapeHtml((user.role || "user").toUpperCase())}</td>
                               <td>${user.is_demo ? "Demo" : "Live"}</td>
@@ -2429,6 +2522,13 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
   const totalQty = safeHoldings.reduce((s, h) => s + Number(h.quantity || 0), 0);
   const soldTotalQty = userSoldHistory.reduce((s, e) => s + Number(e.quantity || 0), 0);
 
+  // Total Investment = lifetime funds deposited (stored as balance_funds in DB)
+  const totalInvestment = Number(user.balance_funds || 0);
+  const balanceFund = totalInvestment - totalInvested;
+  const currentFunds = totalCurrent;
+  const totalReturn = currentFunds + balanceFund - totalInvestment; // = totalCurrent - totalInvested
+  const totalReturnPct = totalInvestment > 0 ? (totalReturn / totalInvestment) * 100 : 0;
+
   return `
     <article class="dashboard-card detail-card">
       <div class="panel-head">
@@ -2437,14 +2537,13 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
           <h3>${escapeHtml(user.full_name)}</h3>
           <p class="detail-subtitle">${escapeHtml(user.fixed_user_id || user.username || "")}</p>
         </div>
-        <span class="badge ${user.total_profit_loss >= 0 ? "green" : "red"}">${currency(user.total_profit_loss)}</span>
+        <span class="badge ${totalReturn >= 0 ? "green" : "red"}">${currency(totalReturn)} (${percent(totalReturnPct)})</span>
       </div>
-      <div class="detail-stat-grid">
-        <article><strong>${safeHoldings.length}</strong><span>Live Stocks</span></article>
-        <article><strong>${currency(user.total_portfolio_value)}</strong><span>Current Value</span></article>
-        <article><strong class="${user.total_profit_loss >= 0 ? "profit" : "loss"}">${percent((user.total_profit_loss / Math.max(user.total_portfolio_value - user.total_profit_loss, 1)) * 100)}</strong><span>Total Return</span></article>
-        <article><strong>${currency(user.initial_funds || 0)}</strong><span>Initial Funds</span></article>
-        <article><strong>${currency(user.balance_funds || 0)}</strong><span>Balance Funds</span></article>
+      <div class="detail-stat-grid detail-stat-grid--4">
+        <article><strong>${currency(totalInvestment)}</strong><span>Total Investment</span></article>
+        <article><strong class="${balanceFund >= 0 ? "" : "loss"}">${currency(balanceFund)}</strong><span>Balance Fund</span></article>
+        <article><strong>${currency(currentFunds)}</strong><span>Current Funds</span></article>
+        <article><strong class="${totalReturn >= 0 ? "profit" : "loss"}">${currency(totalReturn)}<br/><small>${percent(totalReturnPct)}</small></strong><span>Total Return</span></article>
       </div>
 
       <article class="table-card" style="margin-top:18px;">
@@ -2995,7 +3094,10 @@ async function renderAdminPortal() {
                       <td>${currency(holding.current_price)}</td>
                       <td>${currency(Number(holding.current_price || 0) * Number(holding.quantity || 0))}</td>
                       <td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
-                      <td><button class="secondary-btn compact-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}">Sell</button></td>
+                      <td class="action-cell-duo">
+                        <button class="secondary-btn compact-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}">Sell</button>
+                        <button class="secondary-btn compact-btn edit-holding-btn" type="button" data-admin-edit-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}" data-created-at="${escapeHtml(holding.created_at || '')}">Edit</button>
+                      </td>
                     </tr>
                   `
                 )
@@ -3617,7 +3719,10 @@ async function renderAdminPortal(options = {}) {
                           <td class="${Number(holding.today_profit) >= 0 ? "profit" : "loss"}">${currency(holding.today_profit)}</td>
                           <td class="${Number(realizedProfit) >= 0 ? "profit" : "loss"}">${currency(realizedProfit)}</td>
                           <td class="${Number(totalProfit) >= 0 ? "profit" : "loss"}">${currency(totalProfit)}</td>
-                          <td><button class="sell-action-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}">Sell</button></td>
+                          <td class="action-cell-duo">
+                            <button class="sell-action-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}">Sell</button>
+                            <button class="edit-action-btn" type="button" data-admin-edit-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}" data-created-at="${escapeHtml(holding.created_at || '')}">Edit</button>
+                          </td>
                         </tr>
                       `;
                       })

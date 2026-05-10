@@ -52,6 +52,12 @@ class AdminHoldingSellRequest(BaseModel):
     sell_price: float
 
 
+class AdminHoldingEditRequest(BaseModel):
+    quantity: float = Field(gt=0)
+    buy_price: float = Field(gt=0)
+    created_at: datetime | None = None
+
+
 class AdminUserDashboardResponse(BaseModel):
     user_id: int
     username: str

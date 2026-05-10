@@ -24,6 +24,7 @@ from app.schemas.admin import (
     AdminBulkUserActionResponse,
     AdminDashboardResponse,
     AdminHoldingCreateRequest,
+    AdminHoldingEditRequest,
     AdminHoldingSellRequest,
     AdminHoldingSnapshot,
     AdminLoginIssueItem,
@@ -555,6 +556,55 @@ async def admin_sell_holding(
         sold_by_identifier=sold_history.sold_by_identifier,
         created_at=sold_history.created_at,
         sold_at=sold_history.sold_at,
+    )
+
+
+@router.patch("/holdings/{holding_id}", response_model=AdminHoldingSnapshot)
+async def admin_edit_holding(
+    holding_id: int,
+    payload: AdminHoldingEditRequest,
+    request: Request,
+    current_admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+    redis: Redis = Depends(get_redis),
+) -> AdminHoldingSnapshot:
+    holding = (await db.execute(select(PortfolioHolding).where(PortfolioHolding.id == holding_id))).scalar_one_or_none()
+    if not holding:
+        raise HTTPException(status_code=404, detail="Holding not found")
+
+    holding.quantity = payload.quantity
+    holding.buy_price = payload.buy_price
+    if payload.created_at is not None:
+        holding.created_at = payload.created_at
+
+    await db.commit()
+    await db.refresh(holding)
+
+    quote = await fetch_quote(holding.symbol, holding.exchange, redis)
+    buy = float(holding.buy_price)
+    qty = float(holding.quantity)
+
+    await log_admin_action(
+        db,
+        admin_user=current_admin,
+        action="edit_holding",
+        entity_type="portfolio_holding",
+        entity_id=str(holding_id),
+        ip_address=request.client.host if request.client else None,
+        details={"symbol": holding.symbol, "quantity": qty, "buy_price": buy},
+    )
+    return AdminHoldingSnapshot(
+        holding_id=holding.id,
+        symbol=holding.symbol,
+        quantity=qty,
+        buy_price=buy,
+        current_price=quote.price,
+        value=round(quote.price * qty, 2),
+        profit_loss=round((quote.price - buy) * qty, 2),
+        percent_change=round(((quote.price - buy) / buy) * 100, 2) if buy else 0.0,
+        sector=holding.sector,
+        exchange=holding.exchange,
+        created_at=holding.created_at,
     )
 
 
