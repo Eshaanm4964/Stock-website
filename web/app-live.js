@@ -2944,6 +2944,7 @@ async function renderAdminDealPage() {
         </label>
         <label><span>Quantity</span><input name="quantity" type="number" min="1" step="1" placeholder="100" required /></label>
         <label><span>Buy Price</span><input name="buy_price" type="number" min="1" step="0.01" placeholder="1500" required /></label>
+        <label><span>Purchase Date</span><input name="purchase_date" type="date" max="${new Date().toISOString().split('T')[0]}" /></label>
         <label>
           <span>Search Market</span>
           <select name="exchange" required>
