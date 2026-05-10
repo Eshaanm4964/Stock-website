@@ -45,6 +45,7 @@ class AdminHoldingCreateRequest(BaseModel):
     quantity: float
     buy_price: float
     exchange: str = "NSE"
+    created_at: datetime | None = None
 
 
 class AdminHoldingSellRequest(BaseModel):

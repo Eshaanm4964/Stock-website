@@ -1101,6 +1101,7 @@ function buildAdminDatabaseExcelHtml(users = [], userDashboards = []) {
           <td>${escapeHtml(user.username || "")}</td>
           <td>${escapeHtml(user.phone_number || "")}</td>
           <td>${escapeHtml(currency(user.balance_funds || 0))}</td>
+          <td>${escapeHtml(currency(dashboard?.total_portfolio_value ?? user.portfolio_value ?? 0))}</td>
           <td>${escapeHtml(currency(Math.max(0, Number(user.balance_funds || 0) - (Array.isArray(dashboard?.holdings) ? dashboard.holdings : []).reduce((s, h) => s + Number(h.buy_price || 0) * Number(h.quantity || 0), 0))))}</td>
           <td>${escapeHtml(user.role || "user")}</td>
           <td>${user.is_active ? "Active" : "Inactive"}</td>
@@ -1160,6 +1161,7 @@ function buildAdminDatabaseExcelHtml(users = [], userDashboards = []) {
               <th>Username / Email</th>
               <th>Phone Number</th>
               <th>Total Investment</th>
+              <th>Current Value</th>
               <th>Balance Fund</th>
               <th>Role</th>
               <th>Status</th>
@@ -1975,11 +1977,13 @@ async function setupAdminDealForm() {
       const data = new FormData(form);
       const userId = String(data.get("customer_id") || "").trim();
       const selectedExchange = String(data.get("selected_exchange") || "").trim().toUpperCase();
+      const purchaseDateRaw = String(data.get("purchase_date") || "").trim();
       const payload = {
         symbol: String(data.get("symbol") || "").trim().toUpperCase(),
         quantity: Number(data.get("quantity") || 0),
         buy_price: Number(data.get("buy_price") || 0),
-        exchange: (selectedExchange || String(data.get("exchange") || "NSE")).trim().toUpperCase()
+        exchange: (selectedExchange || String(data.get("exchange") || "NSE")).trim().toUpperCase(),
+        created_at: purchaseDateRaw ? new Date(purchaseDateRaw).toISOString() : null
       };
       if (!userId || !payload.symbol || !payload.quantity || !payload.buy_price) {
         throw new Error("Complete all deal fields before adding the position.");
@@ -2274,6 +2278,7 @@ async function renderAdminDealPage() {
           </label>
           <label><span>Quantity</span><input name="quantity" type="number" placeholder="100" /></label>
           <label><span>Buy Price</span><input name="buy_price" type="number" placeholder="1500" /></label>
+          <label><span>Purchase Date</span><input name="purchase_date" type="date" max="${new Date().toISOString().split('T')[0]}" /></label>
           <label>
             <span>Search Market</span>
             <select name="exchange">
@@ -2422,6 +2427,7 @@ async function renderAdminDatabasePage(options = {}) {
                     <th>Username / Email</th>
                     <th>Phone Number</th>
                     <th>Total Investment</th>
+                    <th>Current Value</th>
                     <th>Balance Fund</th>
                     <th>Status</th>
                     <th>Role</th>
@@ -2445,6 +2451,7 @@ async function renderAdminDatabasePage(options = {}) {
                               <td>${escapeHtml(user.username || "")}</td>
                               <td>${escapeHtml(user.phone_number || "")}</td>
                               <td>${currency(user.balance_funds || 0)}</td>
+                              <td>${currency(dashboard?.total_portfolio_value ?? user.portfolio_value ?? 0)}</td>
                               <td>${currency(Math.max(0, Number(user.balance_funds || 0) - holdings.reduce((s, h) => s + Number(h.buy_price || 0) * Number(h.quantity || 0), 0)))}</td>
                               <td><span class="badge ${user.is_active ? "green" : "red"}">${user.is_active ? "Active" : "Inactive"}</span></td>
                               <td>${escapeHtml((user.role || "user").toUpperCase())}</td>
@@ -2457,7 +2464,7 @@ async function renderAdminDatabasePage(options = {}) {
                           `;
                         })
                         .join("")
-                    : `<tr><td colspan="13"><span class="helper-text">No investors found in the database.</span></td></tr>`}
+                    : `<tr><td colspan="14"><span class="helper-text">No investors found in the database.</span></td></tr>`}
                 </tbody>
               </table>
             </div>

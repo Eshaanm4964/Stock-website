@@ -441,6 +441,8 @@ async def admin_add_holding(
             buy_price=payload.buy_price,
             sector=quote.sector,
         )
+        if payload.created_at is not None:
+            holding.created_at = payload.created_at
         db.add(holding)
         await db.commit()
         await db.refresh(holding)
