@@ -866,6 +866,70 @@ body.dashboard-page {
   position: relative;
 }
 
+.admin-sort-menu .admin-sort-panel {
+  right: auto;
+  left: 0;
+  width: 220px;
+  gap: 4px;
+  padding: 10px;
+}
+
+.admin-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.admin-sort-icon {
+  font-size: 1rem;
+  opacity: 0.7;
+}
+
+.admin-sort-active-label {
+  font-weight: 700;
+  color: var(--brand-accent, #2c90f0);
+  font-size: 0.78rem;
+}
+
+.admin-sort-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: background 140ms;
+}
+
+.admin-sort-option strong {
+  font-size: 0.88rem;
+  color: #0f2040;
+}
+
+.admin-sort-option small {
+  font-size: 0.75rem;
+  color: #6b7a99;
+}
+
+.admin-sort-option:hover {
+  background: #f0f6ff;
+  border-color: rgba(44, 144, 240, 0.15);
+}
+
+.admin-sort-option.is-active {
+  background: #e8f3ff;
+  border-color: rgba(44, 144, 240, 0.3);
+}
+
+.admin-sort-option.is-active strong {
+  color: #1a6bbf;
+}
+
 .admin-dropdown-menu summary {
   list-style: none;
 }

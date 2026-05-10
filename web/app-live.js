@@ -21,6 +21,7 @@ let adminUiState = {
   stockFilter: "",
   dateFrom: "",
   dateTo: "",
+  sortBy: "recent",
   revealedStocks: [],
   actionsMenuOpen: false
 };
@@ -1544,6 +1545,15 @@ function setupAdminManagementButtons() {
     });
   }
 
+  document.querySelectorAll("[data-sort-by]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      adminUiState.sortBy = button.dataset.sortBy;
+      const menu = document.getElementById("adminSortMenu");
+      if (menu) menu.removeAttribute("open");
+      await renderAdminPortal();
+    });
+  });
+
   document.querySelectorAll("[data-stock-visibility-toggle]").forEach((button) => {
     button.addEventListener("click", () => {
       toggleAdminRevealedStock(button.dataset.stockVisibilityToggle);
@@ -3052,6 +3062,15 @@ async function renderAdminPortal() {
         (!toDate || (createdAt && createdAt <= toDate));
       return matchesSearch && matchesClient && matchesStock && matchesDate;
     });
+
+    const sortKey = adminUiState.sortBy || "recent";
+    filteredHoldings.sort((a, b) => {
+      if (sortKey === "alpha") return String(a.owner || "").localeCompare(String(b.owner || ""));
+      if (sortKey === "investment") return (Number(b.buy_price || 0) * Number(b.quantity || 0)) - (Number(a.buy_price || 0) * Number(a.quantity || 0));
+      if (sortKey === "profit") return Number(b.profit_loss || 0) - Number(a.profit_loss || 0);
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+    });
+
     const filteredSoldHistory = safeSoldHistory.filter((entry) => {
       const soldAt = entry.sold_at ? new Date(entry.sold_at) : null;
       const matchesSearch =
@@ -3650,6 +3669,26 @@ async function renderAdminPortal(options = {}) {
             </div>
           </div>
           <div class="user-topbar-actions admin-toolbar-right">
+            <details class="admin-dropdown-menu admin-sort-menu" id="adminSortMenu">
+              <summary class="secondary-btn compact-btn admin-sort-btn">
+                <span class="admin-sort-icon">⇅</span>
+                Order By
+                <span class="admin-sort-active-label">${{ recent: "Recent", alpha: "A–Z", investment: "Investment", profit: "Profit" }[adminUiState.sortBy] || "Recent"}</span>
+              </summary>
+              <div class="admin-dropdown-panel admin-sort-panel">
+                ${[
+                  { value: "recent", label: "Recent Investment", desc: "Latest purchase date first" },
+                  { value: "alpha", label: "Alphabetically", desc: "Investor name A to Z" },
+                  { value: "investment", label: "Total Investment", desc: "Highest total investment first" },
+                  { value: "profit", label: "Most Profit", desc: "Highest unrealised P&L first" }
+                ].map(({ value, label, desc }) => `
+                  <button class="admin-sort-option ${adminUiState.sortBy === value ? "is-active" : ""}" type="button" data-sort-by="${value}">
+                    <strong>${label}</strong>
+                    <small>${desc}</small>
+                  </button>
+                `).join("")}
+              </div>
+            </details>
             <div class="admin-search-wrap">
               <input class="user-search admin-universal-search" id="adminUniversalSearch" type="text" placeholder="Search client or stock…" autocomplete="off" value="${escapeHtml(adminUiState.search)}" />
               <div class="admin-search-dropdown" id="adminSearchDropdown" hidden></div>
