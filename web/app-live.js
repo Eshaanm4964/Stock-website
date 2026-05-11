@@ -1735,6 +1735,27 @@ function setupAdminDatabaseExport(users = [], userDashboards = []) {
   });
 }
 
+function showAdminSuccessModal(title, rows) {
+  const existing = document.getElementById("adminSuccessOverlay");
+  if (existing) existing.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "adminSuccessOverlay";
+  overlay.className = "admin-success-overlay";
+  overlay.innerHTML = `
+    <div class="admin-success-modal">
+      <div class="admin-success-icon">✓</div>
+      <h3 class="admin-success-title">${escapeHtml(title)}</h3>
+      <div class="admin-success-details">
+        ${rows.map(([label, value]) => `<div class="admin-success-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(String(value || "—"))}</strong></div>`).join("")}
+      </div>
+      <button class="primary-btn" type="button" id="adminSuccessClose" style="width:100%">Done</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById("adminSuccessClose").addEventListener("click", () => overlay.remove());
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
+}
+
 async function setupAdminCustomerForm() {
   const form = document.getElementById("adminCustomerForm");
   const status = document.getElementById("adminCustomerStatus");
@@ -1774,11 +1795,14 @@ async function setupAdminCustomerForm() {
           String(user.email || "").toLowerCase() === payload.email.toLowerCase()
       );
 
-      if (status) {
-        status.textContent = createdUser?.fixed_user_id
-          ? `Customer created successfully. Client ID: ${createdUser.fixed_user_id}`
-          : "Customer created successfully.";
-      }
+      showAdminSuccessModal("Customer Created Successfully", [
+        ["Customer Name", payload.full_name],
+        ["Client ID", createdUser?.fixed_user_id || "Generating..."],
+        ["Email", payload.email],
+        ["Phone", payload.phone_number],
+        ["Password", payload.password]
+      ]);
+      if (status) status.textContent = "Customer created successfully.";
       form.reset();
       await refreshAdminCurrentPage();
     } catch (error) {
@@ -1799,9 +1823,42 @@ async function setupAdminDealForm() {
   const suggestionsList = document.getElementById("adminDealSuggestions");
   const selectedExchangeInput = document.getElementById("adminDealSelectedExchange");
   const livePricePreview = document.getElementById("adminDealLivePricePreview");
+  const balanceInfoDiv = document.getElementById("adminDealBalanceInfo");
+  const balanceFundsEl = document.getElementById("adminDealBalanceFunds");
+  const affordableEl = document.getElementById("adminDealAffordable");
   let searchTimer = null;
   let requestToken = 0;
   let quoteToken = 0;
+  let currentBalanceFunds = 0;
+  let currentLivePrice = 0;
+
+  const updateAffordability = () => {
+    if (!affordableEl) return;
+    if (currentLivePrice > 0 && currentBalanceFunds > 0) {
+      const n = Math.floor(currentBalanceFunds / currentLivePrice);
+      affordableEl.textContent = `${n.toLocaleString("en-IN")} stocks`;
+      affordableEl.className = n > 0 ? "can-afford" : "";
+    } else {
+      affordableEl.textContent = currentLivePrice > 0 ? "Select a customer first" : "Select a stock first";
+      affordableEl.className = "";
+    }
+  };
+
+  const customerSelect = form.querySelector('[name="customer_id"]');
+  if (customerSelect) {
+    customerSelect.addEventListener("change", () => {
+      const opt = customerSelect.options[customerSelect.selectedIndex];
+      const balance = Number(opt?.dataset?.balance || 0);
+      currentBalanceFunds = balance;
+      if (balanceInfoDiv && balance >= 0 && customerSelect.value) {
+        balanceInfoDiv.style.display = "";
+        if (balanceFundsEl) balanceFundsEl.textContent = currency(balance);
+        updateAffordability();
+      } else if (balanceInfoDiv) {
+        balanceInfoDiv.style.display = "none";
+      }
+    });
+  }
 
   const clearSuggestions = () => {
     if (suggestionsList) suggestionsList.innerHTML = "";
@@ -1845,6 +1902,10 @@ async function setupAdminDealForm() {
       if (buyPriceInput && Number(quote.price) > 0) {
         buyPriceInput.value = Number(quote.price).toFixed(2);
       }
+      if (Number(quote.price) > 0) {
+        currentLivePrice = Number(quote.price);
+        updateAffordability();
+      }
     } catch {
       if (activeToken !== quoteToken) return;
       setLivePricePreview({
@@ -1854,6 +1915,8 @@ async function setupAdminDealForm() {
         meta: companyName || symbol,
         exchange: exchange || "NSE"
       });
+      currentLivePrice = 0;
+      updateAffordability();
     }
   };
 
@@ -2001,12 +2064,25 @@ async function setupAdminDealForm() {
       if (!["NSE", "BSE"].includes(payload.exchange)) {
         throw new Error("Choose a valid NSE or BSE stock from the live search suggestions before adding the deal.");
       }
+      const customerSelect2 = form.querySelector('[name="customer_id"]');
+      const customerOpt = customerSelect2?.options[customerSelect2.selectedIndex];
+      const customerName = customerOpt ? customerOpt.text.split(" (")[0] : "Customer";
       await api(`/admin/users/${userId}/holdings`, {
         method: "POST",
         body: JSON.stringify(payload)
       });
-      if (status) status.textContent = `${payload.symbol} was added successfully.`;
+      showAdminSuccessModal(`Deal Added — ${customerName}`, [
+        ["Customer", customerName],
+        ["Stock Symbol", payload.symbol],
+        ["Exchange", payload.exchange],
+        ["Quantity", String(payload.quantity)],
+        ["Buy Price", currency(payload.buy_price)],
+        ["Total Value", currency(payload.quantity * payload.buy_price)]
+      ]);
+      if (status) status.textContent = `${payload.symbol} added to ${customerName}.`;
       form.reset();
+      currentLivePrice = 0;
+      if (balanceInfoDiv) balanceInfoDiv.style.display = "none";
       await refreshAdminCurrentPage();
     } catch (error) {
       if (status) status.textContent = formatError(error);
@@ -2039,9 +2115,16 @@ async function setupAdminFundsForm() {
         body: JSON.stringify({ amount, note })
       });
 
-      if (status) {
-        status.textContent = `Funds added successfully. New balance funds: ${currency(updatedUser.balance_funds || 0)}.`;
-      }
+      const fundsCustomerSelect = form.querySelector('[name="customer_id"]');
+      const fundsOpt = fundsCustomerSelect?.options[fundsCustomerSelect.selectedIndex];
+      const investorName = fundsOpt ? fundsOpt.text.split(" (")[0] : "Investor";
+      showAdminSuccessModal(`Funds Added — ${investorName}`, [
+        ["Investor", investorName],
+        ["Amount Added", currency(amount)],
+        ["New Balance", currency(updatedUser.balance_funds || 0)],
+        ...(note ? [["Note", note]] : [])
+      ]);
+      if (status) status.textContent = `Funds added. New balance: ${currency(updatedUser.balance_funds || 0)}.`;
       form.reset();
     } catch (error) {
       if (status) status.textContent = formatError(error);
@@ -2276,7 +2359,7 @@ async function renderAdminDealPage() {
             <select name="customer_id">
               <option value="">Select customer</option>
               ${(Array.isArray(users) ? users : [])
-                .map((user) => `<option value="${user.user_id}">${escapeHtml(user.full_name)} (${escapeHtml(user.fixed_user_id || user.username || "")})</option>`)
+                .map((user) => `<option value="${user.user_id}" data-balance="${Number(user.balance_funds || 0).toFixed(2)}">${escapeHtml(user.full_name)} (${escapeHtml(user.fixed_user_id || user.username || "")})</option>`)
                 .join("")}
             </select>
           </label>
@@ -2292,11 +2375,16 @@ async function renderAdminDealPage() {
           <label>
             <span>Search Market</span>
             <select name="exchange">
+              <option value="" disabled selected>Select Exchange</option>
               <option value="ALL">All NSE / BSE</option>
               <option value="NSE">NSE</option>
               <option value="BSE">BSE</option>
             </select>
           </label>
+          <div class="admin-deal-balance-info" id="adminDealBalanceInfo" style="display:none">
+            <div class="admin-deal-balance-row"><span>Customer Balance Funds</span><strong id="adminDealBalanceFunds">—</strong></div>
+            <div class="admin-deal-balance-row"><span>Max Stocks Purchasable</span><strong id="adminDealAffordable">Select a stock first</strong></div>
+          </div>
           <div class="portfolio-live-price-preview" id="adminDealLivePricePreview" data-state="idle">
             <span>Live price preview</span>
             <strong>Waiting for a stock selection</strong>
@@ -2942,7 +3030,7 @@ async function renderAdminDealPage() {
             ${liveUserDashboards
               .slice()
               .sort((a, b) => String(a.full_name || "").localeCompare(String(b.full_name || "")))
-              .map((user) => `<option value="${user.user_id}">${escapeHtml(user.full_name)} (${escapeHtml(user.fixed_user_id || user.username || "Client")})</option>`)
+              .map((user) => `<option value="${user.user_id}" data-balance="${Number(user.balance_funds || 0).toFixed(2)}">${escapeHtml(user.full_name)} (${escapeHtml(user.fixed_user_id || user.username || "Client")})</option>`)
               .join("")}
           </select>
         </label>
@@ -2957,12 +3045,17 @@ async function renderAdminDealPage() {
         <label><span>Purchase Date</span><input name="purchase_date" type="date" max="${new Date().toISOString().split('T')[0]}" /></label>
         <label>
           <span>Search Market</span>
-          <select name="exchange" required>
+          <select name="exchange">
+            <option value="" disabled selected>Select Exchange</option>
             <option value="ALL">All NSE / BSE</option>
-            <option value="NSE" selected>NSE</option>
+            <option value="NSE">NSE</option>
             <option value="BSE">BSE</option>
           </select>
         </label>
+        <div class="admin-deal-balance-info" id="adminDealBalanceInfo" style="display:none">
+          <div class="admin-deal-balance-row"><span>Customer Balance Funds</span><strong id="adminDealBalanceFunds">—</strong></div>
+          <div class="admin-deal-balance-row"><span>Max Stocks Purchasable</span><strong id="adminDealAffordable">Select a stock first</strong></div>
+        </div>
         <div class="portfolio-live-price-preview" id="adminDealLivePricePreview" data-state="idle">
           <span>Live price preview</span>
           <strong>Waiting for a stock selection</strong>
