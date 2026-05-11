@@ -1561,8 +1561,6 @@ function setupAdminManagementButtons() {
     });
   });
 
-  setupDetailEyeButtons(document);
-
   if (selectAll) {
     selectAll.addEventListener("change", () => {
       document.querySelectorAll("[data-user-select]").forEach((checkbox) => {
