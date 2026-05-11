@@ -13,6 +13,7 @@ let chatNudgeTimer = null;
 let adminSearchRenderTimer = null;
 let liveDashboardPriceTimer = null;
 let adminDashboardRefreshTimer = null;
+let userRefreshTimer = null;
 let otpCountdownTimer = null;
 const marketSymbolSearchCache = new Map();
 let adminUiState = {
@@ -23,7 +24,8 @@ let adminUiState = {
   dateTo: "",
   sortBy: "recent",
   revealedStocks: [],
-  actionsMenuOpen: false
+  actionsMenuOpen: false,
+  openDetailUserId: null
 };
 let adminSearchCache = { users: [], stocks: [] };
 let userUiState = {
@@ -1234,6 +1236,8 @@ function logoutAndResetPortals() {
   activeUserId = null;
   window.clearInterval(adminDashboardRefreshTimer);
   adminDashboardRefreshTimer = null;
+  window.clearInterval(userRefreshTimer);
+  userRefreshTimer = null;
   stopLiveDashboardPrices();
   hidePortalMounts();
   hideAuthLoading();
@@ -2974,6 +2978,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       if (!user) return;
       const dropdownId = button.dataset.closeViewDropdown;
       if (dropdownId) closeAdminViewDropdown(dropdownId);
+      adminUiState.openDetailUserId = userId;
       detailMount.innerHTML = buildAdminClientDetail(user, soldHistory);
       detailMount.classList.remove("hidden");
       detailMount.classList.add("portal-visible");
@@ -3026,6 +3031,16 @@ function startAdminDashboardAutoRefresh() {
     if (document.activeElement?.matches?.("input, select, textarea")) return;
     renderAdminPortal().catch(() => {});
   }, 5000);
+}
+
+function startUserRefresh() {
+  window.clearInterval(userRefreshTimer);
+  userRefreshTimer = window.setInterval(async () => {
+    if (document.hidden) return;
+    if (activeRole !== "user") return;
+    if (document.activeElement?.matches?.("input, select, textarea")) return;
+    await renderUserPortal({ silent: true }).catch(() => {});
+  }, 10000);
 }
 
 async function refreshAdminCurrentView() {
@@ -3852,8 +3867,6 @@ async function renderAdminPortal(options = {}) {
     }, 0);
     const filteredPositionsTotalProfit = filteredUnrealizedProfit + filteredPositionsRealizedProfit;
 
-    const prevDetailMount = document.getElementById("adminDetailMount");
-    const savedDetailHTML = silent && prevDetailMount && !prevDetailMount.classList.contains("hidden") ? prevDetailMount.innerHTML : null;
 
     mount.innerHTML = `
     <section class="user-shell admin-simple-shell no-sidebar-shell">
@@ -4112,14 +4125,6 @@ async function renderAdminPortal(options = {}) {
     } else {
       mount.classList.remove("hidden");
     }
-    if (savedDetailHTML) {
-      const newDetailMount = document.getElementById("adminDetailMount");
-      if (newDetailMount) {
-        newDetailMount.innerHTML = savedDetailHTML;
-        newDetailMount.classList.remove("hidden");
-        newDetailMount.classList.add("portal-stable");
-      }
-    }
     activeRole = "admin";
     activeUserId = null;
     startAdminRefresh();
@@ -4127,6 +4132,17 @@ async function renderAdminPortal(options = {}) {
     setupAdminManagementButtons();
     setupAdminDrilldowns(userDashboards, allHoldings, filteredSoldHistory);
     setupScrollSync("adminPositionsTableWrap", "adminPositionsTableScroller");
+    if (adminUiState.openDetailUserId) {
+      const openUser = userDashboards.find((u) => Number(u.user_id) === Number(adminUiState.openDetailUserId));
+      const detailMount = document.getElementById("adminDetailMount");
+      if (openUser && detailMount) {
+        detailMount.innerHTML = buildAdminClientDetail(openUser, filteredSoldHistory);
+        detailMount.classList.remove("hidden");
+        detailMount.classList.add("portal-visible");
+        setupDetailEyeButtons(detailMount);
+        setupScrollSync("adminDetailLiveWrap", "adminDetailLiveScroller");
+      }
+    }
     setupPortalActions();
     void refreshTableLivePrices();
   } catch (error) {
@@ -4565,6 +4581,7 @@ async function renderUserPortal(options = {}) {
     revealPortal(mount);
     activeRole = "user";
     activeUserId = profile.id;
+    startUserRefresh();
     setupUserPortfolioFilters();
     setupScrollSync("userPositionsTableWrap", "userPositionsTableScroller");
     setupPortalActions();
