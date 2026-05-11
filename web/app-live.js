@@ -3354,8 +3354,8 @@ async function renderAdminPortal() {
                           <td><button class="table-link" type="button" data-user-detail="${entry.user_id}">${escapeHtml(entry.full_name)}</button><br /><small>${escapeHtml(entry.fixed_user_id || "")}</small></td>
                           <td>
                             <div class="admin-stock-cell">
-                              <button class="admin-eye-btn" type="button" data-stock-visibility-toggle="${escapeHtml(entry.symbol)}" aria-label="${isAdminStockRevealed(entry.symbol) ? "Hide stock name" : "Show stock name"}">${isAdminStockRevealed(entry.symbol) ? "🙈" : "👁"}</button>
-                              <span>${isAdminStockRevealed(entry.symbol) ? escapeHtml(entry.symbol) : maskStockSymbol(entry.symbol)}</span>
+                              <button class="admin-eye-btn ${isAdminStockRevealed(entry.symbol) ? "is-active" : ""}" type="button" data-stock-visibility-toggle="${escapeHtml(String(entry.symbol || "").toUpperCase())}" aria-label="${isAdminStockRevealed(entry.symbol) ? "Hide stock name" : "Show stock name"}">&#128065;</button>
+                              <span data-stock-label="${escapeHtml(String(entry.symbol || "").toUpperCase())}">${isAdminStockRevealed(entry.symbol) ? escapeHtml(entry.symbol) : maskStockSymbol(entry.symbol)}</span>
                             </div>
                           </td>
                           <td>${formatDate(entry.created_at)}</td>
