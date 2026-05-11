@@ -2797,7 +2797,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
 
       <article class="table-card" style="margin-top:18px;">
         <div class="panel-head"><h3>Live Positions</h3><span class="badge">Realtime</span></div>
-        <div class="table-wrap">
+        <div class="table-wrap admin-position-table-wrap" id="adminDetailLiveWrap">
           <table class="admin-position-table">
             <thead>
               <tr>
@@ -2811,6 +2811,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
                 <th>Today&apos;s P&amp;L</th>
                 <th>Realised P&amp;L</th>
                 <th>Total P&amp;L</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -2840,10 +2841,15 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
                         <td class="${Number(holding.today_profit || 0) >= 0 ? "profit" : "loss"}">${currency(holding.today_profit || 0)}</td>
                         <td class="${realizedProfit >= 0 ? "profit" : "loss"}">${currency(realizedProfit)}</td>
                         <td class="${totalProfit >= 0 ? "profit" : "loss"}">${currency(totalProfit)}</td>
+                        <td class="action-cell-duo">
+                          <button class="buy-action-btn" type="button" data-admin-buy-holding="${holding.holding_id}" data-user-id="${user.user_id}" data-symbol="${escapeHtml(holding.symbol)}" data-owner="${escapeHtml(user.name || '')}" data-exchange="${escapeHtml(holding.exchange || 'NSE')}" data-buy-price="${holding.buy_price}">Buy</button>
+                          <button class="edit-action-btn" type="button" data-admin-edit-holding="${holding.holding_id}" data-symbol="${escapeHtml(holding.symbol)}" data-owner="${escapeHtml(user.name || '')}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}" data-created-at="${escapeHtml(holding.created_at || '')}">Edit</button>
+                          <button class="sell-action-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${escapeHtml(holding.symbol)}" data-owner="${escapeHtml(user.name || '')}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}">Sell</button>
+                        </td>
                       </tr>
                     `;
                   }).join("")
-                : `<tr><td colspan="10"><span class="helper-text">No live positions for this investor.</span></td></tr>`}
+                : `<tr><td colspan="11"><span class="helper-text">No live positions for this investor.</span></td></tr>`}
             </tbody>
             <tfoot>
               <tr class="admin-total-row">
@@ -2856,9 +2862,13 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
                 <td class="${totalToday >= 0 ? "profit" : "loss"}"><strong>${currency(totalToday)}</strong></td>
                 <td class="${totalRealized >= 0 ? "profit" : "loss"}"><strong>${currency(totalRealized)}</strong></td>
                 <td class="${totalPnl >= 0 ? "profit" : "loss"}"><strong>${currency(totalPnl)}</strong></td>
+                <td>—</td>
               </tr>
             </tfoot>
           </table>
+        </div>
+        <div class="admin-table-bottom-scroll" id="adminDetailLiveScroller" aria-label="Scroll live positions table horizontally">
+          <div class="admin-table-bottom-scroll-inner"></div>
         </div>
       </article>
 
@@ -2968,6 +2978,8 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       detailMount.classList.remove("hidden");
       detailMount.classList.add("portal-visible");
       setupDetailEyeButtons(detailMount);
+      setupScrollSync("adminDetailLiveWrap", "adminDetailLiveScroller");
+      setupPortalActions();
       detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
       maybeShowBalanceWarning(user);
     });
@@ -2982,6 +2994,9 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       const user = userDashboards.find((entry) => Number(entry.user_id) === userId);
       if (user) {
         detailMount.innerHTML = buildAdminClientDetail(user, soldHistory, symbol);
+        setupDetailEyeButtons(detailMount);
+        setupScrollSync("adminDetailLiveWrap", "adminDetailLiveScroller");
+        setupPortalActions();
         maybeShowBalanceWarning(user);
       } else {
         const holdings = allHoldings.filter((entry) => String(entry.symbol || "").toUpperCase() === symbol);
