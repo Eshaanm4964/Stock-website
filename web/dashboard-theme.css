@@ -1935,6 +1935,26 @@ body.dashboard-page {
    USER INVESTOR DASHBOARD — Header, Charts, Metrics Modal
 ═══════════════════════════════════════════════════════════════ */
 
+.user-holdings-filter {
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: #0f2040;
+  border: 1px solid rgba(15, 32, 64, 0.1);
+  background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+  box-shadow: 0 10px 24px rgba(15, 32, 64, 0.05);
+  cursor: pointer;
+  appearance: auto;
+  min-width: 130px;
+}
+
+.user-holdings-filter:hover {
+  border-color: rgba(44, 144, 240, 0.34);
+  background: linear-gradient(180deg, #f5f9ff 0%, #eef4fb 100%);
+}
+
 .user-brand-divider {
   width: 1px;
   height: 36px;
