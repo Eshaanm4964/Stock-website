@@ -4158,19 +4158,21 @@ async function renderUserPortal(options = {}) {
     <section class="user-shell no-sidebar-shell user-clean-shell">
       <div class="user-shell-main user-dashboard-stack">
 
-        <header class="user-investor-topbar">
-          <div class="user-investor-topbar-left">
-            <img src="./assets/updated_logo.png" alt="Asset Yantra Logo" class="user-investor-logo" />
+        <header class="user-topbar admin-compact-topbar admin-simple-topbar">
+          <div class="admin-toolbar-left">
+            <div class="brand admin-dashboard-brand">
+              <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/updated_logo.png" alt="Asset Yantra logo" /></span>
+              <span class="public-brand-copy">
+                <strong class="brand-wordmark">Asset Yantra</strong>
+                <small class="brand-tagline">Investor Portfolio</small>
+              </span>
+            </div>
             <div class="user-investor-identity">
-              <div class="user-investor-brand">
-                <span class="user-investor-brand-name">Asset Yantra</span>
-                <span class="user-investor-brand-sub">Investor Portfolio</span>
-              </div>
               <h2 class="user-investor-name" id="investorNameAnimated">${escapeHtml(profile.full_name)}</h2>
               <p class="helper-text">Client ID: ${escapeHtml(profile.fixed_user_id || profile.username || "Not assigned")}</p>
             </div>
           </div>
-          <div class="user-investor-topbar-right">
+          <div class="user-topbar-actions admin-toolbar-right">
             <button class="secondary-btn compact-btn" type="button" id="userMetricsBtn">Metrics</button>
             <button class="secondary-btn compact-btn" type="button" id="userPdfBtn">Download PDF</button>
             <select class="user-search user-holdings-filter" id="userPortfolioStatusFilter">

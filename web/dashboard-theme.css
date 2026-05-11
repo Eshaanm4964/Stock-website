@@ -1935,32 +1935,6 @@ body.dashboard-page {
    USER INVESTOR DASHBOARD — Header, Charts, Metrics Modal
 ═══════════════════════════════════════════════════════════════ */
 
-.user-investor-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 20px 28px;
-  background: linear-gradient(135deg, #0a1628 0%, #0f2040 60%, #1a3a6c 100%);
-  border-radius: 16px;
-  flex-wrap: wrap;
-}
-
-.user-investor-topbar-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  min-width: 0;
-}
-
-.user-investor-logo {
-  width: 52px;
-  height: 52px;
-  object-fit: contain;
-  flex-shrink: 0;
-  border-radius: 10px;
-}
-
 .user-investor-identity {
   display: flex;
   flex-direction: column;
@@ -1968,59 +1942,22 @@ body.dashboard-page {
   min-width: 0;
 }
 
-.user-investor-brand {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.user-investor-brand-name {
-  font-family: "Playfair Display", serif;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #c9a84c;
-  letter-spacing: 0.02em;
-}
-
-.user-investor-brand-sub {
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.5);
-}
-
 .user-investor-name {
-  font-family: "DM Sans", sans-serif;
-  font-size: 1.55rem;
+  font-size: clamp(1.1rem, 1.6vw, 1.5rem);
   font-weight: 700;
-  color: #ffffff;
-  margin: 2px 0 0;
+  color: var(--dash-ink, #0f2040);
+  margin: 0;
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(6px);
 }
 
 @keyframes userNameFadeSlide {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 .user-investor-name--animate {
-  animation: userNameFadeSlide 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
-}
-
-.user-investor-identity .helper-text {
-  color: rgba(255, 255, 255, 0.45);
-  font-size: 0.76rem;
-  margin: 0;
-}
-
-.user-investor-topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  flex-shrink: 0;
+  animation: userNameFadeSlide 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
 }
 
 /* ── Portfolio charts grid ───────────────────────────────────── */
@@ -2193,15 +2130,6 @@ body.dashboard-page {
 
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .user-investor-topbar {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 16px;
-    border-radius: 12px;
-  }
-  .user-investor-logo { width: 40px; height: 40px; }
-  .user-investor-name { font-size: 1.2rem; }
-  .user-investor-topbar-right { width: 100%; justify-content: flex-start; }
   .portfolio-charts-grid { grid-template-columns: 1fr; }
   .user-metrics-modal { padding: 20px 16px; }
 }
@@ -2212,17 +2140,10 @@ body.dashboard-page {
 
 /* ── Print styles ────────────────────────────────────────────── */
 @media print {
-  .user-investor-topbar-right,
+  .admin-toolbar-right,
   .logout-btn,
   .admin-table-bottom-scroll,
   .user-metrics-overlay { display: none !important; }
-
-  .user-investor-topbar {
-    background: #0f2040 !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-    border-radius: 0 !important;
-  }
 
   .user-investor-name {
     opacity: 1 !important;
