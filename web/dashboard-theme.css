@@ -36,6 +36,26 @@
   color: #11203d;
 }
 
+.dashboard-loading-spinner {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+.dashboard-loading-spinner span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #2c90f0;
+  animation: dlSpinnerPulse 1.2s ease-in-out infinite;
+}
+.dashboard-loading-spinner span:nth-child(2) { animation-delay: 0.2s; }
+.dashboard-loading-spinner span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dlSpinnerPulse {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
 @media (max-width: 760px) {
   .dashboard-app-shell {
     padding: 8px;
@@ -1323,6 +1343,7 @@ body.dashboard-page {
 }
 .detail-stat-grid article strong {
   font-family: "IBM Plex Mono", monospace;
+  font-feature-settings: "zero" 0, "ss01" 0;
   font-size: 1.28rem;
   font-weight: 700;
   color: #0f2040;

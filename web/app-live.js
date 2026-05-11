@@ -2610,7 +2610,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
       <div class="panel-head">
         <div>
           <p class="eyebrow">Investor Detail</p>
-          <h3>${escapeHtml(user.full_name)}</h3>
+          <h3 style="color:#2c90f0">${escapeHtml(user.full_name)}</h3>
           <p class="detail-subtitle">${escapeHtml(user.fixed_user_id || user.username || "")}</p>
         </div>
       </div>
@@ -3245,7 +3245,7 @@ async function renderAdminPortal() {
                     .map(
                       (entry) => `
                         <tr>
-                          <td><strong>${escapeHtml(entry.full_name)}</strong><br /><small>${escapeHtml(entry.fixed_user_id || "")}</small></td>
+                          <td><button class="table-link" type="button" data-user-detail="${entry.user_id}">${escapeHtml(entry.full_name)}</button><br /><small>${escapeHtml(entry.fixed_user_id || "")}</small></td>
                           <td>
                             <div class="admin-stock-cell">
                               <button class="admin-eye-btn" type="button" data-stock-visibility-toggle="${escapeHtml(entry.symbol)}" aria-label="${isAdminStockRevealed(entry.symbol) ? "Hide stock name" : "Show stock name"}">${isAdminStockRevealed(entry.symbol) ? "🙈" : "👁"}</button>
@@ -3874,7 +3874,7 @@ async function renderAdminPortal(options = {}) {
                       .map(
                         (entry) => `
                           <tr>
-                            <td><strong>${escapeHtml(entry.full_name)}</strong><br /><small>${escapeHtml(entry.fixed_user_id || "")}</small></td>
+                            <td><button class="table-link" type="button" data-user-detail="${entry.user_id}">${escapeHtml(entry.full_name)}</button><br /><small>${escapeHtml(entry.fixed_user_id || "")}</small></td>
                             <td>
                               <div class="admin-stock-cell">
                                 <button class="admin-eye-btn ${isAdminStockRevealed(entry.symbol) ? "is-active" : ""}" type="button" data-stock-visibility-toggle="${escapeHtml(String(entry.symbol || "").toUpperCase())}" aria-label="${isAdminStockRevealed(entry.symbol) ? "Hide stock name" : "Show stock name"}">&#128065;</button>
