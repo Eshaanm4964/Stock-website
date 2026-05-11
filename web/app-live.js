@@ -885,14 +885,21 @@ function setupPageTransitions() {
     document.body.appendChild(overlay);
   }
 
-  document.body.classList.add("page-enter");
-
-  window.requestAnimationFrame(() => {
+  // If arriving from a page transition, keep overlay visible until content loads
+  if (sessionStorage.getItem("pageTransitionActive")) {
+    sessionStorage.removeItem("pageTransitionActive");
+    overlay.classList.add("is-visible");
+    overlay.setAttribute("aria-hidden", "false");
+    document.body.classList.add("page-transitioning");
+  } else {
+    document.body.classList.add("page-enter");
     window.requestAnimationFrame(() => {
-      document.body.classList.add("page-ready");
-      document.body.classList.remove("page-enter");
+      window.requestAnimationFrame(() => {
+        document.body.classList.add("page-ready");
+        document.body.classList.remove("page-enter");
+      });
     });
-  });
+  }
 
   document.addEventListener("click", (event) => {
     const link = event.target.closest('a[href]');
@@ -909,6 +916,7 @@ function setupPageTransitions() {
     if (url.href === window.location.href) return;
 
     event.preventDefault();
+    sessionStorage.setItem("pageTransitionActive", "1");
     overlay.classList.add("is-visible");
     overlay.setAttribute("aria-hidden", "false");
     document.body.classList.add("page-transitioning");
@@ -1233,9 +1241,18 @@ function startOtpCountdown(elementId, minutes) {
 
 function hideDashLoader() {
   const loader = document.getElementById("dashboardLoader");
-  if (!loader) return;
-  loader.style.opacity = "0";
-  setTimeout(() => loader.remove(), 400);
+  if (loader) {
+    loader.style.opacity = "0";
+    setTimeout(() => loader.remove(), 400);
+  }
+  const transition = document.getElementById("pageTransitionOverlay");
+  if (transition?.classList.contains("is-visible")) {
+    setTimeout(() => {
+      transition.classList.remove("is-visible");
+      transition.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("page-transitioning");
+    }, 180);
+  }
 }
 
 async function renderTicker(elementId, symbols) {
@@ -2806,7 +2823,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
                       <td>
                         <div class="admin-stock-cell">
                           <button class="admin-eye-btn ${isAdminStockRevealed(entry.symbol) ? "is-active" : ""}" type="button" data-stock-visibility-toggle="${escapeHtml(String(entry.symbol || "").toUpperCase())}" aria-label="Toggle stock name">&#128065;</button>
-                          <span data-stock-label="${escapeHtml(String(entry.symbol || "").toUpperCase())}">${isAdminStockRevealed(entry.symbol) ? escapeHtml(entry.symbol) : maskStockSymbol(entry.symbol)}</span>
+                          <span class="sold-history-symbol" data-stock-label="${escapeHtml(String(entry.symbol || "").toUpperCase())}">${isAdminStockRevealed(entry.symbol) ? escapeHtml(entry.symbol) : maskStockSymbol(entry.symbol)}</span>
                         </div>
                       </td>
                       <td>${formatDate(entry.created_at)}</td>
@@ -3355,7 +3372,7 @@ async function renderAdminPortal() {
                           <td>
                             <div class="admin-stock-cell">
                               <button class="admin-eye-btn ${isAdminStockRevealed(entry.symbol) ? "is-active" : ""}" type="button" data-stock-visibility-toggle="${escapeHtml(String(entry.symbol || "").toUpperCase())}" aria-label="${isAdminStockRevealed(entry.symbol) ? "Hide stock name" : "Show stock name"}">&#128065;</button>
-                              <span data-stock-label="${escapeHtml(String(entry.symbol || "").toUpperCase())}">${isAdminStockRevealed(entry.symbol) ? escapeHtml(entry.symbol) : maskStockSymbol(entry.symbol)}</span>
+                              <span class="sold-history-symbol" data-stock-label="${escapeHtml(String(entry.symbol || "").toUpperCase())}">${isAdminStockRevealed(entry.symbol) ? escapeHtml(entry.symbol) : maskStockSymbol(entry.symbol)}</span>
                             </div>
                           </td>
                           <td>${formatDate(entry.created_at)}</td>
@@ -3984,7 +4001,7 @@ async function renderAdminPortal(options = {}) {
                             <td>
                               <div class="admin-stock-cell">
                                 <button class="admin-eye-btn ${isAdminStockRevealed(entry.symbol) ? "is-active" : ""}" type="button" data-stock-visibility-toggle="${escapeHtml(String(entry.symbol || "").toUpperCase())}" aria-label="${isAdminStockRevealed(entry.symbol) ? "Hide stock name" : "Show stock name"}">&#128065;</button>
-                                <span data-stock-label="${escapeHtml(String(entry.symbol || "").toUpperCase())}">${isAdminStockRevealed(entry.symbol) ? escapeHtml(entry.symbol) : maskStockSymbol(entry.symbol)}</span>
+                                <span class="sold-history-symbol" data-stock-label="${escapeHtml(String(entry.symbol || "").toUpperCase())}">${isAdminStockRevealed(entry.symbol) ? escapeHtml(entry.symbol) : maskStockSymbol(entry.symbol)}</span>
                               </div>
                             </td>
                             <td>${formatDate(entry.created_at)}</td>

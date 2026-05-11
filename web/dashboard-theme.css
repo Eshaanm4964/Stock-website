@@ -2325,3 +2325,9 @@ input[type="date"]::-webkit-datetime-edit {
 .admin-deal-balance-row strong.can-afford {
   color: #0f8a55;
 }
+
+/* ── Sold history stock symbol — blue to match table-link ─ */
+.sold-history-symbol {
+  color: #2c90f0;
+  font-weight: 600;
+}
