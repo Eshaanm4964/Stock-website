@@ -943,63 +943,7 @@ function setupReviewForm() {
 }
 
 function setupPageTransitions() {
-  let overlay = document.getElementById("pageTransitionOverlay");
-  if (!overlay) {
-    overlay = document.createElement("div");
-    overlay.id = "pageTransitionOverlay";
-    overlay.className = "page-transition-overlay";
-    overlay.setAttribute("aria-hidden", "true");
-    overlay.innerHTML = `
-      <div class="page-transition-card">
-        <span class="page-transition-logo" aria-hidden="true">
-          <img src="./assets/loading_logo.png" alt="Asset Yantra logo" />
-        </span>
-        <div class="page-transition-bar" aria-hidden="true"></div>
-        <span class="page-transition-label">Loading</span>
-      </div>
-    `;
-    document.body.appendChild(overlay);
-  }
-
-  // If arriving from a page transition, keep overlay visible until content loads
-  if (sessionStorage.getItem("pageTransitionActive")) {
-    sessionStorage.removeItem("pageTransitionActive");
-    overlay.classList.add("is-visible");
-    overlay.setAttribute("aria-hidden", "false");
-    document.body.classList.add("page-transitioning");
-  } else {
-    document.body.classList.add("page-enter");
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        document.body.classList.add("page-ready");
-        document.body.classList.remove("page-enter");
-      });
-    });
-  }
-
-  document.addEventListener("click", (event) => {
-    const link = event.target.closest('a[href]');
-    if (!link) return;
-    const href = link.getAttribute("href");
-    if (!href || href.startsWith("#")) return;
-    if (link.target && link.target !== "_self") return;
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-
-    const url = new URL(href, window.location.href);
-    const isSameOrigin = url.origin === window.location.origin;
-    const isHtmlPage = /\.(html)?$/i.test(url.pathname.split("/").pop() || "");
-    if (!isSameOrigin || !isHtmlPage) return;
-    if (url.href === window.location.href) return;
-
-    event.preventDefault();
-    sessionStorage.setItem("pageTransitionActive", "1");
-    overlay.classList.add("is-visible");
-    overlay.setAttribute("aria-hidden", "false");
-    document.body.classList.add("page-transitioning");
-    window.setTimeout(() => {
-      window.location.href = url.href;
-    }, 260);
-  });
+  sessionStorage.removeItem("pageTransitionActive");
 }
 
 function setupMobileNav() {
@@ -1320,14 +1264,6 @@ function hideDashLoader() {
   if (loader) {
     loader.style.opacity = "0";
     setTimeout(() => loader.remove(), 400);
-  }
-  const transition = document.getElementById("pageTransitionOverlay");
-  if (transition?.classList.contains("is-visible")) {
-    setTimeout(() => {
-      transition.classList.remove("is-visible");
-      transition.setAttribute("aria-hidden", "true");
-      document.body.classList.remove("page-transitioning");
-    }, 180);
   }
 }
 
