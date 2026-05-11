@@ -3947,18 +3947,171 @@ async function renderAdminPortal(options = {}) {
   }
 }
 
+let portfolioChartInstances = {};
+
+const STOCK_SECTOR_MAP = {
+  'KPIL': 'Infrastructure', 'KALIND': 'IT', 'INFY': 'IT', 'TCS': 'IT', 'WIPRO': 'IT',
+  'HDFCBANK': 'Banking', 'ICICIBANK': 'Banking', 'SBIN': 'Banking', 'AXISBANK': 'Banking',
+  'RELIANCE': 'Energy', 'ONGC': 'Energy', 'NTPC': 'Energy', 'POWERGRID': 'Energy',
+  'SUNPHARMA': 'Pharma', 'DRREDDY': 'Pharma', 'CIPLA': 'Pharma', 'DIVISLAB': 'Pharma',
+  'MARUTI': 'Auto', 'TATAMOTORS': 'Auto', 'BAJAJ-AUTO': 'Auto', 'EICHERMOT': 'Auto',
+  'HINDUNILVR': 'FMCG', 'ITC': 'FMCG', 'NESTLEIND': 'FMCG', 'DABUR': 'FMCG'
+};
+const CHART_PALETTE = ['#2c90f0','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16','#f97316','#a78bfa'];
+
+function destroyExistingCharts() {
+  Object.values(portfolioChartInstances).forEach(c => c?.destroy());
+  portfolioChartInstances = {};
+}
+
+function buildSectorAllocationData(holdings) {
+  const map = {};
+  holdings.forEach(h => {
+    const sector = h.sector || STOCK_SECTOR_MAP[String(h.symbol || '').toUpperCase()] || 'Others';
+    const val = Number(h.current_price || 0) * Number(h.quantity || 0);
+    map[sector] = (map[sector] || 0) + val;
+  });
+  return map;
+}
+
+function buildStockAllocationData(holdings) {
+  const map = {};
+  holdings.forEach(h => {
+    const key = String(h.symbol || 'Unknown').toUpperCase();
+    const val = Number(h.current_price || 0) * Number(h.quantity || 0);
+    map[key] = (map[key] || 0) + val;
+  });
+  const entries = Object.entries(map).sort((a, b) => b[1] - a[1]);
+  if (entries.length <= 6) return Object.fromEntries(entries);
+  const top5 = entries.slice(0, 5);
+  const othersVal = entries.slice(5).reduce((s, [, v]) => s + v, 0);
+  return Object.fromEntries([...top5, ['Others', othersVal]]);
+}
+
+function buildExchangeAllocationData(holdings) {
+  const map = {};
+  holdings.forEach(h => {
+    const ex = String(h.exchange || 'Unknown').toUpperCase() || 'Unknown';
+    const val = Number(h.current_price || 0) * Number(h.quantity || 0);
+    map[ex] = (map[ex] || 0) + val;
+  });
+  return map;
+}
+
+function buildPnlContributionData(holdings) {
+  const map = {};
+  holdings.forEach(h => {
+    const key = String(h.symbol || 'Unknown').toUpperCase();
+    map[key] = (map[key] || 0) + Number(h.profit_loss || 0);
+  });
+  return map;
+}
+
+function calculateXIRR(holdings) {
+  if (!holdings.length) return null;
+  let totalInvested = 0, totalCurrent = 0, weightedDays = 0;
+  const today = Date.now();
+  holdings.forEach(h => {
+    const invested = Number(h.buy_price || 0) * Number(h.quantity || 0);
+    const current = Number(h.current_price || 0) * Number(h.quantity || 0);
+    const days = h.created_at ? Math.max(1, (today - new Date(h.created_at).getTime()) / 86400000) : 365;
+    totalInvested += invested;
+    totalCurrent += current;
+    weightedDays += invested * days;
+  });
+  if (!totalInvested || !weightedDays) return null;
+  const avgDays = weightedDays / totalInvested;
+  const years = Math.max(avgDays / 365, 1 / 365);
+  const totalReturn = (totalCurrent - totalInvested) / totalInvested;
+  if (1 + totalReturn <= 0) return totalReturn * 100;
+  return (Math.pow(1 + totalReturn, 1 / years) - 1) * 100;
+}
+
+function renderPortfolioCharts(holdings) {
+  if (typeof Chart === 'undefined') return;
+  const donutOpts = () => ({
+    type: 'doughnut',
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } },
+        title: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.label}: ₹${Number(ctx.raw).toLocaleString('en-IN', { maximumFractionDigits: 0 })} (${ctx.parsed > 0 ? ((ctx.parsed / ctx.dataset.data.reduce((a, b) => a + b, 0)) * 100).toFixed(1) : 0}%)`
+          }
+        }
+      },
+      cutout: '60%'
+    }
+  });
+
+  const sectorCanvas = document.getElementById('sectorAllocationChart');
+  if (sectorCanvas) {
+    const data = buildSectorAllocationData(holdings);
+    const labels = Object.keys(data), values = Object.values(data);
+    portfolioChartInstances.sector = new Chart(sectorCanvas, {
+      ...donutOpts(),
+      data: { labels, datasets: [{ data: values, backgroundColor: CHART_PALETTE.slice(0, labels.length), borderWidth: 2, borderColor: '#fff' }] }
+    });
+  }
+
+  const stockCanvas = document.getElementById('stockAllocationChart');
+  if (stockCanvas) {
+    const data = buildStockAllocationData(holdings);
+    const labels = Object.keys(data), values = Object.values(data);
+    portfolioChartInstances.stock = new Chart(stockCanvas, {
+      ...donutOpts(),
+      data: { labels, datasets: [{ data: values, backgroundColor: CHART_PALETTE.slice(0, labels.length), borderWidth: 2, borderColor: '#fff' }] }
+    });
+  }
+
+  const exCanvas = document.getElementById('exchangeAllocationChart');
+  if (exCanvas) {
+    const data = buildExchangeAllocationData(holdings);
+    const labels = Object.keys(data), values = Object.values(data);
+    portfolioChartInstances.exchange = new Chart(exCanvas, {
+      type: 'pie',
+      data: { labels, datasets: [{ data: values, backgroundColor: ['#2c90f0', '#10b981', '#f59e0b', '#ef4444'], borderWidth: 2, borderColor: '#fff' }] },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ₹${Number(ctx.raw).toLocaleString('en-IN', { maximumFractionDigits: 0 })}` } }
+        }
+      }
+    });
+  }
+
+  const pnlCanvas = document.getElementById('pnlContributionChart');
+  if (pnlCanvas) {
+    const data = buildPnlContributionData(holdings);
+    const entries = Object.entries(data).sort((a, b) => b[1] - a[1]);
+    const labels = entries.map(([k]) => k), values = entries.map(([, v]) => v);
+    portfolioChartInstances.pnl = new Chart(pnlCanvas, {
+      type: 'bar',
+      data: { labels, datasets: [{ label: 'P&L', data: values, backgroundColor: values.map(v => v >= 0 ? '#10b981' : '#ef4444'), borderRadius: 4 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ₹${Number(ctx.raw).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` } } },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+          y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 10 }, callback: v => '₹' + Number(v).toLocaleString('en-IN', { maximumFractionDigits: 0 }) } }
+        }
+      }
+    });
+  }
+}
+
 async function renderUserPortal(options = {}) {
   const mount = document.getElementById("userPortal");
   if (!mount) return;
   if (userRenderInFlight) return;
   userRenderInFlight = true;
   const { showLoading = false, silent = false, loadingTitle, loadingText } = options;
-  if (!silent) {
-    revealPortal(mount);
-  }
-  if (showLoading) {
-    showDashboardLoading(loadingTitle, loadingText);
-  }
+  if (!silent) revealPortal(mount);
+  if (showLoading) showDashboardLoading(loadingTitle, loadingText);
   try {
     const [profile, summary, soldHistory] = await Promise.all([
       api("/auth/me"),
@@ -3976,45 +4129,50 @@ async function renderUserPortal(options = {}) {
     }, new Map());
     const performance = rawPerformance.map((holding) => {
       const symbolKey = String(holding.symbol || "").toUpperCase();
-      const quantity = Number(holding.quantity || 0);
       const currentPrice = Number(holding.current_price ?? holding.buy_price ?? 0);
       const todayProfit = Number(holding.today_profit ?? 0);
       const realizedProfit = Number(realizedMap.get(symbolKey) || 0);
-      return {
-        ...holding,
-        current_price: currentPrice,
-        today_profit: todayProfit,
-        realized_profit: realizedProfit,
-        total_profit: Number(holding.profit_loss || 0) + realizedProfit
-      };
+      return { ...holding, current_price: currentPrice, today_profit: todayProfit, realized_profit: realizedProfit, total_profit: Number(holding.profit_loss || 0) + realizedProfit };
     });
     const filteredPerformance = getFilteredUserPerformance(performance);
-    const profitableCount = performance.filter((holding) => Number(holding.profit_loss || 0) > 0).length;
+    const profitableCount = performance.filter((h) => Number(h.profit_loss || 0) > 0).length;
     const filteredSoldHistory = safeSoldHistory.filter((entry) => {
       const search = userUiState.search.trim().toLowerCase();
       if (!search) return true;
       return String(entry.symbol || "").toLowerCase().includes(search) || String(entry.exchange || "").toLowerCase().includes(search);
     });
-    const totalVisibleValue = filteredPerformance.reduce((sum, holding) => sum + Number(holding.current_price || holding.value || 0) * Number(holding.quantity || 0), 0);
     const gainRate = performance.length ? (profitableCount / performance.length) * 100 : 0;
-    const totalTodayProfit = filteredPerformance.reduce((sum, holding) => sum + Number(holding.today_profit || 0), 0);
-    const totalRealizedProfit = filteredPerformance.reduce((sum, holding) => sum + Number(holding.realized_profit || 0), 0);
-    const totalCombinedProfit = filteredPerformance.reduce((sum, holding) => sum + Number(holding.total_profit || 0), 0);
-    const totalUnrealizedProfit = filteredPerformance.reduce((sum, holding) => sum + Number(holding.profit_loss || 0), 0);
-    const filteredTotalQuantity = filteredPerformance.reduce((sum, holding) => sum + Number(holding.quantity || 0), 0);
-    const filteredInvestedValue = filteredPerformance.reduce((sum, holding) => sum + Number(holding.buy_price || 0) * Number(holding.quantity || 0), 0);
-    const filteredCurrentValue = filteredPerformance.reduce((sum, holding) => sum + Number(holding.current_price || 0) * Number(holding.quantity || 0), 0);
+    const totalTodayProfit = filteredPerformance.reduce((sum, h) => sum + Number(h.today_profit || 0), 0);
+    const totalRealizedProfit = filteredPerformance.reduce((sum, h) => sum + Number(h.realized_profit || 0), 0);
+    const totalCombinedProfit = filteredPerformance.reduce((sum, h) => sum + Number(h.total_profit || 0), 0);
+    const totalUnrealizedProfit = filteredPerformance.reduce((sum, h) => sum + Number(h.profit_loss || 0), 0);
+    const filteredTotalQuantity = filteredPerformance.reduce((sum, h) => sum + Number(h.quantity || 0), 0);
+    const filteredInvestedValue = filteredPerformance.reduce((sum, h) => sum + Number(h.buy_price || 0) * Number(h.quantity || 0), 0);
+    const filteredCurrentValue = filteredPerformance.reduce((sum, h) => sum + Number(h.current_price || 0) * Number(h.quantity || 0), 0);
+
+    const xirr = calculateXIRR(performance);
+    const bestPerformer = performance.length ? performance.reduce((best, h) => Number(h.percent_change || 0) > Number(best.percent_change || 0) ? h : best, performance[0]) : null;
+    const availableBalance = Math.max(0, Number(profile.balance_funds || 0) - filteredInvestedValue);
 
     mount.innerHTML = `
     <section class="user-shell no-sidebar-shell user-clean-shell">
       <div class="user-shell-main user-dashboard-stack">
-        <header class="user-topbar user-clean-topbar">
-          <div>
-            <p class="eyebrow">Investor Portfolio</p>
-            <h2>${profile.full_name}</h2>
-            <p class="helper-text">Client ID: ${escapeHtml(profile.fixed_user_id || profile.username || "Not assigned")}</p>
+
+        <header class="user-investor-topbar">
+          <div class="user-investor-topbar-left">
+            <img src="./assets/updated_logo.png" alt="Asset Yantra Logo" class="user-investor-logo" />
+            <div class="user-investor-identity">
+              <div class="user-investor-brand">
+                <span class="user-investor-brand-name">Asset Yantra</span>
+                <span class="user-investor-brand-sub">Investor Portfolio</span>
+              </div>
+              <h2 class="user-investor-name" id="investorNameAnimated">${escapeHtml(profile.full_name)}</h2>
+              <p class="helper-text">Client ID: ${escapeHtml(profile.fixed_user_id || profile.username || "Not assigned")}</p>
+            </div>
           </div>
-          <div class="user-topbar-actions">
+          <div class="user-investor-topbar-right">
+            <button class="secondary-btn compact-btn" type="button" id="userMetricsBtn">Metrics</button>
+            <button class="secondary-btn compact-btn" type="button" id="userPdfBtn">Download PDF</button>
             <select class="user-search user-holdings-filter" id="userPortfolioStatusFilter">
               <option value="all">All Holdings</option>
               <option value="profit">In profit</option>
@@ -4032,54 +4190,72 @@ async function renderUserPortal(options = {}) {
           <span class="${totalTodayProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalTodayProfit)}</strong> Today&apos;s P&amp;L</span>
         </section>
 
-        <article class="table-card full-span-card user-holdings-card">
+        <article class="table-card full-span-card user-charts-card">
           <div class="panel-head">
             <div>
-              <h3>Portfolio Holdings</h3>
+              <h3>Portfolio Allocation &amp; Risk Insights</h3>
+              <p class="helper-text">Real-time breakdown of your portfolio composition and performance.</p>
             </div>
+          </div>
+          ${performance.length ? `
+          <div class="portfolio-charts-grid">
+            <div class="chart-card">
+              <h4 class="chart-title">Sector Allocation</h4>
+              <p class="chart-subtitle">Distribution by sector based on current value</p>
+              <div class="chart-canvas-wrap"><canvas id="sectorAllocationChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <h4 class="chart-title">Stock Allocation</h4>
+              <p class="chart-subtitle">Top holdings by current portfolio value</p>
+              <div class="chart-canvas-wrap"><canvas id="stockAllocationChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <h4 class="chart-title">NSE vs BSE Allocation</h4>
+              <p class="chart-subtitle">Exchange distribution by current value</p>
+              <div class="chart-canvas-wrap"><canvas id="exchangeAllocationChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <h4 class="chart-title">P&amp;L Contribution</h4>
+              <p class="chart-subtitle">Unrealised profit &amp; loss by stock</p>
+              <div class="chart-canvas-wrap chart-canvas-wrap--bar"><canvas id="pnlContributionChart"></canvas></div>
+            </div>
+          </div>
+          ` : `<p class="helper-text" style="padding:20px 0">No holdings available to chart yet.</p>`}
+        </article>
+
+        <article class="table-card full-span-card user-holdings-card">
+          <div class="panel-head">
+            <div><h3>Portfolio Holdings</h3></div>
             <span class="badge green">Live Portfolio</span>
           </div>
           <div class="table-wrap admin-position-table-wrap" id="userPositionsTableWrap">
             <table class="admin-position-table user-position-table" id="userPositionsTable">
               <thead>
                 <tr>
-                  <th>Symbol</th>
-                  <th>Purchase Date</th>
-                  <th>Qty</th>
-                  <th>Avg Price</th>
-                  <th>Invested Value</th>
-                  <th>Current Value</th>
-                  <th>Unrealised P&amp;L</th>
-                  <th>Today&apos;s P&amp;L</th>
-                  <th>Realised P&amp;L</th>
-                  <th>Total P&amp;L</th>
+                  <th>Symbol</th><th>Purchase Date</th><th>Qty</th><th>Avg Price</th>
+                  <th>Total Investment</th><th>Current Value</th>
+                  <th>Unrealised P&amp;L</th><th>Today&apos;s P&amp;L</th><th>Realised P&amp;L</th><th>Total P&amp;L</th>
                 </tr>
               </thead>
               <tbody>
                 ${filteredPerformance.length
-                  ? filteredPerformance
-                      .map(
-                        (holding) => {
-                          const investedValue = Number(holding.buy_price || 0) * Number(holding.quantity || 0);
-                          const currentValue = Number(holding.current_price || 0) * Number(holding.quantity || 0);
-                          const valueStateClass = currentValue >= investedValue ? "profit" : "loss";
-                          return `
-                          <tr>
-                            <td><strong>${escapeHtml(holding.symbol)}</strong></td>
-                            <td>${formatDate(holding.created_at)}</td>
-                            <td>${Number(holding.quantity || 0).toFixed(2)}</td>
-                            <td>${currency(holding.buy_price)}</td>
-                            <td class="${valueStateClass} user-invested-cell">${currency(investedValue)}</td>
-                            <td class="${valueStateClass} user-current-cell">${currency(currentValue)}</td>
-                            <td class="${Number(holding.profit_loss) >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
-                            <td class="${Number(holding.today_profit) >= 0 ? "profit" : "loss"}">${currency(holding.today_profit)}</td>
-                            <td class="${Number(holding.realized_profit) >= 0 ? "profit" : "loss"}">${currency(holding.realized_profit)}</td>
-                            <td class="${Number(holding.total_profit) >= 0 ? "profit" : "loss"}">${currency(holding.total_profit)}</td>
-                          </tr>
-                        `;
-                        }
-                      )
-                      .join("")
+                  ? filteredPerformance.map((holding) => {
+                      const investedValue = Number(holding.buy_price || 0) * Number(holding.quantity || 0);
+                      const currentValue = Number(holding.current_price || 0) * Number(holding.quantity || 0);
+                      const vsc = currentValue >= investedValue ? "profit" : "loss";
+                      return `<tr>
+                        <td><strong>${escapeHtml(holding.symbol)}</strong></td>
+                        <td>${formatDate(holding.created_at)}</td>
+                        <td>${Number(holding.quantity || 0).toFixed(2)}</td>
+                        <td>${currency(holding.buy_price)}</td>
+                        <td class="${vsc} user-invested-cell">${currency(investedValue)}</td>
+                        <td class="${vsc} user-current-cell">${currency(currentValue)}</td>
+                        <td class="${Number(holding.profit_loss) >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
+                        <td class="${Number(holding.today_profit) >= 0 ? "profit" : "loss"}">${currency(holding.today_profit)}</td>
+                        <td class="${Number(holding.realized_profit) >= 0 ? "profit" : "loss"}">${currency(holding.realized_profit)}</td>
+                        <td class="${Number(holding.total_profit) >= 0 ? "profit" : "loss"}">${currency(holding.total_profit)}</td>
+                      </tr>`;
+                    }).join("")
                   : `<tr><td colspan="10"><span class="helper-text">${performance.length ? "No holdings match the active filters." : "No portfolio holdings are available yet."}</span></td></tr>`}
               </tbody>
               <tfoot>
@@ -4089,7 +4265,7 @@ async function renderUserPortal(options = {}) {
                   <td>—</td>
                   <td><strong>${currency(filteredInvestedValue)}</strong></td>
                   <td class="${filteredCurrentValue >= filteredInvestedValue ? "profit" : "loss"}"><strong>${currency(filteredCurrentValue)}</strong></td>
-                  <td class="${filteredPerformance.reduce((sum, holding) => sum + Number(holding.profit_loss || 0), 0) >= 0 ? "profit" : "loss"}"><strong>${currency(filteredPerformance.reduce((sum, holding) => sum + Number(holding.profit_loss || 0), 0))}</strong></td>
+                  <td class="${totalUnrealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalUnrealizedProfit)}</strong></td>
                   <td class="${totalTodayProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalTodayProfit)}</strong></td>
                   <td class="${totalRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalRealizedProfit)}</strong></td>
                   <td class="${totalCombinedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalCombinedProfit)}</strong></td>
@@ -4114,33 +4290,80 @@ async function renderUserPortal(options = {}) {
             <table class="admin-position-table user-lifetime-table">
               <thead>
                 <tr>
-                  <th>Stock Name</th>
-                  <th>Date of Purchase</th>
-                  <th>Date of Profit</th>
-                  <th>P&amp;L</th>
+                  <th>Stock</th><th>Exchange</th><th>Qty Sold</th><th>Avg Price</th>
+                  <th>Sell Price</th><th>Purchase Date</th><th>Date of Sale</th><th>Realised P&amp;L</th>
                 </tr>
               </thead>
               <tbody>
                 ${filteredSoldHistory.length
-                  ? filteredSoldHistory
-                      .map(
-                        (entry) => `
-                          <tr>
-                            <td><strong>${escapeHtml(entry.symbol)}</strong></td>
-                            <td>${formatDate(entry.created_at)}</td>
-                            <td>${formatDateTime(entry.sold_at)}</td>
-                            <td class="${Number(entry.profit_loss) >= 0 ? "profit" : "loss"}">${currency(entry.profit_loss)}</td>
-                          </tr>
-                        `
-                      )
-                      .join("")
-                  : `<tr><td colspan="4"><span class="helper-text">No realised profit or loss entries are available yet.</span></td></tr>`}
+                  ? filteredSoldHistory.map((entry) => `
+                    <tr>
+                      <td><strong>${escapeHtml(entry.symbol)}</strong></td>
+                      <td>${escapeHtml(entry.exchange || "—")}</td>
+                      <td>${Number(entry.quantity || 0).toFixed(2)}</td>
+                      <td>${currency(entry.buy_price)}</td>
+                      <td>${currency(entry.sell_price)}</td>
+                      <td>${formatDate(entry.created_at)}</td>
+                      <td>${formatDateTime(entry.sold_at)}</td>
+                      <td class="${Number(entry.profit_loss) >= 0 ? "profit" : "loss"}">${currency(entry.profit_loss)}</td>
+                    </tr>`).join("")
+                  : `<tr><td colspan="8"><span class="helper-text">No realised profit or loss entries are available yet.</span></td></tr>`}
               </tbody>
             </table>
           </div>
         </article>
+
       </div>
     </section>
+
+    <div class="user-metrics-overlay hidden" id="userMetricsOverlay">
+      <div class="user-metrics-modal">
+        <div class="user-metrics-modal-head">
+          <div>
+            <h3>Portfolio Metrics</h3>
+            <p class="helper-text">Key performance indicators for your portfolio</p>
+          </div>
+          <button class="user-metrics-close" id="userMetricsClose" type="button">&times;</button>
+        </div>
+        <div class="user-metrics-grid">
+          <div class="user-metric-card">
+            <p class="user-metric-label">Total Investment</p>
+            <p class="user-metric-value neutral">${currency(filteredInvestedValue)}</p>
+            <p class="user-metric-note">Lifetime invested amount</p>
+          </div>
+          <div class="user-metric-card">
+            <p class="user-metric-label">Portfolio Value</p>
+            <p class="user-metric-value ${filteredCurrentValue >= filteredInvestedValue ? "profit" : "loss"}">${currency(filteredCurrentValue)}</p>
+            <p class="user-metric-note">${overallPct >= 0 ? "+" : ""}${overallPct.toFixed(2)}% overall</p>
+          </div>
+          <div class="user-metric-card">
+            <p class="user-metric-label">Available Balance</p>
+            <p class="user-metric-value neutral">${currency(availableBalance)}</p>
+            <p class="user-metric-note">Remaining deployable balance</p>
+          </div>
+          <div class="user-metric-card">
+            <p class="user-metric-label">Total Return</p>
+            <p class="user-metric-value ${totalCombinedProfit >= 0 ? "profit" : "loss"}">${currency(totalCombinedProfit)}</p>
+            <p class="user-metric-note">${percent(overallPct)} overall return</p>
+          </div>
+          <div class="user-metric-card">
+            <p class="user-metric-label">XIRR</p>
+            <p class="user-metric-value ${xirr === null ? "neutral" : xirr >= 0 ? "profit" : "loss"}">${xirr !== null ? xirr.toFixed(2) + "%" : "—"}</p>
+            <p class="user-metric-note">Annualised return estimate</p>
+          </div>
+          <div class="user-metric-card">
+            <p class="user-metric-label">Win Rate</p>
+            <p class="user-metric-value ${gainRate >= 50 ? "profit" : "loss"}">${gainRate.toFixed(1)}%</p>
+            <p class="user-metric-note">${profitableCount} of ${performance.length} positions profitable</p>
+          </div>
+          <div class="user-metric-card">
+            <p class="user-metric-label">Best Performer</p>
+            <p class="user-metric-value profit">${bestPerformer ? escapeHtml(bestPerformer.symbol) : "—"}</p>
+            <p class="user-metric-note">${bestPerformer ? percent(bestPerformer.percent_change) : "No holdings"}</p>
+          </div>
+        </div>
+      </div>
+    </div>
   `;
 
     revealPortal(mount);
@@ -4149,12 +4372,29 @@ async function renderUserPortal(options = {}) {
     setupUserPortfolioFilters();
     setupScrollSync("userPositionsTableWrap", "userPositionsTableScroller");
     setupPortalActions();
+
+    destroyExistingCharts();
+    if (performance.length) renderPortfolioCharts(performance);
+
+    const nameEl = document.getElementById("investorNameAnimated");
+    if (nameEl) nameEl.classList.add("user-investor-name--animate");
+
+    const metricsBtn = document.getElementById("userMetricsBtn");
+    const metricsOverlay = document.getElementById("userMetricsOverlay");
+    const metricsClose = document.getElementById("userMetricsClose");
+    if (metricsBtn && metricsOverlay) {
+      metricsBtn.addEventListener("click", () => metricsOverlay.classList.remove("hidden"));
+      if (metricsClose) metricsClose.addEventListener("click", () => metricsOverlay.classList.add("hidden"));
+      metricsOverlay.addEventListener("click", (e) => { if (e.target === metricsOverlay) metricsOverlay.classList.add("hidden"); });
+    }
+
+    const pdfBtn = document.getElementById("userPdfBtn");
+    if (pdfBtn) pdfBtn.addEventListener("click", () => window.print());
+
   } catch (error) {
     renderPortalError(mount, "User Dashboard", `Login succeeded, but portfolio data could not load yet. ${formatError(error)}`);
     const retry = document.getElementById("retryPortalBtn");
-    if (retry) {
-      retry.addEventListener("click", () => renderUserPortal());
-    }
+    if (retry) retry.addEventListener("click", () => renderUserPortal());
   } finally {
     hideDashboardLoading();
     userRenderInFlight = false;
