@@ -894,27 +894,27 @@ function setupPageTransitions() {
     });
   });
 
-  document.querySelectorAll('a[href]').forEach((link) => {
-    link.addEventListener("click", (event) => {
-      const href = link.getAttribute("href");
-      if (!href || href.startsWith("#")) return;
-      if (link.target && link.target !== "_self") return;
-      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  document.addEventListener("click", (event) => {
+    const link = event.target.closest('a[href]');
+    if (!link) return;
+    const href = link.getAttribute("href");
+    if (!href || href.startsWith("#")) return;
+    if (link.target && link.target !== "_self") return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
-      const url = new URL(href, window.location.href);
-      const isSameOrigin = url.origin === window.location.origin;
-      const isHtmlPage = /\.(html)?$/i.test(url.pathname.split("/").pop() || "");
-      if (!isSameOrigin || !isHtmlPage) return;
-      if (url.href === window.location.href) return;
+    const url = new URL(href, window.location.href);
+    const isSameOrigin = url.origin === window.location.origin;
+    const isHtmlPage = /\.(html)?$/i.test(url.pathname.split("/").pop() || "");
+    if (!isSameOrigin || !isHtmlPage) return;
+    if (url.href === window.location.href) return;
 
-      event.preventDefault();
-      overlay.classList.add("is-visible");
-      overlay.setAttribute("aria-hidden", "false");
-      document.body.classList.add("page-transitioning");
-      window.setTimeout(() => {
-        window.location.href = url.href;
-      }, 260);
-    });
+    event.preventDefault();
+    overlay.classList.add("is-visible");
+    overlay.setAttribute("aria-hidden", "false");
+    document.body.classList.add("page-transitioning");
+    window.setTimeout(() => {
+      window.location.href = url.href;
+    }, 260);
   });
 }
 
@@ -1561,6 +1561,8 @@ function setupAdminManagementButtons() {
     });
   });
 
+  setupDetailEyeButtons(document);
+
   if (selectAll) {
     selectAll.addEventListener("change", () => {
       document.querySelectorAll("[data-user-select]").forEach((checkbox) => {
@@ -2178,6 +2180,17 @@ async function refreshTableLivePrices() {
     } else {
       cell.textContent = "—";
     }
+  });
+}
+
+function setupDetailEyeButtons(container) {
+  (container || document).querySelectorAll("[data-stock-visibility-toggle]").forEach((button) => {
+    if (button._eyeListenerAttached) return;
+    button._eyeListenerAttached = true;
+    button.addEventListener("click", () => {
+      toggleAdminRevealedStock(button.dataset.stockVisibilityToggle);
+      refreshAdminStockVisibility(button.dataset.stockVisibilityToggle);
+    });
   });
 }
 
@@ -2886,6 +2899,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       detailMount.innerHTML = buildAdminClientDetail(user, soldHistory);
       detailMount.classList.remove("hidden");
       detailMount.classList.add("portal-visible");
+      setupDetailEyeButtons(detailMount);
       detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
       maybeShowBalanceWarning(user);
     });
@@ -2908,6 +2922,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       }
       detailMount.classList.remove("hidden");
       detailMount.classList.add("portal-visible");
+      setupDetailEyeButtons(detailMount);
       detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
