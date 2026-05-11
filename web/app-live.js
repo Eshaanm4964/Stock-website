@@ -600,6 +600,81 @@ function showEditHoldingModal({ symbol, owner, currentQty, currentBuyPrice, curr
   });
 }
 
+function showBuyMoreModal({ symbol, owner, exchange, lastBuyPrice }) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "sell-modal-overlay";
+    const today = new Date().toISOString().split("T")[0];
+    overlay.innerHTML = `
+      <div class="sell-modal" role="dialog" aria-modal="true" aria-labelledby="buyMoreModalTitle">
+        <div class="sell-modal-header">
+          <div class="sell-modal-badge" style="background:#16a34a;">BUY MORE</div>
+          <h3 id="buyMoreModalTitle" class="sell-modal-title">${escapeHtml(symbol)}</h3>
+          <p class="sell-modal-owner">${escapeHtml(owner)}</p>
+        </div>
+        <div class="sell-modal-info">
+          <div class="sell-modal-info-item">
+            <span class="sell-modal-info-label">Exchange</span>
+            <span class="sell-modal-info-value">${escapeHtml(exchange || "NSE")}</span>
+          </div>
+          <div class="sell-modal-info-item">
+            <span class="sell-modal-info-label">Last Buy Price</span>
+            <span class="sell-modal-info-value">₹${Number(lastBuyPrice || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>
+          </div>
+        </div>
+        <div class="sell-modal-body">
+          <label class="sell-modal-field">
+            <span>Quantity</span>
+            <input id="buyMoreQty" type="number" min="0.01" step="0.01" placeholder="Enter quantity" class="sell-modal-input" />
+          </label>
+          <label class="sell-modal-field">
+            <span>Buy Price (₹ per share)</span>
+            <input id="buyMorePrice" type="number" min="0.01" step="0.01" value="${lastBuyPrice ? Number(lastBuyPrice).toFixed(2) : ""}" placeholder="Enter buy price" class="sell-modal-input" />
+          </label>
+          <label class="sell-modal-field">
+            <span>Purchase Date</span>
+            <input id="buyMoreDate" type="date" value="${today}" max="${today}" class="sell-modal-input" />
+          </label>
+          <p class="sell-modal-error" id="buyMoreError"></p>
+        </div>
+        <div class="sell-modal-actions">
+          <button class="sell-modal-cancel" id="buyMoreCancel" type="button">Cancel</button>
+          <button class="sell-modal-confirm" id="buyMoreConfirm" type="button" style="background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 6px 16px rgba(34,197,94,0.28);">Confirm Buy</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add("sell-modal-visible"));
+
+    const qtyInput = overlay.querySelector("#buyMoreQty");
+    const priceInput = overlay.querySelector("#buyMorePrice");
+    const dateInput = overlay.querySelector("#buyMoreDate");
+    const errorEl = overlay.querySelector("#buyMoreError");
+    const confirmBtn = overlay.querySelector("#buyMoreConfirm");
+    const cancelBtn = overlay.querySelector("#buyMoreCancel");
+
+    function close(result) {
+      overlay.classList.remove("sell-modal-visible");
+      setTimeout(() => overlay.remove(), 220);
+      resolve(result);
+    }
+
+    cancelBtn.addEventListener("click", () => close(null));
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) close(null); });
+
+    confirmBtn.addEventListener("click", () => {
+      const qty = Number(qtyInput.value);
+      const price = Number(priceInput.value);
+      if (!Number.isFinite(qty) || qty <= 0) { errorEl.textContent = "Quantity must be greater than 0."; return; }
+      if (!Number.isFinite(price) || price <= 0) { errorEl.textContent = "Buy price must be greater than 0."; return; }
+      const dateStr = dateInput.value ? new Date(dateInput.value).toISOString() : new Date().toISOString();
+      close({ quantity: qty, buy_price: price, created_at: dateStr });
+    });
+
+    qtyInput.focus();
+  });
+}
+
 function getHoldingState(holding) {
   const profitLoss = Number(holding?.profit_loss || 0);
   if (profitLoss > 0) return "profit";
@@ -879,7 +954,18 @@ function setupPageTransitions() {
         <span class="page-transition-logo" aria-hidden="true">
           <img src="./assets/loading_logo.png" alt="Asset Yantra logo" />
         </span>
+        <div class="page-transition-gear-wrap" aria-hidden="true">
+          <svg class="gear-outer" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill="currentColor" d="M32 22a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 16a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"/>
+            <path fill="currentColor" d="M53.6 27.6l-2.8-.6a19.5 19.5 0 0 0-1.3-3.1l1.6-2.3a2 2 0 0 0-.2-2.5l-4-4a2 2 0 0 0-2.5-.3l-2.3 1.6a19.5 19.5 0 0 0-3.1-1.3l-.6-2.8A2 2 0 0 0 36.4 11h-5.6a2 2 0 0 0-2 1.5l-.6 2.8a19.5 19.5 0 0 0-3.1 1.3l-2.3-1.6a2 2 0 0 0-2.5.3l-4 4a2 2 0 0 0-.3 2.5l1.6 2.3a19.5 19.5 0 0 0-1.3 3.1l-2.8.6A2 2 0 0 0 12 29.6v5.6a2 2 0 0 0 1.5 2l2.8.6a19.5 19.5 0 0 0 1.3 3.1l-1.6 2.3a2 2 0 0 0 .3 2.5l4 4a2 2 0 0 0 2.5.3l2.3-1.6a19.5 19.5 0 0 0 3.1 1.3l.6 2.8A2 2 0 0 0 30.8 53h5.6a2 2 0 0 0 2-1.5l.6-2.8a19.5 19.5 0 0 0 3.1-1.3l2.3 1.6a2 2 0 0 0 2.5-.3l4-4a2 2 0 0 0 .3-2.5l-1.6-2.3a19.5 19.5 0 0 0 1.3-3.1l2.8-.6A2 2 0 0 0 52 35.2v-5.6a2 2 0 0 0-1.4-2zm-1.6 6.8-2.5.5a2 2 0 0 0-1.5 1.4 15.5 15.5 0 0 1-1.8 4.3 2 2 0 0 0 .1 2l1.4 2.1-2.4 2.4-2.1-1.4a2 2 0 0 0-2-.1 15.5 15.5 0 0 1-4.3 1.8 2 2 0 0 0-1.4 1.5l-.5 2.5h-3.4l-.5-2.5a2 2 0 0 0-1.4-1.5 15.5 15.5 0 0 1-4.3-1.8 2 2 0 0 0-2 .1l-2.1 1.4-2.4-2.4 1.4-2.1a2 2 0 0 0 .1-2 15.5 15.5 0 0 1-1.8-4.3A2 2 0 0 0 16.5 35l-2.5-.5v-3.4l2.5-.5A2 2 0 0 0 18 29.2a15.5 15.5 0 0 1 1.8-4.3 2 2 0 0 0-.1-2l-1.4-2.1 2.4-2.4 2.1 1.4a2 2 0 0 0 2 .1 15.5 15.5 0 0 1 4.3-1.8A2 2 0 0 0 30.5 17l.5-2.5h3.4l.5 2.5a2 2 0 0 0 1.4 1.5 15.5 15.5 0 0 1 4.3 1.8 2 2 0 0 0 2-.1l2.1-1.4 2.4 2.4-1.4 2.1a2 2 0 0 0-.1 2 15.5 15.5 0 0 1 1.8 4.3 2 2 0 0 0 1.5 1.4l2.5.5v3.4z"/>
+          </svg>
+          <svg class="gear-inner" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill="currentColor" d="M32 22a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 16a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"/>
+            <path fill="currentColor" d="M53.6 27.6l-2.8-.6a19.5 19.5 0 0 0-1.3-3.1l1.6-2.3a2 2 0 0 0-.2-2.5l-4-4a2 2 0 0 0-2.5-.3l-2.3 1.6a19.5 19.5 0 0 0-3.1-1.3l-.6-2.8A2 2 0 0 0 36.4 11h-5.6a2 2 0 0 0-2 1.5l-.6 2.8a19.5 19.5 0 0 0-3.1 1.3l-2.3-1.6a2 2 0 0 0-2.5.3l-4 4a2 2 0 0 0-.3 2.5l1.6 2.3a19.5 19.5 0 0 0-1.3 3.1l-2.8.6A2 2 0 0 0 12 29.6v5.6a2 2 0 0 0 1.5 2l2.8.6a19.5 19.5 0 0 0 1.3 3.1l-1.6 2.3a2 2 0 0 0 .3 2.5l4 4a2 2 0 0 0 2.5.3l2.3-1.6a19.5 19.5 0 0 0 3.1 1.3l.6 2.8A2 2 0 0 0 30.8 53h5.6a2 2 0 0 0 2-1.5l.6-2.8a19.5 19.5 0 0 0 3.1-1.3l2.3 1.6a2 2 0 0 0 2.5-.3l4-4a2 2 0 0 0 .3-2.5l-1.6-2.3a19.5 19.5 0 0 0 1.3-3.1l2.8-.6A2 2 0 0 0 52 35.2v-5.6a2 2 0 0 0-1.4-2zm-1.6 6.8-2.5.5a2 2 0 0 0-1.5 1.4 15.5 15.5 0 0 1-1.8 4.3 2 2 0 0 0 .1 2l1.4 2.1-2.4 2.4-2.1-1.4a2 2 0 0 0-2-.1 15.5 15.5 0 0 1-4.3 1.8 2 2 0 0 0-1.4 1.5l-.5 2.5h-3.4l-.5-2.5a2 2 0 0 0-1.4-1.5 15.5 15.5 0 0 1-4.3-1.8 2 2 0 0 0-2 .1l-2.1 1.4-2.4-2.4 1.4-2.1a2 2 0 0 0 .1-2 15.5 15.5 0 0 1-1.8-4.3A2 2 0 0 0 16.5 35l-2.5-.5v-3.4l2.5-.5A2 2 0 0 0 18 29.2a15.5 15.5 0 0 1 1.8-4.3 2 2 0 0 0-.1-2l-1.4-2.1 2.4-2.4 2.1 1.4a2 2 0 0 0 2 .1 15.5 15.5 0 0 1 4.3-1.8A2 2 0 0 0 30.5 17l.5-2.5h3.4l.5 2.5a2 2 0 0 0 1.4 1.5 15.5 15.5 0 0 1 4.3 1.8 2 2 0 0 0 2-.1l2.1-1.4 2.4 2.4-1.4 2.1a2 2 0 0 0-.1 2 15.5 15.5 0 0 1 1.8 4.3 2 2 0 0 0 1.5 1.4l2.5.5v3.4z"/>
+          </svg>
+        </div>
         <div class="page-transition-bar" aria-hidden="true"><span></span></div>
+        <span class="page-transition-label">Loading</span>
       </div>
     `;
     document.body.appendChild(overlay);
@@ -1717,6 +1803,47 @@ function setupAdminManagementButtons() {
         if (statusMessage) {
           statusMessage.textContent = `${symbol} holding updated for ${owner}.`;
         }
+        await renderAdminPortal();
+      } catch (error) {
+        if (statusMessage) statusMessage.textContent = formatError(error);
+      } finally {
+        stopLoading();
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-admin-buy-holding]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const userId = button.dataset.userId;
+      const symbol = button.dataset.symbol || "this stock";
+      const owner = button.dataset.owner || "this customer";
+      const exchange = button.dataset.exchange || "NSE";
+      const lastBuyPrice = Number(button.dataset.buyPrice || 0);
+
+      const result = await showBuyMoreModal({ symbol, owner, exchange, lastBuyPrice });
+      if (!result) return;
+
+      const stopLoading = setButtonLoading(button, "Buying...");
+      try {
+        await api(`/admin/users/${userId}/holdings`, {
+          method: "POST",
+          body: JSON.stringify({
+            symbol,
+            exchange,
+            quantity: result.quantity,
+            buy_price: result.buy_price,
+            created_at: result.created_at
+          })
+        });
+        showAdminSuccessModal(`Buy Order — ${owner}`, [
+          ["Investor", owner],
+          ["Stock", symbol],
+          ["Exchange", exchange],
+          ["Quantity", String(result.quantity)],
+          ["Buy Price", currency(result.buy_price)],
+          ["Total Value", currency(result.quantity * result.buy_price)]
+        ]);
+        if (statusMessage) statusMessage.textContent = `${symbol} purchased for ${owner}.`;
         await renderAdminPortal();
       } catch (error) {
         if (statusMessage) statusMessage.textContent = formatError(error);
@@ -3310,8 +3437,9 @@ async function renderAdminPortal() {
                       <td>${currency(Number(holding.current_price || 0) * Number(holding.quantity || 0))}</td>
                       <td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
                       <td class="action-cell-duo">
-                        <button class="secondary-btn compact-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}">Sell</button>
+                        <button class="secondary-btn compact-btn buy-holding-btn" type="button" data-admin-buy-holding="${holding.holding_id}" data-user-id="${holding.user_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-exchange="${escapeHtml(holding.exchange || 'NSE')}" data-buy-price="${holding.buy_price}">Buy</button>
                         <button class="secondary-btn compact-btn edit-holding-btn" type="button" data-admin-edit-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}" data-created-at="${escapeHtml(holding.created_at || '')}">Edit</button>
+                        <button class="secondary-btn compact-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}">Sell</button>
                       </td>
                     </tr>
                   `
@@ -3955,8 +4083,9 @@ async function renderAdminPortal(options = {}) {
                           <td class="${Number(realizedProfit) >= 0 ? "profit" : "loss"}">${currency(realizedProfit)}</td>
                           <td class="${Number(totalProfit) >= 0 ? "profit" : "loss"}">${currency(totalProfit)}</td>
                           <td class="action-cell-duo">
-                            <button class="sell-action-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}">Sell</button>
+                            <button class="buy-action-btn" type="button" data-admin-buy-holding="${holding.holding_id}" data-user-id="${holding.user_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-exchange="${escapeHtml(holding.exchange || 'NSE')}" data-buy-price="${holding.buy_price}">Buy</button>
                             <button class="edit-action-btn" type="button" data-admin-edit-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}" data-created-at="${escapeHtml(holding.created_at || '')}">Edit</button>
+                            <button class="sell-action-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}">Sell</button>
                           </td>
                         </tr>
                       `;

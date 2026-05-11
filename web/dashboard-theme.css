@@ -253,9 +253,47 @@
   background: #1a82e8;
 }
 
+.buy-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 9px 16px;
+  border: 1px solid #15803d;
+  border-radius: 999px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(34, 197, 94, 0.22);
+  font-size: 0.82rem;
+}
+
+.buy-action-btn:hover {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  transform: translateY(-1px);
+}
+
+.buy-holding-btn {
+  padding: 6px 12px;
+  min-height: 32px;
+  font-size: 0.8rem;
+  border-radius: 999px;
+  border: 1px solid #15803d;
+  color: #ffffff;
+  background: #16a34a;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.buy-holding-btn:hover {
+  background: #15803d;
+}
+
 .action-cell-duo {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
   align-items: center;
   flex-wrap: nowrap;
 }
