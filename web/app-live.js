@@ -329,7 +329,7 @@ function formatError(error) {
     error instanceof TypeError &&
     /(fetch|network|load|failed|offline|connection)/i.test(error.message || "")
   ) {
-    return "Unable to reach the backend server. Check your connection and try again.";
+    return "Server is starting up — please wait a few seconds and try again.";
   }
   const msg = error.message || "";
   if (!msg || msg === "[object Object]") return "Something went wrong. Please try again.";
@@ -4549,6 +4549,8 @@ function setupLogin() {
       }
     });
   }
+
+  fetch(getApiBase().replace(/\/api\/v1$/, "") + "/health").catch(() => {});
 
   if (isLoginPage()) {
     clearAuth();
