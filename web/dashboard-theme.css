@@ -1935,6 +1935,14 @@ body.dashboard-page {
    USER INVESTOR DASHBOARD — Header, Charts, Metrics Modal
 ═══════════════════════════════════════════════════════════════ */
 
+.user-brand-divider {
+  width: 1px;
+  height: 36px;
+  background: rgba(15, 32, 64, 0.14);
+  margin: 0 12px;
+  flex-shrink: 0;
+}
+
 .user-investor-identity {
   display: flex;
   flex-direction: column;
@@ -1943,21 +1951,26 @@ body.dashboard-page {
 }
 
 .user-investor-name {
-  font-size: clamp(1.1rem, 1.6vw, 1.5rem);
+  font-size: 1rem;
   font-weight: 700;
-  color: var(--dash-ink, #0f2040);
-  margin: 0;
+  color: #0f2040;
   opacity: 0;
-  transform: translateY(6px);
+  transform: translateY(5px);
+}
+
+.user-investor-identity .helper-text {
+  font-size: 0.72rem;
+  color: #68758b;
+  margin: 0;
 }
 
 @keyframes userNameFadeSlide {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 .user-investor-name--animate {
-  animation: userNameFadeSlide 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+  animation: userNameFadeSlide 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
 }
 
 /* ── Portfolio charts grid ───────────────────────────────────── */

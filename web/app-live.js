@@ -4166,10 +4166,11 @@ async function renderUserPortal(options = {}) {
                 <strong class="brand-wordmark">Asset Yantra</strong>
                 <small class="brand-tagline">Investor Portfolio</small>
               </span>
-            </div>
-            <div class="user-investor-identity">
-              <h2 class="user-investor-name" id="investorNameAnimated">${escapeHtml(profile.full_name)}</h2>
-              <p class="helper-text">Client ID: ${escapeHtml(profile.fixed_user_id || profile.username || "Not assigned")}</p>
+              <span class="user-brand-divider"></span>
+              <span class="user-investor-identity">
+                <strong class="user-investor-name" id="investorNameAnimated">${escapeHtml(profile.full_name)}</strong>
+                <small class="helper-text">Client ID: ${escapeHtml(profile.fixed_user_id || profile.username || "Not assigned")}</small>
+              </span>
             </div>
           </div>
           <div class="user-topbar-actions admin-toolbar-right">
@@ -4185,7 +4186,7 @@ async function renderUserPortal(options = {}) {
           </div>
         </header>
 
-        <section class="simple-summary-strip user-summary-strip">
+        <section class="simple-summary-strip admin-summary-strip" style="grid-template-columns: repeat(4, minmax(0, 1fr))">
           <span class="${filteredCurrentValue >= filteredInvestedValue ? "profit" : "loss"}"><strong>${currency(filteredCurrentValue)}</strong> Portfolio Value</span>
           <span class="${totalUnrealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalUnrealizedProfit)}</strong> Unrealised P&amp;L</span>
           <span class="${totalRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalRealizedProfit)}</strong> Lifetime Realised P&amp;L</span>
