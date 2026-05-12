@@ -1798,6 +1798,14 @@ function setupAdminManagementButtons() {
     });
   });
 
+  const sortSelect = document.getElementById("adminSortSelect");
+  if (sortSelect) {
+    sortSelect.addEventListener("change", async () => {
+      adminUiState.sortBy = sortSelect.value;
+      await renderAdminPortal();
+    });
+  }
+
   document.querySelectorAll("[data-stock-visibility-toggle]").forEach((button) => {
     button.addEventListener("click", () => {
       toggleAdminRevealedStock(button.dataset.stockVisibilityToggle);
@@ -4149,19 +4157,18 @@ async function renderAdminPortal(options = {}) {
               <summary class="secondary-btn compact-btn admin-nav-btn">Actions & Filters</summary>
               <div class="admin-dropdown-panel">
                 <p class="admin-dropdown-section-label">Quick Actions</p>
-                <div class="admin-dropdown-quick-row">
+                <div class="admin-quick-grid">
                   <button class="secondary-btn compact-btn admin-quick-action-btn" id="adminXirrCalcBtn" type="button">XIRR Calculator</button>
-                </div>
-                <p class="admin-dropdown-section-label" style="margin-top:10px;">Sort Positions By</p>
-                <div class="admin-sort-options">
-                  <button class="admin-sort-option-btn${adminUiState.sortBy === "recent"     ? " is-active" : ""}" type="button" data-sort-by="recent">Recent Investment</button>
-                  <button class="admin-sort-option-btn${adminUiState.sortBy === "alpha"      ? " is-active" : ""}" type="button" data-sort-by="alpha">Alphabetically</button>
-                  <button class="admin-sort-option-btn${adminUiState.sortBy === "investment" ? " is-active" : ""}" type="button" data-sort-by="investment">Total Investment</button>
-                  <button class="admin-sort-option-btn${adminUiState.sortBy === "profit"     ? " is-active" : ""}" type="button" data-sort-by="profit">Most Profit</button>
-                </div>
-                <p class="admin-dropdown-section-label" style="margin-top:10px;">Navigation</p>
-                <div class="admin-dropdown-links">
-                  <a class="secondary-btn compact-btn" href="./admin-database.html"><strong>View Database</strong><small>Raw database view of users and holdings</small></a>
+                  <a class="secondary-btn compact-btn admin-quick-action-btn" href="./admin-database.html">View Database</a>
+                  <label class="admin-quick-action-btn admin-sort-label">
+                    <span>Order By</span>
+                    <select id="adminSortSelect" class="admin-sort-select">
+                      <option value="recent"     ${adminUiState.sortBy === "recent"     ? "selected" : ""}>Recent Investment</option>
+                      <option value="alpha"      ${adminUiState.sortBy === "alpha"      ? "selected" : ""}>Alphabetically</option>
+                      <option value="investment" ${adminUiState.sortBy === "investment" ? "selected" : ""}>Total Investment</option>
+                      <option value="profit"     ${adminUiState.sortBy === "profit"     ? "selected" : ""}>Most Profit</option>
+                    </select>
+                  </label>
                 </div>
                 <p class="admin-dropdown-section-label" style="margin-top:10px;">Filters</p>
                 <div class="admin-dropdown-filters">
