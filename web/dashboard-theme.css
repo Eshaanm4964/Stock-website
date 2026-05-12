@@ -1435,13 +1435,12 @@ body.dashboard-page {
   box-shadow: 0 8px 20px rgba(15, 32, 64, 0.05);
 }
 .detail-stat-grid article strong {
-  font-family: "IBM Plex Mono", monospace;
-  font-feature-settings: "zero" 0, "ss01" 0;
+  font-family: inherit;
   font-size: 1.28rem;
-  font-weight: 700;
+  font-weight: 800;
   color: #0f2040;
   line-height: 1.1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 .detail-stat-grid article strong.profit { color: #0f8a55; }
 .detail-stat-grid article strong.loss   { color: #c2413a; }
@@ -1897,7 +1896,6 @@ body.dashboard-page {
   font-weight: 700;
   color: #ffffff;
   margin: 0 0 4px;
-  font-family: "IBM Plex Mono", monospace;
 }
 .sell-modal-owner {
   font-size: 0.85rem;
@@ -1930,7 +1928,6 @@ body.dashboard-page {
   font-size: 1.05rem;
   font-weight: 700;
   color: #0f203d;
-  font-family: "IBM Plex Mono", monospace;
 }
 
 .sell-modal-body {
@@ -1952,7 +1949,7 @@ body.dashboard-page {
   border: 1.5px solid rgba(17, 35, 63, 0.15);
   border-radius: 10px;
   font-size: 1rem;
-  font-family: "IBM Plex Mono", monospace;
+  font-family: inherit;
   font-weight: 600;
   color: #0f203d;
   background: #f8faff;
@@ -2266,8 +2263,8 @@ body.dashboard-page {
 
 .user-metric-value {
   font-size: 1.25rem;
-  font-weight: 700;
-  font-family: "IBM Plex Mono", monospace;
+  font-weight: 800;
+  font-family: inherit;
   margin: 0;
   line-height: 1.2;
 }

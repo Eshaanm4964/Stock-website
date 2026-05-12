@@ -4131,6 +4131,16 @@ async function renderAdminPortal(options = {}) {
     }, 0);
     const filteredPositionsTotalProfit = filteredUnrealizedProfit + filteredPositionsRealizedProfit;
 
+    // Snapshot detail before re-render to avoid flicker on silent refresh
+    let _savedDetailHtml = null;
+    let _detailWasOpen = false;
+    if (silent && adminUiState.openDetailUserId) {
+      const _existingDetail = document.getElementById("adminDetailMount");
+      if (_existingDetail && !_existingDetail.classList.contains("hidden") && _existingDetail.innerHTML.trim()) {
+        _savedDetailHtml = _existingDetail.innerHTML;
+        _detailWasOpen = true;
+      }
+    }
 
     mount.innerHTML = `
     <section class="user-shell admin-simple-shell no-sidebar-shell">
@@ -4403,7 +4413,12 @@ async function renderAdminPortal(options = {}) {
       const openUser = userDashboards.find((u) => Number(u.user_id) === Number(adminUiState.openDetailUserId));
       const detailMount = document.getElementById("adminDetailMount");
       if (openUser && detailMount) {
-        detailMount.innerHTML = buildAdminClientDetail(openUser, filteredSoldHistory);
+        if (_detailWasOpen && _savedDetailHtml) {
+          // Restore snapshot on silent refresh — no rebuild, no flicker
+          detailMount.innerHTML = _savedDetailHtml;
+        } else {
+          detailMount.innerHTML = buildAdminClientDetail(openUser, filteredSoldHistory);
+        }
         detailMount.classList.remove("hidden");
         detailMount.classList.add("portal-visible");
         setupDetailEyeButtons(detailMount);
