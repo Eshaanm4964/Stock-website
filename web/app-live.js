@@ -1534,11 +1534,15 @@ function setupWebsiteControlButtons() {
 function showXirrCalculatorModal(userDashboards) {
   const overlay = document.createElement("div");
   overlay.className = "sell-modal-overlay";
-  const userOptions = userDashboards
+
+  const sortedUsers = userDashboards
     .slice()
-    .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")))
-    .map((u) => `<option value="${u.user_id}">${escapeHtml(u.name || u.user_id)}</option>`)
+    .sort((a, b) => String(a.full_name || a.name || "").localeCompare(String(b.full_name || b.name || "")));
+
+  const userOptions = sortedUsers
+    .map((u) => `<option value="${u.user_id}">${escapeHtml(u.full_name || u.name || String(u.user_id))}</option>`)
     .join("");
+
   overlay.innerHTML = `
     <div class="sell-modal" role="dialog" aria-modal="true" aria-labelledby="xirrModalTitle" style="max-width:440px;">
       <div class="sell-modal-header">
@@ -1552,6 +1556,12 @@ function showXirrCalculatorModal(userDashboards) {
           <select id="xirrInvestorSelect" class="sell-modal-input">
             <option value="">— Select Investor —</option>
             ${userOptions}
+          </select>
+        </label>
+        <label class="sell-modal-field">
+          <span>Stock</span>
+          <select id="xirrStockSelect" class="sell-modal-input">
+            <option value="">All Stocks</option>
           </select>
         </label>
         <label class="sell-modal-field">
@@ -1581,6 +1591,7 @@ function showXirrCalculatorModal(userDashboards) {
   requestAnimationFrame(() => overlay.classList.add("sell-modal-visible"));
 
   const investorSelect = overlay.querySelector("#xirrInvestorSelect");
+  const stockSelect = overlay.querySelector("#xirrStockSelect");
   const timeframeSelect = overlay.querySelector("#xirrTimeframeSelect");
   const resultBox = overlay.querySelector("#xirrResult");
   const xirrValueEl = overlay.querySelector("#xirrValue");
@@ -1588,6 +1599,20 @@ function showXirrCalculatorModal(userDashboards) {
   const errorEl = overlay.querySelector("#xirrError");
   const calcBtn = overlay.querySelector("#xirrCalculate");
   const closeBtn = overlay.querySelector("#xirrClose");
+
+  function populateStockOptions(userId) {
+    const user = userId ? userDashboards.find((u) => String(u.user_id) === String(userId)) : null;
+    const holdings = user && Array.isArray(user.holdings) ? user.holdings : [];
+    const symbols = [...new Set(holdings.map((h) => h.symbol).filter(Boolean))].sort();
+    stockSelect.innerHTML = `<option value="">All Stocks</option>` +
+      symbols.map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+  }
+
+  investorSelect.addEventListener("change", () => {
+    populateStockOptions(investorSelect.value);
+    resultBox.style.display = "none";
+    errorEl.textContent = "";
+  });
 
   function close() {
     overlay.classList.remove("sell-modal-visible");
@@ -1604,20 +1629,23 @@ function showXirrCalculatorModal(userDashboards) {
     if (!userId) { errorEl.textContent = "Please select an investor."; return; }
     const user = userDashboards.find((u) => String(u.user_id) === String(userId));
     if (!user) { errorEl.textContent = "Investor data not found."; return; }
+    const selectedStock = stockSelect.value;
     const days = timeframeSelect.value === "all" ? null : Number(timeframeSelect.value);
     const cutoff = days ? Date.now() - days * 86400000 : 0;
-    const holdings = (Array.isArray(user.holdings) ? user.holdings : []).filter((h) => {
+    let holdings = (Array.isArray(user.holdings) ? user.holdings : []).filter((h) => {
+      if (selectedStock && h.symbol !== selectedStock) return false;
       if (!cutoff) return true;
       return h.created_at ? new Date(h.created_at).getTime() >= cutoff : true;
     });
-    if (!holdings.length) { errorEl.textContent = "No holdings found for the selected time frame."; return; }
+    if (!holdings.length) { errorEl.textContent = "No holdings found for the selected filters."; return; }
     const xirr = calculateXIRR(holdings);
     if (xirr === null) { errorEl.textContent = "Not enough data to calculate XIRR."; return; }
     const totalInvested = holdings.reduce((s, h) => s + Number(h.buy_price || 0) * Number(h.quantity || 0), 0);
     const totalCurrent = holdings.reduce((s, h) => s + Number(h.current_price || 0) * Number(h.quantity || 0), 0);
+    const investorName = escapeHtml(user.full_name || user.name || String(user.user_id));
     xirrValueEl.textContent = (xirr >= 0 ? "+" : "") + xirr.toFixed(2) + "%";
     xirrValueEl.style.color = xirr >= 0 ? "#0f8a55" : "#c62828";
-    xirrMetaEl.textContent = `Invested: ${currency(totalInvested)} · Current: ${currency(totalCurrent)} · ${holdings.length} position(s)`;
+    xirrMetaEl.textContent = `${investorName}${selectedStock ? " · " + selectedStock : ""} · Invested: ${currency(totalInvested)} · Current: ${currency(totalCurrent)} · ${holdings.length} position(s)`;
     resultBox.style.display = "block";
   });
 }
@@ -3538,7 +3566,7 @@ async function renderAdminPortal() {
           <input class="user-search admin-filter-date" id="adminDateTo" type="date" value="${escapeHtml(adminUiState.dateTo)}" />
           <span class="badge ${filteredPeriodProfit >= 0 ? "green" : "red"}">Range P/L ${currency(filteredPeriodProfit)}</span>
         </div>
-        <div class="table-wrap">
+        <div class="table-wrap admin-position-table-wrap" id="adminPositionsTableWrap">
           <table>
             <thead><tr><th>Investor</th><th>Stock</th><th>Purchase Date</th><th>Qty</th><th>Avg Price</th><th>Invested Value</th><th>Live Price</th><th>Current Value</th><th>Unrealised P&amp;L</th><th>Action</th></tr></thead>
             <tbody>
@@ -3587,6 +3615,9 @@ async function renderAdminPortal() {
             </tfoot>
           </table>
         </div>
+        <div class="admin-table-bottom-scroll" id="adminPositionsTableScroller" aria-label="Scroll positions table horizontally">
+          <div class="admin-table-bottom-scroll-inner"></div>
+        </div>
       </article>
       <article class="dashboard-card" id="adminClientOpsCard">
         <div class="panel-head"><h3>Investor Downloads</h3><span class="badge green">Export</span></div>
@@ -3613,7 +3644,7 @@ async function renderAdminPortal() {
     <div class="dashboard-grid">
       <article class="dashboard-card full-span-card">
         <div class="panel-head"><h3>Sold History</h3><span class="badge ${filteredSoldHistory.length ? "green" : ""}">${filteredSoldHistory.length} Records</span></div>
-        <div class="table-wrap">
+        <div class="table-wrap admin-position-table-wrap" id="adminSoldHistoryWrap">
           <table>
             <thead><tr><th>User</th><th>Stock</th><th>Purchase Date</th><th>Qty Sold</th><th>Avg Price</th><th>Sell Price</th><th>Realised P&amp;L</th><th>Sold At (IST)</th><th>Sold By</th></tr></thead>
             <tbody>
@@ -3639,7 +3670,7 @@ async function renderAdminPortal() {
                         </tr>
                       `
                     )
-                    .join("") 
+                    .join("")
                 : `<tr><td colspan="9"><span class="helper-text">No sold history for the selected filters yet.</span></td></tr>`}
             </tbody>
             <tfoot>
@@ -3653,6 +3684,9 @@ async function renderAdminPortal() {
               </tr>
             </tfoot>
           </table>
+        </div>
+        <div class="admin-table-bottom-scroll" id="adminSoldHistoryScroller" aria-label="Scroll sold history table horizontally">
+          <div class="admin-table-bottom-scroll-inner"></div>
         </div>
       </article>
     </div>
@@ -3913,6 +3947,8 @@ async function renderAdminPortal() {
     setupAdminManagementButtons();
     setupAdminDrilldowns(userDashboards, allHoldings, filteredSoldHistory);
     document.getElementById("adminXirrCalcBtn")?.addEventListener("click", () => showXirrCalculatorModal(userDashboards));
+    setupScrollSync("adminPositionsTableWrap", "adminPositionsTableScroller");
+    setupScrollSync("adminSoldHistoryWrap", "adminSoldHistoryScroller");
     setupPortalActions();
   } catch (error) {
     renderPortalError(mount, "Admin Dashboard", `Login succeeded, but admin dashboard data could not load yet. ${formatError(error)}`);
@@ -4243,7 +4279,7 @@ async function renderAdminPortal(options = {}) {
 
         <article class="dashboard-card full-span-card">
           <div class="panel-head"><h3>Sold History</h3><span class="badge ${filteredSoldHistory.length ? "green" : ""}">${filteredSoldHistory.length} Records</span></div>
-          <div class="table-wrap">
+          <div class="table-wrap admin-position-table-wrap" id="adminSoldHistoryWrap">
             <table>
               <thead><tr><th>Investor Name</th><th>Stock</th><th>Purchase Date</th><th>Qty Sold</th><th>Avg Price</th><th>Sell Price</th><th>Sold Date</th><th>Realised P&amp;L</th><th>P&amp;L %</th></tr></thead>
               <tbody>
@@ -4285,6 +4321,9 @@ async function renderAdminPortal(options = {}) {
               </tfoot>
             </table>
           </div>
+          <div class="admin-table-bottom-scroll" id="adminSoldHistoryScroller" aria-label="Scroll sold history table horizontally">
+            <div class="admin-table-bottom-scroll-inner"></div>
+          </div>
         </article>
 
         <section id="adminDetailMount" class="dashboard-section hidden"></section>
@@ -4305,6 +4344,7 @@ async function renderAdminPortal(options = {}) {
     setupAdminDrilldowns(userDashboards, allHoldings, filteredSoldHistory);
     document.getElementById("adminXirrCalcBtn")?.addEventListener("click", () => showXirrCalculatorModal(userDashboards));
     setupScrollSync("adminPositionsTableWrap", "adminPositionsTableScroller");
+    setupScrollSync("adminSoldHistoryWrap", "adminSoldHistoryScroller");
     if (adminUiState.openDetailUserId) {
       const openUser = userDashboards.find((u) => Number(u.user_id) === Number(adminUiState.openDetailUserId));
       const detailMount = document.getElementById("adminDetailMount");
