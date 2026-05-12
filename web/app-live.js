@@ -3694,7 +3694,7 @@ async function renderAdminPortal() {
       <article class="dashboard-card full-span-card">
         <div class="panel-head"><h3>Sold History</h3><span class="badge ${filteredSoldHistory.length ? "green" : ""}">${filteredSoldHistory.length} Records</span></div>
         <div class="table-wrap admin-position-table-wrap" id="adminSoldHistoryWrap">
-          <table>
+          <table class="admin-position-table">
             <thead><tr><th>User</th><th>Stock</th><th>Purchase Date</th><th>Qty Sold</th><th>Avg Price</th><th>Sell Price</th><th>Realised P&amp;L</th><th>Sold At (IST)</th><th>Sold By</th></tr></thead>
             <tbody>
               ${filteredSoldHistory.length
@@ -4329,7 +4329,7 @@ async function renderAdminPortal(options = {}) {
         <article class="dashboard-card full-span-card">
           <div class="panel-head"><h3>Sold History</h3><span class="badge ${filteredSoldHistory.length ? "green" : ""}">${filteredSoldHistory.length} Records</span></div>
           <div class="table-wrap admin-position-table-wrap" id="adminSoldHistoryWrap">
-            <table>
+            <table class="admin-position-table">
               <thead><tr><th>Investor Name</th><th>Stock</th><th>Purchase Date</th><th>Qty Sold</th><th>Avg Price</th><th>Sell Price</th><th>Sold Date</th><th>Realised P&amp;L</th><th>P&amp;L %</th></tr></thead>
               <tbody>
                 ${filteredSoldHistory.length

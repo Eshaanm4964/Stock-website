@@ -645,7 +645,8 @@
 }
 
 .admin-toolbar-right {
-  justify-content: flex-end;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .admin-search-wrap {
@@ -653,8 +654,8 @@
 }
 .admin-universal-search {
   min-width: 200px;
-  max-width: 260px;
-  width: 260px;
+  max-width: 360px;
+  width: 360px;
 }
 .admin-search-dropdown {
   position: absolute;
@@ -905,8 +906,9 @@ body.dashboard-page {
 
 .admin-toolbar-right {
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   flex: 1 1 auto;
+  gap: 8px;
 }
 
 .admin-database-toolbar-right {
