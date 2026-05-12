@@ -1323,6 +1323,10 @@ body.dashboard-page {
   color: #0f8a55;
 }
 
+.sold-history-body.hidden {
+  display: none;
+}
+
 .sell-action-btn {
   min-height: 40px;
   padding: 9px 16px;

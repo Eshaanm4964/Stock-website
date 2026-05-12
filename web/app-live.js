@@ -2532,6 +2532,18 @@ function setupPortalActions() {
     });
   });
 
+  document.querySelectorAll("[data-sold-history-toggle]").forEach((button) => {
+    if (button.dataset.soldHistoryToggleBound === "true") return;
+    button.dataset.soldHistoryToggleBound = "true";
+    button.addEventListener("click", () => {
+      const body = button.closest("article")?.querySelector(".sold-history-body");
+      if (!body) return;
+      const isHidden = body.classList.toggle("hidden");
+      button.classList.toggle("is-active", !isHidden);
+      button.title = isHidden ? "Show sold history" : "Hide sold history";
+    });
+  });
+
   document.querySelectorAll("[data-admin-reset-password]").forEach((button) => {
     if (button.dataset.resetPasswordBound === "true") return;
     button.dataset.resetPasswordBound = "true";
@@ -3127,7 +3139,14 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
       </article>
 
       <article class="table-card" style="margin-top:18px;">
-        <div class="panel-head"><h3>Sold History</h3><span class="badge ${userSoldHistory.length ? "green" : ""}">${userSoldHistory.length} Record(s)</span></div>
+        <div class="panel-head">
+          <h3>Sold History</h3>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="badge ${userSoldHistory.length ? "green" : ""}">${userSoldHistory.length} Record(s)</span>
+            <button class="admin-eye-btn sold-history-eye-toggle" type="button" data-sold-history-toggle="detail" title="Show / hide sold history">&#128065;</button>
+          </div>
+        </div>
+        <div class="sold-history-body" id="adminDetailSoldBody">
         <div class="table-wrap admin-position-table-wrap" id="adminDetailSoldWrap">
           <table class="admin-position-table">
             <thead>
@@ -3169,6 +3188,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
         </div>
         <div class="admin-table-bottom-scroll" id="adminDetailSoldScroller" aria-label="Scroll sold history table horizontally">
           <div class="admin-table-bottom-scroll-inner"></div>
+        </div>
         </div>
       </article>
     </article>
@@ -3700,7 +3720,14 @@ async function renderAdminPortal() {
     </div>
     <div class="dashboard-grid">
       <article class="dashboard-card full-span-card">
-        <div class="panel-head"><h3>Sold History</h3><span class="badge ${filteredSoldHistory.length ? "green" : ""}">${filteredSoldHistory.length} Records</span></div>
+        <div class="panel-head">
+          <h3>Sold History</h3>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="badge ${filteredSoldHistory.length ? "green" : ""}">${filteredSoldHistory.length} Records</span>
+            <button class="admin-eye-btn sold-history-eye-toggle" type="button" data-sold-history-toggle="main1" title="Show / hide sold history">&#128065;</button>
+          </div>
+        </div>
+        <div class="sold-history-body">
         <div class="table-wrap admin-position-table-wrap" id="adminSoldHistoryWrap">
           <table class="admin-position-table">
             <thead><tr><th>User</th><th>Stock</th><th>Purchase Date</th><th>Qty Sold</th><th>Avg Price</th><th>Sell Price</th><th>Realised P&amp;L</th><th>Sold At (IST)</th><th>Sold By</th></tr></thead>
@@ -3744,6 +3771,7 @@ async function renderAdminPortal() {
         </div>
         <div class="admin-table-bottom-scroll" id="adminSoldHistoryScroller" aria-label="Scroll sold history table horizontally">
           <div class="admin-table-bottom-scroll-inner"></div>
+        </div>
         </div>
       </article>
     </div>
@@ -4342,7 +4370,14 @@ async function renderAdminPortal(options = {}) {
         </article>
 
         <article class="dashboard-card full-span-card">
-          <div class="panel-head"><h3>Sold History</h3><span class="badge ${filteredSoldHistory.length ? "green" : ""}">${filteredSoldHistory.length} Records</span></div>
+          <div class="panel-head">
+            <h3>Sold History</h3>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="badge ${filteredSoldHistory.length ? "green" : ""}">${filteredSoldHistory.length} Records</span>
+              <button class="admin-eye-btn sold-history-eye-toggle" type="button" data-sold-history-toggle="main2" title="Show / hide sold history">&#128065;</button>
+            </div>
+          </div>
+          <div class="sold-history-body">
           <div class="table-wrap admin-position-table-wrap" id="adminSoldHistoryWrap">
             <table class="admin-position-table">
               <thead><tr><th>Investor Name</th><th>Stock</th><th>Purchase Date</th><th>Qty Sold</th><th>Avg Price</th><th>Sell Price</th><th>Sold Date</th><th>Realised P&amp;L</th><th>P&amp;L %</th></tr></thead>
@@ -4387,6 +4422,7 @@ async function renderAdminPortal(options = {}) {
           </div>
           <div class="admin-table-bottom-scroll" id="adminSoldHistoryScroller" aria-label="Scroll sold history table horizontally">
             <div class="admin-table-bottom-scroll-inner"></div>
+          </div>
           </div>
         </article>
 
