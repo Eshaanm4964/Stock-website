@@ -1531,6 +1531,97 @@ function setupWebsiteControlButtons() {
   }
 }
 
+function showXirrCalculatorModal(userDashboards) {
+  const overlay = document.createElement("div");
+  overlay.className = "sell-modal-overlay";
+  const userOptions = userDashboards
+    .slice()
+    .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")))
+    .map((u) => `<option value="${u.user_id}">${escapeHtml(u.name || u.user_id)}</option>`)
+    .join("");
+  overlay.innerHTML = `
+    <div class="sell-modal" role="dialog" aria-modal="true" aria-labelledby="xirrModalTitle" style="max-width:440px;">
+      <div class="sell-modal-header">
+        <div class="sell-modal-badge" style="background:#0f2040;">XIRR CALCULATOR</div>
+        <h3 id="xirrModalTitle" class="sell-modal-title">Annualised Return</h3>
+        <p class="sell-modal-owner">Select an investor and time frame</p>
+      </div>
+      <div class="sell-modal-body">
+        <label class="sell-modal-field">
+          <span>Investor</span>
+          <select id="xirrInvestorSelect" class="sell-modal-input">
+            <option value="">— Select Investor —</option>
+            ${userOptions}
+          </select>
+        </label>
+        <label class="sell-modal-field">
+          <span>Time Frame</span>
+          <select id="xirrTimeframeSelect" class="sell-modal-input">
+            <option value="all">All Time</option>
+            <option value="365">Last 1 Year</option>
+            <option value="180">Last 6 Months</option>
+            <option value="90">Last 3 Months</option>
+            <option value="30">Last 1 Month</option>
+          </select>
+        </label>
+        <div id="xirrResult" style="margin-top:12px;padding:16px;border-radius:14px;background:rgba(15,32,64,0.05);text-align:center;display:none;">
+          <p style="font-size:0.78rem;font-weight:600;letter-spacing:0.06em;color:#70809c;text-transform:uppercase;margin:0 0 6px;">XIRR (Annualised Return)</p>
+          <p id="xirrValue" style="font-size:2rem;font-weight:800;margin:0;"></p>
+          <p id="xirrMeta" style="font-size:0.8rem;color:#70809c;margin:6px 0 0;"></p>
+        </div>
+        <p class="sell-modal-error" id="xirrError"></p>
+      </div>
+      <div class="sell-modal-actions">
+        <button class="sell-modal-cancel" id="xirrClose" type="button">Close</button>
+        <button class="sell-modal-confirm" id="xirrCalculate" type="button" style="background:#0f2040;">Calculate</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add("sell-modal-visible"));
+
+  const investorSelect = overlay.querySelector("#xirrInvestorSelect");
+  const timeframeSelect = overlay.querySelector("#xirrTimeframeSelect");
+  const resultBox = overlay.querySelector("#xirrResult");
+  const xirrValueEl = overlay.querySelector("#xirrValue");
+  const xirrMetaEl = overlay.querySelector("#xirrMeta");
+  const errorEl = overlay.querySelector("#xirrError");
+  const calcBtn = overlay.querySelector("#xirrCalculate");
+  const closeBtn = overlay.querySelector("#xirrClose");
+
+  function close() {
+    overlay.classList.remove("sell-modal-visible");
+    setTimeout(() => overlay.remove(), 220);
+  }
+
+  closeBtn.addEventListener("click", close);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+
+  calcBtn.addEventListener("click", () => {
+    errorEl.textContent = "";
+    resultBox.style.display = "none";
+    const userId = investorSelect.value;
+    if (!userId) { errorEl.textContent = "Please select an investor."; return; }
+    const user = userDashboards.find((u) => String(u.user_id) === String(userId));
+    if (!user) { errorEl.textContent = "Investor data not found."; return; }
+    const days = timeframeSelect.value === "all" ? null : Number(timeframeSelect.value);
+    const cutoff = days ? Date.now() - days * 86400000 : 0;
+    const holdings = (Array.isArray(user.holdings) ? user.holdings : []).filter((h) => {
+      if (!cutoff) return true;
+      return h.created_at ? new Date(h.created_at).getTime() >= cutoff : true;
+    });
+    if (!holdings.length) { errorEl.textContent = "No holdings found for the selected time frame."; return; }
+    const xirr = calculateXIRR(holdings);
+    if (xirr === null) { errorEl.textContent = "Not enough data to calculate XIRR."; return; }
+    const totalInvested = holdings.reduce((s, h) => s + Number(h.buy_price || 0) * Number(h.quantity || 0), 0);
+    const totalCurrent = holdings.reduce((s, h) => s + Number(h.current_price || 0) * Number(h.quantity || 0), 0);
+    xirrValueEl.textContent = (xirr >= 0 ? "+" : "") + xirr.toFixed(2) + "%";
+    xirrValueEl.style.color = xirr >= 0 ? "#0f8a55" : "#c62828";
+    xirrMetaEl.textContent = `Invested: ${currency(totalInvested)} · Current: ${currency(totalCurrent)} · ${holdings.length} position(s)`;
+    resultBox.style.display = "block";
+  });
+}
+
 function setupAdminManagementButtons() {
   const statusMessage = document.getElementById("adminUserActionStatus");
   const searchInput = document.getElementById("adminUniversalSearch");
@@ -2884,7 +2975,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
           <table class="admin-position-table">
             <thead>
               <tr>
-                <th>Symbol</th>
+                <th>Stock</th>
                 <th>Purchase Date</th>
                 <th>Qty</th>
                 <th>Avg Price</th>
@@ -2911,7 +3002,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
                         <td>
                           <div class="admin-stock-cell">
                             <button class="admin-eye-btn ${isAdminStockRevealed(holding.symbol) ? "is-active" : ""}" type="button" data-stock-visibility-toggle="${escapeHtml(String(holding.symbol || "").toUpperCase())}" aria-label="Toggle stock name">&#128065;</button>
-                            <span data-stock-label="${escapeHtml(String(holding.symbol || "").toUpperCase())}">${isAdminStockRevealed(holding.symbol) ? escapeHtml(holding.symbol) : maskStockSymbol(holding.symbol)}</span>
+                            <span class="sold-history-symbol" data-stock-label="${escapeHtml(String(holding.symbol || "").toUpperCase())}">${isAdminStockRevealed(holding.symbol) ? escapeHtml(holding.symbol) : maskStockSymbol(holding.symbol)}</span>
                           </div>
                           <small>${escapeHtml(holding.exchange || "NSE")}</small>
                         </td>
@@ -3821,6 +3912,7 @@ async function renderAdminPortal() {
     setupWebsiteControlButtons();
     setupAdminManagementButtons();
     setupAdminDrilldowns(userDashboards, allHoldings, filteredSoldHistory);
+    document.getElementById("adminXirrCalcBtn")?.addEventListener("click", () => showXirrCalculatorModal(userDashboards));
     setupPortalActions();
   } catch (error) {
     renderPortalError(mount, "Admin Dashboard", `Login succeeded, but admin dashboard data could not load yet. ${formatError(error)}`);
@@ -3961,6 +4053,7 @@ async function renderAdminPortal(options = {}) {
             </div>
           </div>
           <div class="user-topbar-actions admin-toolbar-right">
+            <button class="secondary-btn compact-btn" id="adminXirrCalcBtn" type="button">XIRR Calculator</button>
             <details class="admin-dropdown-menu" id="adminSortDropdown">
               <summary class="secondary-btn compact-btn">Order By</summary>
               <div class="admin-dropdown-panel admin-sort-panel">
@@ -4129,7 +4222,7 @@ async function renderAdminPortal(options = {}) {
               <tfoot>
                 <tr class="admin-total-row">
                   <td colspan="3"><strong>Totals</strong></td>
-                  <td><strong>${filteredTotalQuantity.toFixed(2)}</strong></td>
+                  <td>—</td>
                   <td>—</td>
                   <td>—</td>
                   <td class="${filteredCurrentValue >= filteredInvestedValue ? "profit" : "loss"}"><strong>${currency(filteredInvestedValue)}</strong></td>
@@ -4182,7 +4275,7 @@ async function renderAdminPortal(options = {}) {
               <tfoot>
                 <tr class="admin-total-row">
                   <td colspan="3"><strong>Totals</strong></td>
-                  <td><strong>${filteredSoldQuantity.toFixed(2)}</strong></td>
+                  <td>—</td>
                   <td>—</td>
                   <td>—</td>
                   <td>—</td>
@@ -4210,6 +4303,7 @@ async function renderAdminPortal(options = {}) {
     setupDownloadButtons(userDashboards);
     setupAdminManagementButtons();
     setupAdminDrilldowns(userDashboards, allHoldings, filteredSoldHistory);
+    document.getElementById("adminXirrCalcBtn")?.addEventListener("click", () => showXirrCalculatorModal(userDashboards));
     setupScrollSync("adminPositionsTableWrap", "adminPositionsTableScroller");
     if (adminUiState.openDetailUserId) {
       const openUser = userDashboards.find((u) => Number(u.user_id) === Number(adminUiState.openDetailUserId));
