@@ -677,6 +677,57 @@ function showBuyMoreModal({ symbol, owner, exchange, lastBuyPrice }) {
   });
 }
 
+function showResetPasswordModal({ userId, userName }) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "sell-modal-overlay";
+    overlay.innerHTML = `
+      <div class="sell-modal" role="dialog" aria-modal="true" aria-labelledby="resetPwdTitle">
+        <div class="sell-modal-header">
+          <div class="sell-modal-badge" style="background:#7c3aed;">RESET PASSWORD</div>
+          <h3 id="resetPwdTitle" class="sell-modal-title">${escapeHtml(userName)}</h3>
+          <p class="sell-modal-owner">Set a new login password for this investor</p>
+        </div>
+        <div class="sell-modal-body">
+          <label class="sell-modal-field">
+            <span>New Password</span>
+            <input id="resetPwdInput" type="text" placeholder="Enter new password (min 6 chars)" class="sell-modal-input" autocomplete="off" />
+          </label>
+          <p class="sell-modal-error" id="resetPwdError"></p>
+        </div>
+        <div class="sell-modal-actions">
+          <button class="sell-modal-cancel" id="resetPwdCancel" type="button">Cancel</button>
+          <button class="sell-modal-confirm" id="resetPwdConfirm" type="button" style="background:linear-gradient(135deg,#7c3aed,#5b21b6);box-shadow:0 6px 16px rgba(124,58,237,0.28);">Reset Password</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add("sell-modal-visible"));
+
+    const pwdInput = overlay.querySelector("#resetPwdInput");
+    const errorEl = overlay.querySelector("#resetPwdError");
+    const confirmBtn = overlay.querySelector("#resetPwdConfirm");
+    const cancelBtn = overlay.querySelector("#resetPwdCancel");
+
+    function close(result) {
+      overlay.classList.remove("sell-modal-visible");
+      setTimeout(() => overlay.remove(), 220);
+      resolve(result);
+    }
+
+    cancelBtn.addEventListener("click", () => close(null));
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) close(null); });
+
+    confirmBtn.addEventListener("click", () => {
+      const pwd = pwdInput.value.trim();
+      if (!pwd || pwd.length < 6) { errorEl.textContent = "Password must be at least 6 characters."; return; }
+      close(pwd);
+    });
+
+    pwdInput.focus();
+  });
+}
+
 function getHoldingState(holding) {
   const profitLoss = Number(holding?.profit_loss || 0);
   if (profitLoss > 0) return "profit";
@@ -1782,6 +1833,32 @@ function setupAdminManagementButtons() {
       }
     });
   });
+
+  document.querySelectorAll("[data-admin-reset-password]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const userId = button.dataset.adminResetPassword;
+      const userName = button.dataset.userName || "this investor";
+      const newPassword = await showResetPasswordModal({ userId, userName });
+      if (!newPassword) return;
+      const stopLoading = setButtonLoading(button, "Resetting...");
+      try {
+        await api(`/admin/users/${userId}/reset-password`, {
+          method: "POST",
+          body: JSON.stringify({ password: newPassword })
+        });
+        showAdminSuccessModal(`Password Reset — ${userName}`, [
+          ["Investor", userName],
+          ["New Password", newPassword],
+          ["Status", "Reset successfully"]
+        ]);
+        if (statusMessage) statusMessage.textContent = `Password reset for ${userName}.`;
+      } catch (error) {
+        if (statusMessage) statusMessage.textContent = formatError(error);
+      } finally {
+        stopLoading();
+      }
+    });
+  });
 }
 
 async function refreshAdminCurrentPage() {
@@ -2619,6 +2696,7 @@ async function renderAdminDatabasePage(options = {}) {
                     <th>Portfolio Value</th>
                     <th>Total Holdings</th>
                     <th>Total P&amp;L</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2643,11 +2721,12 @@ async function renderAdminDatabasePage(options = {}) {
                               <td>${currency(dashboard?.total_portfolio_value ?? user.portfolio_value ?? 0)}</td>
                               <td>${dashboard?.total_holdings ?? user.total_holdings ?? 0}</td>
                               <td class="${Number(dashboard?.total_profit_loss || 0) >= 0 ? "profit" : "loss"}">${currency(dashboard?.total_profit_loss || 0)}</td>
+                              <td><button class="secondary-btn compact-btn" type="button" data-admin-reset-password="${user.user_id}" data-user-name="${escapeHtml(user.full_name || user.username || '')}">Reset Password</button></td>
                             </tr>
                           `;
                         })
                         .join("")
-                    : `<tr><td colspan="14"><span class="helper-text">No investors found in the database.</span></td></tr>`}
+                    : `<tr><td colspan="15"><span class="helper-text">No investors found in the database.</span></td></tr>`}
                 </tbody>
               </table>
             </div>
@@ -2858,7 +2937,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
             <tfoot>
               <tr class="admin-total-row">
                 <td colspan="2"><strong>Totals</strong></td>
-                <td><strong>${totalQty.toFixed(2)}</strong></td>
+                <td>—</td>
                 <td>—</td>
                 <td class="${totalCurrent >= totalInvested ? "profit" : "loss"}"><strong>${currency(totalInvested)}</strong></td>
                 <td class="${totalCurrent >= totalInvested ? "profit" : "loss"}"><strong>${currency(totalCurrent)}</strong></td>
@@ -2907,7 +2986,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
             <tfoot>
               <tr class="admin-total-row">
                 <td colspan="2"><strong>Totals</strong></td>
-                <td><strong>${soldTotalQty.toFixed(2)}</strong></td>
+                <td>—</td>
                 <td>—</td>
                 <td>—</td>
                 <td>—</td>
@@ -3406,7 +3485,7 @@ async function renderAdminPortal() {
             <tfoot>
               <tr class="admin-total-row">
                 <td colspan="3"><strong>Totals</strong></td>
-                <td><strong>${filteredTotalQuantity.toFixed(2)}</strong></td>
+                <td>—</td>
                 <td>—</td>
                 <td><strong>${currency(filteredInvestedValue)}</strong></td>
                 <td>—</td>
@@ -3475,7 +3554,7 @@ async function renderAdminPortal() {
             <tfoot>
               <tr class="admin-total-row">
                 <td colspan="3"><strong>Totals</strong></td>
-                <td><strong>${filteredSoldQuantity.toFixed(2)}</strong></td>
+                <td>—</td>
                 <td>—</td>
                 <td>—</td>
                 <td class="${filteredRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredRealizedProfit)}</strong></td>

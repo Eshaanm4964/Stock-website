@@ -395,6 +395,34 @@ async def delete_admin_user(
     )
 
 
+@router.post("/users/{user_id}/reset-password", status_code=200)
+async def admin_reset_password(
+    user_id: int,
+    payload: dict,
+    request: Request,
+    current_admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    user = (await db.execute(select(User).where(User.id == user_id, User.role == UserRole.USER))).scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    new_password = payload.get("password", "").strip()
+    if not new_password or len(new_password) < 6:
+        raise HTTPException(status_code=422, detail="Password must be at least 6 characters.")
+    user.hashed_password = get_password_hash(new_password)
+    await db.commit()
+    await log_admin_action(
+        db,
+        admin_user=current_admin,
+        action="reset_password",
+        entity_type="user",
+        entity_id=str(user_id),
+        ip_address=request.client.host if request.client else None,
+        details={"fixed_user_id": user.fixed_user_id},
+    )
+    return {"message": "Password reset successfully."}
+
+
 @router.post("/users/{user_id}/holdings", response_model=AdminHoldingSnapshot, status_code=201)
 async def admin_add_holding(
     user_id: int,
