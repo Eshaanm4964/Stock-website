@@ -4160,8 +4160,10 @@ async function renderAdminPortal(options = {}) {
               <div class="admin-dropdown-panel">
                 <p class="admin-dropdown-section-label">Quick Actions</p>
                 <div class="admin-dropdown-links">
-                  <a class="secondary-btn compact-btn" href="./admin-add-customer.html"><strong>Add Customer</strong><small>Open the dedicated registration page</small></a>
-                  <a class="secondary-btn compact-btn" href="./admin-add-deal.html"><strong>Add Deal</strong><small>Open the separate deal entry page</small></a>
+                  <a class="secondary-btn compact-btn" href="./admin-add-customer.html"><strong>Add Customer</strong><small>Register a new investor account</small></a>
+                  <a class="secondary-btn compact-btn" href="./admin-add-deal.html"><strong>Add Deal</strong><small>Record a new position for an investor</small></a>
+                  <a class="secondary-btn compact-btn" href="./admin-add-funds.html"><strong>Add Funds</strong><small>Top up balance funds for an investor</small></a>
+                  <a class="secondary-btn compact-btn" href="./admin-database.html"><strong>View Database</strong><small>Raw database view of users and holdings</small></a>
                 </div>
                 <p class="admin-dropdown-section-label">Filters</p>
                 <div class="admin-dropdown-filters">
@@ -4195,8 +4197,6 @@ async function renderAdminPortal(options = {}) {
                 <p class="helper-text admin-filter-summary">Filtered P&amp;L window: <strong class="${filteredPositionsTotalProfit >= 0 ? "profit" : "loss"}">${currency(filteredPositionsTotalProfit)}</strong></p>
               </div>
             </details>
-            <a class="secondary-btn compact-btn" href="./admin-database.html">View Database</a>
-            <a class="secondary-btn compact-btn" href="./admin-add-funds.html">Add Funds</a>
             <details class="admin-dropdown-menu" id="adminInvestorViewDropdown">
               <summary class="secondary-btn compact-btn">Investor View</summary>
               <div class="admin-dropdown-panel">

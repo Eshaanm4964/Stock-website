@@ -651,11 +651,15 @@
 
 .admin-search-wrap {
   position: relative;
+  flex: 1 1 160px;
+  min-width: 120px;
+  max-width: 340px;
+}
+.admin-search-wrap .user-search {
+  min-width: 0;
 }
 .admin-universal-search {
-  min-width: 200px;
-  max-width: 360px;
-  width: 360px;
+  width: 100%;
 }
 .admin-search-dropdown {
   position: absolute;
