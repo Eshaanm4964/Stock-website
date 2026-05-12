@@ -1812,6 +1812,13 @@ body.dashboard-page {
 .sell-modal-overlay.sell-modal-visible .sell-modal {
   transform: translateY(0) scale(1);
 }
+.sell-modal.xirr-modal {
+  max-width: 500px;
+}
+.sell-modal.xirr-modal .sell-modal-input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 
 .sell-modal-header {
   padding: 24px 28px 20px;

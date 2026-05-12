@@ -1535,55 +1535,70 @@ function showXirrCalculatorModal(userDashboards) {
   const overlay = document.createElement("div");
   overlay.className = "sell-modal-overlay";
 
+  // Pre-build map of userId → { name, symbols, holdingsArray } to avoid any lookup bugs
+  const userMap = new Map();
   const sortedUsers = userDashboards
     .slice()
     .sort((a, b) => String(a.full_name || a.name || "").localeCompare(String(b.full_name || b.name || "")));
 
+  for (const u of sortedUsers) {
+    const id = String(u.user_id);
+    const holdings = Array.isArray(u.holdings) ? u.holdings : [];
+    const symbols = [...new Set(holdings.map((h) => String(h.symbol || "").trim()).filter(Boolean))].sort();
+    userMap.set(id, { name: u.full_name || u.name || id, symbols, holdings });
+  }
+
   const userOptions = sortedUsers
-    .map((u) => `<option value="${u.user_id}">${escapeHtml(u.full_name || u.name || String(u.user_id))}</option>`)
+    .map((u) => `<option value="${String(u.user_id)}">${escapeHtml(u.full_name || u.name || String(u.user_id))}</option>`)
     .join("");
 
   overlay.innerHTML = `
-    <div class="sell-modal" role="dialog" aria-modal="true" aria-labelledby="xirrModalTitle" style="max-width:440px;">
-      <div class="sell-modal-header">
-        <div class="sell-modal-badge" style="background:#0f2040;">XIRR CALCULATOR</div>
-        <h3 id="xirrModalTitle" class="sell-modal-title">Annualised Return</h3>
-        <p class="sell-modal-owner">Select an investor and time frame</p>
+    <div class="sell-modal xirr-modal" role="dialog" aria-modal="true" aria-labelledby="xirrModalTitle">
+      <div class="sell-modal-header" style="background:linear-gradient(135deg,#0a1628 0%,#0f2040 60%,#112952 100%);border-radius:20px 20px 0 0;padding:22px 24px 18px;">
+        <div class="sell-modal-badge" style="background:rgba(44,144,240,0.18);color:#7ec4f8;border:1px solid rgba(44,144,240,0.3);font-size:0.68rem;letter-spacing:0.12em;">XIRR CALCULATOR</div>
+        <h3 id="xirrModalTitle" class="sell-modal-title" style="color:#fff;margin:8px 0 4px;">Annualised Return</h3>
+        <p class="sell-modal-owner" style="color:rgba(255,255,255,0.55);font-size:0.8rem;margin:0;">True time-weighted return using the XIRR method</p>
       </div>
-      <div class="sell-modal-body">
-        <label class="sell-modal-field">
-          <span>Investor</span>
-          <select id="xirrInvestorSelect" class="sell-modal-input">
-            <option value="">— Select Investor —</option>
-            ${userOptions}
-          </select>
-        </label>
-        <label class="sell-modal-field">
-          <span>Stock</span>
-          <select id="xirrStockSelect" class="sell-modal-input">
-            <option value="">All Stocks</option>
-          </select>
-        </label>
-        <label class="sell-modal-field">
-          <span>Time Frame</span>
-          <select id="xirrTimeframeSelect" class="sell-modal-input">
-            <option value="all">All Time</option>
-            <option value="365">Last 1 Year</option>
-            <option value="180">Last 6 Months</option>
-            <option value="90">Last 3 Months</option>
-            <option value="30">Last 1 Month</option>
-          </select>
-        </label>
-        <div id="xirrResult" style="margin-top:12px;padding:16px;border-radius:14px;background:rgba(15,32,64,0.05);text-align:center;display:none;">
-          <p style="font-size:0.78rem;font-weight:600;letter-spacing:0.06em;color:#70809c;text-transform:uppercase;margin:0 0 6px;">XIRR (Annualised Return)</p>
-          <p id="xirrValue" style="font-size:2rem;font-weight:800;margin:0;"></p>
-          <p id="xirrMeta" style="font-size:0.8rem;color:#70809c;margin:6px 0 0;"></p>
+      <div class="sell-modal-body" style="padding:20px 24px 8px;">
+        <div style="display:grid;gap:14px;">
+          <label class="sell-modal-field" style="margin:0;">
+            <span style="font-size:0.75rem;font-weight:700;color:#44526b;letter-spacing:0.06em;text-transform:uppercase;">Investor</span>
+            <select id="xirrInvestorSelect" class="sell-modal-input" style="margin-top:6px;">
+              <option value="">— Select Investor —</option>
+              ${userOptions}
+            </select>
+          </label>
+          <label class="sell-modal-field" style="margin:0;">
+            <span style="font-size:0.75rem;font-weight:700;color:#44526b;letter-spacing:0.06em;text-transform:uppercase;">Stock</span>
+            <select id="xirrStockSelect" class="sell-modal-input" style="margin-top:6px;" disabled>
+              <option value="">All Stocks</option>
+            </select>
+          </label>
+          <label class="sell-modal-field" style="margin:0;">
+            <span style="font-size:0.75rem;font-weight:700;color:#44526b;letter-spacing:0.06em;text-transform:uppercase;">Time Period</span>
+            <select id="xirrTimeframeSelect" class="sell-modal-input" style="margin-top:6px;">
+              <option value="30">Last 1 Month</option>
+              <option value="90">Last 3 Months</option>
+              <option value="180">Last 6 Months</option>
+              <option value="365">Last 1 Year</option>
+              <option value="all" selected>All Time</option>
+            </select>
+          </label>
         </div>
-        <p class="sell-modal-error" id="xirrError"></p>
+
+        <div id="xirrResult" style="margin-top:18px;border-radius:16px;overflow:hidden;display:none;">
+          <div style="background:linear-gradient(135deg,#0a1628,#0f2040);padding:20px 24px;text-align:center;">
+            <p style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;color:rgba(255,255,255,0.45);text-transform:uppercase;margin:0 0 8px;">XIRR — Annualised Return</p>
+            <p id="xirrValue" style="font-size:2.6rem;font-weight:900;margin:0;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;"></p>
+            <p id="xirrSubtitle" style="font-size:0.75rem;color:rgba(255,255,255,0.5);margin:6px 0 0;"></p>
+          </div>
+          <div id="xirrStats" style="display:grid;grid-template-columns:1fr 1fr 1fr;background:#f5f9ff;border:1px solid rgba(15,32,64,0.1);border-top:none;border-radius:0 0 16px 16px;"></div>
+        </div>
+        <p class="sell-modal-error" id="xirrError" style="margin-top:12px;"></p>
       </div>
-      <div class="sell-modal-actions">
+      <div class="sell-modal-actions" style="padding:16px 24px 20px;">
         <button class="sell-modal-cancel" id="xirrClose" type="button">Close</button>
-        <button class="sell-modal-confirm" id="xirrCalculate" type="button" style="background:#0f2040;">Calculate</button>
+        <button class="sell-modal-confirm" id="xirrCalculate" type="button" style="background:linear-gradient(135deg,#0f2040,#1a3a6e);">Calculate XIRR</button>
       </div>
     </div>
   `;
@@ -1595,30 +1610,33 @@ function showXirrCalculatorModal(userDashboards) {
   const timeframeSelect = overlay.querySelector("#xirrTimeframeSelect");
   const resultBox = overlay.querySelector("#xirrResult");
   const xirrValueEl = overlay.querySelector("#xirrValue");
-  const xirrMetaEl = overlay.querySelector("#xirrMeta");
+  const xirrSubtitleEl = overlay.querySelector("#xirrSubtitle");
+  const xirrStatsEl = overlay.querySelector("#xirrStats");
   const errorEl = overlay.querySelector("#xirrError");
   const calcBtn = overlay.querySelector("#xirrCalculate");
   const closeBtn = overlay.querySelector("#xirrClose");
 
-  function populateStockOptions(userId) {
-    const user = userId ? userDashboards.find((u) => String(u.user_id) === String(userId)) : null;
-    const holdings = user && Array.isArray(user.holdings) ? user.holdings : [];
-    const symbols = [...new Set(holdings.map((h) => h.symbol).filter(Boolean))].sort();
-    stockSelect.innerHTML = `<option value="">All Stocks</option>` +
-      symbols.map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
-  }
-
   investorSelect.addEventListener("change", () => {
-    populateStockOptions(investorSelect.value);
-    resultBox.style.display = "none";
+    const entry = userMap.get(investorSelect.value);
     errorEl.textContent = "";
+    resultBox.style.display = "none";
+    if (entry && entry.symbols.length) {
+      stockSelect.innerHTML = `<option value="">All Stocks (${entry.symbols.length})</option>` +
+        entry.symbols.map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+      stockSelect.disabled = false;
+    } else {
+      stockSelect.innerHTML = `<option value="">All Stocks</option>`;
+      stockSelect.disabled = true;
+    }
   });
+
+  stockSelect.addEventListener("change", () => { resultBox.style.display = "none"; errorEl.textContent = ""; });
+  timeframeSelect.addEventListener("change", () => { resultBox.style.display = "none"; errorEl.textContent = ""; });
 
   function close() {
     overlay.classList.remove("sell-modal-visible");
     setTimeout(() => overlay.remove(), 220);
   }
-
   closeBtn.addEventListener("click", close);
   overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
 
@@ -1626,26 +1644,49 @@ function showXirrCalculatorModal(userDashboards) {
     errorEl.textContent = "";
     resultBox.style.display = "none";
     const userId = investorSelect.value;
-    if (!userId) { errorEl.textContent = "Please select an investor."; return; }
-    const user = userDashboards.find((u) => String(u.user_id) === String(userId));
-    if (!user) { errorEl.textContent = "Investor data not found."; return; }
+    if (!userId) { errorEl.textContent = "Please select an investor first."; return; }
+    const entry = userMap.get(userId);
+    if (!entry) { errorEl.textContent = "Investor data not found."; return; }
+
     const selectedStock = stockSelect.value;
-    const days = timeframeSelect.value === "all" ? null : Number(timeframeSelect.value);
+    const timeVal = timeframeSelect.value;
+    const days = timeVal === "all" ? null : Number(timeVal);
     const cutoff = days ? Date.now() - days * 86400000 : 0;
-    let holdings = (Array.isArray(user.holdings) ? user.holdings : []).filter((h) => {
-      if (selectedStock && h.symbol !== selectedStock) return false;
+
+    const holdings = entry.holdings.filter((h) => {
+      if (selectedStock && String(h.symbol || "") !== selectedStock) return false;
       if (!cutoff) return true;
       return h.created_at ? new Date(h.created_at).getTime() >= cutoff : true;
     });
-    if (!holdings.length) { errorEl.textContent = "No holdings found for the selected filters."; return; }
+
+    if (!holdings.length) { errorEl.textContent = "No holdings match the selected filters."; return; }
+
     const xirr = calculateXIRR(holdings);
-    if (xirr === null) { errorEl.textContent = "Not enough data to calculate XIRR."; return; }
+    if (xirr === null) { errorEl.textContent = "Not enough data to calculate XIRR (need at least one buy date and a current price)."; return; }
+
     const totalInvested = holdings.reduce((s, h) => s + Number(h.buy_price || 0) * Number(h.quantity || 0), 0);
     const totalCurrent = holdings.reduce((s, h) => s + Number(h.current_price || 0) * Number(h.quantity || 0), 0);
-    const investorName = escapeHtml(user.full_name || user.name || String(user.user_id));
+    const pnl = totalCurrent - totalInvested;
+    const color = xirr >= 0 ? "#4ade80" : "#f87171";
+
     xirrValueEl.textContent = (xirr >= 0 ? "+" : "") + xirr.toFixed(2) + "%";
-    xirrValueEl.style.color = xirr >= 0 ? "#0f8a55" : "#c62828";
-    xirrMetaEl.textContent = `${investorName}${selectedStock ? " · " + selectedStock : ""} · Invested: ${currency(totalInvested)} · Current: ${currency(totalCurrent)} · ${holdings.length} position(s)`;
+    xirrValueEl.style.color = color;
+    xirrSubtitleEl.textContent = `${escapeHtml(entry.name)}${selectedStock ? " · " + selectedStock : " · All Stocks"} · ${timeVal === "all" ? "All Time" : `Last ${timeVal === "30" ? "1 Month" : timeVal === "90" ? "3 Months" : timeVal === "180" ? "6 Months" : "1 Year"}`}`;
+
+    const statCell = (label, value, cls = "") =>
+      `<div style="padding:14px 10px;text-align:center;border-right:1px solid rgba(15,32,64,0.08);">
+        <p style="font-size:0.65rem;font-weight:700;letter-spacing:0.07em;color:#70809c;text-transform:uppercase;margin:0 0 4px;">${label}</p>
+        <p style="font-size:0.9rem;font-weight:800;margin:0;${cls}">${value}</p>
+      </div>`;
+
+    xirrStatsEl.innerHTML =
+      statCell("Invested", currency(totalInvested)) +
+      statCell("Current Value", currency(totalCurrent)) +
+      `<div style="padding:14px 10px;text-align:center;">
+        <p style="font-size:0.65rem;font-weight:700;letter-spacing:0.07em;color:#70809c;text-transform:uppercase;margin:0 0 4px;">P&amp;L</p>
+        <p style="font-size:0.9rem;font-weight:800;margin:0;color:${pnl >= 0 ? "#0f8a55" : "#c62828"};">${pnl >= 0 ? "+" : ""}${currency(pnl)}</p>
+      </div>`;
+
     resultBox.style.display = "block";
   });
 }
@@ -4440,22 +4481,47 @@ function buildPnlContributionData(holdings) {
 
 function calculateXIRR(holdings) {
   if (!holdings.length) return null;
-  let totalInvested = 0, totalCurrent = 0, weightedDays = 0;
-  const today = Date.now();
-  holdings.forEach(h => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayMs = today.getTime();
+
+  // Build cash flows: outflow at each buy date, single inflow of current value today
+  const flows = [];
+  let totalCurrent = 0;
+  for (const h of holdings) {
     const invested = Number(h.buy_price || 0) * Number(h.quantity || 0);
     const current = Number(h.current_price || 0) * Number(h.quantity || 0);
-    const days = h.created_at ? Math.max(1, (today - new Date(h.created_at).getTime()) / 86400000) : 365;
-    totalInvested += invested;
+    if (invested <= 0) continue;
+    const buyDate = h.created_at ? new Date(h.created_at) : today;
+    buyDate.setHours(0, 0, 0, 0);
+    flows.push({ ms: buyDate.getTime(), amount: -invested });
     totalCurrent += current;
-    weightedDays += invested * days;
-  });
-  if (!totalInvested || !weightedDays) return null;
-  const avgDays = weightedDays / totalInvested;
-  const years = Math.max(avgDays / 365, 1 / 365);
-  const totalReturn = (totalCurrent - totalInvested) / totalInvested;
-  if (1 + totalReturn <= 0) return totalReturn * 100;
-  return (Math.pow(1 + totalReturn, 1 / years) - 1) * 100;
+  }
+  if (!flows.length || totalCurrent <= 0) return null;
+  flows.push({ ms: todayMs, amount: totalCurrent });
+  flows.sort((a, b) => a.ms - b.ms);
+
+  const d0 = flows[0].ms;
+  const years = flows.map((f) => (f.ms - d0) / 86400000 / 365);
+
+  // NPV(r) = sum( CF_i / (1+r)^t_i )
+  const npv = (r) => flows.reduce((s, f, i) => s + f.amount / Math.pow(1 + r, years[i]), 0);
+  // dNPV/dr
+  const dnpv = (r) => flows.reduce((s, f, i) => s - years[i] * f.amount / Math.pow(1 + r, years[i] + 1), 0);
+
+  // Newton-Raphson, starting at 10%
+  let r = 0.1;
+  for (let i = 0; i < 100; i++) {
+    const n = npv(r);
+    const dn = dnpv(r);
+    if (Math.abs(dn) < 1e-12) break;
+    const r2 = r - n / dn;
+    if (Math.abs(r2 - r) < 1e-8) { r = r2; break; }
+    r = r2;
+    if (r <= -1) r = -0.999;
+  }
+  if (!isFinite(r) || r <= -1) return null;
+  return r * 100;
 }
 
 function renderPortfolioCharts(holdings) {
