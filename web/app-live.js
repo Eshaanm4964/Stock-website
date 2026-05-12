@@ -1953,31 +1953,6 @@ function setupAdminManagementButtons() {
     });
   });
 
-  document.querySelectorAll("[data-admin-reset-password]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const userId = button.dataset.adminResetPassword;
-      const userName = button.dataset.userName || "this investor";
-      const newPassword = await showResetPasswordModal({ userId, userName });
-      if (!newPassword) return;
-      const stopLoading = setButtonLoading(button, "Resetting...");
-      try {
-        await api(`/admin/users/${userId}/reset-password`, {
-          method: "POST",
-          body: JSON.stringify({ password: newPassword })
-        });
-        showAdminSuccessModal(`Password Reset — ${userName}`, [
-          ["Investor", userName],
-          ["New Password", newPassword],
-          ["Status", "Reset successfully"]
-        ]);
-        if (statusMessage) statusMessage.textContent = `Password reset for ${userName}.`;
-      } catch (error) {
-        if (statusMessage) statusMessage.textContent = formatError(error);
-      } finally {
-        stopLoading();
-      }
-    });
-  });
 }
 
 async function refreshAdminCurrentPage() {
@@ -2507,6 +2482,33 @@ function setupPortalActions() {
       if (event.key === "Escape") closeDropdown();
     });
   });
+
+  document.querySelectorAll("[data-admin-reset-password]").forEach((button) => {
+    if (button.dataset.resetPasswordBound === "true") return;
+    button.dataset.resetPasswordBound = "true";
+    button.addEventListener("click", async () => {
+      const userId = button.dataset.adminResetPassword;
+      const userName = button.dataset.userName || "this investor";
+      const newPassword = await showResetPasswordModal({ userId, userName });
+      if (!newPassword) return;
+      const stopLoading = setButtonLoading(button, "Resetting...");
+      try {
+        await api(`/admin/users/${userId}/reset-password`, {
+          method: "POST",
+          body: JSON.stringify({ password: newPassword })
+        });
+        showAdminSuccessModal(`Password Reset — ${userName}`, [
+          ["Investor", userName],
+          ["New Password", newPassword],
+          ["Status", "Reset successfully"]
+        ]);
+      } catch (error) {
+        alert(formatError(error));
+      } finally {
+        stopLoading();
+      }
+    });
+  });
 }
 
 function setupScrollSync(wrapId, scrollerId) {
@@ -2539,7 +2541,8 @@ function setupScrollSync(wrapId, scrollerId) {
   });
 
   window.addEventListener("resize", syncWidths);
-  syncWidths();
+  // Defer first sync to let the browser finish layout before measuring widths
+  requestAnimationFrame(() => requestAnimationFrame(syncWidths));
 }
 
 function buildAdminActionToolbar(selectedValue = "") {
@@ -3076,7 +3079,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
 
       <article class="table-card" style="margin-top:18px;">
         <div class="panel-head"><h3>Sold History</h3><span class="badge ${userSoldHistory.length ? "green" : ""}">${userSoldHistory.length} Record(s)</span></div>
-        <div class="table-wrap">
+        <div class="table-wrap admin-position-table-wrap" id="adminDetailSoldWrap">
           <table class="admin-position-table">
             <thead>
               <tr><th>Stock</th><th>Purchase Date</th><th>Qty Sold</th><th>Avg Price</th><th>Sell Price</th><th>Sold Date</th><th>Realised P&amp;L</th><th>P&amp;L %</th></tr>
@@ -3114,6 +3117,9 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
               </tr>
             </tfoot>
           </table>
+        </div>
+        <div class="admin-table-bottom-scroll" id="adminDetailSoldScroller" aria-label="Scroll sold history table horizontally">
+          <div class="admin-table-bottom-scroll-inner"></div>
         </div>
       </article>
     </article>
@@ -3182,6 +3188,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       detailMount.classList.add("portal-visible");
       setupDetailEyeButtons(detailMount);
       setupScrollSync("adminDetailLiveWrap", "adminDetailLiveScroller");
+      setupScrollSync("adminDetailSoldWrap", "adminDetailSoldScroller");
       setupPortalActions();
       detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
       maybeShowBalanceWarning(user);
@@ -3199,6 +3206,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
         detailMount.innerHTML = buildAdminClientDetail(user, soldHistory, symbol);
         setupDetailEyeButtons(detailMount);
         setupScrollSync("adminDetailLiveWrap", "adminDetailLiveScroller");
+        setupScrollSync("adminDetailSoldWrap", "adminDetailSoldScroller");
         setupPortalActions();
         maybeShowBalanceWarning(user);
       } else {
@@ -4354,6 +4362,7 @@ async function renderAdminPortal(options = {}) {
         detailMount.classList.add("portal-visible");
         setupDetailEyeButtons(detailMount);
         setupScrollSync("adminDetailLiveWrap", "adminDetailLiveScroller");
+        setupScrollSync("adminDetailSoldWrap", "adminDetailSoldScroller");
       }
     }
     setupPortalActions();
