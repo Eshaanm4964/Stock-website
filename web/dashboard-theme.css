@@ -645,18 +645,30 @@
 }
 
 .admin-toolbar-right {
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: flex-end;
+  gap: 6px;
 }
 
 .admin-search-wrap {
   position: relative;
-  flex: 1 1 160px;
-  min-width: 120px;
-  max-width: 340px;
+  flex: 1 1 180px;
+  min-width: 140px;
+  max-width: 260px;
 }
 .admin-search-wrap .user-search {
   min-width: 0;
+  width: 100%;
+}
+.admin-nav-btn {
+  white-space: nowrap;
+}
+.admin-dropdown-quick-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.admin-quick-action-btn {
+  flex: 1 1 auto;
 }
 .admin-universal-search {
   width: 100%;
@@ -853,6 +865,11 @@ body.dashboard-page {
     linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 249, 255, 0.98) 100%);
   box-shadow: 0 24px 56px rgba(15, 32, 64, 0.08);
 }
+.admin-simple-topbar .compact-btn,
+.admin-simple-topbar summary.compact-btn {
+  padding: 9px 12px;
+  font-size: 0.84rem;
+}
 
 .admin-toolbar-left {
   display: grid;
@@ -910,9 +927,9 @@ body.dashboard-page {
 
 .admin-toolbar-right {
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   flex: 1 1 auto;
-  gap: 8px;
+  gap: 6px;
 }
 
 .admin-database-toolbar-right {

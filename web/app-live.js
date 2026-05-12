@@ -4138,34 +4138,32 @@ async function renderAdminPortal(options = {}) {
             </div>
           </div>
           <div class="user-topbar-actions admin-toolbar-right">
-            <button class="secondary-btn compact-btn" id="adminXirrCalcBtn" type="button">XIRR Calculator</button>
-            <details class="admin-dropdown-menu" id="adminSortDropdown">
-              <summary class="secondary-btn compact-btn">Order By</summary>
-              <div class="admin-dropdown-panel admin-sort-panel">
-                <p class="admin-dropdown-section-label">Sort Positions By</p>
+            <a class="secondary-btn compact-btn admin-nav-btn" href="./admin-add-customer.html">Add Customer</a>
+            <a class="secondary-btn compact-btn admin-nav-btn" href="./admin-add-deal.html">Add Deal</a>
+            <a class="secondary-btn compact-btn admin-nav-btn" href="./admin-add-funds.html">Add Funds</a>
+            <div class="admin-search-wrap">
+              <input class="user-search admin-universal-search" id="adminUniversalSearch" type="text" placeholder="Search client or stock…" autocomplete="off" value="${escapeHtml(adminUiState.search)}" />
+              <div class="admin-search-dropdown" id="adminSearchDropdown" hidden></div>
+            </div>
+            <details class="admin-dropdown-menu" ${adminUiState.actionsMenuOpen ? "open" : ""}>
+              <summary class="secondary-btn compact-btn admin-nav-btn">Actions & Filters</summary>
+              <div class="admin-dropdown-panel">
+                <p class="admin-dropdown-section-label">Quick Actions</p>
+                <div class="admin-dropdown-quick-row">
+                  <button class="secondary-btn compact-btn admin-quick-action-btn" id="adminXirrCalcBtn" type="button">XIRR Calculator</button>
+                </div>
+                <p class="admin-dropdown-section-label" style="margin-top:10px;">Sort Positions By</p>
                 <div class="admin-sort-options">
                   <button class="admin-sort-option-btn${adminUiState.sortBy === "recent"     ? " is-active" : ""}" type="button" data-sort-by="recent">Recent Investment</button>
                   <button class="admin-sort-option-btn${adminUiState.sortBy === "alpha"      ? " is-active" : ""}" type="button" data-sort-by="alpha">Alphabetically</button>
                   <button class="admin-sort-option-btn${adminUiState.sortBy === "investment" ? " is-active" : ""}" type="button" data-sort-by="investment">Total Investment</button>
                   <button class="admin-sort-option-btn${adminUiState.sortBy === "profit"     ? " is-active" : ""}" type="button" data-sort-by="profit">Most Profit</button>
                 </div>
-              </div>
-            </details>
-            <div class="admin-search-wrap">
-              <input class="user-search admin-universal-search" id="adminUniversalSearch" type="text" placeholder="Search client or stock…" autocomplete="off" value="${escapeHtml(adminUiState.search)}" />
-              <div class="admin-search-dropdown" id="adminSearchDropdown" hidden></div>
-            </div>
-            <details class="admin-dropdown-menu" ${adminUiState.actionsMenuOpen ? "open" : ""}>
-              <summary class="secondary-btn compact-btn">Actions & Filters</summary>
-              <div class="admin-dropdown-panel">
-                <p class="admin-dropdown-section-label">Quick Actions</p>
+                <p class="admin-dropdown-section-label" style="margin-top:10px;">Navigation</p>
                 <div class="admin-dropdown-links">
-                  <a class="secondary-btn compact-btn" href="./admin-add-customer.html"><strong>Add Customer</strong><small>Register a new investor account</small></a>
-                  <a class="secondary-btn compact-btn" href="./admin-add-deal.html"><strong>Add Deal</strong><small>Record a new position for an investor</small></a>
-                  <a class="secondary-btn compact-btn" href="./admin-add-funds.html"><strong>Add Funds</strong><small>Top up balance funds for an investor</small></a>
                   <a class="secondary-btn compact-btn" href="./admin-database.html"><strong>View Database</strong><small>Raw database view of users and holdings</small></a>
                 </div>
-                <p class="admin-dropdown-section-label">Filters</p>
+                <p class="admin-dropdown-section-label" style="margin-top:10px;">Filters</p>
                 <div class="admin-dropdown-filters">
                   <label class="toolbar-field">
                     <span>Investor</span>
@@ -4198,7 +4196,7 @@ async function renderAdminPortal(options = {}) {
               </div>
             </details>
             <details class="admin-dropdown-menu" id="adminInvestorViewDropdown">
-              <summary class="secondary-btn compact-btn">Investor View</summary>
+              <summary class="secondary-btn compact-btn admin-nav-btn">Investor View</summary>
               <div class="admin-dropdown-panel">
                 <p class="admin-dropdown-section-label">Jump to Investor</p>
                 <div class="admin-view-list">
@@ -4213,7 +4211,7 @@ async function renderAdminPortal(options = {}) {
               </div>
             </details>
             <details class="admin-dropdown-menu" id="adminStockViewDropdown">
-              <summary class="secondary-btn compact-btn">Stock View</summary>
+              <summary class="secondary-btn compact-btn admin-nav-btn">Stock View</summary>
               <div class="admin-dropdown-panel">
                 <p class="admin-dropdown-section-label">Jump to Stock</p>
                 <div class="admin-view-list">
