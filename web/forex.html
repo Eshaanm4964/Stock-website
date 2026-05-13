@@ -318,58 +318,60 @@
     (function () {
       const STATIC_ACCOUNTS = [
         {
-          id: "acc1500",
-          name: "$1,500 USD Live Account",
+          id: "global-algo-3",
+          name: "Global Algo 3",
           invested: 1500,
-          current: 2441,
-          profit: 941,
-          profitPct: 62.7,
-          period: "Feb 2026 to Apr 2026",
-          totalTrades: 2351,
+          current: 2488,
+          profit: 988,
+          profitPct: 65.9,
+          period: "Feb 2026 to May 2026",
+          totalTrades: 2483,
           winRate: 51.9,
           weeks: [
-            { label: "9-13 Feb", trades: 112, winPct: 49.1, profit: 115, roi: 7.7 },
-            { label: "16-20 Feb", trades: 193, winPct: 53.9, profit: 149, roi: 9.9 },
-            { label: "23-27 Feb", trades: 204, winPct: 54.4, profit: 71, roi: 4.8 },
-            { label: "2-6 Mar", trades: 348, winPct: 52.0, profit: 153, roi: 10.2 },
-            { label: "9-13 Mar", trades: 399, winPct: 52.6, profit: 133, roi: 8.8 },
-            { label: "16-20 Mar", trades: 252, winPct: 52.0, profit: 60, roi: 4.0 },
-            { label: "23-27 Mar", trades: 150, winPct: 53.3, profit: 73, roi: 4.9 },
-            { label: "30 Mar-3 Apr", trades: 301, winPct: 49.5, profit: 83, roi: 5.5 },
-            { label: "6-10 Apr", trades: 116, winPct: 52.6, profit: 95, roi: 6.3 },
-            { label: "13-17 Apr", trades: 112, winPct: 49.1, profit: -24, roi: -1.6 },
-            { label: "20-24 Apr", trades: 120, winPct: 49.2, profit: 25, roi: 1.7 },
-            { label: "27 Apr-1 May", trades: 44, winPct: 54.5, profit: 9, roi: 0.6 }
+            { label: "9 - 13 Feb 26", trades: 112, winPct: 49.1, profit: 115, roi: 7.7 },
+            { label: "16 - 20 Feb 26", trades: 193, winPct: 53.9, profit: 149, roi: 9.9 },
+            { label: "23 - 27 Feb 26", trades: 204, winPct: 54.4, profit: 71, roi: 4.8 },
+            { label: "2 - 6 Mar 26", trades: 348, winPct: 52.0, profit: 153, roi: 10.2 },
+            { label: "9 - 13 Mar 26", trades: 399, winPct: 52.6, profit: 133, roi: 8.8 },
+            { label: "16 - 20 Mar 26", trades: 252, winPct: 52.0, profit: 60, roi: 4.0 },
+            { label: "23 - 27 Mar 26", trades: 150, winPct: 53.3, profit: 73, roi: 4.9 },
+            { label: "30 Mar - 3 Apr 26", trades: 301, winPct: 49.5, profit: 83, roi: 5.5 },
+            { label: "6 - 10 Apr 26", trades: 116, winPct: 52.6, profit: 95, roi: 6.3 },
+            { label: "13 - 17 Apr 26", trades: 112, winPct: 49.1, profit: -24, roi: -1.6 },
+            { label: "20 - 24 Apr 26", trades: 120, winPct: 49.2, profit: 25, roi: 1.7 },
+            { label: "27 Apr - 1 May 26", trades: 64, winPct: 53.1, profit: 13, roi: 0.9 },
+            { label: "4 - 8 May 26", trades: 112, winPct: 51.8, profit: 43, roi: 2.9 }
           ]
         },
         {
-          id: "acc5000",
-          name: "$5,000 USD Live Account",
+          id: "global-algo-2",
+          name: "Global Algo 2",
           invested: 5000,
-          current: 10670,
-          profit: 5670,
-          profitPct: 113.4,
-          period: "Dec 2025 to Apr 2026",
-          totalTrades: 3226,
-          winRate: 53.4,
+          current: 10821,
+          profit: 5821,
+          profitPct: 116.4,
+          period: "Dec 2025 to May 2026",
+          totalTrades: 3302,
+          winRate: 53.3,
           weeks: [
-            { label: "29 Dec 25-2 Jan", trades: 18, winPct: 38.9, profit: 49, roi: 1.0 },
-            { label: "5-9 Jan", trades: 898, winPct: 56.1, profit: 573, roi: 11.5 },
-            { label: "12-16 Jan", trades: 174, winPct: 50.6, profit: 48, roi: 1.0 },
-            { label: "19-23 Jan", trades: 72, winPct: 54.2, profit: 100, roi: 2.0 },
-            { label: "26-30 Jan", trades: 158, winPct: 52.5, profit: 468, roi: 9.4 },
-            { label: "9-13 Feb", trades: 466, winPct: 53.4, profit: 771, roi: 15.4 },
-            { label: "16-20 Feb", trades: 222, winPct: 50.9, profit: 922, roi: 18.4 },
-            { label: "23-27 Feb", trades: 221, winPct: 54.3, profit: 528, roi: 10.6 },
-            { label: "2-6 Mar", trades: 155, winPct: 53.5, profit: 418, roi: 8.4 },
-            { label: "9-13 Mar", trades: 194, winPct: 53.1, profit: 256, roi: 5.1 },
-            { label: "16-20 Mar", trades: 188, winPct: 50.5, profit: 505, roi: 10.1 },
-            { label: "23-27 Mar", trades: 88, winPct: 52.3, profit: 134, roi: 2.7 },
-            { label: "30 Mar-3 Apr", trades: 154, winPct: 51.9, profit: 362, roi: 7.2 },
-            { label: "6-10 Apr", trades: 64, winPct: 50.0, profit: 296, roi: 5.9 },
-            { label: "13-17 Apr", trades: 62, winPct: 53.2, profit: 93, roi: 1.9 },
-            { label: "20-24 Apr", trades: 62, winPct: 51.6, profit: 109, roi: 2.2 },
-            { label: "27 Apr-1 May", trades: 30, winPct: 50.0, profit: 37, roi: 0.7 }
+            { label: "29 Dec 25 - 2 Jan 26", trades: 18, winPct: 38.9, profit: 49, roi: 1.0 },
+            { label: "5 - 9 Jan 26", trades: 898, winPct: 56.1, profit: 573, roi: 11.5 },
+            { label: "12 - 16 Jan 26", trades: 174, winPct: 50.6, profit: 48, roi: 1.0 },
+            { label: "19 - 23 Jan 26", trades: 72, winPct: 54.2, profit: 100, roi: 2.0 },
+            { label: "26 - 30 Jan 26", trades: 158, winPct: 52.5, profit: 468, roi: 9.4 },
+            { label: "9 - 13 Feb 26", trades: 466, winPct: 53.4, profit: 771, roi: 15.4 },
+            { label: "16 - 20 Feb 26", trades: 222, winPct: 50.9, profit: 922, roi: 18.4 },
+            { label: "23 - 27 Feb 26", trades: 221, winPct: 54.3, profit: 528, roi: 10.6 },
+            { label: "2 - 6 Mar 26", trades: 155, winPct: 53.5, profit: 418, roi: 8.4 },
+            { label: "9 - 13 Mar 26", trades: 194, winPct: 53.1, profit: 256, roi: 5.1 },
+            { label: "16 - 20 Mar 26", trades: 188, winPct: 50.5, profit: 505, roi: 10.1 },
+            { label: "23 - 27 Mar 26", trades: 88, winPct: 52.3, profit: 134, roi: 2.7 },
+            { label: "30 Mar - 3 Apr 26", trades: 154, winPct: 51.9, profit: 362, roi: 7.2 },
+            { label: "6 - 10 Apr 26", trades: 64, winPct: 50.0, profit: 296, roi: 5.9 },
+            { label: "13 - 17 Apr 26", trades: 62, winPct: 53.2, profit: 93, roi: 1.9 },
+            { label: "20 - 24 Apr 26", trades: 62, winPct: 51.6, profit: 109, roi: 2.2 },
+            { label: "27 Apr - 1 May 26", trades: 50, winPct: 50.0, profit: 72, roi: 1.4 },
+            { label: "4 - 8 May 26", trades: 56, winPct: 50.0, profit: 116, roi: 2.3 }
           ]
         }
       ];
@@ -467,24 +469,24 @@
           const resp = await fetch("https://goctechnology.com/gocglobalalgo/data/algos.json", { mode: "cors" });
           if (!resp.ok) throw new Error("Non-200");
           const raw = await resp.json();
-          const algos = Array.isArray(raw) ? raw : (raw.algos || raw.data || raw.accounts || []);
+          const algos = Array.isArray(raw) ? raw : [];
           if (!algos.length) throw new Error("Empty");
           const mapped = algos.map(a => ({
-            id: a.id || a.name,
-            name: a.name || a.accountName || a.title,
-            invested: Number(a.invested || a.capital || 0),
-            current: Number(a.current || a.currentValue || a.balance || 0),
-            profit: Number(a.profit || a.netProfit || a.totalProfit || 0),
-            profitPct: Number(a.profitPct || a.profitPercent || a.roi || 0),
-            period: a.period || a.dateRange || "",
-            totalTrades: Number(a.totalTrades || a.trades || 0),
-            winRate: Number(a.winRate || a.winPercent || 0),
-            weeks: (a.weeks || a.weeklyData || a.performance || []).map(w => ({
-              label: w.label || w.range || w.week || "",
-              trades: Number(w.trades || 0),
-              winPct: Number(w.winPct || w.winRate || w.winPercent || 0),
-              profit: Number(w.profit || w.netProfit || 0),
-              roi: Number(w.roi || w.roiPercent || 0)
+            id: a.id,
+            name: a.name,
+            invested: Number(a.stats.invested.value),
+            current: Number(a.stats.invested.value) + Number(a.stats.net_profit.value),
+            profit: Number(a.stats.net_profit.value),
+            profitPct: Number(a.stats.return_pct.value),
+            period: a.meta.period_label,
+            totalTrades: Number(a.meta.trades),
+            winRate: Number(a.totals.win_pct.value),
+            weeks: (a.weekly || []).map(w => ({
+              label: w.week,
+              trades: Number(w.trades.value),
+              winPct: Number(w.win_pct.value),
+              profit: Number(w.ret_dollar.value),
+              roi: Number(w.ret_pct.value)
             }))
           }));
           renderAccounts(mapped);
