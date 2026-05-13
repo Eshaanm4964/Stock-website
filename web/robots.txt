@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+Disallow: /login.html
+Disallow: /admin-dashboard.html
+Disallow: /admin-add-customer.html
+Disallow: /admin-add-deal.html
+Disallow: /admin-add-funds.html
+Disallow: /admin-database.html
+Disallow: /user-dashboard.html
+
+Sitemap: https://www.assetyantra.com/sitemap.xml

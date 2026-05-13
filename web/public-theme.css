@@ -1,4 +1,9 @@
-﻿html {
+﻿/* Ensure Google Fonts use font-display: swap for better LCP */
+@font-face { font-family: 'DM Sans'; font-display: swap; }
+@font-face { font-family: 'Playfair Display'; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; font-display: swap; }
+
+html {
   scroll-behavior: smooth;
 }
 
