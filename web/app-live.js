@@ -5242,7 +5242,7 @@ function setupLogin() {
           identifier: String(data.get("username")).trim(),
           password: String(data.get("password")),
           phone_number: String(data.get("phone")).trim(),
-          otp: ""
+          otp: null
         })
       });
       setAuth({ token: response.access_token, role: response.role });

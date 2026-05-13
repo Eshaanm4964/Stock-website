@@ -302,7 +302,7 @@ async def login(
         )
         raise HTTPException(status_code=401, detail="Phone number verification failed")
 
-    if settings.demo_mode:
+    if settings.demo_mode or payload.otp is None:
         await log_auth_attempt(
             db,
             stage="login",

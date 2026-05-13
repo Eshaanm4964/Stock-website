@@ -43,7 +43,7 @@ class LoginRequest(BaseModel):
     identifier: OptionalIdentifierStr | None = None
     password: PasswordStr | None = None  # required for admin, omitted for user phone-OTP flow
     phone_number: PhoneStr
-    otp: OtpStr
+    otp: OtpStr | None = None
 
 
 class TokenResponse(BaseModel):
