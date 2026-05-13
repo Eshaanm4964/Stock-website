@@ -422,32 +422,35 @@
       }
 
       function buildAccountCard(acct) {
-        const growPct = ((acct.current - acct.invested) / acct.invested * 100).toFixed(1);
         return `
           <article class="algo-account-card">
             <div class="algo-account-header">
               <h3>${acct.name}</h3>
               <span class="algo-account-period">${acct.period}</span>
             </div>
-            <div class="algo-journey">
-              <div class="algo-journey-item"><span class="algo-journey-label">Invested</span><strong class="algo-journey-val">${fmtUSD(acct.invested)}</strong></div>
-              <div class="algo-journey-arrow">⟶</div>
-              <div class="algo-journey-item"><span class="algo-journey-label">Now</span><strong class="algo-journey-val algo-journey-now">${fmtUSD(acct.current)}</strong></div>
-            </div>
-            <p class="algo-profit-headline"><strong class="profit">${fmtUSD(acct.profit)} profit (+${acct.profitPct}%)</strong> in</p>
-            <div class="algo-stat-strip">
-              <div class="algo-stat-item"><strong>${acct.totalTrades.toLocaleString()}</strong><span>Trades</span></div>
-              <div class="algo-stat-item"><strong>${acct.winRate}%</strong><span>Win Rate</span></div>
-              <div class="algo-stat-item profit"><strong>${fmtUSD(acct.profit)}</strong><span>Net Profit</span></div>
-              <div class="algo-stat-item"><strong>${fmtUSD(acct.invested)}</strong><span>Invested</span></div>
-              <div class="algo-stat-item profit"><strong>${fmtUSD(acct.current)}</strong><span>Total</span></div>
-            </div>
-            ${buildBarChart(acct.weeks)}
-            <div class="table-wrap algo-table-wrap">
-              <table class="algo-perf-table">
-                <thead><tr><th>Week Range</th><th>Trades</th><th>Win %</th><th>Profit</th><th>ROI</th></tr></thead>
-                <tbody>${buildTableRows(acct.weeks, true)}</tbody>
-              </table>
+            <div class="algo-card-body">
+              <div class="algo-journey">
+                <div class="algo-journey-item"><span class="algo-journey-label">Invested</span><strong class="algo-journey-val">${fmtUSD(acct.invested)}</strong></div>
+                <div class="algo-journey-arrow">→</div>
+                <div class="algo-journey-item"><span class="algo-journey-label">Current Value</span><strong class="algo-journey-val algo-journey-now">${fmtUSD(acct.current)}</strong></div>
+              </div>
+              <p class="algo-profit-headline"><strong class="profit">${fmtUSD(acct.profit)} net profit (+${acct.profitPct}%)</strong> over this period</p>
+              <div class="algo-stat-strip">
+                <div class="algo-stat-item"><strong>${acct.totalTrades.toLocaleString()}</strong><span>Total Trades</span></div>
+                <div class="algo-stat-item"><strong>${acct.winRate}%</strong><span>Win Rate</span></div>
+                <div class="algo-stat-item profit"><strong>${fmtUSD(acct.profit)}</strong><span>Net Profit</span></div>
+                <div class="algo-stat-item"><strong>${fmtUSD(acct.invested)}</strong><span>Invested</span></div>
+                <div class="algo-stat-item profit"><strong>${fmtUSD(acct.current)}</strong><span>Portfolio Value</span></div>
+              </div>
+              <p class="algo-chart-label">Weekly Profit Performance</p>
+              ${buildBarChart(acct.weeks)}
+              <p class="algo-table-section-label">Week-by-Week Breakdown</p>
+              <div class="algo-table-wrap">
+                <table class="algo-perf-table">
+                  <thead><tr><th>Week Range</th><th>Trades</th><th>Win %</th><th>Profit</th><th>ROI</th></tr></thead>
+                  <tbody>${buildTableRows(acct.weeks, true)}</tbody>
+                </table>
+              </div>
             </div>
           </article>`;
       }
