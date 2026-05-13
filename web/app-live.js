@@ -1898,7 +1898,13 @@ function setupAdminManagementButtons() {
     });
   });
 
+  setupHoldingActionButtons(statusMessage);
+}
+
+function setupHoldingActionButtons(statusMessage) {
   document.querySelectorAll("[data-admin-sell-holding]").forEach((button) => {
+    if (button.dataset.holdingActionBound === "true") return;
+    button.dataset.holdingActionBound = "true";
     button.addEventListener("click", async () => {
       const holdingId = button.dataset.adminSellHolding;
       const symbol = button.dataset.symbol || "this stock";
@@ -1914,14 +1920,9 @@ function setupAdminManagementButtons() {
       try {
         const sale = await api(`/admin/holdings/${holdingId}/sell`, {
           method: "POST",
-          body: JSON.stringify({
-            quantity: sellQuantity,
-            sell_price: sellPrice
-          })
+          body: JSON.stringify({ quantity: sellQuantity, sell_price: sellPrice })
         });
-        if (statusMessage) {
-          statusMessage.textContent = `${symbol} sale saved for ${owner}. Realised P/L: ${currency(sale?.profit_loss || 0)}.`;
-        }
+        if (statusMessage) statusMessage.textContent = `${symbol} sale saved for ${owner}. Realised P/L: ${currency(sale?.profit_loss || 0)}.`;
         await renderAdminPortal();
       } catch (error) {
         if (statusMessage) statusMessage.textContent = formatError(error);
@@ -1932,6 +1933,8 @@ function setupAdminManagementButtons() {
   });
 
   document.querySelectorAll("[data-admin-edit-holding]").forEach((button) => {
+    if (button.dataset.holdingActionBound === "true") return;
+    button.dataset.holdingActionBound = "true";
     button.addEventListener("click", async () => {
       const holdingId = button.dataset.adminEditHolding;
       const symbol = button.dataset.symbol || "this stock";
@@ -1949,9 +1952,7 @@ function setupAdminManagementButtons() {
           method: "PATCH",
           body: JSON.stringify(result)
         });
-        if (statusMessage) {
-          statusMessage.textContent = `${symbol} holding updated for ${owner}.`;
-        }
+        if (statusMessage) statusMessage.textContent = `${symbol} holding updated for ${owner}.`;
         await renderAdminPortal();
       } catch (error) {
         if (statusMessage) statusMessage.textContent = formatError(error);
@@ -1962,6 +1963,8 @@ function setupAdminManagementButtons() {
   });
 
   document.querySelectorAll("[data-admin-buy-holding]").forEach((button) => {
+    if (button.dataset.holdingActionBound === "true") return;
+    button.dataset.holdingActionBound = "true";
     button.addEventListener("click", async () => {
       const userId = button.dataset.userId;
       const symbol = button.dataset.symbol || "this stock";
@@ -2001,7 +2004,6 @@ function setupAdminManagementButtons() {
       }
     });
   });
-
 }
 
 async function refreshAdminCurrentPage() {
@@ -3259,6 +3261,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       setupScrollSync("adminDetailLiveWrap", "adminDetailLiveScroller");
       setupScrollSync("adminDetailSoldWrap", "adminDetailSoldScroller");
       setupPortalActions();
+      setupHoldingActionButtons(document.getElementById("adminUserActionStatus"));
       detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
       maybeShowBalanceWarning(user);
     });
@@ -3277,6 +3280,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
         setupScrollSync("adminDetailLiveWrap", "adminDetailLiveScroller");
         setupScrollSync("adminDetailSoldWrap", "adminDetailSoldScroller");
         setupPortalActions();
+        setupHoldingActionButtons(document.getElementById("adminUserActionStatus"));
         maybeShowBalanceWarning(user);
       } else {
         const holdings = allHoldings.filter((entry) => String(entry.symbol || "").toUpperCase() === symbol);
