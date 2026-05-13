@@ -468,6 +468,22 @@ function showBalanceWarningPopup({ investorName, clientId, shortfall, investedVa
   overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
 }
 
+function showDetailActionLoading(message) {
+  const detailMount = document.getElementById("adminDetailMount");
+  if (!detailMount) return;
+  const existing = document.getElementById("detailActionLoadingOverlay");
+  if (existing) existing.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "detailActionLoadingOverlay";
+  overlay.style.cssText = "position:sticky;bottom:0;left:0;right:0;z-index:200;background:rgba(15,23,42,0.82);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;gap:12px;padding:18px 24px;border-radius:0 0 12px 12px;";
+  overlay.innerHTML = `<span style="display:inline-block;width:18px;height:18px;border:2.5px solid rgba(255,255,255,0.25);border-top-color:#60a5fa;border-radius:50%;animation:orbitSpin 0.7s linear infinite;flex-shrink:0;"></span><span style="color:#e2e8f0;font-size:0.9rem;font-weight:600;">${escapeHtml(message)}</span>`;
+  detailMount.appendChild(overlay);
+}
+
+function hideDetailActionLoading() {
+  document.getElementById("detailActionLoadingOverlay")?.remove();
+}
+
 function showSellModal({ symbol, owner, availableQuantity, averageBuyPrice }) {
   return new Promise((resolve) => {
     const overlay = document.createElement("div");
@@ -1917,14 +1933,16 @@ function setupHoldingActionButtons(statusMessage) {
       const { sellQuantity, sellPrice } = result;
 
       const stopLoading = setButtonLoading(button, "Selling...");
+      showDetailActionLoading(`Selling ${symbol}… Please wait`);
       try {
         const sale = await api(`/admin/holdings/${holdingId}/sell`, {
           method: "POST",
           body: JSON.stringify({ quantity: sellQuantity, sell_price: sellPrice })
         });
         if (statusMessage) statusMessage.textContent = `${symbol} sale saved for ${owner}. Realised P/L: ${currency(sale?.profit_loss || 0)}.`;
-        await renderAdminPortal();
+        await renderAdminPortal({ silent: true, scrollToDetail: true });
       } catch (error) {
+        hideDetailActionLoading();
         if (statusMessage) statusMessage.textContent = formatError(error);
       } finally {
         stopLoading();
@@ -1947,14 +1965,16 @@ function setupHoldingActionButtons(statusMessage) {
       if (!result) return;
 
       const stopLoading = setButtonLoading(button, "Saving...");
+      showDetailActionLoading(`Saving changes for ${symbol}… Please wait`);
       try {
         await api(`/admin/holdings/${holdingId}`, {
           method: "PATCH",
           body: JSON.stringify(result)
         });
         if (statusMessage) statusMessage.textContent = `${symbol} holding updated for ${owner}.`;
-        await renderAdminPortal();
+        await renderAdminPortal({ silent: true, scrollToDetail: true });
       } catch (error) {
+        hideDetailActionLoading();
         if (statusMessage) statusMessage.textContent = formatError(error);
       } finally {
         stopLoading();
@@ -1976,6 +1996,7 @@ function setupHoldingActionButtons(statusMessage) {
       if (!result) return;
 
       const stopLoading = setButtonLoading(button, "Buying...");
+      showDetailActionLoading(`Buying ${symbol}… Please wait`);
       try {
         await api(`/admin/users/${userId}/holdings`, {
           method: "POST",
@@ -1996,8 +2017,9 @@ function setupHoldingActionButtons(statusMessage) {
           ["Total Value", currency(result.quantity * result.buy_price)]
         ]);
         if (statusMessage) statusMessage.textContent = `${symbol} purchased for ${owner}.`;
-        await renderAdminPortal();
+        await renderAdminPortal({ silent: true, scrollToDetail: true });
       } catch (error) {
+        hideDetailActionLoading();
         if (statusMessage) statusMessage.textContent = formatError(error);
       } finally {
         stopLoading();
@@ -4053,7 +4075,7 @@ async function renderAdminPortal(options = {}) {
   if (!mount) return;
   if (adminRenderInFlight) return;
   adminRenderInFlight = true;
-  const { silent = false } = options;
+  const { silent = false, scrollToDetail = false } = options;
   try {
     const [users, soldHistory] = await Promise.all([
       api("/admin/users"),
@@ -4453,8 +4475,7 @@ async function renderAdminPortal(options = {}) {
       const openUser = userDashboards.find((u) => Number(u.user_id) === Number(adminUiState.openDetailUserId));
       const detailMount = document.getElementById("adminDetailMount");
       if (openUser && detailMount) {
-        if (_detailWasOpen && _savedDetailHtml) {
-          // Restore snapshot on silent refresh — no rebuild, no flicker
+        if (_detailWasOpen && _savedDetailHtml && !scrollToDetail) {
           detailMount.innerHTML = _savedDetailHtml;
         } else {
           detailMount.innerHTML = buildAdminClientDetail(openUser, filteredSoldHistory);
@@ -4464,6 +4485,10 @@ async function renderAdminPortal(options = {}) {
         setupDetailEyeButtons(detailMount);
         setupScrollSync("adminDetailLiveWrap", "adminDetailLiveScroller");
         setupScrollSync("adminDetailSoldWrap", "adminDetailSoldScroller");
+        setupHoldingActionButtons(document.getElementById("adminUserActionStatus"));
+        if (scrollToDetail) {
+          requestAnimationFrame(() => detailMount.scrollIntoView({ behavior: "smooth", block: "start" }));
+        }
       }
     }
     setupPortalActions();
