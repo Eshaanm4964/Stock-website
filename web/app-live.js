@@ -5228,8 +5228,8 @@ function setupLogin() {
     const submitButton = adminForm.querySelector('button[type="submit"]');
     const stopLoading = setButtonLoading(submitButton, "Opening Dashboard...");
     try {
-      if (!hasRequiredFields(adminForm, ["username", "password", "phone", "otp"])) {
-        document.getElementById("adminError").textContent = "Complete username, password, phone number, and OTP before opening the dashboard.";
+      if (!hasRequiredFields(adminForm, ["username", "password", "phone"])) {
+        document.getElementById("adminError").textContent = "Complete username, password, and phone number before opening the dashboard.";
         return;
       }
       const data = new FormData(adminForm);
@@ -5242,7 +5242,7 @@ function setupLogin() {
           identifier: String(data.get("username")).trim(),
           password: String(data.get("password")),
           phone_number: String(data.get("phone")).trim(),
-          otp: String(data.get("otp")).trim()
+          otp: ""
         })
       });
       setAuth({ token: response.access_token, role: response.role });
