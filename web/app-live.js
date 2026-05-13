@@ -28,6 +28,7 @@ let adminUiState = {
   openDetailUserId: null
 };
 let adminSearchCache = { users: [], stocks: [] };
+const boundHoldingButtons = new WeakSet();
 let userUiState = {
   search: "",
   status: "all"
@@ -1919,8 +1920,8 @@ function setupAdminManagementButtons() {
 
 function setupHoldingActionButtons(statusMessage) {
   document.querySelectorAll("[data-admin-sell-holding]").forEach((button) => {
-    if (button.dataset.holdingActionBound === "true") return;
-    button.dataset.holdingActionBound = "true";
+    if (boundHoldingButtons.has(button)) return;
+    boundHoldingButtons.add(button);
     button.addEventListener("click", async () => {
       const holdingId = button.dataset.adminSellHolding;
       const symbol = button.dataset.symbol || "this stock";
@@ -1951,8 +1952,8 @@ function setupHoldingActionButtons(statusMessage) {
   });
 
   document.querySelectorAll("[data-admin-edit-holding]").forEach((button) => {
-    if (button.dataset.holdingActionBound === "true") return;
-    button.dataset.holdingActionBound = "true";
+    if (boundHoldingButtons.has(button)) return;
+    boundHoldingButtons.add(button);
     button.addEventListener("click", async () => {
       const holdingId = button.dataset.adminEditHolding;
       const symbol = button.dataset.symbol || "this stock";
@@ -1983,8 +1984,8 @@ function setupHoldingActionButtons(statusMessage) {
   });
 
   document.querySelectorAll("[data-admin-buy-holding]").forEach((button) => {
-    if (button.dataset.holdingActionBound === "true") return;
-    button.dataset.holdingActionBound = "true";
+    if (boundHoldingButtons.has(button)) return;
+    boundHoldingButtons.add(button);
     button.addEventListener("click", async () => {
       const userId = button.dataset.userId;
       const symbol = button.dataset.symbol || "this stock";
