@@ -2708,7 +2708,7 @@ function buildAdminActionToolbar(selectedValue = "") {
           <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/updated_logo.png" alt="Asset Yantra logo" /></span>
           <span class="public-brand-copy">
             <strong class="brand-wordmark">Asset Yantra</strong>
-            <small class="brand-tagline">${selectedValue === "customer" ? "Add Customer" : selectedValue === "funds" ? "Add Funds" : "Add Deal"}</small>
+            <small class="brand-tagline">MARKETS. INSIGHTS. WEALTH.</small>
           </span>
         </div>
       </div>
@@ -2926,7 +2926,7 @@ async function renderAdminDatabasePage(options = {}) {
                 <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/updated_logo.png" alt="Asset Yantra logo" /></span>
                 <span class="public-brand-copy">
                   <strong class="brand-wordmark">Asset Yantra</strong>
-                  <small class="brand-tagline">Database View</small>
+                  <small class="brand-tagline">MARKETS. INSIGHTS. WEALTH.</small>
                 </span>
               </div>
             </div>
@@ -4278,7 +4278,7 @@ async function renderAdminPortal(options = {}) {
               <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/updated_logo.png" alt="Asset Yantra logo" /></span>
               <span class="public-brand-copy">
                 <strong class="brand-wordmark">Asset Yantra</strong>
-                <small class="brand-tagline">Admin Portfolio Dashboard</small>
+                <small class="brand-tagline">MARKETS. INSIGHTS. WEALTH.</small>
               </span>
             </div>
           </div>
@@ -4819,7 +4819,7 @@ async function renderUserPortal(options = {}) {
               <span class="brand-mark brand-logo brand-logo-lg"><img src="./assets/updated_logo.png" alt="Asset Yantra logo" /></span>
               <span class="public-brand-copy">
                 <strong class="brand-wordmark">Asset Yantra</strong>
-                <small class="brand-tagline">Investor Portfolio</small>
+                <small class="brand-tagline">MARKETS. INSIGHTS. WEALTH.</small>
               </span>
               <span class="user-brand-divider"></span>
               <span class="user-investor-identity">
