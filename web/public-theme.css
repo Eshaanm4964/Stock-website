@@ -434,8 +434,9 @@ body.public-page .site-shell {
 
 .home-hero-static {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex-direction: row;
+  align-items: center;
+  gap: 48px;
   padding: 58px 72px 52px;
   position: relative;
   z-index: 1;
@@ -448,17 +449,25 @@ body.public-page .site-shell {
   box-shadow: 0 24px 58px rgba(49,96,73,0.08);
 }
 
+.hero-text-col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
 .home-hero-static h1 {
   font-size: clamp(2.2rem, 4.5vw, 3.4rem);
   line-height: 1.1;
   margin: 10px 0 18px;
-  max-width: 680px;
+  max-width: 580px;
 }
 
 .hero-eyebrow { margin-bottom: 4px !important; }
 
 .hero-sub {
-  max-width: 560px;
+  max-width: 500px;
   color: var(--brand-text-secondary);
   font-size: 1.05rem;
   line-height: 1.7;
@@ -484,14 +493,13 @@ body.public-page .site-shell {
 }
 .hero-secondary-cta:hover { border-color: var(--brand-accent); }
 
-/* ── Animated cards row ── */
+/* ── Animated cards column (right side) ── */
 .hero-cards-row {
   display: flex;
+  flex-direction: column;
   gap: 14px;
-  margin-top: 36px;
-  align-items: stretch;
-  width: 100%;
-  max-width: 580px;
+  flex-shrink: 0;
+  width: 260px;
 }
 
 .hvs-card {
@@ -596,9 +604,9 @@ body.public-page .site-shell {
   50%      { box-shadow: 0 0 0 8px rgba(44,144,240,0.08); }
 }
 
-@media (max-width: 760px) {
-  .home-hero-static { padding: 40px 28px 36px; }
-  .hero-cards-row { max-width: 100%; }
+@media (max-width: 900px) {
+  .home-hero-static { flex-direction: column; align-items: flex-start; gap: 32px; padding: 40px 36px 36px; }
+  .hero-cards-row { flex-direction: row; width: 100%; max-width: 500px; }
 }
 @media (max-width: 520px) {
   .home-hero-static { padding: 32px 20px 30px; }
