@@ -1,7 +1,16 @@
 {
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/", "destination": "/web/index.html" },
-    { "source": "/(.*)", "destination": "/web/$1" }
+    { "source": "/",             "destination": "/web/index.html" },
+    { "source": "/about",        "destination": "/web/about.html" },
+    { "source": "/about-us",     "destination": "/web/about.html" },
+    { "source": "/products",     "destination": "/web/products.html" },
+    { "source": "/forex",        "destination": "/web/forex.html" },
+    { "source": "/contact",      "destination": "/web/contact.html" },
+    { "source": "/reviews",      "destination": "/web/reviews.html" },
+    { "source": "/faq",          "destination": "/web/faq.html" },
+    { "source": "/trust-safety", "destination": "/web/trust-safety.html" },
+    { "source": "/legal",        "destination": "/web/legal.html" },
+    { "source": "/(.*)",         "destination": "/web/$1" }
   ]
 }
