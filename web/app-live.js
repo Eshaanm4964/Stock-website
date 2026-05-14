@@ -2081,6 +2081,46 @@ function setupAdminDatabaseExport(users = [], userDashboards = []) {
   });
 }
 
+function setupAdminClearButtons() {
+  const clearSoldBtn = document.getElementById("clearSoldHistoryBtn");
+  const clearUsersBtn = document.getElementById("clearAllUsersBtn");
+
+  if (clearSoldBtn) {
+    clearSoldBtn.addEventListener("click", async () => {
+      if (!confirm("Delete ALL sold history records? This cannot be undone.")) return;
+      clearSoldBtn.disabled = true;
+      clearSoldBtn.textContent = "Clearing...";
+      try {
+        const res = await api("/admin/clear/sold-history", { method: "DELETE" });
+        alert(`Cleared ${res.deleted} sold history records.`);
+        await renderAdminDatabasePage();
+      } catch (e) {
+        alert("Failed: " + formatError(e));
+        clearSoldBtn.disabled = false;
+        clearSoldBtn.textContent = "Clear Sold History";
+      }
+    });
+  }
+
+  if (clearUsersBtn) {
+    clearUsersBtn.addEventListener("click", async () => {
+      if (!confirm("Delete ALL users and their holdings? This cannot be undone.")) return;
+      if (!confirm("Are you sure? This will remove every client account and all portfolio data permanently.")) return;
+      clearUsersBtn.disabled = true;
+      clearUsersBtn.textContent = "Clearing...";
+      try {
+        const res = await api("/admin/clear/users", { method: "DELETE" });
+        alert(`Cleared ${res.deleted} users and all their data.`);
+        await renderAdminDatabasePage();
+      } catch (e) {
+        alert("Failed: " + formatError(e));
+        clearUsersBtn.disabled = false;
+        clearUsersBtn.textContent = "Clear All Users";
+      }
+    });
+  }
+}
+
 function showAdminSuccessModal(title, rows) {
   const existing = document.getElementById("adminSuccessOverlay");
   if (existing) existing.remove();
@@ -2892,6 +2932,8 @@ async function renderAdminDatabasePage(options = {}) {
               <a class="secondary-btn compact-btn" href="./admin-dashboard.html">Back to Dashboard</a>
               <button class="secondary-btn compact-btn" type="button" id="adminDatabaseExportBtn">Download Excel</button>
               <a class="secondary-btn compact-btn" href="./admin-add-funds.html">Add Funds</a>
+              <button class="danger-outline-btn compact-btn" type="button" id="clearSoldHistoryBtn">Clear Sold History</button>
+              <button class="danger-outline-btn compact-btn" type="button" id="clearAllUsersBtn">Clear All Users</button>
               <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
             </div>
           </header>
@@ -3040,6 +3082,7 @@ async function renderAdminDatabasePage(options = {}) {
     setupScrollSync("adminDatabaseUsersWrap", "adminDatabaseUsersScroller");
     setupScrollSync("adminDatabaseHoldingsWrap", "adminDatabaseHoldingsScroller");
     setupAdminDatabaseExport(safeUsers, userDashboards);
+    setupAdminClearButtons();
   } catch (error) {
     renderPortalError(mount, "Database View", `The database view could not load yet. ${formatError(error)}`);
     const retry = document.getElementById("retryPortalBtn");

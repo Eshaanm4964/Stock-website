@@ -951,3 +951,43 @@ async def admin_operations_overview(
             auth_max_failed_attempts=settings.auth_max_failed_attempts,
         ),
     )
+
+
+@router.delete("/clear/sold-history", status_code=200)
+async def clear_sold_history(
+    request: Request,
+    current_admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    result = await db.execute(delete(SoldHistory))
+    await db.commit()
+    await log_admin_action(
+        db,
+        admin_user=current_admin,
+        action="clear_sold_history",
+        entity_type="sold_history",
+        entity_id="all",
+        ip_address=request.client.host if request.client else None,
+        details={"rows_deleted": result.rowcount},
+    )
+    return {"deleted": result.rowcount}
+
+
+@router.delete("/clear/users", status_code=200)
+async def clear_all_users(
+    request: Request,
+    current_admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    result = await db.execute(delete(User).where(User.role == UserRole.USER))
+    await db.commit()
+    await log_admin_action(
+        db,
+        admin_user=current_admin,
+        action="clear_all_users",
+        entity_type="user",
+        entity_id="all",
+        ip_address=request.client.host if request.client else None,
+        details={"rows_deleted": result.rowcount},
+    )
+    return {"deleted": result.rowcount}
