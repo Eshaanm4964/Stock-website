@@ -914,24 +914,20 @@ body.dashboard-page {
   gap: 14px;
 }
 
-.admin-dashboard-brand--compact .brand-mark {
-  width: 48px;
-  height: 48px;
-}
-
 .admin-toolbar-left--compact {
   align-items: center;
 }
 
 .admin-dashboard-brand .brand-mark {
-  width: 56px;
-  height: 56px;
-  border-radius: 20px;
-  border: 1px solid rgba(44, 144, 240, 0.14);
-  background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
-  box-shadow: 0 10px 24px rgba(44, 144, 240, 0.08);
+  width: 54px;
+  height: 54px;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
   overflow: hidden;
   flex-shrink: 0;
+  padding: 0;
 }
 .admin-dashboard-brand .brand-mark img {
   width: 100%;
@@ -942,19 +938,23 @@ body.dashboard-page {
 
 .admin-dashboard-brand .public-brand-copy {
   display: grid;
-  gap: 4px;
+  gap: 3px;
 }
 
 .admin-dashboard-brand .brand-wordmark {
-  font-family: "DM Sans", sans-serif;
-  font-size: 1.9rem;
-  color: #0f2040;
+  font-size: 1.34rem;
+  font-weight: 700;
   letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #2c90f0, #93caff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .admin-dashboard-brand .brand-tagline {
-  color: #2c74a8;
-  font-weight: 800;
+  color: #1a3a5c;
+  font-size: 0.82rem;
+  font-weight: 400;
 }
 
 .admin-toolbar-right {
@@ -1774,7 +1774,7 @@ body.dashboard-page {
   }
 
   .admin-dashboard-brand .brand-wordmark {
-    font-size: 1.3rem;
+    font-size: 1.1rem;
   }
 
   .admin-search-wrap,
