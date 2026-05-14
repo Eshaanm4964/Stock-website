@@ -113,39 +113,33 @@
               <a class="hero-secondary-cta" href="./products.html">Explore Products</a>
             </div>
             <div class="hero-cards-row" aria-hidden="true">
-              <div class="hvs-card hvs-card--chart">
-                <div class="hvs-chart">
-                  <span style="--h:38%"></span>
-                  <span style="--h:55%"></span>
-                  <span style="--h:44%"></span>
-                  <span style="--h:70%"></span>
-                  <span style="--h:58%"></span>
-                  <span style="--h:85%"></span>
-                  <span style="--h:74%"></span>
-                  <span style="--h:100%"></span>
-                </div>
-                <div class="hvs-chart-label">Portfolio Growth</div>
-              </div>
-              <div class="hvs-card hvs-card--rings">
-                <svg viewBox="0 0 90 90" fill="none">
-                  <circle cx="45" cy="45" r="37" stroke="rgba(44,144,240,0.1)" stroke-width="6"/>
-                  <circle cx="45" cy="45" r="37" stroke="#2c90f0" stroke-width="6" stroke-linecap="round" class="hvs-arc hvs-arc--1"/>
-                  <circle cx="45" cy="45" r="28" stroke="rgba(245,158,11,0.12)" stroke-width="6"/>
-                  <circle cx="45" cy="45" r="28" stroke="#f59e0b" stroke-width="6" stroke-linecap="round" class="hvs-arc hvs-arc--2"/>
-                  <circle cx="45" cy="45" r="19" stroke="rgba(16,185,129,0.12)" stroke-width="6"/>
-                  <circle cx="45" cy="45" r="19" stroke="#10b981" stroke-width="6" stroke-linecap="round" class="hvs-arc hvs-arc--3"/>
+              <div class="hvs-card hvs-card--sparkline">
+                <svg class="hvs-sparkline-svg" viewBox="0 0 220 90" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#2c90f0" stop-opacity="0.18"/>
+                      <stop offset="100%" stop-color="#2c90f0" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path class="hvs-spark-area" d="M0,72 C18,68 28,58 44,60 S68,42 84,46 S108,28 124,24 S150,32 166,20 S192,12 220,6 L220,90 L0,90 Z"/>
+                  <path class="hvs-spark-line" d="M0,72 C18,68 28,58 44,60 S68,42 84,46 S108,28 124,24 S150,32 166,20 S192,12 220,6"/>
+                  <circle class="hvs-spark-dot" cx="44"  cy="60" r="3.5"/>
+                  <circle class="hvs-spark-dot" cx="84"  cy="46" r="3.5" style="animation-delay:1.1s"/>
+                  <circle class="hvs-spark-dot" cx="124" cy="24" r="3.5" style="animation-delay:1.4s"/>
+                  <circle class="hvs-spark-dot" cx="166" cy="20" r="3.5" style="animation-delay:1.7s"/>
+                  <circle class="hvs-spark-dot" cx="220" cy="6"  r="3.5" style="animation-delay:2s"/>
                 </svg>
+                <div class="hvs-spark-label">Market Performance</div>
               </div>
-              <div class="hvs-card hvs-card--stat">
-                <span class="hvs-stat-icon">↗</span>
-                <strong>Algo Trading</strong>
-                <small>XAU/USD · Live</small>
+              <div class="hvs-card hvs-card--radar">
+                <div class="hvs-radar">
+                  <span class="hvs-radar-ring" style="--d:0s"></span>
+                  <span class="hvs-radar-ring" style="--d:0.6s"></span>
+                  <span class="hvs-radar-ring" style="--d:1.2s"></span>
+                  <span class="hvs-radar-dot"></span>
+                </div>
+                <div class="hvs-spark-label">Live Signals</div>
               </div>
-            </div>
-            <div class="hero-trust-row">
-              <span>✦ SEBI Registered</span>
-              <span>✦ ₹25L+ Min. PMS</span>
-              <span>✦ Live Algo Results</span>
             </div>
           </div>
 
