@@ -3440,22 +3440,33 @@ body.public-page .site-shell {
     width: 100%;
     justify-content: flex-start;
     flex-wrap: wrap;
+    animation: navSlideDown 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .public-navbar.nav-open .site-nav.public-nav {
     display: grid;
-    gap: 10px;
+    gap: 6px;
     padding-top: 8px;
   }
 
   .public-navbar.nav-open .header-actions.public-actions {
-    padding-bottom: 4px;
+    padding-bottom: 8px;
   }
 
   .public-navbar.nav-open .site-nav.public-nav a,
   .public-navbar.nav-open .header-actions.public-actions .nav-cta {
     width: 100%;
     justify-content: center;
+    min-height: 46px;
+    display: flex;
+    align-items: center;
+    border-radius: 12px;
+    font-size: 1rem;
+  }
+
+  @keyframes navSlideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
   .products-grid,
@@ -5112,6 +5123,7 @@ a.pill-link {
     flex-direction: column;
     gap: 6px;
     padding: 8px 0 4px;
+    animation: navSlideDown 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .public-navbar.nav-open .site-nav.public-nav a,

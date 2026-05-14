@@ -2454,3 +2454,31 @@ input[type="date"]::-webkit-datetime-edit {
   color: #2c90f0;
   font-weight: 600;
 }
+
+/* ── Empty state ── */
+.dash-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 48px 24px;
+  text-align: center;
+}
+.dash-empty-state svg {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 4px;
+}
+.dash-empty-state strong {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f2040;
+  display: block;
+}
+.dash-empty-state span {
+  font-size: 0.88rem;
+  color: #4a6080;
+  display: block;
+  max-width: 300px;
+  line-height: 1.6;
+}

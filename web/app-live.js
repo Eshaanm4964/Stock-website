@@ -3268,7 +3268,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
                       <td class="${Number(entry.sell_price) >= Number(entry.buy_price) ? "profit" : "loss"}">${percent((((Number(entry.sell_price) - Number(entry.buy_price)) / Math.max(Number(entry.buy_price), 1)) * 100))}</td>
                     </tr>
                   `).join("")
-                : `<tr><td colspan="8"><span class="helper-text">No sold history for this investor yet.</span></td></tr>`}
+                : `<tr><td colspan="8"><div class="dash-empty-state"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 48L32 20l16 28H16z" stroke="#2c90f0" stroke-width="2" stroke-linejoin="round" opacity="0.35"/><path d="M32 30v8M32 42v2" stroke="#2c90f0" stroke-width="2" stroke-linecap="round" opacity="0.6"/></svg><strong>No sold history yet</strong><span>Completed trades will appear here once a sale is processed.</span></div></td></tr>`}
             </tbody>
             <tfoot>
               <tr class="admin-total-row">
@@ -3854,7 +3854,7 @@ async function renderAdminPortal() {
                       `
                     )
                     .join("")
-                : `<tr><td colspan="9"><span class="helper-text">No sold history for the selected filters yet.</span></td></tr>`}
+                : `<tr><td colspan="9"><div class="dash-empty-state"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 48L32 20l16 28H16z" stroke="#2c90f0" stroke-width="2" stroke-linejoin="round" opacity="0.35"/><path d="M32 30v8M32 42v2" stroke="#2c90f0" stroke-width="2" stroke-linecap="round" opacity="0.6"/></svg><strong>No records match the filters</strong><span>Try clearing filters to see all sold history.</span></div></td></tr>`}
             </tbody>
             <tfoot>
               <tr class="admin-total-row">
@@ -4504,7 +4504,7 @@ async function renderAdminPortal(options = {}) {
                         `
                       )
                       .join("")
-                  : `<tr><td colspan="9"><span class="helper-text">No sold history for the selected filters yet.</span></td></tr>`}
+                  : `<tr><td colspan="9"><div class="dash-empty-state"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 48L32 20l16 28H16z" stroke="#2c90f0" stroke-width="2" stroke-linejoin="round" opacity="0.35"/><path d="M32 30v8M32 42v2" stroke="#2c90f0" stroke-width="2" stroke-linecap="round" opacity="0.6"/></svg><strong>No records match the filters</strong><span>Try clearing filters to see all sold history.</span></div></td></tr>`}
               </tbody>
               <tfoot>
                 <tr class="admin-total-row">
@@ -4914,7 +4914,7 @@ async function renderUserPortal(options = {}) {
                         <td class="${Number(holding.total_profit) >= 0 ? "profit" : "loss"}">${currency(holding.total_profit)}</td>
                       </tr>`;
                     }).join("")
-                  : `<tr><td colspan="10"><span class="helper-text">${performance.length ? "No holdings match the active filters." : "No portfolio holdings are available yet."}</span></td></tr>`}
+                  : `<tr><td colspan="10"><div class="dash-empty-state">${performance.length ? `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" stroke="#2c90f0" stroke-width="2" stroke-dasharray="6 4" opacity="0.4"/><path d="M20 38l8-8 6 6 10-12" stroke="#2c90f0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/></svg><strong>No results for filters</strong><span>Try clearing filters to see all holdings.</span>` : `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="20" width="40" height="28" rx="6" stroke="#2c90f0" stroke-width="2" opacity="0.35"/><path d="M20 32h24M20 38h16" stroke="#2c90f0" stroke-width="2" stroke-linecap="round" opacity="0.5"/><circle cx="44" cy="18" r="8" fill="#edf5ff" stroke="#2c90f0" stroke-width="2"/><path d="M44 15v3l2 2" stroke="#2c90f0" stroke-width="1.8" stroke-linecap="round"/></svg><strong>No holdings yet</strong><span>Once the admin adds your first stock, it will appear here.</span>`}</div></td></tr>`}
               </tbody>
               <tfoot>
                 <tr class="admin-total-row">
@@ -4965,7 +4965,7 @@ async function renderUserPortal(options = {}) {
                       <td>${formatDateTime(entry.sold_at)}</td>
                       <td class="${Number(entry.profit_loss) >= 0 ? "profit" : "loss"}">${currency(entry.profit_loss)}</td>
                     </tr>`).join("")
-                  : `<tr><td colspan="8"><span class="helper-text">No realised profit or loss entries are available yet.</span></td></tr>`}
+                  : `<tr><td colspan="8"><div class="dash-empty-state"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 48L32 20l16 28H16z" stroke="#2c90f0" stroke-width="2" stroke-linejoin="round" opacity="0.35"/><path d="M32 30v8M32 42v2" stroke="#2c90f0" stroke-width="2" stroke-linecap="round" opacity="0.6"/></svg><strong>No sold history yet</strong><span>Completed trades will appear here once a sale is processed.</span></div></td></tr>`}
               </tbody>
             </table>
           </div>
@@ -5854,3 +5854,4 @@ setupFooterSocials();
 setupHomePage();
 setupLogin();
 setupDashboardPages();
+
