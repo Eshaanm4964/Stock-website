@@ -195,3 +195,19 @@ class AdminSoldHistoryItem(BaseModel):
     sold_by_identifier: str | None
     created_at: datetime | None = None
     sold_at: datetime
+
+
+class AdminAdminSummary(BaseModel):
+    admin_id: int
+    username: str
+    full_name: str
+    phone_number: str | None
+    is_active: bool
+    created_at: datetime
+
+
+class AdminCreateAdminRequest(BaseModel):
+    full_name: str
+    email: EmailStr
+    phone_number: str
+    password: str

@@ -48,8 +48,10 @@ class PortfolioPerformanceItem(BaseModel):
     quantity: float
     buy_price: float
     current_price: float
+    previous_close: float | None = None
     value: float
     profit_loss: float
+    today_profit: float = 0.0
     percent_change: float
     market_cap_category: str
     sector: str | None

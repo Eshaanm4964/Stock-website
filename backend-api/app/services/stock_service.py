@@ -491,27 +491,39 @@ async def fetch_quote(symbol: str, exchange: str = "NSE", redis: Redis | None = 
 
     price = info.get("currentPrice") or info.get("regularMarketPrice") or info.get("price") or 0.0
 
-    # Attempt 2: fast_info.last_price (reliable for most listed stocks)
-    if not price:
+    # Attempt 2: fast_info (reliable price + previous_close for most listed stocks)
+    if not price or not (info.get("previousClose") or info.get("regularMarketPreviousClose")):
         for sym in (yahoo_symbol, alt_symbol):
             try:
-                lp = yf.Ticker(sym).fast_info.last_price
+                fi = yf.Ticker(sym).fast_info
+                lp = fi.last_price
+                pc = getattr(fi, "previous_close", None)
                 if lp and lp > 0:
+                    patch: dict[str, Any] = {"currentPrice": float(lp), "shortName": info.get("shortName") or symbol.upper(), "currency": "INR"}
+                    if pc and pc > 0:
+                        patch["previousClose"] = float(pc)
+                    info = {**info, **patch}
                     price = float(lp)
-                    info = {**info, "currentPrice": price, "shortName": info.get("shortName") or symbol.upper(), "currency": "INR"}
                     source = "yfinance"
                     break
             except Exception:
                 continue
 
-    # Attempt 3: recent history close price
-    if not price:
+    # Attempt 3: recent history close price (also captures previous close from second-to-last row)
+    if not price or not (info.get("previousClose") or info.get("regularMarketPreviousClose")):
         for sym in (yahoo_symbol, alt_symbol):
             try:
                 hist = yf.Ticker(sym).history(period="5d")
                 if not hist.empty:
-                    price = float(hist["Close"].iloc[-1])
-                    info = {**info, "currentPrice": price, "shortName": info.get("shortName") or symbol.upper(), "currency": "INR"}
+                    closes = hist["Close"]
+                    current_close = float(closes.iloc[-1])
+                    prev_close = float(closes.iloc[-2]) if len(closes) >= 2 else current_close
+                    patch = {"currentPrice": current_close, "shortName": info.get("shortName") or symbol.upper(), "currency": "INR"}
+                    if not (info.get("previousClose") or info.get("regularMarketPreviousClose")):
+                        patch["previousClose"] = prev_close
+                    info = {**info, **patch}
+                    if not price:
+                        price = current_close
                     source = "yfinance"
                     break
             except Exception:

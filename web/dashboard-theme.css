@@ -1,6 +1,7 @@
 ﻿body.dashboard-page {
   margin: 0;
   min-height: 100vh;
+  zoom: 0.67;
   background:
     radial-gradient(circle at top left, rgba(77, 107, 255, 0.08), transparent 20%),
     linear-gradient(180deg, #f7f9fd 0%, #eef3f9 100%);
@@ -1349,11 +1350,30 @@ body.dashboard-page {
 }
 
 .admin-database-card {
-  overflow: hidden;
+  overflow: visible;
 }
 
 .admin-database-subhead {
   margin-top: 18px;
+}
+
+.admin-inline-form {
+  background: rgba(44, 144, 240, 0.04);
+  border: 1px solid rgba(44, 144, 240, 0.14);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+
+.admin-inline-form-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.admin-inline-form-fields .input-field {
+  flex: 1 1 160px;
+  min-width: 140px;
 }
 
 .admin-form-page-card {

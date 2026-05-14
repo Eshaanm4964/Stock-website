@@ -52,8 +52,10 @@ async def build_portfolio_summary(
         invested_value = float(grouped["invested_value"])
         buy_price = invested_value / quantity if quantity else 0.0
         current_price = quote.price
+        previous_close = quote.previous_close if quote.previous_close and quote.previous_close != current_price else None
         value = current_price * quantity
         profit_loss = (current_price - buy_price) * quantity
+        today_profit = (current_price - previous_close) * quantity if previous_close else 0.0
         category = classify_market_cap(quote.market_cap)
 
         total_value += value
@@ -72,8 +74,10 @@ async def build_portfolio_summary(
                 quantity=quantity,
                 buy_price=buy_price,
                 current_price=current_price,
+                previous_close=previous_close,
                 value=round(value, 2),
                 profit_loss=round(profit_loss, 2),
+                today_profit=round(today_profit, 2),
                 percent_change=round(((current_price - buy_price) / buy_price) * 100, 2) if buy_price else 0.0,
                 market_cap_category=category,
                 sector=quote.sector or holding.sector,

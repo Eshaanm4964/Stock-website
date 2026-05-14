@@ -20,8 +20,10 @@ from app.models.user import User, UserRole
 from app.schemas.admin import (
     AdminAuditLogResponse,
     AdminAddFundsRequest,
+    AdminAdminSummary,
     AdminBulkUserActionRequest,
     AdminBulkUserActionResponse,
+    AdminCreateAdminRequest,
     AdminDashboardResponse,
     AdminHoldingCreateRequest,
     AdminHoldingEditRequest,
@@ -991,3 +993,115 @@ async def clear_all_users(
         details={"rows_deleted": result.rowcount},
     )
     return {"deleted": result.rowcount}
+
+
+@router.get("/admins", response_model=list[AdminAdminSummary])
+async def list_admins(
+    current_admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[AdminAdminSummary]:
+    admins = list((await db.execute(select(User).where(User.role == UserRole.ADMIN))).scalars().all())
+    return [
+        AdminAdminSummary(
+            admin_id=admin.id,
+            username=admin.username,
+            full_name=admin.full_name,
+            phone_number=admin.phone_number,
+            is_active=admin.is_active,
+            created_at=admin.created_at,
+        )
+        for admin in admins
+    ]
+
+
+@router.post("/admins", response_model=AdminAdminSummary, status_code=status.HTTP_201_CREATED)
+async def create_admin(
+    payload: AdminCreateAdminRequest,
+    request: Request,
+    current_admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+) -> AdminAdminSummary:
+    normalized_email = payload.email.strip().lower()
+    try:
+        normalized_phone = normalize_indian_mobile(payload.phone_number)
+    except SmsDeliveryError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    existing = (
+        await db.execute(
+            select(User).where(
+                or_(
+                    User.email == normalized_email,
+                    User.username == normalized_email,
+                    User.phone_number == normalized_phone,
+                )
+            )
+        )
+    ).scalar_one_or_none()
+    if existing:
+        raise HTTPException(status_code=409, detail="A user with this email or phone number already exists")
+
+    if not payload.password or len(payload.password) < 6:
+        raise HTTPException(status_code=422, detail="Password must be at least 6 characters.")
+
+    admin = User(
+        username=normalized_email,
+        email=normalized_email,
+        fixed_user_id=await generate_unique_client_id(db),
+        full_name=payload.full_name.strip(),
+        phone_number=normalized_phone,
+        hashed_password=get_password_hash(payload.password),
+        role=UserRole.ADMIN,
+        is_active=True,
+        is_demo=False,
+        initial_funds=0,
+        balance_funds=0,
+    )
+    db.add(admin)
+    await db.commit()
+    await db.refresh(admin)
+    await log_admin_action(
+        db,
+        admin_user=current_admin,
+        action="create_admin",
+        entity_type="user",
+        entity_id=str(admin.id),
+        ip_address=request.client.host if request.client else None,
+        details={"username": admin.username, "full_name": admin.full_name},
+    )
+    return AdminAdminSummary(
+        admin_id=admin.id,
+        username=admin.username,
+        full_name=admin.full_name,
+        phone_number=admin.phone_number,
+        is_active=admin.is_active,
+        created_at=admin.created_at,
+    )
+
+
+@router.post("/admins/{admin_id}/reset-password", status_code=200)
+async def admin_reset_admin_password(
+    admin_id: int,
+    payload: dict,
+    request: Request,
+    current_admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    target = (await db.execute(select(User).where(User.id == admin_id, User.role == UserRole.ADMIN))).scalar_one_or_none()
+    if not target:
+        raise HTTPException(status_code=404, detail="Admin not found")
+    new_password = payload.get("password", "").strip()
+    if not new_password or len(new_password) < 6:
+        raise HTTPException(status_code=422, detail="Password must be at least 6 characters.")
+    target.hashed_password = get_password_hash(new_password)
+    await db.commit()
+    await log_admin_action(
+        db,
+        admin_user=current_admin,
+        action="reset_admin_password",
+        entity_type="user",
+        entity_id=str(admin_id),
+        ip_address=request.client.host if request.client else None,
+        details={"username": target.username},
+    )
+    return {"message": "Admin password reset successfully."}

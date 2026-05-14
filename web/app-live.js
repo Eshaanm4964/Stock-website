@@ -2123,6 +2123,79 @@ function setupAdminClearButtons() {
   }
 }
 
+function setupAdminManagement() {
+  const createBtn = document.getElementById("adminCreateAdminBtn");
+  const cancelBtn = document.getElementById("adminCancelCreateAdmin");
+  const formWrap = document.getElementById("adminCreateAdminForm");
+  const form = document.getElementById("createAdminForm");
+  const msg = document.getElementById("createAdminMsg");
+
+  if (createBtn && formWrap) {
+    createBtn.addEventListener("click", () => {
+      formWrap.style.display = formWrap.style.display === "none" ? "block" : "none";
+    });
+  }
+  if (cancelBtn && formWrap) {
+    cancelBtn.addEventListener("click", () => {
+      formWrap.style.display = "none";
+      if (form) form.reset();
+      if (msg) msg.textContent = "";
+    });
+  }
+  if (form) {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = new FormData(form);
+      const submitBtn = form.querySelector('[type="submit"]');
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Creating..."; }
+      if (msg) msg.textContent = "";
+      try {
+        await api("/admin/admins", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            full_name: data.get("full_name"),
+            email: data.get("email"),
+            phone_number: data.get("phone_number"),
+            password: data.get("password"),
+          }),
+        });
+        if (msg) { msg.style.color = "var(--profit)"; msg.textContent = "Admin created successfully. Refreshing..."; }
+        form.reset();
+        setTimeout(() => renderAdminDatabasePage({ silent: true }), 800);
+      } catch (err) {
+        if (msg) { msg.style.color = "var(--loss)"; msg.textContent = formatError(err); }
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Create Admin"; }
+      }
+    });
+  }
+
+  document.querySelectorAll("[data-admin-reset-admin-password]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const adminId = btn.getAttribute("data-admin-reset-admin-password");
+      const adminName = btn.getAttribute("data-admin-name") || "this admin";
+      const newPwd = prompt(`Reset password for ${adminName}.\n\nEnter new password (min 6 characters):`);
+      if (!newPwd) return;
+      if (newPwd.length < 6) { alert("Password must be at least 6 characters."); return; }
+      btn.disabled = true;
+      btn.textContent = "Resetting...";
+      try {
+        await api(`/admin/admins/${adminId}/reset-password`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: newPwd }),
+        });
+        alert(`Password reset successfully for ${adminName}.`);
+      } catch (err) {
+        alert("Failed: " + formatError(err));
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Reset Password";
+      }
+    });
+  });
+}
+
 function showAdminSuccessModal(title, rows) {
   const existing = document.getElementById("adminSuccessOverlay");
   if (existing) existing.remove();
@@ -2439,18 +2512,17 @@ async function setupAdminDealForm() {
       const userId = String(data.get("customer_id") || "").trim();
       const selectedExchange = String(data.get("selected_exchange") || "").trim().toUpperCase();
       const purchaseDateRaw = String(data.get("purchase_date") || "").trim();
+      const rawExchange = String(data.get("exchange") || "").trim().toUpperCase();
+      const resolvedExchange = selectedExchange || (["NSE", "BSE"].includes(rawExchange) ? rawExchange : "NSE");
       const payload = {
         symbol: String(data.get("symbol") || "").trim().toUpperCase(),
         quantity: Number(data.get("quantity") || 0),
         buy_price: Number(data.get("buy_price") || 0),
-        exchange: (selectedExchange || String(data.get("exchange") || "NSE")).trim().toUpperCase(),
+        exchange: resolvedExchange,
         created_at: purchaseDateRaw ? new Date(purchaseDateRaw).toISOString() : null
       };
       if (!userId || !payload.symbol || !payload.quantity || !payload.buy_price) {
         throw new Error("Complete all deal fields before adding the position.");
-      }
-      if (!["NSE", "BSE"].includes(payload.exchange)) {
-        throw new Error("Choose a valid NSE or BSE stock from the live search suggestions before adding the deal.");
       }
       const customerSelect2 = form.querySelector('[name="customer_id"]');
       const customerOpt = customerSelect2?.options[customerSelect2.selectedIndex];
@@ -2901,8 +2973,9 @@ async function renderAdminDatabasePage(options = {}) {
   const { silent = false } = options;
 
   try {
-    const users = await api("/admin/users");
+    const [users, adminUsers] = await Promise.all([api("/admin/users"), api("/admin/admins").catch(() => [])]);
     const safeUsers = Array.isArray(users) ? users : [];
+    const safeAdmins = Array.isArray(adminUsers) ? adminUsers : [];
     const userDashboards = await safeAdminUserDashboards(safeUsers);
     const dashboardMap = new Map(userDashboards.map((dashboard) => [String(dashboard.user_id), dashboard]));
     const totalPortfolioValue = userDashboards.reduce((sum, dashboard) => sum + Number(dashboard.total_portfolio_value || 0), 0);
@@ -3067,6 +3140,57 @@ async function renderAdminDatabasePage(options = {}) {
             <div class="admin-table-bottom-scroll" id="adminDatabaseHoldingsScroller" aria-label="Scroll holdings table horizontally">
               <div class="admin-table-bottom-scroll-inner"></div>
             </div>
+
+            <div class="panel-head admin-database-subhead">
+              <div>
+                <h3>Admin Management</h3>
+                <p class="helper-text admin-positions-helper">View, create, and manage admin accounts. Reset passwords directly from here.</p>
+              </div>
+              <button class="primary-btn compact-btn" type="button" id="adminCreateAdminBtn">+ New Admin</button>
+            </div>
+
+            <div id="adminCreateAdminForm" style="display:none; padding: 16px 0 8px;">
+              <form class="admin-inline-form" id="createAdminForm" autocomplete="off">
+                <div class="admin-inline-form-fields">
+                  <input class="input-field" type="text" name="full_name" placeholder="Full Name" required />
+                  <input class="input-field" type="email" name="email" placeholder="Email / Username" required />
+                  <input class="input-field" type="tel" name="phone_number" placeholder="Phone (Indian mobile)" required />
+                  <input class="input-field" type="password" name="password" placeholder="Password (min 6 chars)" required minlength="6" />
+                  <button class="primary-btn compact-btn" type="submit">Create Admin</button>
+                  <button class="secondary-btn compact-btn" type="button" id="adminCancelCreateAdmin">Cancel</button>
+                </div>
+                <p class="helper-text" id="createAdminMsg" style="margin-top:8px;"></p>
+              </form>
+            </div>
+
+            <div class="table-wrap admin-position-table-wrap admin-database-table-wrap" id="adminDatabaseAdminsWrap">
+              <table class="admin-position-table admin-database-table" id="adminDatabaseAdminsTable">
+                <thead>
+                  <tr>
+                    <th>Full Name</th>
+                    <th>Username / Email</th>
+                    <th>Phone Number</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${safeAdmins.length
+                    ? safeAdmins.map((admin) => `
+                      <tr>
+                        <td><strong>${escapeHtml(admin.full_name || "")}</strong></td>
+                        <td>${escapeHtml(admin.username || "")}</td>
+                        <td>${escapeHtml(admin.phone_number || "")}</td>
+                        <td><span class="badge ${admin.is_active ? "green" : "red"}">${admin.is_active ? "Active" : "Inactive"}</span></td>
+                        <td>${formatDateTime(admin.created_at)}</td>
+                        <td><button class="secondary-btn compact-btn" type="button" data-admin-reset-admin-password="${admin.admin_id}" data-admin-name="${escapeHtml(admin.full_name || admin.username || '')}">Reset Password</button></td>
+                      </tr>
+                    `).join("")
+                    : `<tr><td colspan="6" class="text-center"><span class="helper-text">No admin accounts found.</span></td></tr>`}
+                </tbody>
+              </table>
+            </div>
           </article>
         </div>
       </section>
@@ -3085,6 +3209,7 @@ async function renderAdminDatabasePage(options = {}) {
     setupScrollSync("adminDatabaseHoldingsWrap", "adminDatabaseHoldingsScroller");
     setupAdminDatabaseExport(safeUsers, userDashboards);
     setupAdminClearButtons();
+    setupAdminManagement();
   } catch (error) {
     renderPortalError(mount, "Database View", `The database view could not load yet. ${formatError(error)}`);
     const retry = document.getElementById("retryPortalBtn");
@@ -3588,18 +3713,26 @@ async function renderAdminPortal() {
         user_id: user.user_id
       }))
     );
-    const symbols = [...new Set(baseHoldings.map((holding) => holding.symbol))];
-    const feed = symbols.length
-      ? await api(`/stocks/feed?symbols=${encodeURIComponent(symbols.join(","))}`).catch(() => [])
-      : [];
-    const safeFeed = Array.isArray(feed) ? feed : [];
-    const quoteMap = new Map(safeFeed.map((quote) => [quote.symbol, quote]));
+    const symbolsByExchange = {};
+    for (const h of baseHoldings) {
+      const ex = (h.exchange || "NSE").toUpperCase();
+      if (!symbolsByExchange[ex]) symbolsByExchange[ex] = new Set();
+      symbolsByExchange[ex].add(h.symbol);
+    }
+    const feedResults = await Promise.all(
+      Object.entries(symbolsByExchange).map(([ex, syms]) =>
+        api(`/stocks/feed?symbols=${encodeURIComponent([...syms].join(","))}&exchange=${ex}`).catch(() => [])
+      )
+    );
+    const quoteMap = new Map(feedResults.flat().map((q) => [`${q.symbol}:${(q.exchange || "NSE").toUpperCase()}`, q]));
     const allHoldings = baseHoldings.map((holding) => {
-      const quote = quoteMap.get(holding.symbol);
+      const ex = (holding.exchange || "NSE").toUpperCase();
+      const quote = quoteMap.get(`${holding.symbol}:${ex}`);
       const currentPrice = Number(quote?.price ?? holding.current_price ?? holding.buy_price);
-      const changePercent = Number(quote?.change_percent ?? 0);
-      const previousClose = changePercent === -100 ? currentPrice : currentPrice / (1 + changePercent / 100 || 1);
-      const todayProfit = (currentPrice - previousClose) * Number(holding.quantity || 0);
+      const prevClose = quote?.previous_close ? Number(quote.previous_close) : null;
+      const todayProfit = prevClose && prevClose !== currentPrice
+        ? (currentPrice - prevClose) * Number(holding.quantity || 0)
+        : Number(holding.today_profit || 0);
       return {
         ...holding,
         current_price: currentPrice,
@@ -4165,18 +4298,26 @@ async function renderAdminPortal(options = {}) {
         user_id: user.user_id
       }))
     );
-    const symbols = [...new Set(baseHoldings.map((holding) => holding.symbol).filter(Boolean))];
-    const feed = symbols.length
-      ? await api(`/stocks/feed?symbols=${encodeURIComponent(symbols.join(","))}`).catch(() => [])
-      : [];
-    const safeFeed = Array.isArray(feed) ? feed : [];
-    const quoteMap = new Map(safeFeed.map((quote) => [quote.symbol, quote]));
+    const symbolsByExchange2 = {};
+    for (const h of baseHoldings) {
+      const ex = (h.exchange || "NSE").toUpperCase();
+      if (!symbolsByExchange2[ex]) symbolsByExchange2[ex] = new Set();
+      symbolsByExchange2[ex].add(h.symbol);
+    }
+    const feedResults2 = await Promise.all(
+      Object.entries(symbolsByExchange2).map(([ex, syms]) =>
+        api(`/stocks/feed?symbols=${encodeURIComponent([...syms].join(","))}&exchange=${ex}`).catch(() => [])
+      )
+    );
+    const quoteMap = new Map(feedResults2.flat().map((q) => [`${q.symbol}:${(q.exchange || "NSE").toUpperCase()}`, q]));
     const allHoldings = baseHoldings.map((holding) => {
-      const quote = quoteMap.get(holding.symbol);
+      const ex = (holding.exchange || "NSE").toUpperCase();
+      const quote = quoteMap.get(`${holding.symbol}:${ex}`);
       const currentPrice = Number(quote?.price ?? holding.current_price ?? holding.buy_price);
-      const changePercent = Number(quote?.change_percent ?? 0);
-      const previousClose = changePercent === -100 ? currentPrice : currentPrice / (1 + changePercent / 100 || 1);
-      const todayProfit = (currentPrice - previousClose) * Number(holding.quantity || 0);
+      const prevClose = quote?.previous_close ? Number(quote.previous_close) : null;
+      const todayProfit = prevClose && prevClose !== currentPrice
+        ? (currentPrice - prevClose) * Number(holding.quantity || 0)
+        : Number(holding.today_profit || 0);
       return {
         ...holding,
         current_price: currentPrice,
