@@ -2853,11 +2853,35 @@ body.public-page .site-shell {
   padding: 18px;
 }
 
-.auth-float-card.balance strong {
-  display: block;
-  margin-top: 10px;
-  color: var(--brand-text);
-  font-size: clamp(1.45rem, 3vw, 1.9rem);
+.auth-sparkline {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 60px;
+  margin-top: 12px;
+}
+
+.auth-sparkline span {
+  flex: 1;
+  height: var(--h, 50%);
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, #2c90f0 0%, #72aefe 100%);
+  transform-origin: bottom;
+  transform: scaleY(0);
+  animation: authBarRise 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.auth-sparkline span:nth-child(1) { animation-delay: 0.1s; }
+.auth-sparkline span:nth-child(2) { animation-delay: 0.2s; }
+.auth-sparkline span:nth-child(3) { animation-delay: 0.3s; }
+.auth-sparkline span:nth-child(4) { animation-delay: 0.4s; background: linear-gradient(180deg, #f59e0b 0%, #fcd34d 100%); }
+.auth-sparkline span:nth-child(5) { animation-delay: 0.5s; }
+.auth-sparkline span:nth-child(6) { animation-delay: 0.6s; }
+.auth-sparkline span:nth-child(7) { animation-delay: 0.7s; }
+.auth-sparkline span:nth-child(8) { animation-delay: 0.8s; background: linear-gradient(180deg, #10b981 0%, #6ee7b7 100%); }
+
+@keyframes authBarRise {
+  to { transform: scaleY(1); }
 }
 
 .auth-float-card.balance small,
@@ -2877,17 +2901,18 @@ body.public-page .site-shell {
 }
 
 .auth-float-card.ring::before {
-  content: "34%";
+  content: "↗";
   width: 92px;
   height: 92px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: var(--brand-text);
+  color: #2c90f0;
+  font-size: 2rem;
   font-weight: 800;
   background:
     radial-gradient(circle, rgba(255, 255, 255, 0.96) 0 56%, transparent 56% 100%),
-    conic-gradient(var(--brand-accent) 0 34%, rgba(255, 202, 40, 0.92) 34% 58%, rgba(114, 174, 254, 0.82) 58% 100%);
+    conic-gradient(#2c90f0 0 42%, #f59e0b 42% 64%, #72aefe 64% 100%);
 }
 
 .auth-float-card.deal {
@@ -2967,14 +2992,6 @@ body.public-page .site-shell {
   animation:
     authCardIn  0.65s cubic-bezier(0.16,1,0.3,1) 0.55s both,
     authFloatC  7s   ease-in-out 1.3s infinite;
-}
-.auth-float-card.balance strong {
-  background: linear-gradient(90deg, var(--brand-text) 30%, #2c90f0 50%, var(--brand-text) 70%);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: authBalanceShimmer 3.5s linear 1s infinite;
 }
 
 .auth-form-zone {
