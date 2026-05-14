@@ -2171,29 +2171,76 @@ function setupAdminManagement() {
   }
 
   document.querySelectorAll("[data-admin-reset-admin-password]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
+    btn.addEventListener("click", () => {
       const adminId = btn.getAttribute("data-admin-reset-admin-password");
-      const adminName = btn.getAttribute("data-admin-name") || "this admin";
-      const newPwd = prompt(`Reset password for ${adminName}.\n\nEnter new password (min 6 characters):`);
-      if (!newPwd) return;
-      if (newPwd.length < 6) { alert("Password must be at least 6 characters."); return; }
-      btn.disabled = true;
-      btn.textContent = "Resetting...";
-      try {
-        await api(`/admin/admins/${adminId}/reset-password`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password: newPwd }),
-        });
-        alert(`Password reset successfully for ${adminName}.`);
-      } catch (err) {
-        alert("Failed: " + formatError(err));
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "Reset Password";
-      }
+      const adminName = btn.getAttribute("data-admin-name") || "Admin";
+      showAdminResetPasswordModal(adminId, adminName);
     });
   });
+}
+
+function showAdminResetPasswordModal(adminId, adminName) {
+  const existing = document.getElementById("adminPwdModalOverlay");
+  if (existing) existing.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "adminPwdModalOverlay";
+  overlay.className = "admin-pwd-modal-overlay";
+  overlay.innerHTML = `
+    <div class="admin-pwd-modal" role="dialog" aria-modal="true" aria-labelledby="pwdModalTitle">
+      <h3 id="pwdModalTitle">Reset Admin Password</h3>
+      <p>Set a new password for <strong>${escapeHtml(adminName)}</strong>. They will need to use this to log in.</p>
+      <div class="admin-form-field">
+        <label for="adminPwdInput">New Password</label>
+        <input class="input-field" id="adminPwdInput" type="password" placeholder="Minimum 6 characters" minlength="6" autocomplete="new-password" />
+      </div>
+      <p id="adminPwdModalErr" style="color:var(--loss);font-size:0.84rem;margin:0 0 10px;display:none;"></p>
+      <div class="admin-pwd-modal-actions">
+        <button class="secondary-btn compact-btn" type="button" id="adminPwdModalCancel">Cancel</button>
+        <button class="primary-btn compact-btn" type="button" id="adminPwdModalConfirm">Reset Password</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const input = document.getElementById("adminPwdInput");
+  const confirmBtn = document.getElementById("adminPwdModalConfirm");
+  const cancelBtn = document.getElementById("adminPwdModalCancel");
+  const errMsg = document.getElementById("adminPwdModalErr");
+
+  setTimeout(() => input && input.focus(), 50);
+
+  const close = () => overlay.remove();
+  cancelBtn.addEventListener("click", close);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+
+  confirmBtn.addEventListener("click", async () => {
+    const pwd = input.value.trim();
+    if (!pwd || pwd.length < 6) {
+      errMsg.textContent = "Password must be at least 6 characters.";
+      errMsg.style.display = "block";
+      input.focus();
+      return;
+    }
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = "Resetting...";
+    errMsg.style.display = "none";
+    try {
+      await api(`/admin/admins/${adminId}/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: pwd }),
+      });
+      overlay.remove();
+      showAdminSuccessModal("Password Reset", [["Admin", adminName], ["Status", "Password updated successfully"]]);
+    } catch (err) {
+      errMsg.textContent = formatError(err);
+      errMsg.style.display = "block";
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = "Reset Password";
+    }
+  });
+
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") confirmBtn.click(); });
 }
 
 function showAdminSuccessModal(title, rows) {
@@ -3149,17 +3196,31 @@ async function renderAdminDatabasePage(options = {}) {
               <button class="primary-btn compact-btn" type="button" id="adminCreateAdminBtn">+ New Admin</button>
             </div>
 
-            <div id="adminCreateAdminForm" style="display:none; padding: 16px 0 8px;">
+            <div id="adminCreateAdminForm" style="display:none; padding: 12px 0 16px;">
               <form class="admin-inline-form" id="createAdminForm" autocomplete="off">
-                <div class="admin-inline-form-fields">
-                  <input class="input-field" type="text" name="full_name" placeholder="Full Name" required />
-                  <input class="input-field" type="email" name="email" placeholder="Email / Username" required />
-                  <input class="input-field" type="tel" name="phone_number" placeholder="Phone (Indian mobile)" required />
-                  <input class="input-field" type="password" name="password" placeholder="Password (min 6 chars)" required minlength="6" />
+                <div class="admin-inline-form-grid">
+                  <div class="admin-form-field">
+                    <label for="newAdminFullName">Full Name</label>
+                    <input class="input-field" id="newAdminFullName" type="text" name="full_name" placeholder="e.g. Rahul Sharma" required />
+                  </div>
+                  <div class="admin-form-field">
+                    <label for="newAdminEmail">Email / Username</label>
+                    <input class="input-field" id="newAdminEmail" type="email" name="email" placeholder="e.g. rahul@assetyantra.com" required />
+                  </div>
+                  <div class="admin-form-field">
+                    <label for="newAdminPhone">Phone Number</label>
+                    <input class="input-field" id="newAdminPhone" type="tel" name="phone_number" placeholder="10-digit Indian mobile" required />
+                  </div>
+                  <div class="admin-form-field">
+                    <label for="newAdminPassword">Password</label>
+                    <input class="input-field" id="newAdminPassword" type="password" name="password" placeholder="Minimum 6 characters" required minlength="6" />
+                  </div>
+                </div>
+                <div class="admin-inline-form-actions">
                   <button class="primary-btn compact-btn" type="submit">Create Admin</button>
                   <button class="secondary-btn compact-btn" type="button" id="adminCancelCreateAdmin">Cancel</button>
                 </div>
-                <p class="helper-text" id="createAdminMsg" style="margin-top:8px;"></p>
+                <p class="helper-text" id="createAdminMsg" style="margin-top:10px;"></p>
               </form>
             </div>
 

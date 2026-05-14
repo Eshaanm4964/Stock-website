@@ -19,11 +19,7 @@
 .dashboard-loading {
   display: grid;
   place-items: center;
-  min-height: calc(100vh - 32px);
-  border: 1px solid rgba(17, 35, 63, 0.08);
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.06);
+  min-height: 100vh;
   color: #44526b;
   text-align: center;
   padding: 32px;
@@ -63,8 +59,7 @@
   }
 
   .dashboard-loading {
-    min-height: calc(100vh - 16px);
-    border-radius: 20px;
+    min-height: 100vh;
     padding: 24px;
   }
 }
@@ -1358,22 +1353,97 @@ body.dashboard-page {
 }
 
 .admin-inline-form {
-  background: rgba(44, 144, 240, 0.04);
+  background: rgba(44, 144, 240, 0.03);
   border: 1px solid rgba(44, 144, 240, 0.14);
-  border-radius: 12px;
-  padding: 16px 18px;
+  border-radius: 16px;
+  padding: 24px 28px 20px;
 }
 
-.admin-inline-form-fields {
+.admin-inline-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 20px;
+  margin-bottom: 18px;
+}
+
+.admin-form-field {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-form-field label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #1a3a5c;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.admin-form-field .input-field {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-inline-form-actions {
+  display: flex;
   gap: 10px;
   align-items: center;
+  padding-top: 4px;
+  border-top: 1px solid rgba(44, 144, 240, 0.1);
+  margin-top: 4px;
 }
 
-.admin-inline-form-fields .input-field {
-  flex: 1 1 160px;
-  min-width: 140px;
+/* Reset password modal */
+.admin-pwd-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 32, 64, 0.45);
+  backdrop-filter: blur(6px);
+  z-index: 500;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.admin-pwd-modal {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 36px 36px 28px;
+  width: min(440px, 100%);
+  box-shadow: 0 32px 80px rgba(15, 32, 64, 0.18);
+  border: 1px solid rgba(44, 144, 240, 0.12);
+}
+
+.admin-pwd-modal h3 {
+  font-family: "Playfair Display", serif;
+  font-size: 1.3rem;
+  color: #0f2040;
+  margin: 0 0 4px;
+}
+
+.admin-pwd-modal p {
+  font-size: 0.88rem;
+  color: #4a6080;
+  margin: 0 0 22px;
+  line-height: 1.6;
+}
+
+.admin-pwd-modal .admin-form-field {
+  margin-bottom: 18px;
+}
+
+.admin-pwd-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+@media (max-width: 600px) {
+  .admin-inline-form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .admin-form-page-card {
