@@ -327,16 +327,43 @@ function getApiBase() {
     : "https://stock-trader-demo-backend.onrender.com/api/v1";
 }
 
+function isNetworkError(error) {
+  return error instanceof TypeError && /(fetch|network|load|failed|offline|connection)/i.test(error.message || "");
+}
+
 function formatError(error) {
-  if (
-    error instanceof TypeError &&
-    /(fetch|network|load|failed|offline|connection)/i.test(error.message || "")
-  ) {
-    return "Server is starting up — please wait a few seconds and try again.";
+  if (isNetworkError(error)) {
+    return "Unable to reach the server. Please check your connection and try again.";
   }
   const msg = error.message || "";
   if (!msg || msg === "[object Object]") return "Something went wrong. Please try again.";
   return msg;
+}
+
+async function apiWithRetry(path, options = {}, errEl, retryMessage) {
+  const maxRetries = 4;
+  const retryDelaySec = 10;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await api(path, options);
+    } catch (error) {
+      if (!isNetworkError(error) || attempt === maxRetries) throw error;
+      await new Promise((resolve) => {
+        let sec = retryDelaySec;
+        if (errEl) errEl.textContent = `${retryMessage} — retrying in ${sec}s…`;
+        const tick = setInterval(() => {
+          sec--;
+          if (sec <= 0) {
+            clearInterval(tick);
+            if (errEl) errEl.textContent = "";
+            resolve();
+          } else {
+            if (errEl) errEl.textContent = `${retryMessage} — retrying in ${sec}s…`;
+          }
+        }, 1000);
+      });
+    }
+  }
 }
 
 function updateBackendStatus(message, state = "neutral") {
@@ -5226,31 +5253,37 @@ function setupLogin() {
   adminForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const submitButton = adminForm.querySelector('button[type="submit"]');
+    const errEl = document.getElementById("adminError");
     const stopLoading = setButtonLoading(submitButton, "Opening Dashboard...");
     try {
       if (!hasRequiredFields(adminForm, ["username", "password", "phone"])) {
-        document.getElementById("adminError").textContent = "Complete username, password, and phone number before opening the dashboard.";
+        errEl.textContent = "Complete username, password, and phone number before opening the dashboard.";
         return;
       }
       const data = new FormData(adminForm);
       hidePortalMounts();
       showAuthLoading("Opening admin dashboard...", "Verifying credentials, loading client data, and preparing admin controls.");
-      const response = await api("/auth/login", {
-        method: "POST",
-        body: JSON.stringify({
-          role: "admin",
-          identifier: String(data.get("username")).trim(),
-          password: String(data.get("password")),
-          phone_number: String(data.get("phone")).trim(),
-          otp: null
-        })
-      });
+      const response = await apiWithRetry(
+        "/auth/login",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            role: "admin",
+            identifier: String(data.get("username")).trim(),
+            password: String(data.get("password")),
+            phone_number: String(data.get("phone")).trim(),
+            otp: null
+          })
+        },
+        errEl,
+        "Connecting to server"
+      );
       setAuth({ token: response.access_token, role: response.role });
-      document.getElementById("adminError").textContent = "";
+      errEl.textContent = "";
       hideAuthLoading();
       window.location.href = "./admin-dashboard.html";
     } catch (error) {
-      document.getElementById("adminError").textContent = formatError(error);
+      errEl.textContent = formatError(error);
       hidePortalMounts();
       hideAuthLoading();
     } finally {
@@ -5273,14 +5306,19 @@ function setupLogin() {
         const data = new FormData(userFormIdPwd);
         hidePortalMounts();
         showAuthLoading("Opening user dashboard...", "Loading your holdings, returns, and portfolio summary.");
-        const response = await api("/auth/login", {
-          method: "POST",
-          body: JSON.stringify({
-            role: "user",
-            identifier: String(data.get("userId") || "").trim().toUpperCase(),
-            password: String(data.get("password"))
-          })
-        });
+        const response = await apiWithRetry(
+          "/auth/login",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              role: "user",
+              identifier: String(data.get("userId") || "").trim().toUpperCase(),
+              password: String(data.get("password"))
+            })
+          },
+          errEl,
+          "Connecting to server"
+        );
         setAuth({ token: response.access_token, role: response.role });
         if (errEl) errEl.textContent = "";
         hideAuthLoading();
@@ -5310,14 +5348,19 @@ function setupLogin() {
         const data = new FormData(userFormPhoneOtp);
         hidePortalMounts();
         showAuthLoading("Opening user dashboard...", "Loading your holdings, returns, and portfolio summary.");
-        const response = await api("/auth/login", {
-          method: "POST",
-          body: JSON.stringify({
-            role: "user",
-            phone_number: String(data.get("phone")).trim(),
-            otp: String(data.get("otp")).trim()
-          })
-        });
+        const response = await apiWithRetry(
+          "/auth/login",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              role: "user",
+              phone_number: String(data.get("phone")).trim(),
+              otp: String(data.get("otp")).trim()
+            })
+          },
+          errEl,
+          "Connecting to server"
+        );
         setAuth({ token: response.access_token, role: response.role });
         if (errEl) errEl.textContent = "";
         hideAuthLoading();
