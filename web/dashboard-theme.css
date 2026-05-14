@@ -955,6 +955,7 @@ body.dashboard-page {
   color: #1a3a5c;
   font-size: 0.82rem;
   font-weight: 400;
+  white-space: nowrap;
 }
 
 .admin-toolbar-right {
