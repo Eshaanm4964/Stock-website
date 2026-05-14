@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#0f2040"/>
+  <text
+    x="256" y="340"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="280"
+    font-weight="700"
+    fill="#2c90f0"
+    text-anchor="middle"
+    letter-spacing="-8"
+  >AY</text>
+  <line x1="96" y1="390" x2="416" y2="390" stroke="#2c90f0" stroke-width="18" stroke-linecap="round" opacity="0.4"/>
+</svg>
