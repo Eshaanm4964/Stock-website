@@ -3775,7 +3775,7 @@ async function renderAdminPortal() {
                   `
                 )
                 .join("")
-                : `<tr><td colspan="10"><span class="helper-text">${searchText || adminUiState.clientFilter || adminUiState.stockFilter ? `No current holdings match the active filter. Check the Sold History section below, or clear the search.` : `No holdings have been added yet. Use Add Deal to record positions.`}</span></td></tr>`}
+                : `<tr><td colspan="10"><div class="dash-empty-state">${searchText || adminUiState.clientFilter || adminUiState.stockFilter ? `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" stroke="#2c90f0" stroke-width="2" stroke-dasharray="6 4" opacity="0.4"/><path d="M20 38l8-8 6 6 10-12" stroke="#2c90f0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/></svg><strong>No results for filters</strong><span>Try clearing the search or filters.</span>` : `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="20" width="40" height="28" rx="6" stroke="#2c90f0" stroke-width="2" opacity="0.35"/><path d="M20 32h24M20 38h16" stroke="#2c90f0" stroke-width="2" stroke-linecap="round" opacity="0.5"/><circle cx="44" cy="18" r="8" fill="#edf5ff" stroke="#2c90f0" stroke-width="2"/><path d="M44 15v3l2 2" stroke="#2c90f0" stroke-width="1.8" stroke-linecap="round"/></svg><strong>No holdings yet</strong><span>Use Add Deal to record investor positions.</span>`}</div></td></tr>`}
             </tbody>
             <tfoot>
               <tr class="admin-total-row">
@@ -4444,7 +4444,7 @@ async function renderAdminPortal(options = {}) {
                       `;
                       })
                       .join("")
-                  : `<tr><td colspan="13"><span class="helper-text">${searchText || adminUiState.clientFilter || adminUiState.stockFilter ? `No current holdings match the active filter. Try clearing the search or checking Sold History below.` : `No holdings have been added yet. Use Add Deal to record investor positions.`}</span></td></tr>`}
+                  : `<tr><td colspan="13"><div class="dash-empty-state">${searchText || adminUiState.clientFilter || adminUiState.stockFilter ? `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" stroke="#2c90f0" stroke-width="2" stroke-dasharray="6 4" opacity="0.4"/><path d="M20 38l8-8 6 6 10-12" stroke="#2c90f0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/></svg><strong>No results for filters</strong><span>Try clearing the search or filters.</span>` : `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="20" width="40" height="28" rx="6" stroke="#2c90f0" stroke-width="2" opacity="0.35"/><path d="M20 32h24M20 38h16" stroke="#2c90f0" stroke-width="2" stroke-linecap="round" opacity="0.5"/><circle cx="44" cy="18" r="8" fill="#edf5ff" stroke="#2c90f0" stroke-width="2"/><path d="M44 15v3l2 2" stroke="#2c90f0" stroke-width="1.8" stroke-linecap="round"/></svg><strong>No holdings yet</strong><span>Use Add Deal to record investor positions.</span>`}</div></td></tr>`}
               </tbody>
               <tfoot>
                 <tr class="admin-total-row">
@@ -5854,4 +5854,5 @@ setupFooterSocials();
 setupHomePage();
 setupLogin();
 setupDashboardPages();
+
 
