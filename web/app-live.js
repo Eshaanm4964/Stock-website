@@ -5563,7 +5563,7 @@ function setupPublicPageVisibility() {
 
   // Inject skeleton shimmer into each section-card
   nodes.forEach((n) => {
-    if (n.classList.contains("section-card") || n.classList.contains("hero-shell")) {
+    if ((n.classList.contains("section-card") || n.classList.contains("hero-shell")) && !n.classList.contains("is-visible")) {
       const skel = document.createElement("div");
       skel.className = "card-skeleton";
       n.style.position = n.style.position || "relative";
