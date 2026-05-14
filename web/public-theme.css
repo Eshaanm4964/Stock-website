@@ -3203,18 +3203,18 @@ body.public-page .site-shell {
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(6, 14, 36, 0.96);
-  backdrop-filter: blur(20px);
+  background: rgba(237, 245, 255, 0.92);
+  backdrop-filter: blur(24px);
   z-index: 180;
 }
 
 .auth-loading-card {
   width: min(560px, calc(100% - 48px));
   padding: 52px 48px 44px;
-  border: 1px solid rgba(44, 144, 240, 0.16);
+  border: 1px solid rgba(44, 144, 240, 0.14);
   border-radius: 32px;
-  background: linear-gradient(180deg, rgba(10, 22, 56, 0.98) 0%, rgba(6, 14, 36, 0.98) 100%);
-  color: #e8f0ff;
+  background: linear-gradient(160deg, #ffffff 0%, #f4f9ff 60%, #edf5ff 100%);
+  box-shadow: 0 32px 80px rgba(15, 32, 64, 0.10), 0 2px 8px rgba(44, 144, 240, 0.06);
   text-align: center;
 }
 
@@ -3223,7 +3223,7 @@ body.public-page .site-shell {
   font-weight: 700;
   letter-spacing: 0.13em;
   text-transform: uppercase;
-  color: rgba(44, 144, 240, 0.75);
+  color: rgba(44, 144, 240, 0.8);
   margin-bottom: 32px;
 }
 
@@ -3243,7 +3243,7 @@ body.public-page .site-shell {
   background: #ffffff;
   padding: 14px 22px;
   object-fit: contain;
-  box-shadow: 0 12px 40px rgba(44, 144, 240, 0.15), 0 2px 8px rgba(15, 32, 64, 0.08);
+  box-shadow: 0 12px 40px rgba(44, 144, 240, 0.18), 0 2px 8px rgba(15, 32, 64, 0.06);
   animation: authLogoFloat 3s ease-in-out infinite;
 }
 
@@ -3252,12 +3252,12 @@ body.public-page .site-shell {
 }
 
 @keyframes authLogoFloat {
-  0%, 100% { transform: translateY(0px);  box-shadow: 0 12px 40px rgba(44,144,240,0.15), 0 2px 8px rgba(15,32,64,0.08); }
-  50%       { transform: translateY(-6px); box-shadow: 0 20px 50px rgba(44,144,240,0.22), 0 4px 12px rgba(15,32,64,0.10); }
+  0%, 100% { transform: translateY(0px);  box-shadow: 0 12px 40px rgba(44,144,240,0.18), 0 2px 8px rgba(15,32,64,0.06); }
+  50%       { transform: translateY(-8px); box-shadow: 0 24px 56px rgba(44,144,240,0.26), 0 4px 12px rgba(15,32,64,0.08); }
 }
 
 .auth-loading-card .section-kicker {
-  color: rgba(44, 144, 240, 0.9);
+  color: #2c90f0;
   font-size: 0.72rem;
   letter-spacing: 0.14em;
   margin-bottom: 10px;
@@ -3282,7 +3282,7 @@ body.public-page .site-shell {
   height: 5px;
   margin-top: 4px;
   border-radius: 999px;
-  background: rgba(44, 144, 240, 0.1);
+  background: rgba(44, 144, 240, 0.12);
   overflow: hidden;
 }
 
@@ -3307,7 +3307,7 @@ body.public-page .site-shell {
   font-weight: 700;
   letter-spacing: 0.10em;
   text-transform: uppercase;
-  color: rgba(44, 144, 240, 0.55);
+  color: rgba(44, 144, 240, 0.65);
 }
 
 /* .fade-up base styles defined in SCROLL ANIMATIONS section below */
