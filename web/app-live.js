@@ -230,7 +230,9 @@ function revealPortal(target) {
   if (!target) return;
   target.classList.remove("hidden");
   target.classList.remove("portal-visible");
+  target.classList.add("portal-ready");
   void target.offsetWidth;
+  target.classList.remove("portal-ready");
   target.classList.add("portal-visible");
 }
 
