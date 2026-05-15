@@ -730,6 +730,46 @@ function showBuyMoreModal({ symbol, owner, exchange, lastBuyPrice }) {
   });
 }
 
+function isInactiveError(error) {
+  return error?.message?.toLowerCase().includes("inactive");
+}
+
+function showInactiveAccountModal(role = "user") {
+  const existing = document.getElementById("inactiveAccountModalOverlay");
+  if (existing) existing.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "inactiveAccountModalOverlay";
+  overlay.className = "admin-pwd-modal-overlay";
+  overlay.innerHTML = `
+    <div class="admin-pwd-modal" role="dialog" aria-modal="true" style="max-width:420px;text-align:center;">
+      <div style="width:56px;height:56px;border-radius:50%;background:rgba(239,68,68,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <h3 style="color:#ef4444;margin-bottom:8px;">Account Inactive</h3>
+      <p style="color:#4a5568;margin-bottom:20px;font-size:0.9rem;">Your ${role === "admin" ? "admin" : ""} account has been deactivated. Please contact AssetYantra to restore access.</p>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:20px;text-align:left;">
+        <p style="font-size:0.75rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#9aa5b8;margin:0 0 12px;">Contact Details</p>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2c90f0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+          <a href="tel:+919885800023" style="color:#2c90f0;font-weight:600;text-decoration:none;">+91 98858 00023</a>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2c90f0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <a href="mailto:info@assetyantra.com" style="color:#2c90f0;font-weight:600;text-decoration:none;">info@assetyantra.com</a>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#25d366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          <a href="https://wa.me/919885800023" target="_blank" rel="noreferrer" style="color:#25d366;font-weight:600;text-decoration:none;">WhatsApp Us</a>
+        </div>
+      </div>
+      <button class="secondary-btn compact-btn" type="button" id="inactiveModalClose" style="width:100%;">Close</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById("inactiveModalClose").addEventListener("click", () => overlay.remove());
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
+}
+
 function showResetPasswordModal({ userId, userName }) {
   return new Promise((resolve) => {
     const overlay = document.createElement("div");
@@ -5763,7 +5803,9 @@ function setupLogin() {
           if (userErrEl) userErrEl.textContent = "";
         }
       } catch (error) {
-        if (button.dataset.sendOtp === "admin") {
+        if (isInactiveError(error)) {
+          showInactiveAccountModal(button.dataset.sendOtp === "admin" ? "admin" : "user");
+        } else if (button.dataset.sendOtp === "admin") {
           document.getElementById("adminError").textContent = formatError(error);
         } else {
           const errEl = document.getElementById("userPhoneOtpError");
@@ -5808,7 +5850,7 @@ function setupLogin() {
       hideAuthLoading();
       window.location.href = "./admin-dashboard.html";
     } catch (error) {
-      errEl.textContent = formatError(error);
+      if (isInactiveError(error)) { showInactiveAccountModal("admin"); } else { errEl.textContent = formatError(error); }
       hidePortalMounts();
       hideAuthLoading();
     } finally {
@@ -5849,7 +5891,7 @@ function setupLogin() {
         hideAuthLoading();
         window.location.href = "./user-dashboard.html";
       } catch (error) {
-        if (errEl) errEl.textContent = formatError(error);
+        if (isInactiveError(error)) { showInactiveAccountModal("user"); } else if (errEl) { errEl.textContent = formatError(error); }
         hidePortalMounts();
         hideAuthLoading();
       } finally {
@@ -5891,7 +5933,7 @@ function setupLogin() {
         hideAuthLoading();
         window.location.href = "./user-dashboard.html";
       } catch (error) {
-        if (errEl) errEl.textContent = formatError(error);
+        if (isInactiveError(error)) { showInactiveAccountModal("user"); } else if (errEl) { errEl.textContent = formatError(error); }
         hidePortalMounts();
         hideAuthLoading();
       } finally {
