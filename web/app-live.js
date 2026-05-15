@@ -2887,6 +2887,106 @@ function setupPortalActions() {
       }
     });
   });
+
+  document.querySelectorAll("[data-edit-investor]").forEach((button) => {
+    if (button.dataset.editBound === "true") return;
+    button.dataset.editBound = "true";
+    button.addEventListener("click", () => {
+      showInvestorEditModal({
+        userId: button.dataset.editInvestor,
+        name: button.dataset.editName || "",
+        phone: button.dataset.editPhone || "",
+        isActive: button.dataset.editActive === "1",
+        initialFunds: parseFloat(button.dataset.editInitial || "0"),
+        balanceFunds: parseFloat(button.dataset.editBalance || "0"),
+      });
+    });
+  });
+}
+
+function showInvestorEditModal({ userId, name, phone, isActive, initialFunds, balanceFunds }) {
+  const existing = document.getElementById("investorEditModalOverlay");
+  if (existing) existing.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "investorEditModalOverlay";
+  overlay.className = "admin-pwd-modal-overlay";
+  overlay.innerHTML = `
+    <div class="admin-pwd-modal admin-pwd-modal--wide" role="dialog" aria-modal="true" aria-labelledby="investorEditTitle">
+      <h3 id="investorEditTitle">Edit Investor Details</h3>
+      <p>Update investor information. Changes apply immediately to the database.</p>
+      <div class="admin-inline-form-grid" style="margin-bottom:18px;">
+        <div class="admin-form-field">
+          <label for="ief_name">Full Name</label>
+          <input class="input-field" id="ief_name" type="text" value="${escapeHtml(name)}" />
+        </div>
+        <div class="admin-form-field">
+          <label for="ief_phone">Phone Number</label>
+          <input class="input-field" id="ief_phone" type="tel" value="${escapeHtml(phone)}" />
+        </div>
+        <div class="admin-form-field">
+          <label for="ief_initial">Initial Funds (₹)</label>
+          <input class="input-field" id="ief_initial" type="number" min="0" step="0.01" value="${initialFunds}" />
+        </div>
+        <div class="admin-form-field">
+          <label for="ief_balance">Balance Funds (₹)</label>
+          <input class="input-field" id="ief_balance" type="number" min="0" step="0.01" value="${balanceFunds}" />
+        </div>
+      </div>
+      <div class="admin-form-field" style="margin-bottom:18px;">
+        <label for="ief_status">Account Status</label>
+        <select class="input-field" id="ief_status">
+          <option value="1" ${isActive ? "selected" : ""}>Active</option>
+          <option value="0" ${!isActive ? "selected" : ""}>Inactive</option>
+        </select>
+      </div>
+      <p id="iefErr" style="color:var(--loss);font-size:0.84rem;margin:0 0 12px;display:none;"></p>
+      <div class="admin-pwd-modal-actions">
+        <button class="secondary-btn compact-btn" type="button" id="iefCancel">Cancel</button>
+        <button class="primary-btn compact-btn" type="button" id="iefSubmit">Save Changes</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const errEl = document.getElementById("iefErr");
+  const submitBtn = document.getElementById("iefSubmit");
+  const close = () => overlay.remove();
+
+  document.getElementById("iefCancel").addEventListener("click", close);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+
+  submitBtn.addEventListener("click", async () => {
+    const full_name = document.getElementById("ief_name").value.trim();
+    const phone_number = document.getElementById("ief_phone").value.trim();
+    const initial_funds = parseFloat(document.getElementById("ief_initial").value || "0");
+    const balance_funds = parseFloat(document.getElementById("ief_balance").value || "0");
+    const is_active = document.getElementById("ief_status").value === "1";
+
+    if (!full_name || !phone_number) {
+      errEl.textContent = "Name and phone are required."; errEl.style.display = "block"; return;
+    }
+    submitBtn.disabled = true; submitBtn.textContent = "Saving..."; errEl.style.display = "none";
+    try {
+      await api(`/admin/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ full_name, phone_number, is_active, initial_funds, balance_funds }),
+      });
+      overlay.remove();
+      showAdminSuccessModal("Investor Updated", [
+        ["Name", full_name],
+        ["Phone", phone_number],
+        ["Status", is_active ? "Active" : "Inactive"],
+        ["Balance Funds", `₹${balance_funds.toLocaleString("en-IN")}`],
+      ]);
+      setTimeout(() => renderAdminDatabasePage({ silent: true }), 900);
+    } catch (err) {
+      errEl.textContent = formatError(err); errEl.style.display = "block";
+      submitBtn.disabled = false; submitBtn.textContent = "Save Changes";
+    }
+  });
+
+  setTimeout(() => { const el = document.getElementById("ief_name"); if (el) el.focus(); }, 50);
 }
 
 function setupScrollSync(wrapId, scrollerId) {
@@ -3224,12 +3324,21 @@ async function renderAdminDatabasePage(options = {}) {
                               <td>${currency(dashboard?.total_portfolio_value ?? user.portfolio_value ?? 0)}</td>
                               <td>${dashboard?.total_holdings ?? user.total_holdings ?? 0}</td>
                               <td class="${Number(dashboard?.total_profit_loss || 0) >= 0 ? "profit" : "loss"}">${currency(dashboard?.total_profit_loss || 0)}</td>
-                              <td><button class="secondary-btn compact-btn" type="button" data-admin-reset-password="${user.user_id}" data-user-name="${escapeHtml(user.full_name || user.username || '')}">Reset Password</button></td>
+                              <td style="display:flex;gap:6px;">
+                                <button class="secondary-btn compact-btn" type="button"
+                                  data-edit-investor="${user.user_id}"
+                                  data-edit-name="${escapeHtml(user.full_name || '')}"
+                                  data-edit-phone="${escapeHtml(user.phone_number || '')}"
+                                  data-edit-active="${user.is_active ? '1' : '0'}"
+                                  data-edit-initial="${user.initial_funds || 0}"
+                                  data-edit-balance="${user.balance_funds || 0}">Edit</button>
+                                <button class="secondary-btn compact-btn" type="button" data-admin-reset-password="${user.user_id}" data-user-name="${escapeHtml(user.full_name || user.username || '')}">Reset Password</button>
+                              </td>
                             </tr>
                           `;
                         })
                         .join("")
-                    : `<tr><td colspan="15"><span class="helper-text">No investors found in the database.</span></td></tr>`}
+                    : `<tr><td colspan="16"><span class="helper-text">No investors found in the database.</span></td></tr>`}
                 </tbody>
               </table>
             </div>

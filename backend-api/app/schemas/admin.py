@@ -216,3 +216,11 @@ class AdminCreateAdminRequest(BaseModel):
 class AdminUpdateAdminRequest(BaseModel):
     full_name: str
     phone_number: str
+
+
+class AdminUpdateUserRequest(BaseModel):
+    full_name: str
+    phone_number: str
+    is_active: bool
+    initial_funds: float = Field(default=0.0, ge=0)
+    balance_funds: float = Field(default=0.0, ge=0)

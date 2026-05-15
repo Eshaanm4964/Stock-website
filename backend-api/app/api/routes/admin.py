@@ -25,6 +25,7 @@ from app.schemas.admin import (
     AdminBulkUserActionResponse,
     AdminCreateAdminRequest,
     AdminUpdateAdminRequest,
+    AdminUpdateUserRequest,
     AdminDashboardResponse,
     AdminHoldingCreateRequest,
     AdminHoldingEditRequest,
@@ -395,6 +396,59 @@ async def delete_admin_user(
         entity_id=str(user_id),
         ip_address=request.client.host if request.client else None,
         details={"fixed_user_id": fixed_user_id, "full_name": full_name},
+    )
+
+
+@router.patch("/users/{user_id}", response_model=AdminUserSummary)
+async def admin_update_user(
+    user_id: int,
+    payload: AdminUpdateUserRequest,
+    request: Request,
+    current_admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+    redis: Redis = Depends(get_redis),
+) -> AdminUserSummary:
+    user = (await db.execute(select(User).where(User.id == user_id, User.role == UserRole.USER))).scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    try:
+        normalized_phone = normalize_indian_mobile(payload.phone_number)
+    except SmsDeliveryError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    user.full_name = payload.full_name.strip()
+    user.phone_number = normalized_phone
+    user.is_active = payload.is_active
+    user.initial_funds = payload.initial_funds
+    user.balance_funds = payload.balance_funds
+    await db.commit()
+    await db.refresh(user)
+    holdings = list(
+        (await db.execute(select(PortfolioHolding).where(PortfolioHolding.user_id == user.id))).scalars().all()
+    )
+    portfolio = await build_portfolio_summary(holdings, redis)
+    await log_admin_action(
+        db,
+        admin_user=current_admin,
+        action="update_user",
+        entity_type="user",
+        entity_id=str(user_id),
+        ip_address=request.client.host if request.client else None,
+        details={"full_name": user.full_name, "is_active": user.is_active, "balance_funds": float(user.balance_funds)},
+    )
+    return AdminUserSummary(
+        user_id=user.id,
+        username=user.username,
+        fixed_user_id=user.fixed_user_id,
+        full_name=user.full_name,
+        phone_number=user.phone_number,
+        role=user.role.value,
+        is_active=user.is_active,
+        is_demo=user.is_demo,
+        created_at=user.created_at,
+        portfolio_value=portfolio.total_portfolio_value,
+        total_holdings=len(holdings),
+        initial_funds=float(user.initial_funds or 0),
+        balance_funds=float(user.balance_funds or 0),
     )
 
 
