@@ -3057,7 +3057,7 @@ function buildAdminActionToolbar(selectedValue = "") {
 async function renderAdminCustomerPage() {
   const mount = document.getElementById("adminPortal");
   if (!mount) return;
-  revealPortal(mount);
+  showDashboardLoading("Add Customer", "Loading the customer registration form.");
 
   mount.innerHTML = `
     <section class="dashboard-stack admin-dashboard-stack">
@@ -3084,6 +3084,7 @@ async function renderAdminCustomerPage() {
     </section>
   `;
 
+  hideDashboardLoading();
   revealPortal(mount);
   activeRole = "admin";
   activeUserId = null;
@@ -3094,7 +3095,7 @@ async function renderAdminCustomerPage() {
 async function renderAdminDealPage() {
   const mount = document.getElementById("adminPortal");
   if (!mount) return;
-  revealPortal(mount);
+  showDashboardLoading("Add Deal", "Loading deal entry form.");
 
   let users = [];
   try {
@@ -3159,6 +3160,7 @@ async function renderAdminDealPage() {
     </section>
   `;
 
+  hideDashboardLoading();
   revealPortal(mount);
   activeRole = "admin";
   activeUserId = null;
@@ -3169,7 +3171,7 @@ async function renderAdminDealPage() {
 async function renderAdminFundsPage() {
   const mount = document.getElementById("adminPortal");
   if (!mount) return;
-  revealPortal(mount);
+  showDashboardLoading("Add Funds", "Loading funds management form.");
 
   let users = [];
   try {
@@ -3209,6 +3211,7 @@ async function renderAdminFundsPage() {
     </section>
   `;
 
+  hideDashboardLoading();
   revealPortal(mount);
   activeRole = "admin";
   activeUserId = null;
@@ -4542,6 +4545,9 @@ async function renderAdminPortal(options = {}) {
   if (adminRenderInFlight) return;
   adminRenderInFlight = true;
   const { silent = false, scrollToDetail = false } = options;
+  if (!silent) {
+    showDashboardLoading("Loading Dashboard...", "Fetching investor portfolios and live market prices.");
+  }
   try {
     const [users, soldHistory] = await Promise.all([
       api("/admin/users"),
@@ -4932,6 +4938,7 @@ async function renderAdminPortal(options = {}) {
   `;
 
     if (!silent) {
+      hideDashboardLoading();
       revealPortal(mount);
     } else {
       mount.classList.remove("hidden");
@@ -4968,6 +4975,7 @@ async function renderAdminPortal(options = {}) {
     setupPortalActions();
     void refreshTableLivePrices();
   } catch (error) {
+    hideDashboardLoading();
     renderPortalError(mount, "Admin Dashboard", `Login succeeded, but admin dashboard data could not load yet. ${formatError(error)}`);
     const retry = document.getElementById("retryPortalBtn");
     if (retry) {
@@ -5923,7 +5931,7 @@ function setupDashboardPages() {
       window.location.href = "./login.html";
       return;
     }
-    renderUserPortal().then(hideDashLoader).catch(() => {
+    renderUserPortal({ showLoading: true, loadingTitle: "Loading Portfolio...", loadingText: "Fetching your holdings, returns, and market prices." }).then(hideDashLoader).catch(() => {
       hideDashLoader();
       clearAuth();
       renderPortalError(
