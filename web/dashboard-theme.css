@@ -46,13 +46,23 @@ body.dashboard-page {
 }
 
 #dashboardLoadingOverlay .auth-loading-card {
-  width: min(680px, calc(100vw - 48px));
-  overflow: hidden;
+  width: min(600px, calc(100vw - 48px));
 }
 
+/* Switch logo to normal flow so it doesn't overlap text below */
 #dashboardLoadingOverlay .auth-orbit-loader {
+  position: static;
+  width: min(440px, 100%);
+  height: auto;
+  margin: 0 auto 28px;
+}
+
+#dashboardLoadingOverlay .auth-orbit-loader img {
+  position: static;
   width: 100%;
-  height: 120px;
+  height: auto;
+  display: block;
+  padding: 10px 16px;
 }
 
 .dashboard-loading strong {
