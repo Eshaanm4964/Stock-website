@@ -342,22 +342,49 @@ def _set_local_cached_quote(key: str, quote: StockQuote) -> None:
 
 
 def _build_quote(symbol: str, exchange: str, info: dict[str, Any], *, source: str, is_fallback: bool) -> StockQuote:
-    price = info.get("currentPrice") or info.get("regularMarketPrice") or info.get("price") or 0.0
-    previous = info.get("previousClose") or info.get("regularMarketPreviousClose") or price or 1
-    if not price:
-        previous = price or 0.0
+    price = float(info.get("currentPrice") or info.get("regularMarketPrice") or info.get("price") or 0.0)
+
+    # Try explicit previous-close fields first
+    prev_raw = info.get("previousClose") or info.get("regularMarketPreviousClose")
+    previous: float | None = float(prev_raw) if prev_raw else None
+
+    # Derive from regularMarketChangePercent when the field is absent
+    if previous is None and price:
+        direct_pct = info.get("regularMarketChangePercent")
+        if direct_pct is not None:
+            pct = float(direct_pct)
+            if pct != 0 and pct != -100:
+                previous = price / (1 + pct / 100)
+
+    # Derive from regularMarketChange (absolute change)
+    if previous is None and price:
+        direct_change = info.get("regularMarketChange")
+        if direct_change is not None:
+            chg = float(direct_change)
+            if chg != 0:
+                previous = price - chg
+
+    # Mark as unknown — do NOT fall back to price; keep None so callers know
     fetched_at = _utc_now()
     cache_until = fetched_at + timedelta(seconds=settings.cache_ttl_seconds)
+
+    if previous and previous > 0:
+        change_percent = ((price - previous) / previous) * 100
+        prev_close_out: float | None = round(previous, 4)
+    else:
+        change_percent = 0.0
+        prev_close_out = None
+
     return StockQuote(
         symbol=symbol.upper(),
         short_name=info.get("shortName") or info.get("longName") or symbol.upper(),
         exchange=exchange.upper(),
-        price=float(price),
-        change_percent=float(((price - previous) / previous) * 100) if previous else 0.0,
+        price=price,
+        change_percent=round(change_percent, 4),
         currency=info.get("currency") or "INR",
         market_cap=info.get("marketCap"),
         sector=info.get("sector"),
-        previous_close=float(previous) if previous else None,
+        previous_close=prev_close_out,
         fetched_at=fetched_at.isoformat(),
         cache_until=cache_until.isoformat(),
         data_source=source,
@@ -509,17 +536,23 @@ async def fetch_quote(symbol: str, exchange: str = "NSE", redis: Redis | None = 
             except Exception:
                 continue
 
-    # Attempt 3: recent history close price (also captures previous close from second-to-last row)
-    if not price or not (info.get("previousClose") or info.get("regularMarketPreviousClose")):
+    # Attempt 3: history (10d to ensure we always get at least 2 trading days)
+    has_prev = bool(info.get("previousClose") or info.get("regularMarketPreviousClose")
+                    or info.get("regularMarketChangePercent") or info.get("regularMarketChange"))
+    if not price or not has_prev:
         for sym in (yahoo_symbol, alt_symbol):
             try:
-                hist = yf.Ticker(sym).history(period="5d")
+                hist = yf.Ticker(sym).history(period="10d")
                 if not hist.empty:
                     closes = hist["Close"]
                     current_close = float(closes.iloc[-1])
-                    prev_close = float(closes.iloc[-2]) if len(closes) >= 2 else current_close
-                    patch = {"currentPrice": current_close, "shortName": info.get("shortName") or symbol.upper(), "currency": "INR"}
-                    if not (info.get("previousClose") or info.get("regularMarketPreviousClose")):
+                    prev_close = float(closes.iloc[-2]) if len(closes) >= 2 else None
+                    patch: dict[str, Any] = {
+                        "currentPrice": current_close,
+                        "shortName": info.get("shortName") or symbol.upper(),
+                        "currency": "INR",
+                    }
+                    if prev_close is not None and not has_prev:
                         patch["previousClose"] = prev_close
                     info = {**info, **patch}
                     if not price:

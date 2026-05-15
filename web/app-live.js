@@ -3984,7 +3984,7 @@ async function renderAdminPortal() {
       const quote = quoteMap.get(`${holding.symbol}:${ex}`);
       const currentPrice = Number(quote?.price ?? holding.current_price ?? holding.buy_price);
       const prevClose = quote?.previous_close ? Number(quote.previous_close) : null;
-      const todayProfit = prevClose && prevClose !== currentPrice
+      const todayProfit = prevClose
         ? (currentPrice - prevClose) * Number(holding.quantity || 0)
         : Number(holding.today_profit || 0);
       return {
@@ -4569,7 +4569,7 @@ async function renderAdminPortal(options = {}) {
       const quote = quoteMap.get(`${holding.symbol}:${ex}`);
       const currentPrice = Number(quote?.price ?? holding.current_price ?? holding.buy_price);
       const prevClose = quote?.previous_close ? Number(quote.previous_close) : null;
-      const todayProfit = prevClose && prevClose !== currentPrice
+      const todayProfit = prevClose
         ? (currentPrice - prevClose) * Number(holding.quantity || 0)
         : Number(holding.today_profit || 0);
       return {

@@ -52,7 +52,7 @@ async def build_portfolio_summary(
         invested_value = float(grouped["invested_value"])
         buy_price = invested_value / quantity if quantity else 0.0
         current_price = quote.price
-        previous_close = quote.previous_close if quote.previous_close and quote.previous_close != current_price else None
+        previous_close = quote.previous_close  # None when yfinance couldn't determine it
         value = current_price * quantity
         profit_loss = (current_price - buy_price) * quantity
         today_profit = (current_price - previous_close) * quantity if previous_close else 0.0
