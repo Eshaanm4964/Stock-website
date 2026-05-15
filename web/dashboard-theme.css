@@ -39,6 +39,22 @@ body.dashboard-page {
   z-index: 10;
 }
 
+/* Counter body zoom on the JS-injected dashboard loading overlay so the
+   card and logo render at their true CSS sizes (not 0.67x shrunk) */
+#dashboardLoadingOverlay {
+  zoom: calc(1 / 0.67);
+}
+
+#dashboardLoadingOverlay .auth-loading-card {
+  width: min(680px, calc(100vw - 48px));
+  overflow: hidden;
+}
+
+#dashboardLoadingOverlay .auth-orbit-loader {
+  width: 100%;
+  height: 120px;
+}
+
 .dashboard-loading strong {
   display: block;
   margin-bottom: 10px;
