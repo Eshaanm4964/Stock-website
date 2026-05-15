@@ -2811,11 +2811,19 @@ async function setupAdminDealForm() {
         ["Buy Price", currency(payload.buy_price)],
         ["Total Value", currency(payload.quantity * payload.buy_price)]
       ]);
-      if (status) status.textContent = `${payload.symbol} added to ${customerName}.`;
-      form.reset();
+      if (status) status.textContent = `${payload.symbol} added to ${customerName}. Ready for next deal.`;
+      // Reset only the stock-specific fields so the customer stays selected and search works immediately
+      if (symbolInput) { symbolInput.value = ""; }
+      if (selectedExchangeInput) selectedExchangeInput.value = "";
+      const quantityInput = form.querySelector('[name="quantity"]');
+      const buyPriceInput = form.querySelector('[name="buy_price"]');
+      const dateInput = form.querySelector('[name="purchase_date"]');
+      if (quantityInput) quantityInput.value = "";
+      if (buyPriceInput) buyPriceInput.value = "";
+      if (dateInput) dateInput.value = "";
+      clearSuggestions();
+      setLivePricePreview();
       currentLivePrice = 0;
-      if (balanceInfoDiv) balanceInfoDiv.style.display = "none";
-      await refreshAdminCurrentPage();
     } catch (error) {
       if (status) status.textContent = formatError(error);
     } finally {
