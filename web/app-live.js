@@ -3223,6 +3223,10 @@ async function renderAdminDatabasePage(options = {}) {
   adminRenderInFlight = true;
   const { silent = false } = options;
 
+  if (!silent) {
+    showDashboardLoading("Loading Database...", "Fetching investor records, holdings, and portfolio data.");
+  }
+
   try {
     const [users, adminUsers] = await Promise.all([api("/admin/users"), api("/admin/admins").catch(() => [])]);
     const safeUsers = Array.isArray(users) ? users : [];
@@ -3451,6 +3455,7 @@ async function renderAdminDatabasePage(options = {}) {
     `;
 
     if (!silent) {
+      hideDashboardLoading();
       revealPortal(mount);
     } else {
       mount.classList.remove("hidden");
@@ -3465,6 +3470,7 @@ async function renderAdminDatabasePage(options = {}) {
     setupAdminClearButtons();
     setupAdminManagement();
   } catch (error) {
+    hideDashboardLoading();
     renderPortalError(mount, "Database View", `The database view could not load yet. ${formatError(error)}`);
     const retry = document.getElementById("retryPortalBtn");
     if (retry) {
