@@ -289,8 +289,8 @@ function showDashboardLoading(title, text) {
   const overlay = ensureDashboardLoadingOverlay();
   const titleNode = document.getElementById("dashboardLoadingTitle");
   const textNode = document.getElementById("dashboardLoadingText");
-  if (titleNode) titleNode.textContent = title || "Opening user dashboard...";
-  if (textNode) textNode.textContent = text || "Loading your holdings, returns, and portfolio summary.";
+  if (titleNode) titleNode.textContent = title || "Opening dashboard";
+  if (textNode) textNode.textContent = text || "Loading your holdings, returns, and portfolio summary";
   overlay.classList.remove("hidden");
   overlay.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
@@ -899,7 +899,7 @@ function setupUserPortfolioFilters() {
         showLoading: true,
         silent: true,
         loadingTitle: "Opening user dashboard...",
-        loadingText: "Loading your holdings, returns, and portfolio summary."
+        loadingText: "Loading your holdings, returns, and portfolio summary"
       });
     });
   }
@@ -3057,7 +3057,7 @@ function buildAdminActionToolbar(selectedValue = "") {
 async function renderAdminCustomerPage() {
   const mount = document.getElementById("adminPortal");
   if (!mount) return;
-  showDashboardLoading("Add Customer", "Loading the customer registration form.");
+  showDashboardLoading("Add Customer", "Loading the customer registration form");
 
   mount.innerHTML = `
     <section class="dashboard-stack admin-dashboard-stack">
@@ -3095,7 +3095,7 @@ async function renderAdminCustomerPage() {
 async function renderAdminDealPage() {
   const mount = document.getElementById("adminPortal");
   if (!mount) return;
-  showDashboardLoading("Add Deal", "Loading deal entry form.");
+  showDashboardLoading("Add Deal", "Loading deal entry form");
 
   let users = [];
   try {
@@ -3171,7 +3171,7 @@ async function renderAdminDealPage() {
 async function renderAdminFundsPage() {
   const mount = document.getElementById("adminPortal");
   if (!mount) return;
-  showDashboardLoading("Add Funds", "Loading funds management form.");
+  showDashboardLoading("Add Funds", "Loading funds management form");
 
   let users = [];
   try {
@@ -3227,7 +3227,7 @@ async function renderAdminDatabasePage(options = {}) {
   const { silent = false } = options;
 
   if (!silent) {
-    showDashboardLoading("Loading Database...", "Fetching investor records, holdings, and portfolio data.");
+    showDashboardLoading("Loading Database", "Fetching investor records, holdings, and portfolio data");
   }
 
   try {
@@ -4546,7 +4546,7 @@ async function renderAdminPortal(options = {}) {
   adminRenderInFlight = true;
   const { silent = false, scrollToDetail = false } = options;
   if (!silent) {
-    showDashboardLoading("Loading Dashboard...", "Fetching investor portfolios and live market prices.");
+    showDashboardLoading("Loading Dashboard", "Fetching investor portfolios and live market prices");
   }
   try {
     const [users, soldHistory] = await Promise.all([
@@ -5931,7 +5931,7 @@ function setupDashboardPages() {
       window.location.href = "./login.html";
       return;
     }
-    renderUserPortal({ showLoading: true, loadingTitle: "Loading Portfolio...", loadingText: "Fetching your holdings, returns, and market prices." }).then(hideDashLoader).catch(() => {
+    renderUserPortal({ showLoading: true, loadingTitle: "Loading Portfolio", loadingText: "Fetching your holdings, returns, and market prices" }).then(hideDashLoader).catch(() => {
       hideDashLoader();
       clearAuth();
       renderPortalError(

@@ -65,6 +65,21 @@ body.dashboard-page {
   padding: 10px 16px;
 }
 
+/* Animated loading dots after the subtitle text */
+#dashboardLoadingText::after {
+  content: '...';
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  width: 0;
+  animation: loadingDotReveal 1.4s steps(4, end) infinite;
+}
+
+@keyframes loadingDotReveal {
+  0%   { width: 0; }
+  100% { width: 1.4em; }
+}
+
 .dashboard-loading strong {
   display: block;
   margin-bottom: 10px;
