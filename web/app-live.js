@@ -2125,58 +2125,162 @@ function setupAdminClearButtons() {
 
 function setupAdminManagement() {
   const createBtn = document.getElementById("adminCreateAdminBtn");
-  const cancelBtn = document.getElementById("adminCancelCreateAdmin");
-  const formWrap = document.getElementById("adminCreateAdminForm");
-  const form = document.getElementById("createAdminForm");
-  const msg = document.getElementById("createAdminMsg");
+  if (createBtn) {
+    createBtn.addEventListener("click", () => showAdminCreateModal());
+  }
 
-  if (createBtn && formWrap) {
-    createBtn.addEventListener("click", () => {
-      formWrap.style.display = formWrap.style.display === "none" ? "block" : "none";
+  document.querySelectorAll("[data-admin-edit]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      showAdminEditModal(
+        btn.getAttribute("data-admin-edit"),
+        btn.getAttribute("data-admin-name") || "",
+        btn.getAttribute("data-admin-phone") || ""
+      );
     });
-  }
-  if (cancelBtn && formWrap) {
-    cancelBtn.addEventListener("click", () => {
-      formWrap.style.display = "none";
-      if (form) form.reset();
-      if (msg) msg.textContent = "";
-    });
-  }
-  if (form) {
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const data = new FormData(form);
-      const submitBtn = form.querySelector('[type="submit"]');
-      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Creating..."; }
-      if (msg) msg.textContent = "";
-      try {
-        await api("/admin/admins", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            full_name: data.get("full_name"),
-            email: data.get("email"),
-            phone_number: data.get("phone_number"),
-            password: data.get("password"),
-          }),
-        });
-        if (msg) { msg.style.color = "var(--profit)"; msg.textContent = "Admin created successfully. Refreshing..."; }
-        form.reset();
-        setTimeout(() => renderAdminDatabasePage({ silent: true }), 800);
-      } catch (err) {
-        if (msg) { msg.style.color = "var(--loss)"; msg.textContent = formatError(err); }
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Create Admin"; }
-      }
-    });
-  }
+  });
 
   document.querySelectorAll("[data-admin-reset-admin-password]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const adminId = btn.getAttribute("data-admin-reset-admin-password");
-      const adminName = btn.getAttribute("data-admin-name") || "Admin";
-      showAdminResetPasswordModal(adminId, adminName);
+      showAdminResetPasswordModal(
+        btn.getAttribute("data-admin-reset-admin-password"),
+        btn.getAttribute("data-admin-name") || "Admin"
+      );
     });
   });
+}
+
+function showAdminCreateModal() {
+  const existing = document.getElementById("adminCreateModalOverlay");
+  if (existing) existing.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "adminCreateModalOverlay";
+  overlay.className = "admin-pwd-modal-overlay";
+  overlay.innerHTML = `
+    <div class="admin-pwd-modal admin-pwd-modal--wide" role="dialog" aria-modal="true" aria-labelledby="createAdminModalTitle">
+      <h3 id="createAdminModalTitle">Create New Admin</h3>
+      <p>Fill in the details below to create a new admin account.</p>
+      <div class="admin-inline-form-grid">
+        <div class="admin-form-field">
+          <label for="caf_full_name">Full Name</label>
+          <input class="input-field" id="caf_full_name" type="text" placeholder="e.g. Rahul Sharma" />
+        </div>
+        <div class="admin-form-field">
+          <label for="caf_email">Email / Username</label>
+          <input class="input-field" id="caf_email" type="email" placeholder="e.g. rahul@assetyantra.com" />
+        </div>
+        <div class="admin-form-field">
+          <label for="caf_phone">Phone Number</label>
+          <input class="input-field" id="caf_phone" type="tel" placeholder="10-digit Indian mobile" />
+        </div>
+        <div class="admin-form-field">
+          <label for="caf_password">Password</label>
+          <input class="input-field" id="caf_password" type="password" placeholder="Minimum 6 characters" />
+        </div>
+      </div>
+      <p id="cafErr" style="color:var(--loss);font-size:0.84rem;margin:0 0 12px;display:none;"></p>
+      <div class="admin-pwd-modal-actions">
+        <button class="secondary-btn compact-btn" type="button" id="cafCancel">Cancel</button>
+        <button class="primary-btn compact-btn" type="button" id="cafSubmit">Create Admin</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const errEl = document.getElementById("cafErr");
+  const submitBtn = document.getElementById("cafSubmit");
+  const close = () => overlay.remove();
+
+  document.getElementById("cafCancel").addEventListener("click", close);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+
+  submitBtn.addEventListener("click", async () => {
+    const full_name = document.getElementById("caf_full_name").value.trim();
+    const email = document.getElementById("caf_email").value.trim();
+    const phone_number = document.getElementById("caf_phone").value.trim();
+    const password = document.getElementById("caf_password").value;
+
+    if (!full_name || !email || !phone_number || !password) {
+      errEl.textContent = "All fields are required."; errEl.style.display = "block"; return;
+    }
+    if (password.length < 6) {
+      errEl.textContent = "Password must be at least 6 characters."; errEl.style.display = "block"; return;
+    }
+    submitBtn.disabled = true; submitBtn.textContent = "Creating..."; errEl.style.display = "none";
+    try {
+      await api("/admin/admins", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ full_name, email, phone_number, password }),
+      });
+      overlay.remove();
+      showAdminSuccessModal("Admin Created", [["Name", full_name], ["Email", email], ["Status", "Active"]]);
+      setTimeout(() => renderAdminDatabasePage({ silent: true }), 900);
+    } catch (err) {
+      errEl.textContent = formatError(err); errEl.style.display = "block";
+      submitBtn.disabled = false; submitBtn.textContent = "Create Admin";
+    }
+  });
+
+  setTimeout(() => { const el = document.getElementById("caf_full_name"); if (el) el.focus(); }, 50);
+}
+
+function showAdminEditModal(adminId, currentName, currentPhone) {
+  const existing = document.getElementById("adminEditModalOverlay");
+  if (existing) existing.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "adminEditModalOverlay";
+  overlay.className = "admin-pwd-modal-overlay";
+  overlay.innerHTML = `
+    <div class="admin-pwd-modal" role="dialog" aria-modal="true" aria-labelledby="editAdminModalTitle">
+      <h3 id="editAdminModalTitle">Edit Admin Details</h3>
+      <p>Update the name or phone number for this admin account.</p>
+      <div class="admin-form-field" style="margin-bottom:14px;">
+        <label for="eaf_name">Full Name</label>
+        <input class="input-field" id="eaf_name" type="text" value="${escapeHtml(currentName)}" />
+      </div>
+      <div class="admin-form-field" style="margin-bottom:18px;">
+        <label for="eaf_phone">Phone Number</label>
+        <input class="input-field" id="eaf_phone" type="tel" value="${escapeHtml(currentPhone)}" />
+      </div>
+      <p id="eafErr" style="color:var(--loss);font-size:0.84rem;margin:0 0 12px;display:none;"></p>
+      <div class="admin-pwd-modal-actions">
+        <button class="secondary-btn compact-btn" type="button" id="eafCancel">Cancel</button>
+        <button class="primary-btn compact-btn" type="button" id="eafSubmit">Save Changes</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const errEl = document.getElementById("eafErr");
+  const submitBtn = document.getElementById("eafSubmit");
+  const close = () => overlay.remove();
+
+  document.getElementById("eafCancel").addEventListener("click", close);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+
+  submitBtn.addEventListener("click", async () => {
+    const full_name = document.getElementById("eaf_name").value.trim();
+    const phone_number = document.getElementById("eaf_phone").value.trim();
+    if (!full_name || !phone_number) {
+      errEl.textContent = "Name and phone are required."; errEl.style.display = "block"; return;
+    }
+    submitBtn.disabled = true; submitBtn.textContent = "Saving..."; errEl.style.display = "none";
+    try {
+      await api(`/admin/admins/${adminId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ full_name, phone_number }),
+      });
+      overlay.remove();
+      showAdminSuccessModal("Admin Updated", [["Name", full_name], ["Phone", phone_number]]);
+      setTimeout(() => renderAdminDatabasePage({ silent: true }), 900);
+    } catch (err) {
+      errEl.textContent = formatError(err); errEl.style.display = "block";
+      submitBtn.disabled = false; submitBtn.textContent = "Save Changes";
+    }
+  });
+
+  setTimeout(() => { const el = document.getElementById("eaf_name"); if (el) el.focus(); }, 50);
 }
 
 function showAdminResetPasswordModal(adminId, adminName) {
@@ -3196,34 +3300,6 @@ async function renderAdminDatabasePage(options = {}) {
               <button class="primary-btn compact-btn" type="button" id="adminCreateAdminBtn">+ New Admin</button>
             </div>
 
-            <div id="adminCreateAdminForm" style="display:none; padding: 12px 0 16px;">
-              <form class="admin-inline-form" id="createAdminForm" autocomplete="off">
-                <div class="admin-inline-form-grid">
-                  <div class="admin-form-field">
-                    <label for="newAdminFullName">Full Name</label>
-                    <input class="input-field" id="newAdminFullName" type="text" name="full_name" placeholder="e.g. Rahul Sharma" required />
-                  </div>
-                  <div class="admin-form-field">
-                    <label for="newAdminEmail">Email / Username</label>
-                    <input class="input-field" id="newAdminEmail" type="email" name="email" placeholder="e.g. rahul@assetyantra.com" required />
-                  </div>
-                  <div class="admin-form-field">
-                    <label for="newAdminPhone">Phone Number</label>
-                    <input class="input-field" id="newAdminPhone" type="tel" name="phone_number" placeholder="10-digit Indian mobile" required />
-                  </div>
-                  <div class="admin-form-field">
-                    <label for="newAdminPassword">Password</label>
-                    <input class="input-field" id="newAdminPassword" type="password" name="password" placeholder="Minimum 6 characters" required minlength="6" />
-                  </div>
-                </div>
-                <div class="admin-inline-form-actions">
-                  <button class="primary-btn compact-btn" type="submit">Create Admin</button>
-                  <button class="secondary-btn compact-btn" type="button" id="adminCancelCreateAdmin">Cancel</button>
-                </div>
-                <p class="helper-text" id="createAdminMsg" style="margin-top:10px;"></p>
-              </form>
-            </div>
-
             <div class="table-wrap admin-position-table-wrap admin-database-table-wrap" id="adminDatabaseAdminsWrap">
               <table class="admin-position-table admin-database-table" id="adminDatabaseAdminsTable">
                 <thead>
@@ -3233,7 +3309,7 @@ async function renderAdminDatabasePage(options = {}) {
                     <th>Phone Number</th>
                     <th>Status</th>
                     <th>Created At</th>
-                    <th>Action</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -3245,7 +3321,15 @@ async function renderAdminDatabasePage(options = {}) {
                         <td>${escapeHtml(admin.phone_number || "")}</td>
                         <td><span class="badge ${admin.is_active ? "green" : "red"}">${admin.is_active ? "Active" : "Inactive"}</span></td>
                         <td>${formatDateTime(admin.created_at)}</td>
-                        <td><button class="secondary-btn compact-btn" type="button" data-admin-reset-admin-password="${admin.admin_id}" data-admin-name="${escapeHtml(admin.full_name || admin.username || '')}">Reset Password</button></td>
+                        <td style="display:flex;gap:6px;">
+                          <button class="secondary-btn compact-btn" type="button"
+                            data-admin-edit="${admin.admin_id}"
+                            data-admin-name="${escapeHtml(admin.full_name || "")}"
+                            data-admin-phone="${escapeHtml(admin.phone_number || "")}">Edit</button>
+                          <button class="secondary-btn compact-btn" type="button"
+                            data-admin-reset-admin-password="${admin.admin_id}"
+                            data-admin-name="${escapeHtml(admin.full_name || admin.username || '')}">Reset Password</button>
+                        </td>
                       </tr>
                     `).join("")
                     : `<tr><td colspan="6" class="text-center"><span class="helper-text">No admin accounts found.</span></td></tr>`}

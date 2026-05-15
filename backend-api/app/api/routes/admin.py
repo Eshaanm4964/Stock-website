@@ -24,6 +24,7 @@ from app.schemas.admin import (
     AdminBulkUserActionRequest,
     AdminBulkUserActionResponse,
     AdminCreateAdminRequest,
+    AdminUpdateAdminRequest,
     AdminDashboardResponse,
     AdminHoldingCreateRequest,
     AdminHoldingEditRequest,
@@ -1105,3 +1106,41 @@ async def admin_reset_admin_password(
         details={"username": target.username},
     )
     return {"message": "Admin password reset successfully."}
+
+
+@router.patch("/admins/{admin_id}", response_model=AdminAdminSummary)
+async def update_admin(
+    admin_id: int,
+    payload: AdminUpdateAdminRequest,
+    request: Request,
+    current_admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+) -> AdminAdminSummary:
+    target = (await db.execute(select(User).where(User.id == admin_id, User.role == UserRole.ADMIN))).scalar_one_or_none()
+    if not target:
+        raise HTTPException(status_code=404, detail="Admin not found")
+    try:
+        normalized_phone = normalize_indian_mobile(payload.phone_number)
+    except SmsDeliveryError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    target.full_name = payload.full_name.strip()
+    target.phone_number = normalized_phone
+    await db.commit()
+    await db.refresh(target)
+    await log_admin_action(
+        db,
+        admin_user=current_admin,
+        action="update_admin",
+        entity_type="user",
+        entity_id=str(admin_id),
+        ip_address=request.client.host if request.client else None,
+        details={"full_name": target.full_name, "phone_number": target.phone_number},
+    )
+    return AdminAdminSummary(
+        admin_id=target.id,
+        username=target.username,
+        full_name=target.full_name,
+        phone_number=target.phone_number,
+        is_active=target.is_active,
+        created_at=target.created_at,
+    )

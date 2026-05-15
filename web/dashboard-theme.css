@@ -1433,6 +1433,10 @@ body.dashboard-page {
   margin-bottom: 18px;
 }
 
+.admin-pwd-modal--wide {
+  width: min(600px, 100%);
+}
+
 .admin-pwd-modal-actions {
   display: flex;
   gap: 10px;

@@ -211,3 +211,8 @@ class AdminCreateAdminRequest(BaseModel):
     email: EmailStr
     phone_number: str
     password: str
+
+
+class AdminUpdateAdminRequest(BaseModel):
+    full_name: str
+    phone_number: str
