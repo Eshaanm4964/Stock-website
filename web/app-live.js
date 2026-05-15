@@ -3858,6 +3858,7 @@ function buildAdminActionPageShell({
 async function renderAdminCustomerPage() {
   const mount = document.getElementById("adminCustomerPortal");
   if (!mount) return;
+  showDashboardLoading("Add Customer", "Loading the customer registration form");
   const adminCustomerStatus =
     sessionStorage.getItem("assetyantra_admin_customer_status") ||
     "Client ID will be generated like ABC123 and shown here.";
@@ -3876,6 +3877,7 @@ async function renderAdminCustomerPage() {
       </form>
     `
   });
+  hideDashboardLoading();
   revealPortal(mount);
   activeRole = "admin";
   setupAdminCustomerForm();
@@ -3885,6 +3887,7 @@ async function renderAdminCustomerPage() {
 async function renderAdminDealPage() {
   const mount = document.getElementById("adminDealPortal");
   if (!mount) return;
+  showDashboardLoading("Add Deal", "Loading deal entry form");
   let liveUserDashboards = [];
   try {
     const users = await api("/admin/users");
@@ -3941,6 +3944,7 @@ async function renderAdminDealPage() {
       </form>
     `
   });
+  hideDashboardLoading();
   revealPortal(mount);
   activeRole = "admin";
   setupAdminDealForm();

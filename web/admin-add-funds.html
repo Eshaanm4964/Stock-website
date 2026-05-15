@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -14,18 +14,26 @@
     <link rel="stylesheet" href="./dashboard-theme.css" />
   </head>
   <body data-page="admin-add-funds" class="dashboard-page">
-    <main class="dashboard-app-shell">
-      <section id="adminPortal" class="dashboard-section">
-        <div class="dashboard-loading">
-          <div>
-            <div class="dashboard-loading-spinner" aria-hidden="true"><span></span><span></span><span></span></div>
-            <strong>Opening add funds workspace...</strong>
-            <p>Please wait while we load the investor balance tools.</p>
-          </div>
+    <div id="dashboardLoadingOverlay" class="auth-loading-overlay" aria-hidden="false">
+      <div class="auth-loading-card">
+        <div class="auth-loading-brand">Asset Yantra Portfolio Sync</div>
+        <div class="auth-orbit-loader" aria-hidden="true">
+          <span></span><span></span>
+          <img src="./assets/loading_logo.png" alt="Asset Yantra logo" />
         </div>
-      </section>
+        <h2 id="dashboardLoadingTitle">Add Funds</h2>
+        <p id="dashboardLoadingText">Loading funds management form</p>
+        <div class="auth-loading-progress"><span></span></div>
+        <div class="auth-loading-steps">
+          <span>Portfolio</span>
+          <span>Pricing</span>
+          <span>History</span>
+        </div>
+      </div>
+    </div>
+    <main class="dashboard-app-shell">
+      <section id="adminPortal" class="dashboard-section hidden"></section>
     </main>
     <script src="./app-live.js?v=20260426-adminfunds"></script>
   <script defer src="/_vercel/insights/script.js"></script></body>
 </html>
-
