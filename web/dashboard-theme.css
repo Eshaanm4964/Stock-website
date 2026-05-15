@@ -49,12 +49,21 @@ body.dashboard-page {
 
 #dashboardLoadingOverlay .auth-loading-card {
   width: min(600px, calc(100vw - 48px));
-  animation: dlCardIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Pre-embedded card (page-load): animate in so every page arrival feels polished */
+#dashboardLoadingOverlay:not(.hidden) .auth-loading-card:not(.dl-entering) {
+  animation: dlCardIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Programmatic show (nav-exit on source page): slightly slower for extra presence */
+#dashboardLoadingOverlay .auth-loading-card.dl-entering {
+  animation: dlCardIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes dlCardIn {
-  from { opacity: 0; transform: translateY(24px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0)   scale(1);    }
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
 }
 
 /* Switch logo to normal flow so it never overlaps text */
