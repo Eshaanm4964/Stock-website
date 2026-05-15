@@ -644,6 +644,74 @@ function showSellModal({ symbol, owner, availableQuantity, averageBuyPrice }) {
   });
 }
 
+function showDealActionChoiceModal({ symbol, owner }) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "sell-modal-overlay";
+    overlay.innerHTML = `
+      <div class="sell-modal" role="dialog" aria-modal="true" style="max-width:380px;">
+        <div class="sell-modal-header">
+          <div class="sell-modal-badge" style="background:#2c90f0;">DEAL ACTION</div>
+          <h3 class="sell-modal-title">${escapeHtml(symbol)}</h3>
+          <p class="sell-modal-owner">${escapeHtml(owner)}</p>
+        </div>
+        <div class="sell-modal-body" style="gap:10px;">
+          <p style="font-size:0.9rem;color:#4a5568;margin:0 0 4px;">What would you like to do with this deal?</p>
+          <button id="dacEditBtn" class="sell-modal-confirm" type="button" style="width:100%;background:#2c90f0;">Edit Deal</button>
+          <button id="dacDeleteBtn" class="sell-modal-confirm" type="button" style="width:100%;background:#dc2626;">Delete Deal</button>
+        </div>
+        <div class="sell-modal-actions">
+          <button id="dacCancelBtn" class="sell-modal-cancel" type="button">Cancel</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add("sell-modal-visible"));
+    function close(result) {
+      overlay.classList.remove("sell-modal-visible");
+      setTimeout(() => overlay.remove(), 220);
+      resolve(result);
+    }
+    overlay.querySelector("#dacEditBtn").addEventListener("click", () => close("edit"));
+    overlay.querySelector("#dacDeleteBtn").addEventListener("click", () => close("delete"));
+    overlay.querySelector("#dacCancelBtn").addEventListener("click", () => close(null));
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) close(null); });
+  });
+}
+
+function showDealDeleteConfirmModal({ symbol, owner }) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "sell-modal-overlay";
+    overlay.innerHTML = `
+      <div class="sell-modal" role="dialog" aria-modal="true" style="max-width:380px;">
+        <div class="sell-modal-header">
+          <div class="sell-modal-badge" style="background:#dc2626;">DELETE DEAL</div>
+          <h3 class="sell-modal-title">${escapeHtml(symbol)}</h3>
+          <p class="sell-modal-owner">${escapeHtml(owner)}</p>
+        </div>
+        <div class="sell-modal-body">
+          <p style="font-size:0.9rem;color:#4a5568;margin:0;">This will permanently remove <strong>${escapeHtml(symbol)}</strong> from ${escapeHtml(owner)}'s portfolio. This action cannot be undone.</p>
+        </div>
+        <div class="sell-modal-actions">
+          <button id="ddcCancelBtn" class="sell-modal-cancel" type="button">Cancel</button>
+          <button id="ddcConfirmBtn" class="sell-modal-confirm" type="button" style="background:#dc2626;">Yes, Delete</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add("sell-modal-visible"));
+    function close(result) {
+      overlay.classList.remove("sell-modal-visible");
+      setTimeout(() => overlay.remove(), 220);
+      resolve(result);
+    }
+    overlay.querySelector("#ddcConfirmBtn").addEventListener("click", () => close(true));
+    overlay.querySelector("#ddcCancelBtn").addEventListener("click", () => close(false));
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) close(false); });
+  });
+}
+
 function showEditHoldingModal({ symbol, owner, currentQty, currentBuyPrice, currentDate }) {
   return new Promise((resolve) => {
     const overlay = document.createElement("div");
@@ -2196,6 +2264,27 @@ function setupHoldingActionButtons(statusMessage) {
       const currentBuyPrice = Number(button.dataset.buyPrice || 0);
       const currentDate = button.dataset.createdAt || "";
 
+      const action = await showDealActionChoiceModal({ symbol, owner });
+      if (!action) return;
+
+      if (action === "delete") {
+        const confirmed = await showDealDeleteConfirmModal({ symbol, owner });
+        if (!confirmed) return;
+        const stopLoading = setButtonLoading(button, "Removing...");
+        showDetailActionLoading(`Removing ${symbol} for ${owner}… Please wait`);
+        try {
+          await api(`/admin/holdings/${holdingId}`, { method: "DELETE" });
+          if (statusMessage) statusMessage.textContent = `${symbol} deal removed for ${owner}.`;
+          await renderAdminPortal({ silent: true, scrollToDetail: true });
+        } catch (error) {
+          hideDetailActionLoading();
+          if (statusMessage) statusMessage.textContent = formatError(error);
+        } finally {
+          stopLoading();
+        }
+        return;
+      }
+
       const result = await showEditHoldingModal({ symbol, owner, currentQty, currentBuyPrice, currentDate });
       if (!result) return;
 
@@ -3190,10 +3279,6 @@ function showInvestorEditModal({ userId, name, phone, email, isActive, initialFu
       <p style="font-size:0.75rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#9aa5b8;margin:0 0 10px;">Funds — Current Balance: <span style="color:#2c90f0;">₹${Number(balanceFunds).toLocaleString("en-IN")}</span></p>
       <div class="admin-inline-form-grid" style="margin-bottom:16px;">
         <div class="admin-form-field">
-          <label for="ief_initial">Initial Funds (₹)</label>
-          <input class="input-field" id="ief_initial" type="number" min="0" step="0.01" value="${initialFunds}" />
-        </div>
-        <div class="admin-form-field">
           <label for="ief_add_fund">Add Funds (₹)</label>
           <input class="input-field" id="ief_add_fund" type="number" min="0" step="0.01" value="0" placeholder="Amount to add" />
         </div>
@@ -3224,7 +3309,6 @@ function showInvestorEditModal({ userId, name, phone, email, isActive, initialFu
     const phone_number = document.getElementById("ief_phone").value.trim();
     const email_val = document.getElementById("ief_email").value.trim();
     const new_password = document.getElementById("ief_password").value;
-    const initial_funds = parseFloat(document.getElementById("ief_initial").value || "0");
     const add_fund = parseFloat(document.getElementById("ief_add_fund").value || "0");
     const remove_fund = parseFloat(document.getElementById("ief_remove_fund").value || "0");
     const is_active = document.getElementById("ief_status").value === "1";
@@ -3241,7 +3325,7 @@ function showInvestorEditModal({ userId, name, phone, email, isActive, initialFu
       await api(`/admin/users/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ full_name, phone_number, is_active, initial_funds, balance_funds, email: email_val || null }),
+        body: JSON.stringify({ full_name, phone_number, is_active, balance_funds, email: email_val || null }),
       });
       if (new_password) {
         await api(`/admin/users/${userId}/reset-password`, {
@@ -4293,7 +4377,7 @@ async function renderAdminPortal() {
       const prevClose = quote?.previous_close ? Number(quote.previous_close) : null;
       const todayProfit = prevClose
         ? (currentPrice - prevClose) * Number(holding.quantity || 0)
-        : Number(holding.today_profit || 0);
+        : 0;
       return {
         ...holding,
         current_price: currentPrice,
@@ -4881,7 +4965,7 @@ async function renderAdminPortal(options = {}) {
       const prevClose = quote?.previous_close ? Number(quote.previous_close) : null;
       const todayProfit = prevClose
         ? (currentPrice - prevClose) * Number(holding.quantity || 0)
-        : Number(holding.today_profit || 0);
+        : 0;
       return {
         ...holding,
         current_price: currentPrice,

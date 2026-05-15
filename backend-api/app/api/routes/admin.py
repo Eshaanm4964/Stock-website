@@ -697,6 +697,32 @@ async def admin_edit_holding(
     )
 
 
+@router.delete("/holdings/{holding_id}", status_code=204)
+async def admin_delete_holding(
+    holding_id: int,
+    request: Request,
+    current_admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    holding = (await db.execute(select(PortfolioHolding).where(PortfolioHolding.id == holding_id))).scalar_one_or_none()
+    if not holding:
+        raise HTTPException(status_code=404, detail="Holding not found")
+
+    symbol = holding.symbol
+    await db.delete(holding)
+    await db.commit()
+
+    await log_admin_action(
+        db,
+        admin_user=current_admin,
+        action="delete_holding",
+        entity_type="portfolio_holding",
+        entity_id=str(holding_id),
+        ip_address=request.client.host if request.client else None,
+        details={"symbol": symbol},
+    )
+
+
 @router.get("/sold-history", response_model=list[AdminSoldHistoryItem])
 async def admin_sold_history(
     limit: int = Query(default=100, ge=1, le=500),
