@@ -1433,6 +1433,107 @@ function buildAdminDatabaseExcelHtml(users = [], userDashboards = []) {
   `;
 }
 
+function showLoginTransition(role, destination) {
+  const existing = document.getElementById("loginTransitionOverlay");
+  if (existing) existing.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "loginTransitionOverlay";
+  overlay.style.cssText = "position:fixed;inset:0;z-index:200;display:grid;place-items:center;overflow:hidden;";
+  const label = role === "admin" ? "Admin Dashboard" : "Your Portfolio";
+  const subtitle = role === "admin" ? "Loading admin controls and investor data." : "Fetching your holdings, returns, and market prices.";
+  overlay.innerHTML = `
+    <style>
+      @keyframes ltFadeIn   { from{opacity:0} to{opacity:1} }
+      @keyframes ltCardIn   { from{opacity:0;transform:translateY(36px) scale(0.95)} to{opacity:1;transform:translateY(0) scale(1)} }
+      @keyframes ltBarFill  { 0%{width:0} 55%{width:68%} 80%{width:88%} 100%{width:100%} }
+      @keyframes ltOrb1     { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(50px,-40px) scale(1.18)} }
+      @keyframes ltOrb2     { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-40px,50px) scale(1.13)} }
+      @keyframes ltOrb3     { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.2)} }
+      @keyframes ltDot      { 0%,100%{opacity:0.15;transform:scale(1)} 50%{opacity:0.7;transform:scale(1.6)} }
+      @keyframes ltRing     { 0%{transform:scale(1);opacity:0.7} 100%{transform:scale(2.2);opacity:0} }
+      @keyframes ltIconBob  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+      @keyframes ltLogoIn   { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
+      @keyframes ltTitleIn  { from{opacity:0;transform:translateX(-10px)} to{opacity:1;transform:translateX(0)} }
+      @keyframes ltSubIn    { from{opacity:0} to{opacity:1} }
+      @keyframes ltDivider  { from{width:0;opacity:0} to{width:60px;opacity:1} }
+      @keyframes ltStep     { from{opacity:0.15;color:rgba(44,144,240,0.3)} to{opacity:1;color:#2c90f0} }
+      #ltCard          { animation:ltCardIn 0.55s 0.05s cubic-bezier(0.22,1,0.36,1) both; }
+      #ltBar span      { animation:ltBarFill 2.2s 0.4s cubic-bezier(0.4,0,0.2,1) forwards; }
+      #ltIconWrap      { animation:ltIconBob 2.2s 0.6s ease-in-out infinite; }
+      .lt-ring-1       { animation:ltRing 2s 0.4s ease-out infinite; }
+      .lt-ring-2       { animation:ltRing 2s 0.9s ease-out infinite; }
+      .lt-ring-3       { animation:ltRing 2s 1.4s ease-out infinite; }
+      #ltLogo          { animation:ltLogoIn 0.5s 0.2s ease both; }
+      #ltTitle         { animation:ltTitleIn 0.5s 0.35s ease both; opacity:0; }
+      #ltSub           { animation:ltSubIn 0.5s 0.55s ease both; opacity:0; }
+      #ltDivider       { animation:ltDivider 0.6s 0.5s ease both; }
+      .lt-step-1       { animation:ltStep 0.4s 0.5s ease forwards; opacity:0.15; }
+      .lt-step-2       { animation:ltStep 0.4s 1.1s ease forwards; opacity:0.15; }
+      .lt-step-3       { animation:ltStep 0.4s 1.7s ease forwards; opacity:0.15; }
+    </style>
+
+    <!-- Background -->
+    <div style="position:absolute;inset:0;background:linear-gradient(145deg,#f0f7ff 0%,#ddeeff 45%,#f5f9ff 100%);animation:ltFadeIn 0.3s ease both;"></div>
+    <div style="position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(44,144,240,0.14) 0%,transparent 68%);top:-200px;left:-180px;animation:ltOrb1 8s ease-in-out infinite;"></div>
+    <div style="position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(15,32,64,0.08) 0%,transparent 68%);bottom:-160px;right:-140px;animation:ltOrb2 9s ease-in-out infinite;"></div>
+    <div style="position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(44,144,240,0.06) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);animation:ltOrb3 11s ease-in-out infinite;"></div>
+
+    <!-- Floating dots -->
+    <div style="position:absolute;top:14%;left:9%;width:10px;height:10px;border-radius:50%;background:rgba(44,144,240,0.28);animation:ltDot 2.5s 0s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:72%;left:6%;width:7px;height:7px;border-radius:50%;background:rgba(44,144,240,0.2);animation:ltDot 3.1s 0.4s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:30%;left:18%;width:5px;height:5px;border-radius:50%;background:rgba(44,144,240,0.16);animation:ltDot 2.8s 1s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:20%;right:8%;width:12px;height:12px;border-radius:50%;background:rgba(44,144,240,0.22);animation:ltDot 2.7s 0.7s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:62%;right:10%;width:8px;height:8px;border-radius:50%;background:rgba(44,144,240,0.18);animation:ltDot 2.4s 1.3s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:80%;right:20%;width:6px;height:6px;border-radius:50%;background:rgba(44,144,240,0.15);animation:ltDot 3.3s 0.2s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:50%;left:4%;width:9px;height:9px;border-radius:50%;background:rgba(44,144,240,0.14);animation:ltDot 2.9s 1.6s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:40%;right:5%;width:7px;height:7px;border-radius:50%;background:rgba(44,144,240,0.18);animation:ltDot 2.6s 0.9s ease-in-out infinite;"></div>
+
+    <!-- Card -->
+    <div id="ltCard" style="position:relative;z-index:2;width:min(680px,90%);padding:64px 64px 56px;border-radius:40px;border:1px solid rgba(44,144,240,0.18);background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);box-shadow:0 60px 140px rgba(44,144,240,0.16),0 16px 40px rgba(0,50,120,0.08);text-align:center;">
+
+      <!-- Logo -->
+      <div id="ltLogo" style="margin:0 auto 36px;width:min(300px,78%);">
+        <img src="./assets/loading_logo.png" alt="Asset Yantra" style="width:100%;display:block;" />
+      </div>
+
+      <!-- Divider -->
+      <div id="ltDivider" style="height:2px;width:60px;margin:0 auto 36px;border-radius:999px;background:linear-gradient(90deg,transparent,#2c90f0,transparent);"></div>
+
+      <!-- Icon + heading -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:18px;">
+        <div id="ltIconWrap" style="position:relative;flex-shrink:0;width:58px;height:58px;display:flex;align-items:center;justify-content:center;">
+          <div class="lt-ring-1" style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(44,144,240,0.5);"></div>
+          <div class="lt-ring-2" style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(44,144,240,0.4);"></div>
+          <div class="lt-ring-3" style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(44,144,240,0.3);"></div>
+          <div style="position:relative;z-index:1;width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#2c90f0,#1a6fc4);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(44,144,240,0.45);">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+        </div>
+        <h2 id="ltTitle" style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(1.8rem,3.5vw,2.6rem);line-height:1.1;color:#0f2040;font-weight:800;">Welcome Back</h2>
+      </div>
+
+      <p id="ltSub" style="margin:0 0 44px;color:#6b7a99;font-size:1rem;line-height:1.7;">Opening your <strong style="color:#2c90f0;font-weight:700;">${escapeHtml(label)}</strong>. ${escapeHtml(subtitle)}</p>
+
+      <!-- Progress bar -->
+      <div id="ltBar" style="width:100%;height:6px;border-radius:999px;background:rgba(44,144,240,0.1);overflow:hidden;margin-bottom:28px;">
+        <span style="display:block;height:100%;border-radius:999px;width:0;background:linear-gradient(90deg,#1a6fc4,#2c90f0,#60b4ff,#2c90f0);background-size:200% 100%;"></span>
+      </div>
+
+      <!-- Steps -->
+      <div style="display:flex;justify-content:center;align-items:center;gap:20px;">
+        <span class="lt-step-1" style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Verifying Session</span>
+        <span style="width:4px;height:4px;border-radius:50%;background:rgba(44,144,240,0.25);display:inline-block;"></span>
+        <span class="lt-step-2" style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Loading Data</span>
+        <span style="width:4px;height:4px;border-radius:50%;background:rgba(44,144,240,0.25);display:inline-block;"></span>
+        <span class="lt-step-3" style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Entering Dashboard</span>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.body.style.overflow = "hidden";
+  setTimeout(() => { window.location.href = destination; }, 2400);
+}
+
 function showLogoutScreen() {
   const existing = document.getElementById("logoutScreenOverlay");
   if (existing) existing.remove();
@@ -6040,7 +6141,7 @@ function setupLogin() {
       setAuth({ token: response.access_token, role: response.role });
       errEl.textContent = "";
       hideAuthLoading();
-      window.location.href = "./admin-dashboard.html";
+      showLoginTransition("admin", "./admin-dashboard.html");
     } catch (error) {
       if (isInactiveError(error)) { showInactiveAccountModal("admin"); } else { errEl.textContent = formatError(error); }
       hidePortalMounts();
@@ -6081,7 +6182,7 @@ function setupLogin() {
         setAuth({ token: response.access_token, role: response.role });
         if (errEl) errEl.textContent = "";
         hideAuthLoading();
-        window.location.href = "./user-dashboard.html";
+        showLoginTransition("user", "./user-dashboard.html");
       } catch (error) {
         if (isInactiveError(error)) { showInactiveAccountModal("user"); } else if (errEl) { errEl.textContent = formatError(error); }
         hidePortalMounts();
@@ -6123,7 +6224,7 @@ function setupLogin() {
         setAuth({ token: response.access_token, role: response.role });
         if (errEl) errEl.textContent = "";
         hideAuthLoading();
-        window.location.href = "./user-dashboard.html";
+        showLoginTransition("user", "./user-dashboard.html");
       } catch (error) {
         if (isInactiveError(error)) { showInactiveAccountModal("user"); } else if (errEl) { errEl.textContent = formatError(error); }
         hidePortalMounts();
