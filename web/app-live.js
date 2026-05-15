@@ -6,10 +6,6 @@ let activeRole = null;
 let activeUserId = null;
 let _navGuardActive = false;
 
-function _navGuardBeforeUnload(e) {
-  e.preventDefault();
-  e.returnValue = "";
-}
 function _showNavGuardModal() {
   if (document.getElementById("navGuardModal")) return;
   const modal = document.createElement("div");
@@ -49,12 +45,10 @@ function attachNavGuard() {
   if (_navGuardActive) return;
   _navGuardActive = true;
   history.pushState(null, "", location.href);
-  window.addEventListener("beforeunload", _navGuardBeforeUnload);
   window.addEventListener("popstate", _navGuardPopState);
 }
 function detachNavGuard() {
   _navGuardActive = false;
-  window.removeEventListener("beforeunload", _navGuardBeforeUnload);
   window.removeEventListener("popstate", _navGuardPopState);
 }
 let liveTickerTimer = null;
