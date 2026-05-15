@@ -1387,61 +1387,92 @@ function showLogoutScreen() {
   overlay.style.cssText = "position:fixed;inset:0;z-index:200;display:grid;place-items:center;overflow:hidden;";
   overlay.innerHTML = `
     <style>
-      @keyframes loFadeIn  { from{opacity:0} to{opacity:1} }
-      @keyframes loCardIn  { from{opacity:0;transform:translateY(28px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
-      @keyframes loBarFill { 0%{width:0} 60%{width:74%} 85%{width:91%} 100%{width:100%} }
-      @keyframes loShieldPulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.35)} 50%{box-shadow:0 0 0 10px rgba(239,68,68,0)} }
-      @keyframes loOrb1    { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(40px,-30px) scale(1.15)} }
-      @keyframes loOrb2    { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-30px,40px) scale(1.1)} }
-      @keyframes loDot     { 0%,100%{opacity:0.2;transform:scale(1)} 50%{opacity:0.8;transform:scale(1.5)} }
-      @keyframes loStep    { from{opacity:0.2;color:rgba(239,68,68,0.3)} to{opacity:1;color:#ef4444} }
-      #loCard      { animation:loCardIn 0.5s 0.08s cubic-bezier(0.22,1,0.36,1) both; }
-      #loBar span  { animation:loBarFill 2.4s 0.4s cubic-bezier(0.4,0,0.2,1) forwards; }
-      #loShieldIcon{ animation:loShieldPulse 1.8s 0.5s ease-in-out infinite; }
-      .lo-step-1   { animation:loStep 0.45s 0.5s ease forwards; opacity:0.2; }
-      .lo-step-2   { animation:loStep 0.45s 1.1s ease forwards; opacity:0.2; }
-      .lo-step-3   { animation:loStep 0.45s 1.8s ease forwards; opacity:0.2; }
+      @keyframes loFadeIn    { from{opacity:0} to{opacity:1} }
+      @keyframes loCardIn    { from{opacity:0;transform:translateY(36px) scale(0.95)} to{opacity:1;transform:translateY(0) scale(1)} }
+      @keyframes loBarFill   { 0%{width:0} 55%{width:70%} 82%{width:90%} 100%{width:100%} }
+      @keyframes loOrb1      { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(50px,-40px) scale(1.18)} }
+      @keyframes loOrb2      { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-40px,50px) scale(1.13)} }
+      @keyframes loOrb3      { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.2)} }
+      @keyframes loDot       { 0%,100%{opacity:0.15;transform:scale(1)} 50%{opacity:0.7;transform:scale(1.6)} }
+      @keyframes loStep      { from{opacity:0.15;color:rgba(239,68,68,0.25)} to{opacity:1;color:#ef4444} }
+      @keyframes loRing      { 0%{transform:scale(1);opacity:0.7} 100%{transform:scale(2.2);opacity:0} }
+      @keyframes loShieldBob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+      @keyframes loLogoIn    { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
+      @keyframes loTitleIn   { from{opacity:0;transform:translateX(-10px)} to{opacity:1;transform:translateX(0)} }
+      @keyframes loSubIn     { from{opacity:0} to{opacity:1} }
+      @keyframes loDivider   { from{width:0;opacity:0} to{width:60px;opacity:1} }
+      #loCard           { animation:loCardIn 0.55s 0.05s cubic-bezier(0.22,1,0.36,1) both; }
+      #loBar span       { animation:loBarFill 2.5s 0.5s cubic-bezier(0.4,0,0.2,1) forwards; }
+      #loShieldWrap     { animation:loShieldBob 2.2s 0.6s ease-in-out infinite; }
+      .lo-ring-1        { animation:loRing 2s 0.4s ease-out infinite; }
+      .lo-ring-2        { animation:loRing 2s 0.9s ease-out infinite; }
+      .lo-ring-3        { animation:loRing 2s 1.4s ease-out infinite; }
+      #loLogo           { animation:loLogoIn 0.5s 0.2s ease both; }
+      #loTitle          { animation:loTitleIn 0.5s 0.35s ease both; opacity:0; }
+      #loSub            { animation:loSubIn 0.5s 0.55s ease both; opacity:0; }
+      #loDivider        { animation:loDivider 0.6s 0.5s ease both; }
+      .lo-step-1        { animation:loStep 0.4s 0.6s ease forwards; opacity:0.15; }
+      .lo-step-2        { animation:loStep 0.4s 1.2s ease forwards; opacity:0.15; }
+      .lo-step-3        { animation:loStep 0.4s 1.9s ease forwards; opacity:0.15; }
     </style>
 
-    <!-- Background -->
-    <div style="position:absolute;inset:0;background:linear-gradient(150deg,#fff5f5 0%,#ffe4e4 55%,#fff0f0 100%);animation:loFadeIn 0.3s ease both;"></div>
-    <div style="position:absolute;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,rgba(239,68,68,0.16) 0%,transparent 70%);top:-140px;left:-120px;animation:loOrb1 7s ease-in-out infinite;"></div>
-    <div style="position:absolute;width:480px;height:480px;border-radius:50%;background:radial-gradient(circle,rgba(220,38,38,0.12) 0%,transparent 70%);bottom:-120px;right:-90px;animation:loOrb2 8s ease-in-out infinite;"></div>
-    <div style="position:absolute;top:16%;left:10%;width:8px;height:8px;border-radius:50%;background:rgba(239,68,68,0.22);animation:loDot 2.6s 0s ease-in-out infinite;"></div>
-    <div style="position:absolute;top:70%;left:7%;width:6px;height:6px;border-radius:50%;background:rgba(239,68,68,0.18);animation:loDot 3s 0.5s ease-in-out infinite;"></div>
-    <div style="position:absolute;top:22%;right:9%;width:10px;height:10px;border-radius:50%;background:rgba(239,68,68,0.2);animation:loDot 2.8s 0.8s ease-in-out infinite;"></div>
-    <div style="position:absolute;top:68%;right:12%;width:7px;height:7px;border-radius:50%;background:rgba(239,68,68,0.16);animation:loDot 2.4s 1.2s ease-in-out infinite;"></div>
+    <!-- Background gradient -->
+    <div style="position:absolute;inset:0;background:linear-gradient(145deg,#fff3f3 0%,#ffe0e0 45%,#fff5f5 100%);animation:loFadeIn 0.3s ease both;"></div>
+
+    <!-- Large background orbs -->
+    <div style="position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(239,68,68,0.15) 0%,transparent 68%);top:-200px;left:-180px;animation:loOrb1 8s ease-in-out infinite;"></div>
+    <div style="position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(220,38,38,0.12) 0%,transparent 68%);bottom:-160px;right:-140px;animation:loOrb2 9s ease-in-out infinite;"></div>
+    <div style="position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(239,68,68,0.08) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);animation:loOrb3 11s ease-in-out infinite;"></div>
+
+    <!-- Floating dots -->
+    <div style="position:absolute;top:14%;left:9%;width:10px;height:10px;border-radius:50%;background:rgba(239,68,68,0.3);animation:loDot 2.5s 0s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:72%;left:6%;width:7px;height:7px;border-radius:50%;background:rgba(239,68,68,0.22);animation:loDot 3.1s 0.4s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:30%;left:18%;width:5px;height:5px;border-radius:50%;background:rgba(239,68,68,0.18);animation:loDot 2.8s 1s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:20%;right:8%;width:12px;height:12px;border-radius:50%;background:rgba(239,68,68,0.25);animation:loDot 2.7s 0.7s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:62%;right:10%;width:8px;height:8px;border-radius:50%;background:rgba(239,68,68,0.2);animation:loDot 2.4s 1.3s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:80%;right:20%;width:6px;height:6px;border-radius:50%;background:rgba(239,68,68,0.18);animation:loDot 3.3s 0.2s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:50%;left:4%;width:9px;height:9px;border-radius:50%;background:rgba(239,68,68,0.15);animation:loDot 2.9s 1.6s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:40%;right:5%;width:7px;height:7px;border-radius:50%;background:rgba(239,68,68,0.2);animation:loDot 2.6s 0.9s ease-in-out infinite;"></div>
 
     <!-- Card -->
-    <div id="loCard" style="position:relative;z-index:2;width:min(520px,88%);padding:52px 48px 44px;border-radius:32px;border:1px solid rgba(239,68,68,0.15);background:rgba(255,255,255,0.96);backdrop-filter:blur(16px);box-shadow:0 40px 100px rgba(239,68,68,0.14),0 8px 24px rgba(120,0,0,0.06);text-align:center;">
+    <div id="loCard" style="position:relative;z-index:2;width:min(680px,90%);padding:64px 64px 56px;border-radius:40px;border:1px solid rgba(239,68,68,0.18);background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);box-shadow:0 60px 140px rgba(239,68,68,0.18),0 16px 40px rgba(180,0,0,0.08);text-align:center;">
 
       <!-- Logo -->
-      <div style="margin:0 auto 32px;width:min(260px,80%);">
+      <div id="loLogo" style="margin:0 auto 36px;width:min(300px,78%);">
         <img src="./assets/loading_logo.png" alt="Asset Yantra" style="width:100%;display:block;" />
       </div>
 
-      <!-- Heading with inline shield -->
-      <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:14px;">
-        <div id="loShieldIcon" style="flex-shrink:0;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <!-- Divider -->
+      <div id="loDivider" style="height:2px;width:60px;margin:0 auto 36px;border-radius:999px;background:linear-gradient(90deg,transparent,#ef4444,transparent);"></div>
+
+      <!-- Shield + heading row -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:18px;">
+        <!-- Shield with ripple rings -->
+        <div id="loShieldWrap" style="position:relative;flex-shrink:0;width:58px;height:58px;display:flex;align-items:center;justify-content:center;">
+          <div class="lo-ring-1" style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(239,68,68,0.5);"></div>
+          <div class="lo-ring-2" style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(239,68,68,0.4);"></div>
+          <div class="lo-ring-3" style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(239,68,68,0.3);"></div>
+          <div style="position:relative;z-index:1;width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#ef4444 0%,#dc2626 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(239,68,68,0.45);">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
         </div>
-        <h2 style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(1.6rem,3.5vw,2.2rem);line-height:1.15;color:#0f2040;">Securely Logging Out</h2>
+        <h2 id="loTitle" style="margin:0;font-family:'Playfair Display',serif;font-size:clamp(1.8rem,3.5vw,2.6rem);line-height:1.1;color:#0f2040;font-weight:800;">Securely Logging Out</h2>
       </div>
 
-      <p style="margin:0 0 36px;color:#6b7a99;font-size:0.95rem;line-height:1.65;">Thanks for choosing <strong style="color:#ef4444;">Asset Yantra</strong> as your partner.</p>
+      <p id="loSub" style="margin:0 0 44px;color:#6b7a99;font-size:1rem;line-height:1.7;">Thanks for choosing <strong style="color:#ef4444;font-weight:700;">Asset Yantra</strong> as your Partner.</p>
 
       <!-- Progress bar -->
-      <div id="loBar" style="width:100%;height:5px;border-radius:999px;background:rgba(239,68,68,0.1);overflow:hidden;margin-bottom:20px;">
-        <span style="display:block;height:100%;border-radius:999px;width:0;background:linear-gradient(90deg,#ef4444,#f87171,#dc2626);"></span>
+      <div id="loBar" style="width:100%;height:6px;border-radius:999px;background:rgba(239,68,68,0.1);overflow:hidden;margin-bottom:28px;">
+        <span style="display:block;height:100%;border-radius:999px;width:0;background:linear-gradient(90deg,#dc2626,#ef4444,#f87171,#ef4444);background-size:200% 100%;"></span>
       </div>
 
       <!-- Steps -->
-      <div style="display:flex;justify-content:center;align-items:center;gap:16px;">
-        <span class="lo-step-1" style="font-size:0.68rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Clearing Session</span>
-        <span style="color:rgba(239,68,68,0.2);">•</span>
-        <span class="lo-step-2" style="font-size:0.68rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Securing Data</span>
-        <span style="color:rgba(239,68,68,0.2);">•</span>
-        <span class="lo-step-3" style="font-size:0.68rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Redirecting</span>
+      <div style="display:flex;justify-content:center;align-items:center;gap:20px;">
+        <span class="lo-step-1" style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Clearing Session</span>
+        <span style="width:4px;height:4px;border-radius:50%;background:rgba(239,68,68,0.25);display:inline-block;"></span>
+        <span class="lo-step-2" style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Securing Data</span>
+        <span style="width:4px;height:4px;border-radius:50%;background:rgba(239,68,68,0.25);display:inline-block;"></span>
+        <span class="lo-step-3" style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Redirecting</span>
       </div>
     </div>
   `;
