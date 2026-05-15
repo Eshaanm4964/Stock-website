@@ -420,6 +420,8 @@ async def admin_update_user(
     user.is_active = payload.is_active
     user.initial_funds = payload.initial_funds
     user.balance_funds = payload.balance_funds
+    if payload.email is not None:
+        user.email = payload.email.strip() or None
     await db.commit()
     await db.refresh(user)
     holdings = list(

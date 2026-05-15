@@ -2923,6 +2923,7 @@ function setupPortalActions() {
         userId: button.dataset.editInvestor,
         name: button.dataset.editName || "",
         phone: button.dataset.editPhone || "",
+        email: button.dataset.editEmail || "",
         isActive: button.dataset.editActive === "1",
         initialFunds: parseFloat(button.dataset.editInitial || "0"),
         balanceFunds: parseFloat(button.dataset.editBalance || "0"),
@@ -2931,41 +2932,64 @@ function setupPortalActions() {
   });
 }
 
-function showInvestorEditModal({ userId, name, phone, isActive, initialFunds, balanceFunds }) {
+function showInvestorEditModal({ userId, name, phone, email, isActive, initialFunds, balanceFunds }) {
   const existing = document.getElementById("investorEditModalOverlay");
   if (existing) existing.remove();
   const overlay = document.createElement("div");
   overlay.id = "investorEditModalOverlay";
   overlay.className = "admin-pwd-modal-overlay";
   overlay.innerHTML = `
-    <div class="admin-pwd-modal admin-pwd-modal--wide" role="dialog" aria-modal="true" aria-labelledby="investorEditTitle">
-      <h3 id="investorEditTitle">Edit Investor Details</h3>
-      <p>Update investor information. Changes apply immediately to the database.</p>
-      <div class="admin-inline-form-grid" style="margin-bottom:18px;">
+    <div class="admin-pwd-modal admin-pwd-modal--wide" role="dialog" aria-modal="true" aria-labelledby="investorEditTitle" style="max-width:560px;max-height:90vh;overflow-y:auto;">
+      <h3 id="investorEditTitle" style="color:#2c90f0;margin-bottom:4px;">Edit Investor</h3>
+      <p style="font-size:0.83rem;color:#6b7a99;margin-bottom:18px;">Changes apply immediately to the database.</p>
+
+      <p style="font-size:0.75rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#9aa5b8;margin:0 0 10px;">Profile</p>
+      <div class="admin-inline-form-grid" style="margin-bottom:16px;">
         <div class="admin-form-field">
           <label for="ief_name">Full Name</label>
           <input class="input-field" id="ief_name" type="text" value="${escapeHtml(name)}" />
         </div>
         <div class="admin-form-field">
-          <label for="ief_phone">Phone Number</label>
+          <label for="ief_phone">Mobile Number</label>
           <input class="input-field" id="ief_phone" type="tel" value="${escapeHtml(phone)}" />
         </div>
+        <div class="admin-form-field">
+          <label for="ief_email">Email</label>
+          <input class="input-field" id="ief_email" type="email" value="${escapeHtml(email)}" placeholder="optional" />
+        </div>
+        <div class="admin-form-field">
+          <label for="ief_status">Account Status</label>
+          <select class="input-field" id="ief_status">
+            <option value="1" ${isActive ? "selected" : ""}>Active</option>
+            <option value="0" ${!isActive ? "selected" : ""}>Inactive</option>
+          </select>
+        </div>
+      </div>
+
+      <p style="font-size:0.75rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#9aa5b8;margin:0 0 10px;">Password</p>
+      <div class="admin-inline-form-grid" style="margin-bottom:16px;">
+        <div class="admin-form-field">
+          <label for="ief_password">New Password <span style="font-weight:400;color:#9aa5b8;">(leave blank to keep current)</span></label>
+          <input class="input-field" id="ief_password" type="password" placeholder="Min 6 characters" autocomplete="new-password" />
+        </div>
+      </div>
+
+      <p style="font-size:0.75rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#9aa5b8;margin:0 0 10px;">Funds — Current Balance: <span style="color:#2c90f0;">₹${Number(balanceFunds).toLocaleString("en-IN")}</span></p>
+      <div class="admin-inline-form-grid" style="margin-bottom:16px;">
         <div class="admin-form-field">
           <label for="ief_initial">Initial Funds (₹)</label>
           <input class="input-field" id="ief_initial" type="number" min="0" step="0.01" value="${initialFunds}" />
         </div>
         <div class="admin-form-field">
-          <label for="ief_balance">Balance Funds (₹)</label>
-          <input class="input-field" id="ief_balance" type="number" min="0" step="0.01" value="${balanceFunds}" />
+          <label for="ief_add_fund">Add Funds (₹)</label>
+          <input class="input-field" id="ief_add_fund" type="number" min="0" step="0.01" value="0" placeholder="Amount to add" />
+        </div>
+        <div class="admin-form-field">
+          <label for="ief_remove_fund">Remove Funds (₹)</label>
+          <input class="input-field" id="ief_remove_fund" type="number" min="0" step="0.01" value="0" placeholder="Amount to deduct" />
         </div>
       </div>
-      <div class="admin-form-field" style="margin-bottom:18px;">
-        <label for="ief_status">Account Status</label>
-        <select class="input-field" id="ief_status">
-          <option value="1" ${isActive ? "selected" : ""}>Active</option>
-          <option value="0" ${!isActive ? "selected" : ""}>Inactive</option>
-        </select>
-      </div>
+
       <p id="iefErr" style="color:var(--loss);font-size:0.84rem;margin:0 0 12px;display:none;"></p>
       <div class="admin-pwd-modal-actions">
         <button class="secondary-btn compact-btn" type="button" id="iefCancel">Cancel</button>
@@ -2985,26 +3009,41 @@ function showInvestorEditModal({ userId, name, phone, isActive, initialFunds, ba
   submitBtn.addEventListener("click", async () => {
     const full_name = document.getElementById("ief_name").value.trim();
     const phone_number = document.getElementById("ief_phone").value.trim();
+    const email_val = document.getElementById("ief_email").value.trim();
+    const new_password = document.getElementById("ief_password").value;
     const initial_funds = parseFloat(document.getElementById("ief_initial").value || "0");
-    const balance_funds = parseFloat(document.getElementById("ief_balance").value || "0");
+    const add_fund = parseFloat(document.getElementById("ief_add_fund").value || "0");
+    const remove_fund = parseFloat(document.getElementById("ief_remove_fund").value || "0");
     const is_active = document.getElementById("ief_status").value === "1";
+    const balance_funds = Math.max(0, balanceFunds + add_fund - remove_fund);
 
     if (!full_name || !phone_number) {
-      errEl.textContent = "Name and phone are required."; errEl.style.display = "block"; return;
+      errEl.textContent = "Name and mobile number are required."; errEl.style.display = "block"; return;
+    }
+    if (new_password && new_password.length < 6) {
+      errEl.textContent = "Password must be at least 6 characters."; errEl.style.display = "block"; return;
     }
     submitBtn.disabled = true; submitBtn.textContent = "Saving..."; errEl.style.display = "none";
     try {
       await api(`/admin/users/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ full_name, phone_number, is_active, initial_funds, balance_funds }),
+        body: JSON.stringify({ full_name, phone_number, is_active, initial_funds, balance_funds, email: email_val || null }),
       });
+      if (new_password) {
+        await api(`/admin/users/${userId}/reset-password`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: new_password }),
+        });
+      }
       overlay.remove();
       showAdminSuccessModal("Investor Updated", [
         ["Name", full_name],
-        ["Phone", phone_number],
+        ["Mobile", phone_number],
         ["Status", is_active ? "Active" : "Inactive"],
-        ["Balance Funds", `₹${balance_funds.toLocaleString("en-IN")}`],
+        ["New Balance", `₹${balance_funds.toLocaleString("en-IN")}`],
+        ...(new_password ? [["Password", "Reset successfully"]] : []),
       ]);
       setTimeout(() => renderAdminDatabasePage({ silent: true }), 900);
     } catch (err) {
@@ -3363,10 +3402,10 @@ async function renderAdminDatabasePage(options = {}) {
                                   data-edit-investor="${user.user_id}"
                                   data-edit-name="${escapeHtml(user.full_name || '')}"
                                   data-edit-phone="${escapeHtml(user.phone_number || '')}"
+                                  data-edit-email="${escapeHtml(user.email || '')}"
                                   data-edit-active="${user.is_active ? '1' : '0'}"
                                   data-edit-initial="${user.initial_funds || 0}"
                                   data-edit-balance="${user.balance_funds || 0}">Edit</button>
-                                <button class="secondary-btn compact-btn" type="button" data-admin-reset-password="${user.user_id}" data-user-name="${escapeHtml(user.full_name || user.username || '')}">Reset Password</button>
                                 <button class="danger-outline-btn compact-btn" type="button" data-delete-user="${user.user_id}" data-user-name="${escapeHtml(user.full_name || user.username || '')}">Delete</button>
                               </td>
                             </tr>
