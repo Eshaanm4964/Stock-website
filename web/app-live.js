@@ -3970,9 +3970,9 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
                         <td class="${realizedProfit >= 0 ? "profit" : "loss"}">${currency(realizedProfit)}</td>
                         <td class="${totalProfit >= 0 ? "profit" : "loss"}">${currency(totalProfit)}</td>
                         <td class="action-cell-duo">
-                          <button class="buy-action-btn" type="button" data-admin-buy-holding="${holding.holding_id}" data-user-id="${user.user_id}" data-symbol="${escapeHtml(holding.symbol)}" data-owner="${escapeHtml(user.name || '')}" data-exchange="${escapeHtml(holding.exchange || 'NSE')}" data-buy-price="${holding.buy_price}">Buy</button>
-                          <button class="edit-action-btn" type="button" data-admin-edit-holding="${holding.holding_id}" data-symbol="${escapeHtml(holding.symbol)}" data-owner="${escapeHtml(user.name || '')}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}" data-created-at="${escapeHtml(holding.created_at || '')}">Edit</button>
-                          <button class="sell-action-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${escapeHtml(holding.symbol)}" data-owner="${escapeHtml(user.name || '')}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}">Sell</button>
+                          <button class="buy-action-btn" type="button" data-admin-buy-holding="${holding.holding_id}" data-user-id="${user.user_id}" data-symbol="${escapeHtml(holding.symbol)}" data-owner="${escapeHtml(user.full_name || '')}" data-exchange="${escapeHtml(holding.exchange || 'NSE')}" data-buy-price="${holding.buy_price}">Buy</button>
+                          <button class="edit-action-btn" type="button" data-admin-edit-holding="${holding.holding_id}" data-symbol="${escapeHtml(holding.symbol)}" data-owner="${escapeHtml(user.full_name || '')}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}" data-created-at="${escapeHtml(holding.created_at || '')}">Edit</button>
+                          <button class="sell-action-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${escapeHtml(holding.symbol)}" data-owner="${escapeHtml(user.full_name || '')}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}">Sell</button>
                         </td>
                       </tr>
                     `;
@@ -4329,636 +4329,22 @@ async function renderAdminDealPage() {
   setupPortalActions();
 }
 
-async function renderAdminPortal() {
-  const mount = document.getElementById("adminPortal");
-  if (!mount) return;
-  revealPortal(mount);
-  try {
-    const [dashboard, users, auditLogs, authAttempts, systemStatus, reviews, operationsOverview, soldHistory] = await Promise.all([
-      api("/admin/dashboard"),
-      api("/admin/users"),
-      api("/admin/audit-logs?limit=8"),
-      api("/admin/auth-attempts?limit=8"),
-      api("/admin/system-status"),
-      api("/admin/reviews"),
-      api("/admin/operations-overview"),
-      api("/admin/sold-history?limit=100").catch(() => [])
-    ]);
-    const safeUsers = Array.isArray(users) ? users : [];
-    const safeAuditLogs = Array.isArray(auditLogs) ? auditLogs : [];
-    const safeAuthAttempts = Array.isArray(authAttempts) ? authAttempts : [];
-    const safeReviews = Array.isArray(reviews) ? reviews : [];
-    const safeSoldHistory = Array.isArray(soldHistory) ? soldHistory : [];
-    const userDashboards = await safeAdminUserDashboards(safeUsers);
-    const baseHoldings = userDashboards.flatMap((user) =>
-      (Array.isArray(user.holdings) ? user.holdings : []).map((holding) => ({
-        ...holding,
-        owner: user.full_name,
-        fixed_user_id: user.fixed_user_id,
-        user_id: user.user_id
-      }))
-    );
-    const symbolsByExchange = {};
-    for (const h of baseHoldings) {
-      const ex = (h.exchange || "NSE").toUpperCase();
-      if (!symbolsByExchange[ex]) symbolsByExchange[ex] = new Set();
-      symbolsByExchange[ex].add(h.symbol);
-    }
-    const feedResults = await Promise.all(
-      Object.entries(symbolsByExchange).map(([ex, syms]) =>
-        api(`/stocks/feed?symbols=${encodeURIComponent([...syms].join(","))}&exchange=${ex}`).catch(() => [])
-      )
-    );
-    const quoteMap = new Map(feedResults.flat().map((q) => [`${q.symbol}:${(q.exchange || "NSE").toUpperCase()}`, q]));
-    const allHoldings = baseHoldings.map((holding) => {
-      const ex = (holding.exchange || "NSE").toUpperCase();
-      const quote = quoteMap.get(`${holding.symbol}:${ex}`);
-      const currentPrice = Number(quote?.price ?? holding.current_price ?? holding.buy_price);
-      const prevClose = quote?.previous_close ? Number(quote.previous_close) : null;
-      const todayProfit = prevClose
-        ? (currentPrice - prevClose) * Number(holding.quantity || 0)
-        : 0;
-      return {
-        ...holding,
-        current_price: currentPrice,
-        percent_change: Number(holding.percent_change ?? ((currentPrice - holding.buy_price) / Math.max(holding.buy_price, 1)) * 100),
-        profit_loss: (currentPrice - Number(holding.buy_price || 0)) * Number(holding.quantity || 0),
-        today_profit: Number.isFinite(todayProfit) ? todayProfit : 0
-      };
-    });
-    const totalValue = userDashboards.reduce((sum, user) => sum + Number(user.total_portfolio_value), 0);
-    const totalPnl = userDashboards.reduce((sum, user) => sum + Number(user.total_profit_loss), 0);
-    const todayProfit = allHoldings.reduce((sum, holding) => sum + Number(holding.today_profit || 0), 0);
-    const inactiveUsers = safeUsers.filter((user) => !user.is_active).length;
-    const failedAttempts = safeAuthAttempts.filter((attempt) => !attempt.success).length;
-    const searchText = adminUiState.search.toLowerCase();
-    const selectedClient = adminUiState.clientFilter;
-    const fromDate = adminUiState.dateFrom ? new Date(`${adminUiState.dateFrom}T00:00:00`) : null;
-    const toDate = adminUiState.dateTo ? new Date(`${adminUiState.dateTo}T23:59:59`) : null;
-    const filteredUsers = safeUsers.filter((user) => {
-      return (
-        !searchText ||
-        user.full_name.toLowerCase().includes(searchText) ||
-        String(user.fixed_user_id || user.username).toLowerCase().includes(searchText) ||
-        String(user.phone_number || "").toLowerCase().includes(searchText)
-      );
-    });
-    const selectedStock = String(adminUiState.stockFilter || "").toUpperCase();
-    const filteredHoldings = allHoldings.filter((holding) => {
-      const createdAt = holding.created_at ? new Date(holding.created_at) : null;
-      const matchesSearch =
-        !searchText ||
-        String(holding.owner || "").toLowerCase().includes(searchText) ||
-        String(holding.fixed_user_id || "").toLowerCase().includes(searchText) ||
-        String(holding.symbol || "").toLowerCase().includes(searchText) ||
-        String(holding.sector || "").toLowerCase().includes(searchText) ||
-        String(holding.exchange || "").toLowerCase().includes(searchText);
-      const matchesClient = !selectedClient || String(holding.fixed_user_id || holding.user_id) === String(selectedClient);
-      const matchesStock = !selectedStock || String(holding.symbol || "").toUpperCase() === selectedStock;
-      const matchesDate =
-        (!fromDate || (createdAt && createdAt >= fromDate)) &&
-        (!toDate || (createdAt && createdAt <= toDate));
-      return matchesSearch && matchesClient && matchesStock && matchesDate;
-    });
-
-    const sortKey = adminUiState.sortBy || "recent";
-    filteredHoldings.sort((a, b) => {
-      if (sortKey === "alpha") return String(a.owner || "").localeCompare(String(b.owner || ""));
-      if (sortKey === "investment") return (Number(b.buy_price || 0) * Number(b.quantity || 0)) - (Number(a.buy_price || 0) * Number(a.quantity || 0));
-      if (sortKey === "profit") return Number(b.profit_loss || 0) - Number(a.profit_loss || 0);
-      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
-    });
-
-    const filteredSoldHistory = safeSoldHistory.filter((entry) => {
-      const soldAt = entry.sold_at ? new Date(entry.sold_at) : null;
-      const matchesSearch =
-        !searchText ||
-        String(entry.full_name || "").toLowerCase().includes(searchText) ||
-        String(entry.fixed_user_id || "").toLowerCase().includes(searchText) ||
-        String(entry.symbol || "").toLowerCase().includes(searchText);
-      const matchesClient = !selectedClient || String(entry.fixed_user_id || entry.user_id) === String(selectedClient);
-      const matchesStock = !selectedStock || String(entry.symbol || "").toUpperCase() === selectedStock;
-      const matchesDate =
-        (!fromDate || (soldAt && soldAt >= fromDate)) &&
-        (!toDate || (soldAt && soldAt <= toDate));
-      return matchesSearch && matchesClient && matchesStock && matchesDate;
-    });
-    const filteredUnrealizedProfit = filteredHoldings.reduce((sum, holding) => sum + Number(holding.profit_loss || 0), 0);
-    const filteredRealizedProfit = filteredSoldHistory.reduce((sum, entry) => sum + Number(entry.profit_loss || 0), 0);
-    const filteredPeriodProfit = filteredUnrealizedProfit + filteredRealizedProfit;
-    const filteredInvestedValue = filteredHoldings.reduce((sum, holding) => sum + Number(holding.buy_price || 0) * Number(holding.quantity || 0), 0);
-    const filteredCurrentValue = filteredHoldings.reduce((sum, holding) => sum + Number(holding.current_price || 0) * Number(holding.quantity || 0), 0);
-    const filteredTotalQuantity = filteredHoldings.reduce((sum, holding) => sum + Number(holding.quantity || 0), 0);
-    const filteredSoldQuantity = filteredSoldHistory.reduce((sum, entry) => sum + Number(entry.quantity || 0), 0);
-    const availableStockOptions = [...new Set([...allHoldings.map((holding) => String(holding.symbol || "").toUpperCase()), ...safeSoldHistory.map((entry) => String(entry.symbol || "").toUpperCase())].filter(Boolean))].sort();
-    const pendingModerationCount = safeReviews.filter((review) => !review.is_seeded).length;
-    const stockConcentration = Array.isArray(operationsOverview?.stock_concentration) ? operationsOverview.stock_concentration : [];
-    const recentUserActivity = Array.isArray(operationsOverview?.recent_user_activity) ? operationsOverview.recent_user_activity : [];
-    const loginIssueBreakdown = Array.isArray(operationsOverview?.login_issue_breakdown) ? operationsOverview.login_issue_breakdown : [];
-
-    mount.innerHTML = `
-    <section class="user-shell admin-simple-shell no-sidebar-shell">
-      <div class="user-shell-main admin-simple-main dashboard-stack admin-dashboard-stack">
-      <header class="user-topbar admin-compact-topbar admin-simple-topbar">
-        <div class="admin-toolbar-left">
-          <input class="user-search admin-universal-search" id="adminUniversalSearch" type="text" placeholder="Search user, client ID, or stock" />
-          <p class="live-price-status admin-auto-refresh-label">Live sync enabled</p>
-        </div>
-        <div class="user-topbar-actions admin-toolbar-right">
-          <select class="user-search admin-action-select" data-admin-action-nav="true">
-            <option value="">Admin Actions</option>
-            <option value="./admin-add-customer.html">Add Customer</option>
-            <option value="./admin-add-deal.html">Add Deal</option>
-          </select>
-          <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
-        </div>
-      </header>
-      <div id="adminOverviewCard">
-    <div class="metrics-grid admin-simple-metrics">
-      <article class="metric-card"><strong>${dashboard?.total_users ?? safeUsers.length}</strong><span>Investors</span><small>Persisted registered users</small></article>
-      <article class="metric-card"><strong>${dashboard?.newly_registered_users ?? 0}</strong><span>New This Week</span><small>Non-demo client registrations</small></article>
-      <article class="metric-card"><strong>${dashboard?.total_holdings ?? baseHoldings.length}</strong><span>Total Holdings</span><small>Stocks stored in the database</small></article>
-      <article class="metric-card"><strong class="${todayProfit >= 0 ? "profit" : "loss"}">${currency(todayProfit)}</strong><span>Today Profit</span><small>Intraday movement across tracked holdings</small></article>
-      <article class="metric-card"><strong class="${totalPnl >= 0 ? "profit" : "loss"}">${currency(totalPnl)}</strong><span>Total Profit Till Now</span><small>Current tracked value ${currency(totalValue)}</small></article>
-    </div>
-    <div class="admin-position-summary">
-      <span><strong>${currency(filteredInvestedValue)}</strong> Invested Value</span>
-      <span><strong>${currency(filteredCurrentValue)}</strong> Current Value</span>
-      <span class="${filteredUnrealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredUnrealizedProfit)}</strong> Unrealised P&amp;L</span>
-      <span class="${filteredRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredRealizedProfit)}</strong> Realised P&amp;L</span>
-      <span class="${filteredPeriodProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredPeriodProfit)}</strong> Combined P&amp;L</span>
-    </div>
-    <div class="metrics-grid admin-status-grid">
-      <article class="metric-card"><strong>${systemStatus.backend_status}</strong><span>Backend</span><small>Environment ${systemStatus.environment}</small></article>
-      <article class="metric-card"><strong>${systemStatus.database_status}</strong><span>Database</span><small>Connection health</small></article>
-      <article class="metric-card"><strong>${systemStatus.redis_status}</strong><span>Redis</span><small>Cache and queue state</small></article>
-      <article class="metric-card"><strong class="${systemStatus.otp_debug_mode ? "loss" : "profit"}">${systemStatus.otp_debug_mode ? "On" : "Off"}</strong><span>OTP Debug</span><small>${systemStatus.environment === "production" ? "Must stay off in production" : "Development-only testing mode"}</small></article>
-      <article class="metric-card"><strong>${pendingModerationCount}</strong><span>Reviews To Moderate</span><small>Non-seeded public reviews</small></article>
-    </div>
-    <div class="dashboard-grid">
-      <article class="table-card">
-        <div class="panel-head">
-          <h3>All Investor Positions</h3>
-          <div class="table-actions">
-            <span class="badge">Admin View</span>
-          </div>
-        </div>
-        <div class="admin-filter-bar">
-          <select class="user-search admin-filter-select" id="adminClientFilter">
-            <option value="">All Investors</option>
-            ${safeUsers
-              .map((user) => `<option value="${escapeHtml(user.fixed_user_id || String(user.user_id))}" ${String(adminUiState.clientFilter) === String(user.fixed_user_id || user.user_id) ? "selected" : ""}>${escapeHtml(user.full_name)} (${escapeHtml(user.fixed_user_id || user.username)})</option>`)
-              .join("")}
-          </select>
-          <select class="user-search admin-filter-select" id="adminStockFilter">
-            <option value="">All Stocks</option>
-            ${availableStockOptions
-              .map((symbol) => `<option value="${escapeHtml(symbol)}" ${adminUiState.stockFilter === symbol ? "selected" : ""}>${escapeHtml(symbol)}</option>`)
-              .join("")}
-          </select>
-          <input class="user-search admin-filter-date" id="adminDateFrom" type="date" value="${escapeHtml(adminUiState.dateFrom)}" />
-          <input class="user-search admin-filter-date" id="adminDateTo" type="date" value="${escapeHtml(adminUiState.dateTo)}" />
-          <span class="badge ${filteredPeriodProfit >= 0 ? "green" : "red"}">Range P/L ${currency(filteredPeriodProfit)}</span>
-        </div>
-        <div class="table-wrap admin-position-table-wrap" id="adminPositionsTableWrap">
-          <table>
-            <thead><tr><th>Investor</th><th>Stock</th><th>Purchase Date</th><th>Qty</th><th>Avg Price</th><th>Invested Value</th><th>Live Price</th><th>Current Value</th><th>Unrealised P&amp;L</th><th>Action</th></tr></thead>
-            <tbody>
-              ${filteredHoldings.length
-                ? filteredHoldings
-                .map(
-                  (holding) => `
-                    <tr>
-                      <td><button class="table-link" type="button" data-user-detail="${holding.user_id}">${holding.owner}</button><br /><small>${holding.fixed_user_id || ""}</small></td>
-                      <td>
-                        <div class="admin-stock-cell">
-                          <button class="admin-eye-btn" type="button" data-stock-visibility-toggle="${escapeHtml(holding.symbol)}" aria-label="${isAdminStockRevealed(holding.symbol) ? "Hide stock name" : "Show stock name"}">${isAdminStockRevealed(holding.symbol) ? "🙈" : "👁"}</button>
-                          <button class="table-link" type="button" data-stock-detail="${holding.symbol}">${isAdminStockRevealed(holding.symbol) ? holding.symbol : maskStockSymbol(holding.symbol)}</button>
-                        </div>
-                        <small>${holding.sector || "Tracked holding"}</small>
-                      </td>
-                      <td>${formatDate(holding.created_at)}</td>
-                      <td>${holding.quantity}</td>
-                      <td>${currency(holding.buy_price)}</td>
-                      <td>${currency(Number(holding.buy_price || 0) * Number(holding.quantity || 0))}</td>
-                      <td>${currency(holding.current_price)}</td>
-                      <td>${currency(Number(holding.current_price || 0) * Number(holding.quantity || 0))}</td>
-                      <td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
-                      <td class="action-cell-duo">
-                        <button class="secondary-btn compact-btn buy-holding-btn" type="button" data-admin-buy-holding="${holding.holding_id}" data-user-id="${holding.user_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-exchange="${escapeHtml(holding.exchange || 'NSE')}" data-buy-price="${holding.buy_price}">Buy</button>
-                        <button class="secondary-btn compact-btn edit-holding-btn" type="button" data-admin-edit-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}" data-created-at="${escapeHtml(holding.created_at || '')}">Edit</button>
-                        <button class="secondary-btn compact-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}">Sell</button>
-                      </td>
-                    </tr>
-                  `
-                )
-                .join("")
-                : `<tr><td colspan="10"><div class="dash-empty-state">${searchText || adminUiState.clientFilter || adminUiState.stockFilter ? `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" stroke="#2c90f0" stroke-width="2" stroke-dasharray="6 4" opacity="0.4"/><path d="M20 38l8-8 6 6 10-12" stroke="#2c90f0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/></svg><strong>No results for filters</strong><span>Try clearing the search or filters.</span>` : `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="20" width="40" height="28" rx="6" stroke="#2c90f0" stroke-width="2" opacity="0.35"/><path d="M20 32h24M20 38h16" stroke="#2c90f0" stroke-width="2" stroke-linecap="round" opacity="0.5"/><circle cx="44" cy="18" r="8" fill="#edf5ff" stroke="#2c90f0" stroke-width="2"/><path d="M44 15v3l2 2" stroke="#2c90f0" stroke-width="1.8" stroke-linecap="round"/></svg><strong>No holdings yet</strong><span>Use Add Deal to record investor positions.</span>`}</div></td></tr>`}
-            </tbody>
-            <tfoot>
-              <tr class="admin-total-row">
-                <td colspan="3"><strong>Totals</strong></td>
-                <td>—</td>
-                <td>—</td>
-                <td><strong>${currency(filteredInvestedValue)}</strong></td>
-                <td>—</td>
-                <td><strong>${currency(filteredCurrentValue)}</strong></td>
-                <td class="${filteredUnrealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredUnrealizedProfit)}</strong></td>
-                <td>—</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-        <div class="admin-table-bottom-scroll" id="adminPositionsTableScroller" aria-label="Scroll positions table horizontally">
-          <div class="admin-table-bottom-scroll-inner"></div>
-        </div>
-      </article>
-      <article class="dashboard-card" id="adminClientOpsCard">
-        <div class="panel-head"><h3>Investor Downloads</h3><span class="badge green">Export</span></div>
-        <div class="stack-list">
-          ${userDashboards
-            .map(
-              (user) => `
-                <article class="stack-item">
-                  <div>
-                    <strong>${user.full_name}</strong>
-                    <small>${user.fixed_user_id || user.username}</small>
-                  </div>
-                  <div class="actions-row">
-                    <span class="${user.total_profit_loss >= 0 ? "profit" : "loss"}">${currency(user.total_profit_loss)}</span>
-                    <button class="download-btn" type="button" data-download-user-id="${user.user_id}">Download Dashboard</button>
-                  </div>
-                </article>
-              `
-            )
-            .join("")}
-        </div>
-      </article>
-    </div>
-    <div class="dashboard-grid">
-      <article class="dashboard-card full-span-card">
-        <div class="panel-head">
-          <h3>Sold History</h3>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <span class="badge ${filteredSoldHistory.length ? "green" : ""}">${filteredSoldHistory.length} Records</span>
-            <button class="admin-eye-btn sold-history-eye-toggle" type="button" data-sold-history-toggle="main1" title="Show / hide sold history">&#128065;</button>
-          </div>
-        </div>
-        <div class="sold-history-body">
-        <div class="table-wrap admin-position-table-wrap" id="adminSoldHistoryWrap">
-          <table class="admin-position-table">
-            <thead><tr><th>User</th><th>Stock</th><th>Purchase Date</th><th>Qty Sold</th><th>Avg Price</th><th>Sell Price</th><th>Realised P&amp;L</th><th>Sold At (IST)</th><th>Sold By</th></tr></thead>
-            <tbody>
-              ${filteredSoldHistory.length
-                ? filteredSoldHistory
-                    .map(
-                      (entry) => `
-                        <tr>
-                          <td><button class="table-link" type="button" data-user-detail="${entry.user_id}">${escapeHtml(entry.full_name)}</button><br /><small>${escapeHtml(entry.fixed_user_id || "")}</small></td>
-                          <td>
-                            <div class="admin-stock-cell">
-                              <button class="admin-eye-btn ${isAdminStockRevealed(entry.symbol) ? "is-active" : ""}" type="button" data-stock-visibility-toggle="${escapeHtml(String(entry.symbol || "").toUpperCase())}" aria-label="${isAdminStockRevealed(entry.symbol) ? "Hide stock name" : "Show stock name"}">&#128065;</button>
-                              <span class="sold-history-symbol" data-stock-label="${escapeHtml(String(entry.symbol || "").toUpperCase())}">${isAdminStockRevealed(entry.symbol) ? escapeHtml(entry.symbol) : maskStockSymbol(entry.symbol)}</span>
-                            </div>
-                          </td>
-                          <td>${formatDate(entry.created_at)}</td>
-                          <td>${entry.quantity}</td>
-                          <td>${currency(entry.buy_price)}</td>
-                          <td>${currency(entry.sell_price)}</td>
-                          <td class="${Number(entry.profit_loss) >= 0 ? "profit" : "loss"}">${currency(entry.profit_loss)}</td>
-                          <td>${formatDateTime(entry.sold_at)}</td>
-                          <td><small>${escapeHtml(entry.sold_by_identifier || entry.sold_by_role || "System")}</small></td>
-                        </tr>
-                      `
-                    )
-                    .join("")
-                : `<tr><td colspan="9"><div class="dash-empty-state"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 48L32 20l16 28H16z" stroke="#2c90f0" stroke-width="2" stroke-linejoin="round" opacity="0.35"/><path d="M32 30v8M32 42v2" stroke="#2c90f0" stroke-width="2" stroke-linecap="round" opacity="0.6"/></svg><strong>No records match the filters</strong><span>Try clearing filters to see all sold history.</span></div></td></tr>`}
-            </tbody>
-            <tfoot>
-              <tr class="admin-total-row">
-                <td colspan="3"><strong>Totals</strong></td>
-                <td>—</td>
-                <td>—</td>
-                <td>—</td>
-                <td class="${filteredRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredRealizedProfit)}</strong></td>
-                <td colspan="2">—</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-        <div class="admin-table-bottom-scroll" id="adminSoldHistoryScroller" aria-label="Scroll sold history table horizontally">
-          <div class="admin-table-bottom-scroll-inner"></div>
-        </div>
-        </div>
-      </article>
-    </div>
-    <div class="dashboard-grid">
-      <article class="dashboard-card">
-        <div class="panel-head"><h3>Backend Operations</h3><span class="badge">Owner View</span></div>
-        <div class="detail-stat-grid">
-          <article><strong>${operationsOverview.active_users}</strong><span>Active Users</span></article>
-          <article><strong>${operationsOverview.users_with_holdings}</strong><span>Users With Holdings</span></article>
-          <article><strong>${currency(operationsOverview.average_portfolio_value)}</strong><span>Avg Portfolio Value</span></article>
-        </div>
-        <div class="stack-list">
-          <article class="stack-item stack-item-compact">
-            <div>
-              <strong>Largest Client Portfolio</strong>
-              <small>Highest invested value across tracked users</small>
-            </div>
-            <div>
-              <strong>${currency(operationsOverview.largest_client_value)}</strong>
-              <small>Current backend snapshot</small>
-            </div>
-          </article>
-          <article class="stack-item stack-item-compact">
-            <div>
-              <strong>Issue Hotspots</strong>
-              <small>${loginIssueBreakdown.length ? loginIssueBreakdown.map((item) => `${item.reason.replaceAll("_", " ")} (${item.count})`).join(", ") : "No recent login issues"}</small>
-            </div>
-          </article>
-        </div>
-      </article>
-      <article class="dashboard-card" id="adminUsersCard">
-        <div class="panel-head"><h3>User Management</h3><span class="badge">Control</span></div>
-        <div class="admin-bulk-bar">
-          <label class="bulk-select-all"><input id="adminSelectAllUsers" type="checkbox" /> Select visible users</label>
-          <div class="table-actions">
-            <button class="secondary-btn compact-btn" type="button" id="bulkActivateUsersBtn">Bulk Activate</button>
-            <button class="secondary-btn compact-btn" type="button" id="bulkDisableUsersBtn">Bulk Disable</button>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table>
-          <thead><tr><th></th><th>Investor</th><th>Status</th><th>Joined</th><th>Value</th><th>Actions</th></tr></thead>
-            <tbody>
-              ${filteredUsers.length
-                ? filteredUsers
-                .map(
-                  (user) => `
-                    <tr>
-                      <td><input type="checkbox" data-user-select value="${user.user_id}" /></td>
-                      <td><strong>${user.full_name}</strong><br /><small>${user.fixed_user_id || user.username}${user.is_demo ? " | Demo" : ""}</small></td>
-                      <td><span class="badge ${user.is_active ? "green" : "red"}">${user.is_active ? "Active" : "Inactive"}</span></td>
-                      <td>${formatDate(user.created_at)}</td>
-                      <td>${currency(user.portfolio_value)}</td>
-                      <td>
-                        <div class="table-actions">
-                          <button class="secondary-btn compact-btn" type="button" data-user-status-action="${user.user_id}" data-next-active="${(!user.is_active).toString()}">${user.is_active ? "Disable" : "Activate"}</button>
-                        </div>
-                      </td>
-                    </tr>
-                  `
-                )
-                .join("")
-                : `<tr><td colspan="6"><span class="helper-text">No users match the current search or filter.</span></td></tr>`}
-            </tbody>
-          </table>
-        </div>
-        <p class="helper-text" id="adminUserActionStatus">${inactiveUsers} non-demo user account(s) are currently inactive. Showing ${filteredUsers.length} result(s).</p>
-      </article>
-      <article class="dashboard-card" id="adminControlsCard">
-        <div class="panel-head"><h3>Website Controls</h3><span class="badge">Manage</span></div>
-        <div class="stack-list">
-          <article class="stack-item">
-            <div><strong>FAQ Insight Cards</strong><small>Show or hide the extra cards on the FAQ page.</small></div>
-            <button class="secondary-btn" type="button" id="toggleFaqInsightsBtn">Hide FAQ Cards</button>
-          </article>
-          <article class="stack-item">
-            <div><strong>Delete User Reviews</strong><small>Remove all user-submitted reviews from website storage.</small></div>
-            <button class="secondary-btn danger-btn" type="button" id="clearCustomReviewsBtn">Delete Reviews</button>
-          </article>
-        </div>
-        <p class="helper-text" id="siteControlStatus">Website controls are available for admin actions.</p>
-      </article>
-    </div>
-    <div class="dashboard-grid">
-      <article class="dashboard-card" id="adminModerationCard">
-        <div class="panel-head"><h3>Month-on-Month P&amp;L</h3><span class="badge">Trend</span></div>
-        ${renderChart([
-          { label: "Nov", value: totalPnl * 0.48 },
-          { label: "Dec", value: totalPnl * 0.61 },
-          { label: "Jan", value: totalPnl * -0.12 },
-          { label: "Feb", value: totalPnl * 0.39 },
-          { label: "Mar", value: totalPnl * 0.57 },
-          { label: "Apr", value: totalPnl || totalValue * 0.05 }
-        ])}
-      </article>
-      <article class="dashboard-card" id="adminSecurityCard">
-        <div class="panel-head"><h3>Review Moderation</h3><span class="badge">${pendingModerationCount} Pending</span></div>
-        <div class="stack-list">
-          ${safeReviews.length
-            ? safeReviews
-                .slice(0, 8)
-                .map(
-                  (review) => `
-                    <article class="stack-item stack-item-compact">
-                      <div>
-                        <strong>${review.name}</strong>
-                        <small>${review.role} · ${"★".repeat(review.rating)}</small>
-                        <small>${review.message}</small>
-                      </div>
-                      <div class="table-actions">
-                        <span class="badge ${review.is_seeded ? "green" : ""}">${review.is_seeded ? "Seeded" : "Public"}</span>
-                        ${review.is_seeded
-                          ? `<span class="helper-chip">Protected</span>`
-                          : `<button class="secondary-btn danger-btn compact-btn" type="button" data-delete-review="${review.id}" data-review-name="${review.name}">Remove</button>`}
-                      </div>
-                    </article>
-                  `
-                )
-                .join("")
-            : `<article class="stack-item"><div><strong>No reviews available</strong><small>Submitted reviews will appear here.</small></div></article>`}
-        </div>
-      </article>
-    </div>
-    <div class="dashboard-grid">
-      <article class="dashboard-card">
-        <div class="panel-head"><h3>User Activity View</h3><span class="badge">Recent</span></div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>User</th><th>Status</th><th>Holdings</th><th>Last Holding</th><th>Last Auth</th></tr></thead>
-            <tbody>
-              ${recentUserActivity.length
-                ? recentUserActivity
-                    .map(
-                      (activity) => `
-                        <tr>
-                          <td><strong>${activity.full_name}</strong><br /><small>${activity.fixed_user_id || ""}</small></td>
-                          <td><span class="badge ${activity.is_active ? "green" : "red"}">${activity.is_active ? "Active" : "Inactive"}</span></td>
-                          <td>${activity.holding_count}</td>
-                          <td>${formatDate(activity.last_holding_at)}</td>
-                          <td>${formatDateTime(activity.last_auth_attempt_at)}</td>
-                        </tr>
-                      `
-                    )
-                    .join("")
-                : `<tr><td colspan="5"><span class="helper-text">No recent user activity to display.</span></td></tr>`}
-            </tbody>
-          </table>
-        </div>
-      </article>
-      <article class="dashboard-card">
-        <div class="panel-head"><h3>Stock Concentration</h3><span class="badge">Exposure</span></div>
-        <div class="stack-list">
-          ${stockConcentration.length
-            ? stockConcentration
-                .map(
-                  (item) => `
-                    <article class="stack-item stack-item-compact">
-                      <div>
-                        <strong>${item.symbol}</strong>
-                <small>${item.client_count} investor(s) holding this stock</small>
-                      </div>
-                      <div>
-                        <strong>${currency(item.invested_value)}</strong>
-                        <small>${item.total_quantity} shares</small>
-                      </div>
-                    </article>
-                  `
-                )
-                .join("")
-            : `<article class="stack-item"><div><strong>No concentration data</strong><small>Portfolio exposure will appear here.</small></div></article>`}
-        </div>
-      </article>
-    </div>
-    <div class="dashboard-grid">
-      <article class="dashboard-card">
-        <div class="panel-head"><h3>Security Activity</h3><span class="badge ${failedAttempts ? "red" : "green"}">${failedAttempts} Failed</span></div>
-        <div class="stack-list">
-          ${safeAuthAttempts.length
-            ? safeAuthAttempts
-                .map(
-                  (attempt) => `
-                    <article class="stack-item stack-item-compact">
-                      <div>
-                        <strong>${attempt.stage === "request_otp" ? "OTP Request" : "Login"} · ${attempt.identifier}</strong>
-                        <small>${attempt.role} ${attempt.failure_reason ? `· ${attempt.failure_reason.replaceAll("_", " ")}` : "· successful"}</small>
-                      </div>
-                      <div>
-                        <strong class="${attempt.success ? "profit" : "loss"}">${attempt.success ? "Success" : "Failed"}</strong>
-                        <small>${formatDateTime(attempt.created_at)}</small>
-                      </div>
-                    </article>
-                  `
-                )
-                .join("")
-            : `<article class="stack-item"><div><strong>No recent auth activity</strong><small>Login and OTP events will appear here.</small></div></article>`}
-        </div>
-      </article>
-      <article class="dashboard-card">
-        <div class="panel-head"><h3>Admin Audit Trail</h3><span class="badge">Tracked</span></div>
-        <div class="stack-list">
-          ${safeAuditLogs.length
-            ? safeAuditLogs
-                .map(
-                  (log) => `
-                    <article class="stack-item stack-item-compact">
-                      <div>
-                        <strong>${log.action.replaceAll("_", " ")}</strong>
-                        <small>${log.entity_type}${log.entity_id ? ` · ${log.entity_id}` : ""}</small>
-                      </div>
-                      <div>
-                        <strong>${log.ip_address || "local"}</strong>
-                        <small>${formatDateTime(log.created_at)}</small>
-                      </div>
-                    </article>
-                  `
-                )
-                .join("")
-            : `<article class="stack-item"><div><strong>No admin actions yet</strong><small>Management activity will appear here.</small></div></article>`}
-        </div>
-      </article>
-      <article class="dashboard-card">
-        <div class="panel-head"><h3>System Settings Overview</h3><span class="badge">Config</span></div>
-        <div class="stack-list">
-          <article class="stack-item stack-item-compact">
-            <div><strong>FAQ Insights</strong><small>Extra FAQ cards on public FAQ page</small></div>
-            <div><strong>${operationsOverview.settings_overview.show_faq_insights ? "Enabled" : "Disabled"}</strong></div>
-          </article>
-          <article class="stack-item stack-item-compact">
-            <div><strong>Chat Nudges</strong><small>Finance assistant popup prompts</small></div>
-            <div><strong>${operationsOverview.settings_overview.chat_nudges_enabled ? "Enabled" : "Disabled"}</strong></div>
-          </article>
-          <article class="stack-item stack-item-compact">
-            <div><strong>OTP Debug Mode</strong><small>Must be off in production</small></div>
-            <div><strong class="${operationsOverview.settings_overview.otp_debug_mode ? "loss" : "profit"}">${operationsOverview.settings_overview.otp_debug_mode ? "Enabled" : "Disabled"}</strong></div>
-          </article>
-          <article class="stack-item stack-item-compact">
-            <div><strong>Rate Limit Window</strong><small>Failed auth throttling window</small></div>
-            <div><strong>${operationsOverview.settings_overview.auth_rate_limit_window_minutes} min</strong></div>
-          </article>
-          <article class="stack-item stack-item-compact">
-            <div><strong>Max Failed Attempts</strong><small>Allowed before throttling</small></div>
-            <div><strong>${operationsOverview.settings_overview.auth_max_failed_attempts}</strong></div>
-          </article>
-        </div>
-      </article>
-    </div>
-    <section id="adminDetailMount" class="dashboard-section hidden"></section>
-    </div>
-    </section>
-  `;
-
-    revealPortal(mount);
-    activeRole = "admin";
-    activeUserId = null;
-    startAdminRefresh();
-    setupDownloadButtons(userDashboards);
-    setupWebsiteControlButtons();
-    setupAdminManagementButtons();
-    setupAdminDrilldowns(userDashboards, allHoldings, filteredSoldHistory);
-    document.getElementById("adminXirrCalcBtn")?.addEventListener("click", () => showXirrCalculatorModal(userDashboards));
-    setupScrollSync("adminPositionsTableWrap", "adminPositionsTableScroller");
-    setupScrollSync("adminSoldHistoryWrap", "adminSoldHistoryScroller");
-    setupPortalActions();
-  } catch (error) {
-    renderPortalError(mount, "Admin Dashboard", `Login succeeded, but admin dashboard data could not load yet. ${formatError(error)}`);
-    const retry = document.getElementById("retryPortalBtn");
-    if (retry) {
-      retry.addEventListener("click", () => renderAdminPortal());
-    }
-  }
-}
-
-function _savePortalCache(key, data) {
-  try { sessionStorage.setItem(key, JSON.stringify({ t: Date.now(), d: data })); } catch {}
-}
-function _loadPortalCache(key, maxAgeMs = 3 * 60 * 1000) {
-  try {
-    const raw = sessionStorage.getItem(key);
-    if (!raw) return null;
-    const { t, d } = JSON.parse(raw);
-    return Date.now() - t < maxAgeMs ? d : null;
-  } catch { return null; }
-}
+let _adminCache = null;
 
 async function renderAdminPortal(options = {}) {
   const mount = document.getElementById("adminPortal");
   if (!mount) return;
   if (adminRenderInFlight) return;
   adminRenderInFlight = true;
-  const { silent = false, scrollToDetail = false, _fromCache = false } = options;
+  const { silent = false, scrollToDetail = false } = options;
+  const useCache = !!_adminCache && !silent;
 
-  const cached = !_fromCache && _loadPortalCache("ay:admin");
-  if (cached) {
-    adminRenderInFlight = false;
-    await renderAdminPortal({ ...options, _fromCache: true,
-      _cachedUsers: cached.users, _cachedDashboards: cached.userDashboards,
-      _cachedSoldHistory: cached.soldHistory, _cachedFeed: cached.feed });
-    renderAdminPortal({ silent: true }).catch(() => {});
-    return;
-  }
-
-  if (!silent && !_fromCache) {
-    showDashboardLoading("Loading Dashboard", "Fetching investor portfolios and live market prices");
-  }
+  if (!silent) showDashboardLoading("Loading Dashboard", "Fetching investor portfolios and live market prices");
   try {
-    let safeUsers, safeSoldHistory, userDashboards;
-    if (_fromCache) {
-      safeUsers = options._cachedUsers || [];
-      safeSoldHistory = options._cachedSoldHistory || [];
-      userDashboards = options._cachedDashboards || [];
+    let safeUsers, safeSoldHistory, userDashboards, feedFlat;
+
+    if (useCache) {
+      ({ safeUsers, safeSoldHistory, userDashboards, feedFlat } = _adminCache);
     } else {
       const [users, soldHistory] = await Promise.all([
         api("/admin/users"),
@@ -4967,7 +4353,24 @@ async function renderAdminPortal(options = {}) {
       safeUsers = Array.isArray(users) ? users : [];
       safeSoldHistory = Array.isArray(soldHistory) ? soldHistory : [];
       userDashboards = await safeAdminUserDashboards(safeUsers);
+      const baseHoldingsForFeed = userDashboards.flatMap((u) =>
+        (Array.isArray(u.holdings) ? u.holdings : []).map((h) => ({ symbol: h.symbol, exchange: h.exchange || "NSE" }))
+      );
+      const symsByEx = {};
+      for (const h of baseHoldingsForFeed) {
+        const ex = (h.exchange || "NSE").toUpperCase();
+        if (!symsByEx[ex]) symsByEx[ex] = new Set();
+        symsByEx[ex].add(h.symbol);
+      }
+      const feedResults = await Promise.all(
+        Object.entries(symsByEx).map(([ex, syms]) =>
+          api(`/stocks/feed?symbols=${encodeURIComponent([...syms].join(","))}&exchange=${ex}`).catch(() => [])
+        )
+      );
+      feedFlat = feedResults.flat();
+      _adminCache = { safeUsers, safeSoldHistory, userDashboards, feedFlat };
     }
+
     const baseHoldings = userDashboards.flatMap((user) =>
       (Array.isArray(user.holdings) ? user.holdings : []).map((holding) => ({
         ...holding,
@@ -4976,25 +4379,7 @@ async function renderAdminPortal(options = {}) {
         user_id: user.user_id
       }))
     );
-    const symbolsByExchange2 = {};
-    for (const h of baseHoldings) {
-      const ex = (h.exchange || "NSE").toUpperCase();
-      if (!symbolsByExchange2[ex]) symbolsByExchange2[ex] = new Set();
-      symbolsByExchange2[ex].add(h.symbol);
-    }
-    let feedFlat2;
-    if (_fromCache && options._cachedFeed) {
-      feedFlat2 = options._cachedFeed;
-    } else {
-      const feedResults2 = await Promise.all(
-        Object.entries(symbolsByExchange2).map(([ex, syms]) =>
-          api(`/stocks/feed?symbols=${encodeURIComponent([...syms].join(","))}&exchange=${ex}`).catch(() => [])
-        )
-      );
-      feedFlat2 = feedResults2.flat();
-      if (!silent) _savePortalCache("ay:admin", { users: safeUsers, userDashboards, soldHistory: safeSoldHistory, feed: feedFlat2 });
-    }
-    const quoteMap = new Map(feedFlat2.map((q) => [`${q.symbol}:${(q.exchange || "NSE").toUpperCase()}`, q]));
+    const quoteMap = new Map(feedFlat.map((q) => [`${q.symbol}:${(q.exchange || "NSE").toUpperCase()}`, q]));
     const allHoldings = baseHoldings.map((holding) => {
       const ex = (holding.exchange || "NSE").toUpperCase();
       const quote = quoteMap.get(`${holding.symbol}:${ex}`);
@@ -5362,6 +4747,7 @@ async function renderAdminPortal(options = {}) {
     } else {
       mount.classList.remove("hidden");
     }
+    if (useCache) setTimeout(() => { adminRenderInFlight = false; renderAdminPortal({ silent: true }).catch(() => {}); }, 0);
     activeRole = "admin";
     activeUserId = null;
     startAdminRefresh();
@@ -5587,37 +4973,30 @@ function renderPortfolioCharts(holdings) {
   }
 }
 
+let _userCache = null;
+
 async function renderUserPortal(options = {}) {
   const mount = document.getElementById("userPortal");
   if (!mount) return;
   if (userRenderInFlight) return;
   userRenderInFlight = true;
-  const { showLoading = false, silent = false, loadingTitle, loadingText, _fromCache = false } = options;
+  const { showLoading = false, silent = false, loadingTitle, loadingText } = options;
 
-  const cached = !_fromCache && !showLoading && _loadPortalCache("ay:user");
-  if (cached) {
-    userRenderInFlight = false;
-    await renderUserPortal({ ...options, _fromCache: true,
-      _cachedProfile: cached.profile, _cachedSummary: cached.summary, _cachedSoldHistory: cached.soldHistory });
-    renderUserPortal({ silent: true }).catch(() => {});
-    return;
-  }
-
-  if (!silent && !_fromCache) revealPortal(mount);
+  const useUserCache = !!_userCache && !silent && !showLoading;
+  if (!silent && !useUserCache) revealPortal(mount);
   if (showLoading) showDashboardLoading(loadingTitle, loadingText);
   try {
     let profile, summary, soldHistory;
-    if (_fromCache) {
-      profile = options._cachedProfile;
-      summary = options._cachedSummary;
-      soldHistory = options._cachedSoldHistory || [];
+    if (useUserCache) {
+      ({ profile, summary, soldHistory } = _userCache);
+      revealPortal(mount);
     } else {
       [profile, summary, soldHistory] = await Promise.all([
         api("/auth/me"),
         api("/portfolio/summary"),
         api("/portfolio/sold-history").catch(() => [])
       ]);
-      if (!silent) _savePortalCache("ay:user", { profile, summary, soldHistory });
+      _userCache = { profile, summary, soldHistory };
     }
     const rawPerformance = Array.isArray(summary.performance) ? summary.performance : [];
     const safeSoldHistory = Array.isArray(soldHistory) ? soldHistory : [];
@@ -5871,6 +5250,7 @@ async function renderUserPortal(options = {}) {
   `;
 
     revealPortal(mount);
+    if (useUserCache) setTimeout(() => { userRenderInFlight = false; renderUserPortal({ silent: true }).catch(() => {}); }, 0);
     activeRole = "user";
     activeUserId = profile.id;
     startUserRefresh();
