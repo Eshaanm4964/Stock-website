@@ -3468,12 +3468,30 @@ async function renderAdminDatabasePage(options = {}) {
               <span class="badge green">${safeUsers.length} Investors / ${totalHoldings} Holdings</span>
             </div>
             <div class="admin-database-statline">
-              <span><strong>${safeUsers.length}</strong> Investors</span>
-              <span><strong>${safeUsers.filter((user) => user.is_active).length}</strong> Active</span>
-              <span><strong>${totalHoldings}</strong> Holdings</span>
-              <span><strong>${currency(safeUsers.reduce((sum, user) => sum + Number(user.balance_funds || 0), 0))}</strong> Total Investment</span>
-              <span><strong>${currency(totalPortfolioValue)}</strong> Portfolio Value</span>
-              <span class="${totalProfitLoss >= 0 ? "profit" : "loss"}"><strong>${currency(totalProfitLoss)}</strong> Total P&amp;L</span>
+              <div class="db-stat-card">
+                <span class="db-stat-label">Total Investors</span>
+                <strong class="db-stat-value">${safeUsers.length}</strong>
+              </div>
+              <div class="db-stat-card">
+                <span class="db-stat-label">Active</span>
+                <strong class="db-stat-value">${safeUsers.filter((u) => u.is_active).length} <small>/ ${safeUsers.length}</small></strong>
+              </div>
+              <div class="db-stat-card">
+                <span class="db-stat-label">Total Holdings</span>
+                <strong class="db-stat-value">${totalHoldings}</strong>
+              </div>
+              <div class="db-stat-card">
+                <span class="db-stat-label">Total Investment</span>
+                <strong class="db-stat-value">${currency(safeUsers.reduce((sum, u) => sum + Number(u.balance_funds || 0), 0))}</strong>
+              </div>
+              <div class="db-stat-card">
+                <span class="db-stat-label">Portfolio Value</span>
+                <strong class="db-stat-value">${currency(totalPortfolioValue)}</strong>
+              </div>
+              <div class="db-stat-card">
+                <span class="db-stat-label">Total P&amp;L</span>
+                <strong class="db-stat-value ${totalProfitLoss >= 0 ? "profit" : "loss"}">${totalProfitLoss >= 0 ? "+" : ""}${currency(totalProfitLoss)}</strong>
+              </div>
             </div>
 
             <div class="table-wrap admin-position-table-wrap admin-database-table-wrap" id="adminDatabaseUsersWrap">
