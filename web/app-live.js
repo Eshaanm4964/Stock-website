@@ -299,9 +299,13 @@ function showDashboardLoading(title, text) {
 function hideDashboardLoading() {
   const overlay = document.getElementById("dashboardLoadingOverlay");
   if (!overlay) return;
-  overlay.classList.add("hidden");
-  overlay.setAttribute("aria-hidden", "true");
-  document.body.style.overflow = "";
+  overlay.style.opacity = "0";
+  setTimeout(() => {
+    overlay.classList.add("hidden");
+    overlay.style.opacity = "";
+    overlay.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  }, 350);
 }
 
 function getSiteControls() {
