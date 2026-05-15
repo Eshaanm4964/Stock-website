@@ -51,14 +51,9 @@ body.dashboard-page {
   width: min(600px, calc(100vw - 48px));
 }
 
-/* Pre-embedded card (page-load): animate in so every page arrival feels polished */
-#dashboardLoadingOverlay:not(.hidden) .auth-loading-card:not(.dl-entering) {
+/* Card animates in on every page arrival (pre-embedded overlay, visible from HTML) */
+#dashboardLoadingOverlay:not(.hidden) .auth-loading-card {
   animation: dlCardIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-/* Programmatic show (nav-exit on source page): slightly slower for extra presence */
-#dashboardLoadingOverlay .auth-loading-card.dl-entering {
-  animation: dlCardIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes dlCardIn {

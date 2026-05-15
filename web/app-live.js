@@ -291,13 +291,6 @@ function showDashboardLoading(title, text) {
   const textNode = document.getElementById("dashboardLoadingText");
   if (titleNode) titleNode.textContent = title || "Opening dashboard";
   if (textNode) textNode.textContent = text || "Loading your holdings, returns, and portfolio summary";
-  // Trigger card entrance animation only when revealing from a hidden state
-  const card = overlay.querySelector(".auth-loading-card");
-  if (card && overlay.classList.contains("hidden")) {
-    card.classList.remove("dl-entering");
-    void card.offsetWidth; // force reflow so animation restarts
-    card.classList.add("dl-entering");
-  }
   overlay.style.opacity = "";
   overlay.classList.remove("hidden");
   overlay.setAttribute("aria-hidden", "false");
@@ -2817,40 +2810,8 @@ function setupDetailEyeButtons(container) {
   });
 }
 
-let _navTransitionsSetup = false;
-function setupDashboardNavTransitions() {
-  if (_navTransitionsSetup) return;
-  _navTransitionsSetup = true;
-
-  const PAGE_TITLES = {
-    "admin-dashboard":    { t: "Loading Dashboard",  s: "Fetching investor portfolios and live market prices" },
-    "admin-database":     { t: "Loading Database",   s: "Fetching investor records, holdings, and portfolio data" },
-    "admin-add-customer": { t: "Add Customer",       s: "Loading the customer registration form" },
-    "admin-add-deal":     { t: "Add Deal",            s: "Loading deal entry form" },
-    "admin-add-funds":    { t: "Add Funds",           s: "Loading funds management form" },
-    "user-dashboard":     { t: "Loading Portfolio",  s: "Fetching your holdings, returns, and market prices" },
-  };
-
-  document.addEventListener("click", (e) => {
-    const link = e.target.closest("a[href]");
-    if (!link || link.target === "_blank") return;
-
-    let url;
-    try { url = new URL(link.href, window.location.origin); } catch { return; }
-    if (url.origin !== window.location.origin) return;
-
-    const matchedKey = Object.keys(PAGE_TITLES).find((k) => url.pathname.includes(k));
-    if (!matchedKey) return;
-
-    e.preventDefault();
-    const { t, s } = PAGE_TITLES[matchedKey];
-    showDashboardLoading(t, s);
-    setTimeout(() => { window.location.href = url.href; }, 350);
-  });
-}
 
 function setupPortalActions() {
-  setupDashboardNavTransitions();
   document.querySelectorAll("[data-logout]").forEach((button) => {
     button.addEventListener("click", () => logoutAndResetPortals());
   });
@@ -2872,9 +2833,7 @@ function setupPortalActions() {
   document.querySelectorAll("[data-admin-action-nav]").forEach((select) => {
     select.addEventListener("change", () => {
       if (!select.value) return;
-      // Show loading overlay before navigating so the transition is smooth
-      showDashboardLoading("Loading", "Please wait…");
-      setTimeout(() => { window.location.href = select.value; }, 280);
+      window.location.href = select.value;
     });
   });
 
