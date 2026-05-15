@@ -496,16 +496,6 @@ async def fetch_quote(symbol: str, exchange: str = "NSE", redis: Redis | None = 
     info: dict[str, Any]
     source = "yfinance"
     is_fallback = False
-    try:
-        alpha_quote = await _fetch_alpha_quote(symbol, exchange)
-        if alpha_quote:
-            if redis:
-                await set_cached_json(redis, cache_key, _serialize_quote(alpha_quote), settings.cache_ttl_seconds)
-            else:
-                _set_local_cached_quote(cache_key, alpha_quote)
-            return alpha_quote
-    except Exception:
-        pass
 
     yahoo_symbol = _normalize_symbol(symbol, exchange)
     alt_symbol = _normalize_symbol(symbol, "BSE" if exchange.upper() == "NSE" else "NSE")
