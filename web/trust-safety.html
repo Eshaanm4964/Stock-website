@@ -521,44 +521,6 @@
       </main>
     </div>
     <script src="./app-live.js"></script>
-    <script>
-    (function () {
-      /* ── Mouse-follow glow ── */
-      const section = document.getElementById('capitalSafety');
-      const glow = document.getElementById('csMouse');
-      if (section && glow) {
-        section.addEventListener('mousemove', function (e) {
-          const r = section.getBoundingClientRect();
-          glow.style.left = (e.clientX - r.left) + 'px';
-          glow.style.top  = (e.clientY - r.top)  + 'px';
-          glow.style.opacity = '1';
-        });
-        section.addEventListener('mouseleave', function () {
-          glow.style.opacity = '0';
-        });
-      }
-
-
-      /* ── Scroll reveal ── */
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (entry.isIntersecting) {
-            var el = entry.target;
-            var idx = parseInt(el.dataset.csIndex || '0', 10);
-            setTimeout(function () { el.classList.add('cs-card-visible'); }, idx * 160);
-            io.unobserve(el);
-          }
-        });
-      }, { threshold: 0.15 });
-      document.querySelectorAll('.cs-card').forEach(function (c) { io.observe(c); });
-
-      var headerIo = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('cs-header-visible'); headerIo.unobserve(e.target); } });
-      }, { threshold: 0.3 });
-      var hdr = document.querySelector('.cs-header');
-      if (hdr) headerIo.observe(hdr);
-    })();
-    </script>
   <script defer src="/_vercel/insights/script.js"></script></body>
 </html>
 

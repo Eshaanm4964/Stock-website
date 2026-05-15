@@ -277,42 +277,6 @@
     </a>
 
     <script src="./app-live.js"></script>
-    <script>
-    // Formspree AJAX submission with status feedback
-    (function () {
-      const form = document.getElementById("contactForm");
-      const status = document.getElementById("contactStatus");
-      if (!form || !status) return;
-      form.addEventListener("submit", async function (e) {
-        e.preventDefault();
-        const btn = form.querySelector(".submit-btn");
-        btn.disabled = true;
-        btn.textContent = "Sending…";
-        status.textContent = "";
-        try {
-          const resp = await fetch(form.action, {
-            method: "POST",
-            body: new FormData(form),
-            headers: { Accept: "application/json" }
-          });
-          if (resp.ok) {
-            status.textContent = "✓ Message sent! We'll get back to you within 24 hours.";
-            status.style.color = "var(--brand-accent)";
-            form.reset();
-          } else {
-            const data = await resp.json().catch(() => ({}));
-            status.textContent = data.error || "Something went wrong. Please email info@assetyantra.com directly.";
-            status.style.color = "#c62828";
-          }
-        } catch (_) {
-          status.textContent = "Could not send. Please WhatsApp or email us directly.";
-          status.style.color = "#c62828";
-        }
-        btn.disabled = false;
-        btn.textContent = "Send Message";
-      });
-    })();
-    </script>
   <script defer src="/_vercel/insights/script.js"></script></body>
 </html>
 
