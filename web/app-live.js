@@ -4921,23 +4921,53 @@ async function renderAdminPortal() {
   }
 }
 
+function _savePortalCache(key, data) {
+  try { sessionStorage.setItem(key, JSON.stringify({ t: Date.now(), d: data })); } catch {}
+}
+function _loadPortalCache(key, maxAgeMs = 3 * 60 * 1000) {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const { t, d } = JSON.parse(raw);
+    return Date.now() - t < maxAgeMs ? d : null;
+  } catch { return null; }
+}
+
 async function renderAdminPortal(options = {}) {
   const mount = document.getElementById("adminPortal");
   if (!mount) return;
   if (adminRenderInFlight) return;
   adminRenderInFlight = true;
-  const { silent = false, scrollToDetail = false } = options;
-  if (!silent) {
+  const { silent = false, scrollToDetail = false, _fromCache = false } = options;
+
+  const cached = !_fromCache && _loadPortalCache("ay:admin");
+  if (cached) {
+    adminRenderInFlight = false;
+    await renderAdminPortal({ ...options, _fromCache: true,
+      _cachedUsers: cached.users, _cachedDashboards: cached.userDashboards,
+      _cachedSoldHistory: cached.soldHistory, _cachedFeed: cached.feed });
+    renderAdminPortal({ silent: true }).catch(() => {});
+    return;
+  }
+
+  if (!silent && !_fromCache) {
     showDashboardLoading("Loading Dashboard", "Fetching investor portfolios and live market prices");
   }
   try {
-    const [users, soldHistory] = await Promise.all([
-      api("/admin/users"),
-      api("/admin/sold-history?limit=100").catch(() => [])
-    ]);
-    const safeUsers = Array.isArray(users) ? users : [];
-    const safeSoldHistory = Array.isArray(soldHistory) ? soldHistory : [];
-    const userDashboards = await safeAdminUserDashboards(safeUsers);
+    let safeUsers, safeSoldHistory, userDashboards;
+    if (_fromCache) {
+      safeUsers = options._cachedUsers || [];
+      safeSoldHistory = options._cachedSoldHistory || [];
+      userDashboards = options._cachedDashboards || [];
+    } else {
+      const [users, soldHistory] = await Promise.all([
+        api("/admin/users"),
+        api("/admin/sold-history?limit=100").catch(() => [])
+      ]);
+      safeUsers = Array.isArray(users) ? users : [];
+      safeSoldHistory = Array.isArray(soldHistory) ? soldHistory : [];
+      userDashboards = await safeAdminUserDashboards(safeUsers);
+    }
     const baseHoldings = userDashboards.flatMap((user) =>
       (Array.isArray(user.holdings) ? user.holdings : []).map((holding) => ({
         ...holding,
@@ -4952,12 +4982,19 @@ async function renderAdminPortal(options = {}) {
       if (!symbolsByExchange2[ex]) symbolsByExchange2[ex] = new Set();
       symbolsByExchange2[ex].add(h.symbol);
     }
-    const feedResults2 = await Promise.all(
-      Object.entries(symbolsByExchange2).map(([ex, syms]) =>
-        api(`/stocks/feed?symbols=${encodeURIComponent([...syms].join(","))}&exchange=${ex}`).catch(() => [])
-      )
-    );
-    const quoteMap = new Map(feedResults2.flat().map((q) => [`${q.symbol}:${(q.exchange || "NSE").toUpperCase()}`, q]));
+    let feedFlat2;
+    if (_fromCache && options._cachedFeed) {
+      feedFlat2 = options._cachedFeed;
+    } else {
+      const feedResults2 = await Promise.all(
+        Object.entries(symbolsByExchange2).map(([ex, syms]) =>
+          api(`/stocks/feed?symbols=${encodeURIComponent([...syms].join(","))}&exchange=${ex}`).catch(() => [])
+        )
+      );
+      feedFlat2 = feedResults2.flat();
+      if (!silent) _savePortalCache("ay:admin", { users: safeUsers, userDashboards, soldHistory: safeSoldHistory, feed: feedFlat2 });
+    }
+    const quoteMap = new Map(feedFlat2.map((q) => [`${q.symbol}:${(q.exchange || "NSE").toUpperCase()}`, q]));
     const allHoldings = baseHoldings.map((holding) => {
       const ex = (holding.exchange || "NSE").toUpperCase();
       const quote = quoteMap.get(`${holding.symbol}:${ex}`);
@@ -5555,15 +5592,33 @@ async function renderUserPortal(options = {}) {
   if (!mount) return;
   if (userRenderInFlight) return;
   userRenderInFlight = true;
-  const { showLoading = false, silent = false, loadingTitle, loadingText } = options;
-  if (!silent) revealPortal(mount);
+  const { showLoading = false, silent = false, loadingTitle, loadingText, _fromCache = false } = options;
+
+  const cached = !_fromCache && !showLoading && _loadPortalCache("ay:user");
+  if (cached) {
+    userRenderInFlight = false;
+    await renderUserPortal({ ...options, _fromCache: true,
+      _cachedProfile: cached.profile, _cachedSummary: cached.summary, _cachedSoldHistory: cached.soldHistory });
+    renderUserPortal({ silent: true }).catch(() => {});
+    return;
+  }
+
+  if (!silent && !_fromCache) revealPortal(mount);
   if (showLoading) showDashboardLoading(loadingTitle, loadingText);
   try {
-    const [profile, summary, soldHistory] = await Promise.all([
-      api("/auth/me"),
-      api("/portfolio/summary"),
-      api("/portfolio/sold-history").catch(() => [])
-    ]);
+    let profile, summary, soldHistory;
+    if (_fromCache) {
+      profile = options._cachedProfile;
+      summary = options._cachedSummary;
+      soldHistory = options._cachedSoldHistory || [];
+    } else {
+      [profile, summary, soldHistory] = await Promise.all([
+        api("/auth/me"),
+        api("/portfolio/summary"),
+        api("/portfolio/sold-history").catch(() => [])
+      ]);
+      if (!silent) _savePortalCache("ay:user", { profile, summary, soldHistory });
+    }
     const rawPerformance = Array.isArray(summary.performance) ? summary.performance : [];
     const safeSoldHistory = Array.isArray(soldHistory) ? soldHistory : [];
     const totalInvested = rawPerformance.reduce((sum, item) => sum + Number(item.buy_price || 0) * Number(item.quantity || 0), 0);

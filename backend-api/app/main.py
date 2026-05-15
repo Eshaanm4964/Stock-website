@@ -74,12 +74,12 @@ async def stock_broadcast() -> None:
             await manager.broadcast_stock_update(
                 {"type": "stock_feed", "data": [quote.model_dump() for quote in quotes]}
             )
-            await asyncio.sleep(settings.cache_ttl_seconds)
+            await asyncio.sleep(30)
         except asyncio.CancelledError:
             break
         except Exception:
             pass
-            await asyncio.sleep(settings.cache_ttl_seconds)
+            await asyncio.sleep(30)
 
 
 @asynccontextmanager
