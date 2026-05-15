@@ -1373,6 +1373,54 @@ function buildAdminDatabaseExcelHtml(users = [], userDashboards = []) {
   `;
 }
 
+function showLogoutScreen() {
+  const existing = document.getElementById("logoutScreenOverlay");
+  if (existing) existing.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "logoutScreenOverlay";
+  overlay.style.cssText = `
+    position:fixed;inset:0;z-index:200;display:grid;place-items:center;
+    background:radial-gradient(ellipse at 20% 10%,rgba(239,68,68,0.10) 0%,transparent 40%),
+               radial-gradient(ellipse at 80% 90%,rgba(220,38,38,0.08) 0%,transparent 40%),
+               linear-gradient(160deg,#fff5f5 0%,#fff0f0 50%,#fff8f8 100%);
+    animation:logoutFadeIn 0.35s ease both;
+  `;
+  overlay.innerHTML = `
+    <style>
+      @keyframes logoutFadeIn { from{opacity:0} to{opacity:1} }
+      @keyframes logoutCardIn { from{opacity:0;transform:translateY(18px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+      @keyframes logoutBarFill {
+        0%{width:0;opacity:1} 60%{width:72%;opacity:1} 85%{width:90%;opacity:1} 100%{width:100%;opacity:0.7}
+      }
+      @keyframes logoutPulse { 0%,100%{opacity:0.5;transform:scale(1)} 50%{opacity:1;transform:scale(1.05)} }
+      #logoutCard { animation:logoutCardIn 0.4s 0.05s cubic-bezier(0.22,1,0.36,1) both; }
+      #logoutBar span { animation:logoutBarFill 2.4s 0.3s cubic-bezier(0.4,0,0.2,1) forwards; }
+      #logoutShield { animation:logoutPulse 1.6s 0.4s ease-in-out infinite; }
+    </style>
+    <div id="logoutCard" style="width:min(520px,92%);padding:48px 44px 40px;border-radius:32px;border:1px solid rgba(239,68,68,0.18);background:#fff;box-shadow:0 40px 100px rgba(239,68,68,0.12),0 8px 24px rgba(120,0,0,0.06);text-align:center;">
+      <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.13em;text-transform:uppercase;color:#ef4444;margin-bottom:20px;opacity:0.8;">Asset Yantra — Secure Session</div>
+      <div style="position:relative;width:min(340px,100%);margin:0 auto 24px;">
+        <img src="./assets/loading_logo.png" alt="Asset Yantra" style="width:100%;display:block;padding:8px 12px;" />
+        <div id="logoutShield" style="position:absolute;bottom:-8px;right:16px;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(239,68,68,0.4);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+      </div>
+      <h2 style="margin:0 0 10px;font-family:'Playfair Display',serif;font-size:clamp(1.7rem,3vw,2.2rem);line-height:1.1;color:#0f2040;">Securely Logging Out</h2>
+      <p style="margin:0 0 28px;color:#6b7a99;line-height:1.65;font-size:0.95rem;">Thanks for choosing <strong style="color:#ef4444;">Asset Yantra</strong> as your Partner.</p>
+      <div id="logoutBar" style="width:100%;height:5px;border-radius:999px;background:rgba(239,68,68,0.12);overflow:hidden;margin-bottom:20px;">
+        <span style="display:block;height:100%;border-radius:999px;width:0;background:linear-gradient(90deg,#ef4444,#f87171,#dc2626);background-size:200% 100%;"></span>
+      </div>
+      <div style="display:flex;justify-content:center;gap:20px;">
+        <span style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(239,68,68,0.5);">Clearing Session</span>
+        <span style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(239,68,68,0.5);">Securing Data</span>
+        <span style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(239,68,68,0.5);">Redirecting</span>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.body.style.overflow = "hidden";
+}
+
 function logoutAndResetPortals() {
   stopAdminRefresh();
   clearAuth();
@@ -1385,7 +1433,8 @@ function logoutAndResetPortals() {
   stopLiveDashboardPrices();
   hidePortalMounts();
   hideAuthLoading();
-  window.location.href = "./login.html";
+  showLogoutScreen();
+  setTimeout(() => { window.location.href = "./login.html"; }, 2600);
 }
 
 function startOtpCountdown(elementId, minutes) {
