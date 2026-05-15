@@ -3483,10 +3483,6 @@ async function renderAdminDatabasePage(options = {}) {
                 <strong class="db-stat-value">${safeUsers.filter((u) => u.is_active).length} <small>/ ${safeUsers.length}</small></strong>
               </div>
               <div class="db-stat-card">
-                <span class="db-stat-label">Total Holdings</span>
-                <strong class="db-stat-value">${totalHoldings}</strong>
-              </div>
-              <div class="db-stat-card">
                 <span class="db-stat-label">Total Investment</span>
                 <strong class="db-stat-value">${currency(safeUsers.reduce((sum, u) => sum + Number(u.balance_funds || 0), 0))}</strong>
               </div>
