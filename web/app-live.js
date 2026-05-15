@@ -4,6 +4,27 @@ const SITE_CONTROL_KEY = "stock_trader_site_controls";
 const REVIEW_STORAGE_KEY = "stock_trader_reviews";
 let activeRole = null;
 let activeUserId = null;
+let _navGuardActive = false;
+
+function _navGuardBeforeUnload(e) {
+  e.preventDefault();
+  e.returnValue = "";
+}
+function _navGuardPopState() {
+  if (_navGuardActive) history.pushState(null, "", location.href);
+}
+function attachNavGuard() {
+  if (_navGuardActive) return;
+  _navGuardActive = true;
+  history.pushState(null, "", location.href);
+  window.addEventListener("beforeunload", _navGuardBeforeUnload);
+  window.addEventListener("popstate", _navGuardPopState);
+}
+function detachNavGuard() {
+  _navGuardActive = false;
+  window.removeEventListener("beforeunload", _navGuardBeforeUnload);
+  window.removeEventListener("popstate", _navGuardPopState);
+}
 let liveTickerTimer = null;
 let adminRefreshTimer = null;
 let homeHeroTimer = null;
@@ -182,6 +203,7 @@ function stopAdminRefresh() {
 }
 
 function startAdminRefresh() {
+  attachNavGuard();
   stopAdminRefresh();
   const intervalMs = isAdminDatabasePage() ? 30000 : 15000;
   adminRefreshTimer = window.setInterval(async () => {
@@ -1481,6 +1503,7 @@ function showLogoutScreen() {
 }
 
 function logoutAndResetPortals() {
+  detachNavGuard();
   stopAdminRefresh();
   clearAuth();
   activeRole = null;
@@ -4039,6 +4062,7 @@ function startAdminDashboardAutoRefresh() {
 }
 
 function startUserRefresh() {
+  attachNavGuard();
   window.clearInterval(userRefreshTimer);
   userRefreshTimer = window.setInterval(async () => {
     if (document.hidden) return;
