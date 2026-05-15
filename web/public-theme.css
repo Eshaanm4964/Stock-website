@@ -64,7 +64,7 @@ body.public-page .auth-heading {
 body.public-page .metric-value,
 body.public-page .mock-number,
 body.public-page .ticker-price {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: "DM Sans", sans-serif;
   font-variant-numeric: normal;
   font-feature-settings: "zero" 0;
 }
@@ -1446,7 +1446,7 @@ body.public-page .site-shell {
   color: var(--brand-accent);
   font-size: clamp(2rem, 3.6vw, 2.8rem);
   font-weight: 700;
-  font-family: "IBM Plex Mono", monospace;
+  font-family: "DM Sans", sans-serif;
   letter-spacing: -0.02em;
   line-height: 1;
 }
@@ -4142,7 +4142,7 @@ body.public-page .site-shell {
 
 .algo-hero-stats { display: flex; justify-content: flex-start; gap: 32px; flex-wrap: wrap; margin-bottom: 28px; }
 .algo-hero-stat { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
-.algo-stat-num { font-family: "IBM Plex Mono", monospace; font-size: 1.5rem; font-weight: 700; color: var(--brand-accent); }
+.algo-stat-num { font-family: "DM Sans", sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--brand-accent); }
 .algo-hero-stat span:last-child { font-size: 0.8rem; font-weight: 700; color: var(--brand-text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
 
 .algo-hero-cta { display: flex; justify-content: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 0; }
@@ -4186,7 +4186,7 @@ body.public-page .site-shell {
   font-size: 0.78rem;
   color: rgba(255,255,255,0.55);
   font-weight: 600;
-  font-family: "IBM Plex Mono", monospace;
+  font-family: "DM Sans", sans-serif;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -4205,7 +4205,7 @@ body.public-page .site-shell {
   color: var(--brand-text-muted);
 }
 .algo-journey-val {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: "DM Sans", sans-serif;
   font-size: 2rem;
   font-weight: 700;
   color: var(--brand-text);
