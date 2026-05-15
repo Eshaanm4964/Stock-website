@@ -2076,35 +2076,37 @@ function setupAdminManagementButtons() {
     });
   }
 
-  if (clientFilter) {
-    clientFilter.value = adminUiState.clientFilter;
-    clientFilter.addEventListener("change", async () => {
-      adminUiState.clientFilter = clientFilter.value;
-      await renderAdminPortal();
+  if (clientFilter) clientFilter.value = adminUiState.clientFilter;
+  if (stockFilter) stockFilter.value = adminUiState.stockFilter;
+  if (dateFromInput) dateFromInput.value = adminUiState.dateFrom;
+  if (dateToInput) dateToInput.value = adminUiState.dateTo;
+
+  const applyFilterBtn = document.getElementById("adminApplyFilterBtn");
+  const clearFilterBtn = document.getElementById("adminClearFilterBtn");
+
+  if (applyFilterBtn) {
+    applyFilterBtn.addEventListener("click", async () => {
+      if (clientFilter) adminUiState.clientFilter = clientFilter.value;
+      if (stockFilter) adminUiState.stockFilter = stockFilter.value;
+      if (dateFromInput) adminUiState.dateFrom = dateFromInput.value;
+      if (dateToInput) adminUiState.dateTo = dateToInput.value;
+      const dropdown = document.querySelector(".admin-dropdown-menu[open]");
+      if (dropdown) dropdown.removeAttribute("open");
+      await renderAdminPortal({ silent: true });
     });
   }
 
-  if (stockFilter) {
-    stockFilter.value = adminUiState.stockFilter;
-    stockFilter.addEventListener("change", async () => {
-      adminUiState.stockFilter = stockFilter.value;
-      await renderAdminPortal();
-    });
-  }
-
-  if (dateFromInput) {
-    dateFromInput.value = adminUiState.dateFrom;
-    dateFromInput.addEventListener("change", async () => {
-      adminUiState.dateFrom = dateFromInput.value;
-      await renderAdminPortal();
-    });
-  }
-
-  if (dateToInput) {
-    dateToInput.value = adminUiState.dateTo;
-    dateToInput.addEventListener("change", async () => {
-      adminUiState.dateTo = dateToInput.value;
-      await renderAdminPortal();
+  if (clearFilterBtn) {
+    clearFilterBtn.addEventListener("click", async () => {
+      adminUiState.clientFilter = "";
+      adminUiState.stockFilter = "";
+      adminUiState.dateFrom = "";
+      adminUiState.dateTo = "";
+      if (clientFilter) clientFilter.value = "";
+      if (stockFilter) stockFilter.value = "";
+      if (dateFromInput) dateFromInput.value = "";
+      if (dateToInput) dateToInput.value = "";
+      await renderAdminPortal({ silent: true });
     });
   }
 
@@ -2427,13 +2429,14 @@ function setupAdminManagement() {
     btn.addEventListener("click", async () => {
       const adminId = btn.getAttribute("data-admin-edit");
       const adminName = btn.getAttribute("data-admin-name") || "";
+      const isActive = btn.getAttribute("data-admin-is-active") === "1";
       const stopLoading = setButtonLoading(btn, "Loading...");
       try {
         const admins = await api("/admin/admins");
         const admin = Array.isArray(admins) ? admins.find((a) => String(a.admin_id) === String(adminId)) : null;
-        showAdminEditModal(adminId, adminName, admin?.phone_number || "");
+        showAdminEditModal(adminId, adminName, admin?.phone_number || "", admin?.is_active ?? isActive);
       } catch {
-        showAdminEditModal(adminId, adminName, "");
+        showAdminEditModal(adminId, adminName, "", isActive);
       } finally {
         stopLoading();
       }
@@ -2446,15 +2449,6 @@ function setupAdminManagement() {
         btn.getAttribute("data-admin-reset-admin-password"),
         btn.getAttribute("data-admin-name") || "Admin"
       );
-    });
-  });
-
-  document.querySelectorAll("[data-admin-toggle-status]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const adminId = btn.getAttribute("data-admin-toggle-status");
-      const adminName = btn.getAttribute("data-admin-name") || "Admin";
-      const isActive = btn.getAttribute("data-admin-is-active") === "1";
-      showAdminToggleStatusModal(adminId, adminName, isActive);
     });
   });
 
@@ -2543,7 +2537,7 @@ function showAdminCreateModal() {
   setTimeout(() => { const el = document.getElementById("caf_full_name"); if (el) el.focus(); }, 50);
 }
 
-function showAdminEditModal(adminId, currentName, currentPhone) {
+function showAdminEditModal(adminId, currentName, currentPhone, currentIsActive = true) {
   const existing = document.getElementById("adminEditModalOverlay");
   if (existing) existing.remove();
   const overlay = document.createElement("div");
@@ -2552,14 +2546,25 @@ function showAdminEditModal(adminId, currentName, currentPhone) {
   overlay.innerHTML = `
     <div class="admin-pwd-modal" role="dialog" aria-modal="true" aria-labelledby="editAdminModalTitle">
       <h3 id="editAdminModalTitle">Edit Admin Details</h3>
-      <p>Update the name or phone number for this admin account.</p>
+      <p>Update the name, phone number, or status for this admin account.</p>
       <div class="admin-form-field" style="margin-bottom:14px;">
         <label for="eaf_name">Full Name</label>
         <input class="input-field" id="eaf_name" type="text" value="${escapeHtml(currentName)}" />
       </div>
-      <div class="admin-form-field" style="margin-bottom:18px;">
+      <div class="admin-form-field" style="margin-bottom:14px;">
         <label for="eaf_phone">Phone Number</label>
         <input class="input-field" id="eaf_phone" type="tel" value="${escapeHtml(currentPhone)}" />
+      </div>
+      <div class="admin-form-field" style="margin-bottom:18px;">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <span style="font-size:0.87rem;font-weight:600;">Account Status</span>
+          <label class="admin-status-toggle" style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;">
+            <input type="checkbox" id="eaf_is_active" ${currentIsActive ? "checked" : ""} style="opacity:0;width:0;height:0;position:absolute;">
+            <span class="admin-toggle-slider" style="position:absolute;cursor:pointer;inset:0;background:${currentIsActive ? "var(--accent,#2c90f0)" : "#ccc"};border-radius:24px;transition:background 0.2s;"></span>
+            <span style="position:absolute;top:3px;left:${currentIsActive ? "23px" : "3px"};width:18px;height:18px;background:#fff;border-radius:50%;transition:left 0.2s;pointer-events:none;" id="eafToggleThumb"></span>
+          </label>
+          <span id="eafStatusLabel" style="font-size:0.85rem;color:${currentIsActive ? "var(--profit,#16a34a)" : "var(--loss,#dc2626)"};">${currentIsActive ? "Active" : "Inactive"}</span>
+        </label>
       </div>
       <p id="eafErr" style="color:var(--loss);font-size:0.84rem;margin:0 0 12px;display:none;"></p>
       <div class="admin-pwd-modal-actions">
@@ -2572,7 +2577,19 @@ function showAdminEditModal(adminId, currentName, currentPhone) {
 
   const errEl = document.getElementById("eafErr");
   const submitBtn = document.getElementById("eafSubmit");
+  const checkbox = document.getElementById("eaf_is_active");
+  const slider = overlay.querySelector(".admin-toggle-slider");
+  const thumb = document.getElementById("eafToggleThumb");
+  const statusLabel = document.getElementById("eafStatusLabel");
   const close = () => overlay.remove();
+
+  checkbox.addEventListener("change", () => {
+    const active = checkbox.checked;
+    slider.style.background = active ? "var(--accent,#2c90f0)" : "#ccc";
+    thumb.style.left = active ? "23px" : "3px";
+    statusLabel.textContent = active ? "Active" : "Inactive";
+    statusLabel.style.color = active ? "var(--profit,#16a34a)" : "var(--loss,#dc2626)";
+  });
 
   document.getElementById("eafCancel").addEventListener("click", close);
   overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
@@ -2580,18 +2597,29 @@ function showAdminEditModal(adminId, currentName, currentPhone) {
   submitBtn.addEventListener("click", async () => {
     const full_name = document.getElementById("eaf_name").value.trim();
     const phone_number = document.getElementById("eaf_phone").value.trim();
+    const is_active = checkbox.checked;
     if (!full_name || !phone_number) {
       errEl.textContent = "Name and phone are required."; errEl.style.display = "block"; return;
     }
     submitBtn.disabled = true; submitBtn.textContent = "Saving..."; errEl.style.display = "none";
     try {
-      await api(`/admin/admins/${adminId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ full_name, phone_number }),
-      });
+      const calls = [
+        api(`/admin/admins/${adminId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ full_name, phone_number }),
+        })
+      ];
+      if (is_active !== currentIsActive) {
+        calls.push(api(`/admin/admins/${adminId}/status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ is_active }),
+        }));
+      }
+      await Promise.all(calls);
       overlay.remove();
-      showAdminSuccessModal("Admin Updated", [["Name", full_name], ["Phone", phone_number]]);
+      showAdminSuccessModal("Admin Updated", [["Name", full_name], ["Phone", phone_number], ["Status", is_active ? "Active" : "Inactive"]]);
       setTimeout(() => renderAdminDatabasePage({ silent: true }), 900);
     } catch (err) {
       errEl.textContent = formatError(err); errEl.style.display = "block";
@@ -2664,51 +2692,6 @@ function showAdminResetPasswordModal(adminId, adminName) {
   });
 
   input.addEventListener("keydown", (e) => { if (e.key === "Enter") confirmBtn.click(); });
-}
-
-function showAdminToggleStatusModal(adminId, adminName, isCurrentlyActive) {
-  const existing = document.getElementById("adminToggleStatusOverlay");
-  if (existing) existing.remove();
-  const overlay = document.createElement("div");
-  overlay.id = "adminToggleStatusOverlay";
-  overlay.className = "admin-pwd-modal-overlay";
-  const action = isCurrentlyActive ? "Deactivate" : "Activate";
-  const newStatus = !isCurrentlyActive;
-  overlay.innerHTML = `
-    <div class="admin-pwd-modal" role="dialog" aria-modal="true">
-      <h3>${action} Admin</h3>
-      <p>${isCurrentlyActive
-        ? `<strong>${escapeHtml(adminName)}</strong> will be deactivated and will no longer be able to log in.`
-        : `<strong>${escapeHtml(adminName)}</strong> will be reactivated and will be able to log in again.`}</p>
-      <p id="atsErr" style="color:var(--loss);font-size:0.84rem;margin:0 0 12px;display:none;"></p>
-      <div class="admin-pwd-modal-actions">
-        <button class="secondary-btn compact-btn" type="button" id="atsCancel">Cancel</button>
-        <button class="${isCurrentlyActive ? "danger-outline-btn" : "primary-btn"} compact-btn" type="button" id="atsConfirm">${action}</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-  const errEl = document.getElementById("atsErr");
-  const confirmBtn = document.getElementById("atsConfirm");
-  const close = () => overlay.remove();
-  document.getElementById("atsCancel").addEventListener("click", close);
-  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
-  confirmBtn.addEventListener("click", async () => {
-    confirmBtn.disabled = true; confirmBtn.textContent = "Saving..."; errEl.style.display = "none";
-    try {
-      await api(`/admin/admins/${adminId}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_active: newStatus }),
-      });
-      overlay.remove();
-      showAdminSuccessModal(`Admin ${action}d`, [["Admin", adminName], ["Status", newStatus ? "Active" : "Inactive"]]);
-      setTimeout(() => renderAdminDatabasePage({ silent: true }), 900);
-    } catch (err) {
-      errEl.textContent = formatError(err); errEl.style.display = "block";
-      confirmBtn.disabled = false; confirmBtn.textContent = action;
-    }
-  });
 }
 
 function showAdminDeleteModal(adminId, adminName) {
@@ -3918,14 +3901,11 @@ async function renderAdminDatabasePage(options = {}) {
                         <td style="display:flex;gap:6px;flex-wrap:wrap;">
                           <button class="secondary-btn compact-btn" type="button"
                             data-admin-edit="${admin.admin_id}"
-                            data-admin-name="${escapeHtml(admin.full_name || "")}">Edit</button>
+                            data-admin-name="${escapeHtml(admin.full_name || "")}"
+                            data-admin-is-active="${admin.is_active ? "1" : "0"}">Edit</button>
                           <button class="secondary-btn compact-btn" type="button"
                             data-admin-reset-admin-password="${admin.admin_id}"
                             data-admin-name="${escapeHtml(admin.full_name || admin.username || '')}">Reset Password</button>
-                          <button class="${admin.is_active ? "danger-outline-btn" : "secondary-btn"} compact-btn" type="button"
-                            data-admin-toggle-status="${admin.admin_id}"
-                            data-admin-name="${escapeHtml(admin.full_name || "")}"
-                            data-admin-is-active="${admin.is_active ? "1" : "0"}">${admin.is_active ? "Deactivate" : "Activate"}</button>
                           <button class="danger-outline-btn compact-btn" type="button"
                             data-admin-delete="${admin.admin_id}"
                             data-admin-name="${escapeHtml(admin.full_name || admin.username || '')}">Delete</button>
@@ -4441,6 +4421,23 @@ async function renderAdminDealPage() {
 
 let _adminCache = null;
 
+const _ADMIN_SESSION_KEY = "adminPortalCache_v2";
+const _ADMIN_SESSION_TTL = 170000;
+
+function _saveAdminSession(cache) {
+  try { sessionStorage.setItem(_ADMIN_SESSION_KEY, JSON.stringify({ ts: Date.now(), d: cache })); } catch {}
+}
+
+function _loadAdminSession() {
+  try {
+    const raw = sessionStorage.getItem(_ADMIN_SESSION_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    if (!p || Date.now() - p.ts > _ADMIN_SESSION_TTL) return null;
+    return p.d;
+  } catch { return null; }
+}
+
 async function renderAdminPortal(options = {}) {
   const mount = document.getElementById("adminPortal");
   if (!mount) return;
@@ -4479,6 +4476,7 @@ async function renderAdminPortal(options = {}) {
       );
       feedFlat = feedResults.flat();
       _adminCache = { safeUsers, safeSoldHistory, userDashboards, feedFlat };
+      _saveAdminSession(_adminCache);
     }
 
     const baseHoldings = userDashboards.flatMap((user) =>
@@ -4663,7 +4661,11 @@ async function renderAdminPortal(options = {}) {
                     <input class="user-search admin-filter-date" id="adminDateTo" type="date" value="${escapeHtml(adminUiState.dateTo)}" />
                   </label>
                 </div>
-                <p class="helper-text admin-filter-summary">${allFiltersFilled ? `Filtered P&amp;L window: <strong class="${filteredPositionsTotalProfit >= 0 ? "profit" : "loss"}">${currency(filteredPositionsTotalProfit)}</strong>` : `Fill all 4 filters (investor, stock, from &amp; to date) to see filtered P&amp;L`}</p>
+                <div style="display:flex;gap:8px;margin-top:10px;">
+                  <button class="primary-btn compact-btn" type="button" id="adminApplyFilterBtn">Apply Filter</button>
+                  <button class="secondary-btn compact-btn" type="button" id="adminClearFilterBtn">Clear</button>
+                </div>
+                <p class="helper-text admin-filter-summary" style="margin-top:8px;">${allFiltersFilled ? `Filtered P&amp;L window: <strong class="${filteredPositionsTotalProfit >= 0 ? "profit" : "loss"}">${currency(filteredPositionsTotalProfit)}</strong>` : `Apply all 4 filters to see P&amp;L`}</p>
               </div>
             </details>
             <details class="admin-dropdown-menu" id="adminInvestorViewDropdown">
@@ -5846,6 +5848,8 @@ function setupDashboardPages() {
       window.location.href = "./login.html";
       return;
     }
+    const _sessionCache = _loadAdminSession();
+    if (_sessionCache) _adminCache = _sessionCache;
     renderAdminPortal().then(hideDashLoader).catch(() => {
       hideDashLoader();
       clearAuth();
