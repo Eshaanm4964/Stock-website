@@ -2448,6 +2448,24 @@ function setupAdminManagement() {
       );
     });
   });
+
+  document.querySelectorAll("[data-admin-toggle-status]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const adminId = btn.getAttribute("data-admin-toggle-status");
+      const adminName = btn.getAttribute("data-admin-name") || "Admin";
+      const isActive = btn.getAttribute("data-admin-is-active") === "1";
+      showAdminToggleStatusModal(adminId, adminName, isActive);
+    });
+  });
+
+  document.querySelectorAll("[data-admin-delete]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      showAdminDeleteModal(
+        btn.getAttribute("data-admin-delete"),
+        btn.getAttribute("data-admin-name") || "Admin"
+      );
+    });
+  });
 }
 
 function showAdminCreateModal() {
@@ -2646,6 +2664,88 @@ function showAdminResetPasswordModal(adminId, adminName) {
   });
 
   input.addEventListener("keydown", (e) => { if (e.key === "Enter") confirmBtn.click(); });
+}
+
+function showAdminToggleStatusModal(adminId, adminName, isCurrentlyActive) {
+  const existing = document.getElementById("adminToggleStatusOverlay");
+  if (existing) existing.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "adminToggleStatusOverlay";
+  overlay.className = "admin-pwd-modal-overlay";
+  const action = isCurrentlyActive ? "Deactivate" : "Activate";
+  const newStatus = !isCurrentlyActive;
+  overlay.innerHTML = `
+    <div class="admin-pwd-modal" role="dialog" aria-modal="true">
+      <h3>${action} Admin</h3>
+      <p>${isCurrentlyActive
+        ? `<strong>${escapeHtml(adminName)}</strong> will be deactivated and will no longer be able to log in.`
+        : `<strong>${escapeHtml(adminName)}</strong> will be reactivated and will be able to log in again.`}</p>
+      <p id="atsErr" style="color:var(--loss);font-size:0.84rem;margin:0 0 12px;display:none;"></p>
+      <div class="admin-pwd-modal-actions">
+        <button class="secondary-btn compact-btn" type="button" id="atsCancel">Cancel</button>
+        <button class="${isCurrentlyActive ? "danger-outline-btn" : "primary-btn"} compact-btn" type="button" id="atsConfirm">${action}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const errEl = document.getElementById("atsErr");
+  const confirmBtn = document.getElementById("atsConfirm");
+  const close = () => overlay.remove();
+  document.getElementById("atsCancel").addEventListener("click", close);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+  confirmBtn.addEventListener("click", async () => {
+    confirmBtn.disabled = true; confirmBtn.textContent = "Saving..."; errEl.style.display = "none";
+    try {
+      await api(`/admin/admins/${adminId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: newStatus }),
+      });
+      overlay.remove();
+      showAdminSuccessModal(`Admin ${action}d`, [["Admin", adminName], ["Status", newStatus ? "Active" : "Inactive"]]);
+      setTimeout(() => renderAdminDatabasePage({ silent: true }), 900);
+    } catch (err) {
+      errEl.textContent = formatError(err); errEl.style.display = "block";
+      confirmBtn.disabled = false; confirmBtn.textContent = action;
+    }
+  });
+}
+
+function showAdminDeleteModal(adminId, adminName) {
+  const existing = document.getElementById("adminDeleteAdminOverlay");
+  if (existing) existing.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "adminDeleteAdminOverlay";
+  overlay.className = "admin-pwd-modal-overlay";
+  overlay.innerHTML = `
+    <div class="admin-pwd-modal" role="dialog" aria-modal="true">
+      <h3>Delete Admin Account</h3>
+      <p>This will permanently delete <strong>${escapeHtml(adminName)}</strong>. This action cannot be undone.</p>
+      <p id="adaErr" style="color:var(--loss);font-size:0.84rem;margin:0 0 12px;display:none;"></p>
+      <div class="admin-pwd-modal-actions">
+        <button class="secondary-btn compact-btn" type="button" id="adaCancel">Cancel</button>
+        <button class="danger-outline-btn compact-btn" type="button" id="adaConfirm">Delete Admin</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const errEl = document.getElementById("adaErr");
+  const confirmBtn = document.getElementById("adaConfirm");
+  const close = () => overlay.remove();
+  document.getElementById("adaCancel").addEventListener("click", close);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+  confirmBtn.addEventListener("click", async () => {
+    confirmBtn.disabled = true; confirmBtn.textContent = "Deleting..."; errEl.style.display = "none";
+    try {
+      await api(`/admin/admins/${adminId}`, { method: "DELETE" });
+      overlay.remove();
+      showAdminSuccessModal("Admin Deleted", [["Admin", adminName], ["Status", "Account removed"]]);
+      setTimeout(() => renderAdminDatabasePage({ silent: true }), 900);
+    } catch (err) {
+      errEl.textContent = formatError(err); errEl.style.display = "block";
+      confirmBtn.disabled = false; confirmBtn.textContent = "Delete Admin";
+    }
+  });
 }
 
 function showAdminSuccessModal(title, rows) {
@@ -3482,7 +3582,7 @@ async function renderAdminDealPage() {
         <form id="adminDealForm" class="admin-inline-form">
           <label>
             <span>Customer</span>
-            <select name="customer_id">
+            <select class="input-field" name="customer_id">
               <option value="">Select customer</option>
               ${(Array.isArray(users) ? users : [])
                 .map((user) => `<option value="${user.user_id}" data-balance="${Number(user.balance_funds || 0).toFixed(2)}">${escapeHtml(user.full_name)} (${escapeHtml(user.fixed_user_id || user.username || "")})</option>`)
@@ -3500,7 +3600,7 @@ async function renderAdminDealPage() {
           <label><span>Purchase Date</span><input name="purchase_date" type="date" max="${new Date().toISOString().split('T')[0]}" /></label>
           <label>
             <span>Search Market</span>
-            <select name="exchange">
+            <select class="input-field" name="exchange">
               <option value="" disabled selected>Select Exchange</option>
               <option value="ALL">All NSE / BSE</option>
               <option value="NSE">NSE</option>
@@ -3815,13 +3915,20 @@ async function renderAdminDatabasePage(options = {}) {
                         <td>${escapeHtml(admin.phone_number || "")}</td>
                         <td><span class="badge ${admin.is_active ? "green" : "red"}">${admin.is_active ? "Active" : "Inactive"}</span></td>
                         <td>${formatDateTime(admin.created_at)}</td>
-                        <td style="display:flex;gap:6px;">
+                        <td style="display:flex;gap:6px;flex-wrap:wrap;">
                           <button class="secondary-btn compact-btn" type="button"
                             data-admin-edit="${admin.admin_id}"
                             data-admin-name="${escapeHtml(admin.full_name || "")}">Edit</button>
                           <button class="secondary-btn compact-btn" type="button"
                             data-admin-reset-admin-password="${admin.admin_id}"
                             data-admin-name="${escapeHtml(admin.full_name || admin.username || '')}">Reset Password</button>
+                          <button class="${admin.is_active ? "danger-outline-btn" : "secondary-btn"} compact-btn" type="button"
+                            data-admin-toggle-status="${admin.admin_id}"
+                            data-admin-name="${escapeHtml(admin.full_name || "")}"
+                            data-admin-is-active="${admin.is_active ? "1" : "0"}">${admin.is_active ? "Deactivate" : "Activate"}</button>
+                          <button class="danger-outline-btn compact-btn" type="button"
+                            data-admin-delete="${admin.admin_id}"
+                            data-admin-name="${escapeHtml(admin.full_name || admin.username || '')}">Delete</button>
                         </td>
                       </tr>
                     `).join("")
@@ -3906,9 +4013,9 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
     <article class="dashboard-card detail-card">
       <div class="panel-head">
         <div>
-          <p class="eyebrow">Investor Detail</p>
-          <h3 style="color:#2c90f0">${escapeHtml(user.full_name)}</h3>
-          <p class="detail-subtitle">${escapeHtml(user.fixed_user_id || user.username || "")}</p>
+          <p class="eyebrow" style="font-size:0.78rem;letter-spacing:0.12em;color:var(--accent,#2c90f0);text-transform:uppercase;font-weight:700;margin-bottom:4px;">Investor Detail</p>
+          <h2 style="color:#2c90f0;font-size:1.45rem;margin:0 0 4px;font-weight:700;">${escapeHtml(user.full_name)}</h2>
+          <p class="detail-subtitle" style="font-size:0.9rem;color:var(--text-muted,#8895a7);margin:0;">${escapeHtml(user.fixed_user_id || user.username || "")}</p>
         </div>
       </div>
       <div class="detail-stat-grid detail-stat-grid--5">
@@ -4077,9 +4184,11 @@ function buildAdminStockDetail(symbol, holdings) {
       </div>
       <div class="table-wrap admin-position-table-wrap" style="border-radius:12px;">
         <table class="admin-position-table" style="min-width:unset;width:100%;">
-          <thead><tr><th>Investor</th><th>Client ID</th><th>Purchase Date</th><th>Qty</th><th>Avg Price</th><th>Live Price</th><th>P&amp;L</th></tr></thead>
+          <thead><tr><th>Investor</th><th>Client ID</th><th>Purchase Date</th><th>Qty</th><th>Avg Price</th><th>Live Price</th><th>P&amp;L</th><th>P&amp;L %</th></tr></thead>
           <tbody>
-            ${holdings.map((holding) => `
+            ${holdings.map((holding) => {
+              const pct = Number(holding.buy_price) > 0 ? ((Number(holding.current_price) - Number(holding.buy_price)) / Number(holding.buy_price)) * 100 : 0;
+              return `
               <tr>
                 <td><button class="table-link" type="button" data-user-detail="${holding.user_id}">${escapeHtml(holding.owner)}</button></td>
                 <td>${holding.fixed_user_id || ""}</td>
@@ -4088,8 +4197,9 @@ function buildAdminStockDetail(symbol, holdings) {
                 <td>${currency(holding.buy_price)}</td>
                 <td>${currency(holding.current_price)}</td>
                 <td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}</td>
+                <td class="${pct >= 0 ? "profit" : "loss"}">${percent(pct)}</td>
               </tr>
-            `).join("")}
+            `}).join("")}
           </tbody>
         </table>
       </div>
@@ -4402,6 +4512,7 @@ async function renderAdminPortal(options = {}) {
     const selectedStock = String(adminUiState.stockFilter || "").toUpperCase();
     const fromDate = adminUiState.dateFrom ? new Date(`${adminUiState.dateFrom}T00:00:00`) : null;
     const toDate = adminUiState.dateTo ? new Date(`${adminUiState.dateTo}T23:59:59`) : null;
+    const allFiltersFilled = !!selectedClient && !!selectedStock && !!fromDate && !!toDate;
 
     const filteredHoldings = allHoldings.filter((holding) => {
       const createdAt = holding.created_at ? new Date(holding.created_at) : null;
@@ -4480,6 +4591,11 @@ async function renderAdminPortal(options = {}) {
       }
     }
 
+    if (silent) {
+      mount.classList.add("admin-silent-refresh");
+      requestAnimationFrame(() => mount.classList.remove("admin-silent-refresh"));
+    }
+
     mount.innerHTML = `
     <section class="user-shell admin-simple-shell no-sidebar-shell">
       <div class="user-shell-main admin-simple-main dashboard-stack admin-dashboard-stack">
@@ -4547,7 +4663,7 @@ async function renderAdminPortal(options = {}) {
                     <input class="user-search admin-filter-date" id="adminDateTo" type="date" value="${escapeHtml(adminUiState.dateTo)}" />
                   </label>
                 </div>
-                <p class="helper-text admin-filter-summary">Filtered P&amp;L window: <strong class="${filteredPositionsTotalProfit >= 0 ? "profit" : "loss"}">${currency(filteredPositionsTotalProfit)}</strong></p>
+                <p class="helper-text admin-filter-summary">${allFiltersFilled ? `Filtered P&amp;L window: <strong class="${filteredPositionsTotalProfit >= 0 ? "profit" : "loss"}">${currency(filteredPositionsTotalProfit)}</strong>` : `Fill all 4 filters (investor, stock, from &amp; to date) to see filtered P&amp;L`}</p>
               </div>
             </details>
             <details class="admin-dropdown-menu" id="adminInvestorViewDropdown">

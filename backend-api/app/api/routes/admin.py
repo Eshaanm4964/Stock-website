@@ -1226,3 +1226,64 @@ async def update_admin(
         is_active=target.is_active,
         created_at=target.created_at,
     )
+
+
+@router.patch("/admins/{admin_id}/status", response_model=AdminAdminSummary)
+async def toggle_admin_status(
+    admin_id: int,
+    payload: AdminUserStatusUpdateRequest,
+    request: Request,
+    current_admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+) -> AdminAdminSummary:
+    if admin_id == current_admin.id:
+        raise HTTPException(status_code=400, detail="Cannot change your own account status")
+    target = (await db.execute(select(User).where(User.id == admin_id, User.role == UserRole.ADMIN))).scalar_one_or_none()
+    if not target:
+        raise HTTPException(status_code=404, detail="Admin not found")
+    target.is_active = payload.is_active
+    await db.commit()
+    await db.refresh(target)
+    await log_admin_action(
+        db,
+        admin_user=current_admin,
+        action="update_admin_status",
+        entity_type="user",
+        entity_id=str(admin_id),
+        ip_address=request.client.host if request.client else None,
+        details={"is_active": target.is_active},
+    )
+    return AdminAdminSummary(
+        admin_id=target.id,
+        username=target.username,
+        full_name=target.full_name,
+        phone_number=target.phone_number,
+        is_active=target.is_active,
+        created_at=target.created_at,
+    )
+
+
+@router.delete("/admins/{admin_id}", status_code=204)
+async def delete_admin(
+    admin_id: int,
+    request: Request,
+    current_admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    if admin_id == current_admin.id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own admin account")
+    target = (await db.execute(select(User).where(User.id == admin_id, User.role == UserRole.ADMIN))).scalar_one_or_none()
+    if not target:
+        raise HTTPException(status_code=404, detail="Admin not found")
+    username = target.username
+    await db.delete(target)
+    await db.commit()
+    await log_admin_action(
+        db,
+        admin_user=current_admin,
+        action="delete_admin",
+        entity_type="user",
+        entity_id=str(admin_id),
+        ip_address=request.client.host if request.client else None,
+        details={"deleted_username": username},
+    )
