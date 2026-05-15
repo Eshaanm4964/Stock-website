@@ -2896,6 +2896,25 @@ function setupPortalActions() {
     });
   });
 
+  document.querySelectorAll("[data-delete-user]").forEach((button) => {
+    if (button.dataset.deleteBound === "true") return;
+    button.dataset.deleteBound = "true";
+    button.addEventListener("click", async () => {
+      const userId = button.dataset.deleteUser;
+      const userName = button.dataset.userName || "this investor";
+      if (!confirm(`Delete ${userName}? This will remove all their holdings and data permanently.`)) return;
+      const stopLoading = setButtonLoading(button, "Deleting...");
+      try {
+        await api(`/admin/users/${userId}`, { method: "DELETE" });
+        await renderAdminDatabasePage({ silent: true });
+      } catch (error) {
+        alert(formatError(error));
+      } finally {
+        stopLoading();
+      }
+    });
+  });
+
   document.querySelectorAll("[data-edit-investor]").forEach((button) => {
     if (button.dataset.editBound === "true") return;
     button.dataset.editBound = "true";
@@ -3348,6 +3367,7 @@ async function renderAdminDatabasePage(options = {}) {
                                   data-edit-initial="${user.initial_funds || 0}"
                                   data-edit-balance="${user.balance_funds || 0}">Edit</button>
                                 <button class="secondary-btn compact-btn" type="button" data-admin-reset-password="${user.user_id}" data-user-name="${escapeHtml(user.full_name || user.username || '')}">Reset Password</button>
+                                <button class="danger-outline-btn compact-btn" type="button" data-delete-user="${user.user_id}" data-user-name="${escapeHtml(user.full_name || user.username || '')}">Delete</button>
                               </td>
                             </tr>
                           `;
