@@ -10,8 +10,40 @@ function _navGuardBeforeUnload(e) {
   e.preventDefault();
   e.returnValue = "";
 }
+function _showNavGuardModal() {
+  if (document.getElementById("navGuardModal")) return;
+  const modal = document.createElement("div");
+  modal.id = "navGuardModal";
+  modal.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(15,32,64,0.55);backdrop-filter:blur(6px);animation:ngFadeIn 0.2s ease both;";
+  modal.innerHTML = `
+    <style>
+      @keyframes ngFadeIn  { from{opacity:0} to{opacity:1} }
+      @keyframes ngCardIn  { from{opacity:0;transform:translateY(20px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+    </style>
+    <div style="width:min(460px,90%);background:#fff;border-radius:24px;padding:40px 36px 32px;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,0.18);animation:ngCardIn 0.25s ease both;">
+      <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:0 8px 24px rgba(239,68,68,0.35);">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <h3 style="margin:0 0 10px;font-family:'Playfair Display',serif;font-size:1.45rem;color:#0f2040;font-weight:800;">Secure Logout Required</h3>
+      <p style="margin:0 0 28px;color:#6b7a99;font-size:0.95rem;line-height:1.65;">Please use the <strong style="color:#0f2040;">Secure Logout</strong> button to safely exit your dashboard. Leaving without logging out may keep your session active.</p>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <button id="ngStayBtn" style="flex:1;max-width:160px;padding:12px 20px;border-radius:12px;border:1.5px solid rgba(15,32,64,0.15);background:#fff;color:#0f2040;font-size:0.9rem;font-weight:600;cursor:pointer;">Stay</button>
+        <button id="ngLogoutBtn" style="flex:1;max-width:180px;padding:12px 20px;border-radius:12px;border:none;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:0.9rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(239,68,68,0.4);">Secure Logout</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  document.getElementById("ngStayBtn").addEventListener("click", () => modal.remove());
+  document.getElementById("ngLogoutBtn").addEventListener("click", () => {
+    modal.remove();
+    logoutAndResetPortals();
+  });
+  modal.addEventListener("click", (e) => { if (e.target === modal) modal.remove(); });
+}
 function _navGuardPopState() {
-  if (_navGuardActive) history.pushState(null, "", location.href);
+  if (!_navGuardActive) return;
+  history.pushState(null, "", location.href);
+  _showNavGuardModal();
 }
 function attachNavGuard() {
   if (_navGuardActive) return;
