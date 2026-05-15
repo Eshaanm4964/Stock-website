@@ -100,11 +100,6 @@ MARKET_SYMBOL_CATALOG: list[dict[str, Any]] = [
     {"symbol": "SIEMENS", "name": "Siemens Ltd", "sector": "Industrials"},
 ]
 
-ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query"
-ALPHA_SYMBOL_OVERRIDES: dict[str, str] = {
-    "NIFTY50": "NIFTY50",
-    "SENSEX": "BSESN",
-}
 YAHOO_SEARCH_URL = "https://query2.finance.yahoo.com/v1/finance/search"
 
 
@@ -119,17 +114,6 @@ def _normalize_symbol(symbol: str, exchange: str = "NSE") -> str:
     if upper.endswith(".NS") or upper.endswith(".BO"):
         return upper
     return f"{upper}.BO" if exchange.upper() == "BSE" else f"{upper}.NS"
-
-
-def _alpha_symbol_candidates(symbol: str) -> list[str]:
-    upper = symbol.upper().replace(" ", "")
-    if upper in ALPHA_SYMBOL_OVERRIDES:
-        return [ALPHA_SYMBOL_OVERRIDES[upper], upper]
-    if upper.startswith("^"):
-        return [upper]
-    if "." in upper or ":" in upper:
-        return [upper]
-    return [f"NSE:{upper}", f"{upper}.NSE", upper]
 
 
 def _clean_search_value(value: str) -> str:
@@ -390,96 +374,6 @@ def _build_quote(symbol: str, exchange: str, info: dict[str, Any], *, source: st
         data_source=source,
         is_fallback=is_fallback,
     )
-
-
-def _build_alpha_quote(symbol: str, exchange: str, payload: dict[str, Any]) -> StockQuote | None:
-    global_quote = payload.get("Global Quote") or {}
-    price = global_quote.get("05. price")
-    previous = global_quote.get("08. previous close")
-    change_percent = str(global_quote.get("10. change percent") or "0").replace("%", "")
-    if not price:
-        return None
-    return StockQuote(
-        symbol=symbol.upper(),
-        short_name=symbol.upper(),
-        exchange=exchange.upper(),
-        price=float(price),
-        change_percent=float(change_percent or 0),
-        currency="INR",
-        market_cap=None,
-        sector=FALLBACK_QUOTES.get(symbol.upper(), {}).get("sector"),
-        previous_close=float(previous) if previous else None,
-        fetched_at=_utc_now().isoformat(),
-        cache_until=(_utc_now() + timedelta(seconds=settings.cache_ttl_seconds)).isoformat(),
-        data_source="alpha_vantage",
-        is_fallback=False,
-    )
-
-
-def _build_alpha_daily_quote(symbol: str, exchange: str, payload: dict[str, Any]) -> StockQuote | None:
-    series = payload.get("Time Series (Daily)") or {}
-    if not series:
-        return None
-    latest_dates = sorted(series.keys(), reverse=True)
-    latest = series.get(latest_dates[0], {})
-    previous_day = series.get(latest_dates[1], latest) if len(latest_dates) > 1 else latest
-    price = latest.get("4. close")
-    previous = previous_day.get("4. close") or price
-    if not price:
-        return None
-    price_float = float(price)
-    previous_float = float(previous or price_float)
-    return StockQuote(
-        symbol=symbol.upper(),
-        short_name=symbol.upper(),
-        exchange=exchange.upper(),
-        price=price_float,
-        change_percent=((price_float - previous_float) / previous_float) * 100 if previous_float else 0,
-        currency="INR",
-        market_cap=None,
-        sector=FALLBACK_QUOTES.get(symbol.upper(), {}).get("sector"),
-        previous_close=previous_float,
-        fetched_at=_utc_now().isoformat(),
-        cache_until=(_utc_now() + timedelta(seconds=settings.cache_ttl_seconds)).isoformat(),
-        data_source="alpha_vantage_daily",
-        is_fallback=False,
-    )
-
-
-async def _fetch_alpha_quote(symbol: str, exchange: str) -> StockQuote | None:
-    if not settings.alpha_vantage_api_key:
-        return None
-
-    async with httpx.AsyncClient(timeout=12) as client:
-        for alpha_symbol in _alpha_symbol_candidates(symbol):
-            response = await client.get(
-                ALPHA_VANTAGE_BASE_URL,
-                params={
-                    "function": "GLOBAL_QUOTE",
-                    "symbol": alpha_symbol,
-                    "apikey": settings.alpha_vantage_api_key,
-                },
-            )
-            response.raise_for_status()
-            quote = _build_alpha_quote(symbol, exchange, response.json())
-            if quote:
-                return quote
-
-        for alpha_symbol in _alpha_symbol_candidates(symbol):
-            daily_response = await client.get(
-                ALPHA_VANTAGE_BASE_URL,
-                params={
-                    "function": "TIME_SERIES_DAILY",
-                    "symbol": alpha_symbol,
-                    "outputsize": "compact",
-                    "apikey": settings.alpha_vantage_api_key,
-                },
-            )
-            daily_response.raise_for_status()
-            quote = _build_alpha_daily_quote(symbol, exchange, daily_response.json())
-            if quote:
-                return quote
-    return None
 
 
 def _yf_fetch_info(symbol: str) -> dict[str, Any]:
