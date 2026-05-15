@@ -1378,42 +1378,60 @@ function showLogoutScreen() {
   if (existing) existing.remove();
   const overlay = document.createElement("div");
   overlay.id = "logoutScreenOverlay";
-  overlay.style.cssText = `
-    position:fixed;inset:0;z-index:200;display:grid;place-items:center;
-    background:radial-gradient(ellipse at 20% 10%,rgba(239,68,68,0.10) 0%,transparent 40%),
-               radial-gradient(ellipse at 80% 90%,rgba(220,38,38,0.08) 0%,transparent 40%),
-               linear-gradient(160deg,#fff5f5 0%,#fff0f0 50%,#fff8f8 100%);
-    animation:logoutFadeIn 0.35s ease both;
-  `;
+  overlay.style.cssText = "position:fixed;inset:0;z-index:200;display:grid;place-items:center;overflow:hidden;";
   overlay.innerHTML = `
     <style>
-      @keyframes logoutFadeIn { from{opacity:0} to{opacity:1} }
-      @keyframes logoutCardIn { from{opacity:0;transform:translateY(18px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
-      @keyframes logoutBarFill {
-        0%{width:0;opacity:1} 60%{width:72%;opacity:1} 85%{width:90%;opacity:1} 100%{width:100%;opacity:0.7}
-      }
-      @keyframes logoutPulse { 0%,100%{opacity:0.5;transform:scale(1)} 50%{opacity:1;transform:scale(1.05)} }
-      #logoutCard { animation:logoutCardIn 0.4s 0.05s cubic-bezier(0.22,1,0.36,1) both; }
-      #logoutBar span { animation:logoutBarFill 2.4s 0.3s cubic-bezier(0.4,0,0.2,1) forwards; }
-      #logoutShield { animation:logoutPulse 1.6s 0.4s ease-in-out infinite; }
+      @keyframes loBgPulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
+      @keyframes loFadeIn  { from{opacity:0} to{opacity:1} }
+      @keyframes loCardIn  { from{opacity:0;transform:translateY(24px) scale(0.96)} to{opacity:1;transform:translateY(0) scale(1)} }
+      @keyframes loBarFill { 0%{width:0} 60%{width:74%} 85%{width:91%} 100%{width:100%} }
+      @keyframes loShield  { 0%,100%{transform:scale(1);box-shadow:0 4px 16px rgba(239,68,68,0.4)} 50%{transform:scale(1.12);box-shadow:0 8px 32px rgba(239,68,68,0.65)} }
+      @keyframes loOrb1    { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(40px,-30px) scale(1.15)} }
+      @keyframes loOrb2    { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-30px,40px) scale(1.1)} }
+      @keyframes loOrb3    { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(20px,25px) scale(1.08)} 66%{transform:translate(-25px,-15px) scale(0.95)} }
+      @keyframes loDot     { 0%,100%{opacity:0.25;transform:scale(1)} 50%{opacity:1;transform:scale(1.5)} }
+      @keyframes loStep    { 0%{opacity:0.25;color:rgba(239,68,68,0.35)} 100%{opacity:1;color:#ef4444} }
+      #loCard  { animation:loCardIn 0.45s 0.1s cubic-bezier(0.22,1,0.36,1) both; }
+      #loBar span { animation:loBarFill 2.4s 0.4s cubic-bezier(0.4,0,0.2,1) forwards; }
+      #loShield { animation:loShield 1.8s 0.3s ease-in-out infinite; }
+      .lo-step-1 { animation:loStep 0.5s 0.6s ease forwards; opacity:0.25; }
+      .lo-step-2 { animation:loStep 0.5s 1.2s ease forwards; opacity:0.25; }
+      .lo-step-3 { animation:loStep 0.5s 1.9s ease forwards; opacity:0.25; }
     </style>
-    <div id="logoutCard" style="width:min(520px,92%);padding:48px 44px 40px;border-radius:32px;border:1px solid rgba(239,68,68,0.18);background:#fff;box-shadow:0 40px 100px rgba(239,68,68,0.12),0 8px 24px rgba(120,0,0,0.06);text-align:center;">
-      <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.13em;text-transform:uppercase;color:#ef4444;margin-bottom:20px;opacity:0.8;">Asset Yantra — Secure Session</div>
-      <div style="position:relative;width:min(340px,100%);margin:0 auto 24px;">
-        <img src="./assets/loading_logo.png" alt="Asset Yantra" style="width:100%;display:block;padding:8px 12px;" />
-        <div id="logoutShield" style="position:absolute;bottom:-8px;right:16px;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(239,68,68,0.4);">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+
+    <!-- Animated background -->
+    <div style="position:absolute;inset:0;background:linear-gradient(160deg,#fff5f5 0%,#ffe8e8 50%,#fff0f0 100%);animation:loFadeIn 0.35s ease both;"></div>
+    <div style="position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(239,68,68,0.18) 0%,transparent 70%);top:-160px;left:-140px;animation:loOrb1 7s ease-in-out infinite;"></div>
+    <div style="position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(220,38,38,0.14) 0%,transparent 70%);bottom:-130px;right:-100px;animation:loOrb2 8s ease-in-out infinite;"></div>
+    <div style="position:absolute;width:350px;height:350px;border-radius:50%;background:radial-gradient(circle,rgba(239,68,68,0.10) 0%,transparent 70%);top:50%;left:60%;transform:translate(-50%,-50%);animation:loOrb3 9s ease-in-out infinite;"></div>
+    <!-- Floating dots -->
+    <div style="position:absolute;top:18%;left:12%;width:10px;height:10px;border-radius:50%;background:rgba(239,68,68,0.25);animation:loDot 2.4s 0s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:72%;left:8%;width:7px;height:7px;border-radius:50%;background:rgba(239,68,68,0.2);animation:loDot 2.8s 0.4s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:25%;right:10%;width:12px;height:12px;border-radius:50%;background:rgba(239,68,68,0.22);animation:loDot 3.2s 0.7s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:65%;right:14%;width:8px;height:8px;border-radius:50%;background:rgba(239,68,68,0.18);animation:loDot 2.6s 1.1s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:45%;left:5%;width:6px;height:6px;border-radius:50%;background:rgba(239,68,68,0.15);animation:loDot 3s 0.3s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:82%;right:22%;width:9px;height:9px;border-radius:50%;background:rgba(239,68,68,0.2);animation:loDot 2.2s 0.9s ease-in-out infinite;"></div>
+
+    <!-- Card -->
+    <div id="loCard" style="position:relative;z-index:2;width:min(620px,88%);padding:56px 52px 48px;border-radius:36px;border:1px solid rgba(239,68,68,0.2);background:rgba(255,255,255,0.92);backdrop-filter:blur(12px);box-shadow:0 48px 120px rgba(239,68,68,0.16),0 12px 32px rgba(120,0,0,0.07);text-align:center;">
+      <div style="font-size:0.68rem;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;color:#ef4444;margin-bottom:24px;opacity:0.75;">Asset Yantra — Secure Session</div>
+      <div style="position:relative;width:min(380px,100%);margin:0 auto 28px;">
+        <img src="./assets/loading_logo.png" alt="Asset Yantra" style="width:100%;display:block;padding:8px 14px;" />
+        <div id="loShield" style="position:absolute;bottom:-10px;right:10px;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         </div>
       </div>
-      <h2 style="margin:0 0 10px;font-family:'Playfair Display',serif;font-size:clamp(1.7rem,3vw,2.2rem);line-height:1.1;color:#0f2040;">Securely Logging Out</h2>
-      <p style="margin:0 0 28px;color:#6b7a99;line-height:1.65;font-size:0.95rem;">Thanks for choosing <strong style="color:#ef4444;">Asset Yantra</strong> as your Partner.</p>
-      <div id="logoutBar" style="width:100%;height:5px;border-radius:999px;background:rgba(239,68,68,0.12);overflow:hidden;margin-bottom:20px;">
-        <span style="display:block;height:100%;border-radius:999px;width:0;background:linear-gradient(90deg,#ef4444,#f87171,#dc2626);background-size:200% 100%;"></span>
+      <h2 style="margin:0 0 12px;font-family:'Playfair Display',serif;font-size:clamp(2rem,4vw,2.8rem);line-height:1.1;color:#0f2040;">Securely Logging Out</h2>
+      <p style="margin:0 0 32px;color:#6b7a99;line-height:1.7;font-size:1rem;">Thanks for choosing <strong style="color:#ef4444;">Asset Yantra</strong> as your Partner.</p>
+      <div id="loBar" style="width:100%;height:6px;border-radius:999px;background:rgba(239,68,68,0.12);overflow:hidden;margin-bottom:24px;">
+        <span style="display:block;height:100%;border-radius:999px;width:0;background:linear-gradient(90deg,#ef4444,#f87171,#dc2626);"></span>
       </div>
-      <div style="display:flex;justify-content:center;gap:20px;">
-        <span style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(239,68,68,0.5);">Clearing Session</span>
-        <span style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(239,68,68,0.5);">Securing Data</span>
-        <span style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(239,68,68,0.5);">Redirecting</span>
+      <div style="display:flex;justify-content:center;align-items:center;gap:24px;">
+        <span class="lo-step-1" style="font-size:0.7rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;">Clearing Session</span>
+        <span style="color:rgba(239,68,68,0.25);font-size:0.8rem;">•</span>
+        <span class="lo-step-2" style="font-size:0.7rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;">Securing Data</span>
+        <span style="color:rgba(239,68,68,0.25);font-size:0.8rem;">•</span>
+        <span class="lo-step-3" style="font-size:0.7rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;">Redirecting</span>
       </div>
     </div>
   `;
