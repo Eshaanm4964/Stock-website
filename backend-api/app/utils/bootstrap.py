@@ -14,7 +14,9 @@ DEMO_FIXED_USER_IDS = ("AAR101", "MEE202", "ROH303")
 
 async def ensure_admin_user(db: AsyncSession) -> None:
     settings = get_settings()
-    existing = await db.execute(select(User).where(User.role == UserRole.ADMIN))
+    existing = await db.execute(
+        select(User).where(User.role == UserRole.ADMIN, User.username == settings.admin_username).limit(1)
+    )
     admin = existing.scalar_one_or_none()
     if admin:
         admin.username = settings.admin_username
