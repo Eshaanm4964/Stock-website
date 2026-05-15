@@ -3696,7 +3696,7 @@ function buildAdminStockDetail(symbol, holdings) {
       <div class="panel-head">
         <div>
           <p class="eyebrow">Stock Investor Breakdown</p>
-          <h3>${escapeHtml(symbol)}</h3>
+          <h3 style="color:#2c90f0">${escapeHtml(symbol)}</h3>
           <p class="detail-subtitle">Click any investor name to open their dashboard. The table shows each investor's buy value, live value, and return on this stock.</p>
         </div>
         <span class="badge">${holdings.length} Holders</span>
@@ -3706,13 +3706,13 @@ function buildAdminStockDetail(symbol, holdings) {
         <article><strong>${totalQty}</strong><span>Total Quantity</span></article>
         <article><strong class="${totalPnl >= 0 ? "profit" : "loss"}">${currency(totalPnl)}</strong><span>Combined P&amp;L</span></article>
       </div>
-      <div class="table-wrap">
-        <table>
+      <div class="table-wrap admin-position-table-wrap" style="border-radius:12px;">
+        <table class="admin-position-table" style="min-width:unset;width:100%;">
           <thead><tr><th>Investor</th><th>Client ID</th><th>Purchase Date</th><th>Qty</th><th>Avg Price</th><th>Live Price</th><th>P&amp;L</th></tr></thead>
           <tbody>
             ${holdings.map((holding) => `
               <tr>
-                <td>${holding.owner}</td>
+                <td><button class="table-link" type="button" data-user-detail="${holding.user_id}">${escapeHtml(holding.owner)}</button></td>
                 <td>${holding.fixed_user_id || ""}</td>
                 <td>${formatDate(holding.created_at)}</td>
                 <td>${holding.quantity}</td>
