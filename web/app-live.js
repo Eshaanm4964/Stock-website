@@ -2244,12 +2244,19 @@ function setupAdminManagement() {
   }
 
   document.querySelectorAll("[data-admin-edit]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      showAdminEditModal(
-        btn.getAttribute("data-admin-edit"),
-        btn.getAttribute("data-admin-name") || "",
-        btn.getAttribute("data-admin-phone") || ""
-      );
+    btn.addEventListener("click", async () => {
+      const adminId = btn.getAttribute("data-admin-edit");
+      const adminName = btn.getAttribute("data-admin-name") || "";
+      const stopLoading = setButtonLoading(btn, "Loading...");
+      try {
+        const admins = await api("/admin/admins");
+        const admin = Array.isArray(admins) ? admins.find((a) => String(a.admin_id) === String(adminId)) : null;
+        showAdminEditModal(adminId, adminName, admin?.phone_number || "");
+      } catch {
+        showAdminEditModal(adminId, adminName, "");
+      } finally {
+        stopLoading();
+      }
     });
   });
 
@@ -3614,8 +3621,7 @@ async function renderAdminDatabasePage(options = {}) {
                         <td style="display:flex;gap:6px;">
                           <button class="secondary-btn compact-btn" type="button"
                             data-admin-edit="${admin.admin_id}"
-                            data-admin-name="${escapeHtml(admin.full_name || "")}"
-                            data-admin-phone="${escapeHtml(admin.phone_number || "")}">Edit</button>
+                            data-admin-name="${escapeHtml(admin.full_name || "")}">Edit</button>
                           <button class="secondary-btn compact-btn" type="button"
                             data-admin-reset-admin-password="${admin.admin_id}"
                             data-admin-name="${escapeHtml(admin.full_name || admin.username || '')}">Reset Password</button>
