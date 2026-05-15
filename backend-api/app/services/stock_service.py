@@ -482,7 +482,38 @@ async def _fetch_alpha_quote(symbol: str, exchange: str) -> StockQuote | None:
     return None
 
 
+def _yf_fetch_info(symbol: str) -> dict[str, Any]:
+    try:
+        return yf.Ticker(symbol).info
+    except Exception:
+        return {}
+
+
+def _yf_fetch_fast_info(symbol: str) -> tuple[float | None, float | None]:
+    try:
+        fi = yf.Ticker(symbol).fast_info
+        lp = fi.last_price
+        pc = getattr(fi, "previous_close", None)
+        return (float(lp) if lp and lp > 0 else None, float(pc) if pc and pc > 0 else None)
+    except Exception:
+        return (None, None)
+
+
+def _yf_fetch_history(symbol: str) -> tuple[float | None, float | None]:
+    try:
+        hist = yf.Ticker(symbol).history(period="10d")
+        if hist.empty:
+            return (None, None)
+        closes = hist["Close"]
+        current = float(closes.iloc[-1])
+        prev = float(closes.iloc[-2]) if len(closes) >= 2 else None
+        return (current, prev)
+    except Exception:
+        return (None, None)
+
+
 async def fetch_quote(symbol: str, exchange: str = "NSE", redis: Redis | None = None) -> StockQuote:
+    import asyncio
     cache_key = _cache_key(symbol, exchange)
     if redis:
         cached = await get_cached_json(redis, cache_key)
@@ -500,57 +531,42 @@ async def fetch_quote(symbol: str, exchange: str = "NSE", redis: Redis | None = 
     yahoo_symbol = _normalize_symbol(symbol, exchange)
     alt_symbol = _normalize_symbol(symbol, "BSE" if exchange.upper() == "NSE" else "NSE")
 
-    # Attempt 1: ticker.info (most detail but sometimes empty for Indian stocks)
-    try:
-        info = yf.Ticker(yahoo_symbol).info
-    except Exception:
+    # Attempt 1: fast_info on both symbols concurrently (fastest, returns price + prev_close)
+    (lp_main, pc_main), (lp_alt, pc_alt) = await asyncio.gather(
+        asyncio.to_thread(_yf_fetch_fast_info, yahoo_symbol),
+        asyncio.to_thread(_yf_fetch_fast_info, alt_symbol),
+    )
+    lp = lp_main or lp_alt
+    pc = pc_main or pc_alt
+    if lp:
+        info = {"currentPrice": lp, "shortName": symbol.upper(), "currency": "INR"}
+        if pc:
+            info["previousClose"] = pc
+    else:
         info = {}
 
-    price = info.get("currentPrice") or info.get("regularMarketPrice") or info.get("price") or 0.0
+    price = lp or 0.0
 
-    # Attempt 2: fast_info (reliable price + previous_close for most listed stocks)
-    if not price or not (info.get("previousClose") or info.get("regularMarketPreviousClose")):
-        for sym in (yahoo_symbol, alt_symbol):
-            try:
-                fi = yf.Ticker(sym).fast_info
-                lp = fi.last_price
-                pc = getattr(fi, "previous_close", None)
-                if lp and lp > 0:
-                    patch: dict[str, Any] = {"currentPrice": float(lp), "shortName": info.get("shortName") or symbol.upper(), "currency": "INR"}
-                    if pc and pc > 0:
-                        patch["previousClose"] = float(pc)
-                    info = {**info, **patch}
-                    price = float(lp)
-                    source = "yfinance"
-                    break
-            except Exception:
-                continue
+    # Attempt 2: ticker.info for richer metadata (name, sector) — only if fast_info missed price
+    if not price:
+        info = await asyncio.to_thread(_yf_fetch_info, yahoo_symbol)
+        price = float(info.get("currentPrice") or info.get("regularMarketPrice") or info.get("price") or 0.0)
 
-    # Attempt 3: history (10d to ensure we always get at least 2 trading days)
-    has_prev = bool(info.get("previousClose") or info.get("regularMarketPreviousClose")
-                    or info.get("regularMarketChangePercent") or info.get("regularMarketChange"))
+    # Attempt 3: history as last resort (covers illiquid / less active stocks)
+    has_prev = bool(info.get("previousClose") or info.get("regularMarketPreviousClose"))
     if not price or not has_prev:
-        for sym in (yahoo_symbol, alt_symbol):
-            try:
-                hist = yf.Ticker(sym).history(period="10d")
-                if not hist.empty:
-                    closes = hist["Close"]
-                    current_close = float(closes.iloc[-1])
-                    prev_close = float(closes.iloc[-2]) if len(closes) >= 2 else None
-                    patch: dict[str, Any] = {
-                        "currentPrice": current_close,
-                        "shortName": info.get("shortName") or symbol.upper(),
-                        "currency": "INR",
-                    }
-                    if prev_close is not None and not has_prev:
-                        patch["previousClose"] = prev_close
-                    info = {**info, **patch}
-                    if not price:
-                        price = current_close
-                    source = "yfinance"
-                    break
-            except Exception:
-                continue
+        (curr_main, prev_main), (curr_alt, prev_alt) = await asyncio.gather(
+            asyncio.to_thread(_yf_fetch_history, yahoo_symbol),
+            asyncio.to_thread(_yf_fetch_history, alt_symbol),
+        )
+        curr = curr_main or curr_alt
+        prev = prev_main or prev_alt
+        if curr:
+            patch: dict[str, Any] = {"currentPrice": curr, "shortName": info.get("shortName") or symbol.upper(), "currency": "INR"}
+            if prev and not has_prev:
+                patch["previousClose"] = prev
+            info = {**info, **patch}
+            price = curr
 
     # Attempt 4: named fallback quotes
     if not price:
@@ -571,13 +587,12 @@ async def fetch_quote(symbol: str, exchange: str = "NSE", redis: Redis | None = 
 async def fetch_market_feed(
     symbols: list[str], exchange: str = "NSE", redis: Redis | None = None
 ) -> list[StockQuote]:
-    quotes = []
-    for symbol in symbols:
-        try:
-            quotes.append(await fetch_quote(symbol, exchange, redis))
-        except Exception:
-            continue
-    return quotes
+    import asyncio
+    results = await asyncio.gather(
+        *[fetch_quote(symbol, exchange, redis) for symbol in symbols],
+        return_exceptions=True,
+    )
+    return [r for r in results if isinstance(r, StockQuote)]
 
 
 def _series_tail_or_none(series: pd.Series) -> float | None:
