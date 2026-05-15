@@ -63,6 +63,12 @@ const currency = (value) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value || 0));
 
 const percent = (value) => `${value >= 0 ? "+" : ""}${Number(value || 0).toFixed(2)}%`;
+const formatMonthYear = (value) => {
+  if (!value) return "—";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "—";
+  return parsed.toLocaleDateString("en-IN", { month: "short", year: "numeric" });
+};
 const formatDate = (value) => {
   if (!value) return "No record";
   const parsed = new Date(value);
@@ -3533,7 +3539,7 @@ async function renderAdminDatabasePage(options = {}) {
                               <td><span class="badge ${user.is_active ? "green" : "red"}">${user.is_active ? "Active" : "Inactive"}</span></td>
                               <td>${escapeHtml((user.role || "user").toUpperCase())}</td>
                               <td>${user.is_demo ? "Demo" : "Live"}</td>
-                              <td>${formatDateTime(user.created_at)}</td>
+                              <td>${formatMonthYear(user.created_at)}</td>
                               <td>${currency(dashboard?.total_portfolio_value ?? user.portfolio_value ?? 0)}</td>
                               <td>${dashboard?.total_holdings ?? user.total_holdings ?? 0}</td>
                               <td class="${Number(dashboard?.total_profit_loss || 0) >= 0 ? "profit" : "loss"}">${currency(dashboard?.total_profit_loss || 0)}</td>
