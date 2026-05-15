@@ -3344,7 +3344,7 @@ async function renderAdminDatabasePage(options = {}) {
                           const holdings = Array.isArray(dashboard?.holdings) ? dashboard.holdings : [];
                           return `
                             <tr>
-                              <td><strong>${escapeHtml(user.full_name || "Unknown Investor")}</strong></td>
+                              <td><strong style="color:#2c90f0">${escapeHtml(user.full_name || "Unknown Investor")}</strong></td>
                               <td>${escapeHtml(user.fixed_user_id || "")}</td>
                               <td>${escapeHtml(user.username || "")}</td>
                               <td>${escapeHtml(user.phone_number || "")}</td>
@@ -3412,7 +3412,7 @@ async function renderAdminDatabasePage(options = {}) {
                         .map(
                           (holding) => `
                             <tr>
-                              <td>${escapeHtml(holding.full_name || "Unknown Investor")}</td>
+                              <td><strong style="color:#2c90f0">${escapeHtml(holding.full_name || "Unknown Investor")}</strong></td>
                               <td>${escapeHtml(holding.fixed_user_id || "")}</td>
                               <td>${escapeHtml(holding.username || "")}</td>
                               <td>${escapeHtml(holding.symbol || "")}</td>
@@ -3460,7 +3460,7 @@ async function renderAdminDatabasePage(options = {}) {
                   ${safeAdmins.length
                     ? safeAdmins.map((admin) => `
                       <tr>
-                        <td><strong>${escapeHtml(admin.full_name || "")}</strong></td>
+                        <td><strong style="color:#2c90f0">${escapeHtml(admin.full_name || "")}</strong></td>
                         <td>${escapeHtml(admin.username || "")}</td>
                         <td>${escapeHtml(admin.phone_number || "")}</td>
                         <td><span class="badge ${admin.is_active ? "green" : "red"}">${admin.is_active ? "Active" : "Inactive"}</span></td>
