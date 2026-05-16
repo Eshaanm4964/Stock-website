@@ -71,6 +71,7 @@ let adminUiState = {
   dateTo: "",
   sortBy: "recent",
   revealedStocks: [],
+  masterStockReveal: false,
   actionsMenuOpen: false,
   openDetailUserId: null
 };
@@ -151,6 +152,7 @@ function maskStockSymbol(symbol) {
 }
 
 function isAdminStockRevealed(symbol) {
+  if (adminUiState.masterStockReveal) return true;
   return adminUiState.revealedStocks.includes(String(symbol || "").toUpperCase());
 }
 
@@ -2219,6 +2221,24 @@ function setupAdminManagementButtons() {
     });
   });
 
+  const masterEyeBtn = document.getElementById("adminMasterStockEye");
+  if (masterEyeBtn) {
+    masterEyeBtn.addEventListener("click", async () => {
+      adminUiState.masterStockReveal = !adminUiState.masterStockReveal;
+      await renderAdminPortal({ silent: true });
+    });
+  }
+
+  document.querySelectorAll("[data-delete-sold-history]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      showDeleteSoldHistoryModal(
+        btn.getAttribute("data-delete-sold-history"),
+        btn.getAttribute("data-sold-symbol") || "",
+        btn.getAttribute("data-sold-owner") || ""
+      );
+    });
+  });
+
   setupHoldingActionButtons(statusMessage);
 }
 
@@ -2731,6 +2751,43 @@ function showAdminDeleteModal(adminId, adminName) {
   });
 }
 
+function showDeleteSoldHistoryModal(entryId, symbol, ownerName) {
+  const existing = document.getElementById("deleteSoldHistoryOverlay");
+  if (existing) existing.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "deleteSoldHistoryOverlay";
+  overlay.className = "admin-pwd-modal-overlay";
+  overlay.innerHTML = `
+    <div class="admin-pwd-modal" role="dialog" aria-modal="true">
+      <h3>Delete Sold History Entry</h3>
+      <p>Remove the <strong>${escapeHtml(symbol)}</strong> sale record for <strong>${escapeHtml(ownerName)}</strong>? This cannot be undone.</p>
+      <p id="dshErr" style="color:var(--loss);font-size:0.84rem;margin:0 0 12px;display:none;"></p>
+      <div class="admin-pwd-modal-actions">
+        <button class="secondary-btn compact-btn" type="button" id="dshCancel">Cancel</button>
+        <button class="danger-outline-btn compact-btn" type="button" id="dshConfirm">Delete</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const errEl = document.getElementById("dshErr");
+  const confirmBtn = document.getElementById("dshConfirm");
+  const close = () => overlay.remove();
+  document.getElementById("dshCancel").addEventListener("click", close);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+  confirmBtn.addEventListener("click", async () => {
+    confirmBtn.disabled = true; confirmBtn.textContent = "Deleting..."; errEl.style.display = "none";
+    try {
+      await api(`/admin/sold-history/${entryId}`, { method: "DELETE" });
+      overlay.remove();
+      _adminCache = null;
+      await renderAdminPortal({ silent: true });
+    } catch (err) {
+      errEl.textContent = formatError(err); errEl.style.display = "block";
+      confirmBtn.disabled = false; confirmBtn.textContent = "Delete";
+    }
+  });
+}
+
 function showAdminSuccessModal(title, rows) {
   const existing = document.getElementById("adminSuccessOverlay");
   if (existing) existing.remove();
@@ -2768,8 +2825,8 @@ async function setupAdminCustomerForm() {
         email: String(data.get("email") || "").trim(),
         phone_number: String(data.get("phone_number") || "").trim(),
         password: String(data.get("password") || ""),
-        initial_funds: 0,
-        balance_funds: Number(data.get("balance_funds") || 0)
+        initial_funds: Number(data.get("initial_funds") || 0),
+        balance_funds: Number(data.get("initial_funds") || 0)
       };
 
       if (!payload.full_name || !payload.email || !payload.phone_number || !payload.password) {
@@ -2842,16 +2899,32 @@ async function setupAdminDealForm() {
 
   const customerSelect = form.querySelector('[name="customer_id"]');
   if (customerSelect) {
-    customerSelect.addEventListener("change", () => {
+    customerSelect.addEventListener("change", async () => {
       const opt = customerSelect.options[customerSelect.selectedIndex];
-      const balance = Number(opt?.dataset?.balance || 0);
-      currentBalanceFunds = balance;
-      if (balanceInfoDiv && balance >= 0 && customerSelect.value) {
-        balanceInfoDiv.style.display = "";
-        if (balanceFundsEl) balanceFundsEl.textContent = currency(balance);
-        updateAffordability();
-      } else if (balanceInfoDiv) {
+      const userId = customerSelect.value;
+      if (!userId) {
         balanceInfoDiv.style.display = "none";
+        currentBalanceFunds = 0;
+        updateAffordability();
+        return;
+      }
+      balanceInfoDiv.style.display = "";
+      balanceFundsEl.textContent = "Loading...";
+      affordableEl.textContent = "—";
+      try {
+        const dashboard = await api(`/admin/users/${userId}/dashboard?audit=false`);
+        const totalDeposited = Number(dashboard.balance_funds || 0);
+        const totalInvested = (Array.isArray(dashboard.holdings) ? dashboard.holdings : [])
+          .reduce((sum, h) => sum + Number(h.buy_price || 0) * Number(h.quantity || 0), 0);
+        const available = Math.max(0, totalDeposited - totalInvested);
+        currentBalanceFunds = available;
+        balanceFundsEl.textContent = currency(available);
+        updateAffordability();
+      } catch {
+        const balance = parseFloat(opt.dataset.balance || "0");
+        currentBalanceFunds = balance;
+        balanceFundsEl.textContent = currency(balance);
+        updateAffordability();
       }
     });
   }
@@ -3115,7 +3188,7 @@ async function setupAdminFundsForm() {
 
       const updatedUser = await api(`/admin/users/${userId}/funds`, {
         method: "POST",
-        body: JSON.stringify({ amount, note })
+        body: JSON.stringify({ amount, note: note || undefined, date: data.get("date") || undefined })
       });
 
       const fundsCustomerSelect = form.querySelector('[name="customer_id"]');
@@ -3518,10 +3591,11 @@ async function renderAdminCustomerPage() {
           <span class="badge green">Customer Access</span>
         </div>
         <form id="adminCustomerForm" class="admin-inline-form">
-          <label><span>Customer Name</span><input name="full_name" type="text" placeholder="Customer full name" required /></label>
+          <label><span>Investor Name</span><input name="full_name" type="text" placeholder="Investor full name" required /></label>
           <label><span>Email</span><input name="email" type="email" placeholder="client@email.com" required /></label>
           <label><span>Phone</span><input name="phone_number" type="tel" placeholder="Phone number" required /></label>
           <label><span>Password</span><input name="password" type="password" placeholder="Minimum 8 characters" required /></label>
+          <label><span>Initial Funds (₹)</span><input name="initial_funds" type="number" min="0" step="0.01" placeholder="0" /></label>
           <label><span>Total Investment</span><input name="balance_funds" type="number" min="0" step="0.01" placeholder="1000000" /></label>
           <button class="primary-btn" type="submit">Create Customer</button>
         </form>
@@ -3591,7 +3665,7 @@ async function renderAdminDealPage() {
             </select>
           </label>
           <div class="admin-deal-balance-info" id="adminDealBalanceInfo" style="display:none">
-            <div class="admin-deal-balance-row"><span>Customer Balance Funds</span><strong id="adminDealBalanceFunds">—</strong></div>
+            <div class="admin-deal-balance-row"><span>Available Balance</span><strong id="adminDealBalanceFunds">—</strong></div>
             <div class="admin-deal-balance-row"><span>Max Stocks Purchasable</span><strong id="adminDealAffordable">Select a stock first</strong></div>
           </div>
           <div class="portfolio-live-price-preview" id="adminDealLivePricePreview" data-state="idle">
@@ -3649,6 +3723,10 @@ async function renderAdminFundsPage() {
             </select>
           </label>
           <label><span>Fund Amount</span><input name="amount" type="number" min="0.01" step="0.01" placeholder="100000" required /></label>
+          <label>
+            <span>Date of Top-Up</span>
+            <input name="date" type="date" max="${new Date().toISOString().split('T')[0]}" value="${new Date().toISOString().split('T')[0]}" />
+          </label>
           <label><span>Note</span><input name="note" type="text" placeholder="Optional note for this top-up" /></label>
           <button class="primary-btn" type="submit">Add Funds</button>
         </form>
@@ -3677,9 +3755,14 @@ async function renderAdminDatabasePage(options = {}) {
   }
 
   try {
-    const [users, adminUsers] = await Promise.all([api("/admin/users"), api("/admin/admins").catch(() => [])]);
+    const [users, adminUsers, soldHistoryData] = await Promise.all([
+      api("/admin/users"),
+      api("/admin/admins").catch(() => []),
+      api("/admin/sold-history?limit=500").catch(() => [])
+    ]);
     const safeUsers = Array.isArray(users) ? users : [];
     const safeAdmins = Array.isArray(adminUsers) ? adminUsers : [];
+    const safeSoldHistory = Array.isArray(soldHistoryData) ? soldHistoryData : [];
     const userDashboards = await safeAdminUserDashboards(safeUsers);
     const dashboardMap = new Map(userDashboards.map((dashboard) => [String(dashboard.user_id), dashboard]));
     const totalPortfolioValue = userDashboards.reduce((sum, dashboard) => sum + Number(dashboard.total_portfolio_value || 0), 0);
@@ -3710,7 +3793,7 @@ async function renderAdminDatabasePage(options = {}) {
             <div class="user-topbar-actions admin-toolbar-right admin-database-toolbar-right">
               <a class="secondary-btn compact-btn" href="./admin-dashboard.html">Back to Dashboard</a>
               <button class="secondary-btn compact-btn" type="button" id="adminDatabaseExportBtn">Download Excel</button>
-              <a class="secondary-btn compact-btn" href="./admin-add-funds.html">Add Funds</a>
+              <a class="secondary-btn compact-btn" href="./admin-add-funds.html">Top Up Funds</a>
               <button class="danger-outline-btn compact-btn" type="button" id="clearSoldHistoryBtn">Clear Sold History</button>
               <button class="danger-outline-btn compact-btn" type="button" id="clearAllUsersBtn">Clear All Users</button>
               <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
@@ -3765,6 +3848,7 @@ async function renderAdminDatabasePage(options = {}) {
                     <th>Created At</th>
                     <th>Portfolio Value</th>
                     <th>Total Holdings</th>
+                    <th>Fund Top-ups</th>
                     <th>Total P&amp;L</th>
                     <th>Action</th>
                   </tr>
@@ -3790,6 +3874,7 @@ async function renderAdminDatabasePage(options = {}) {
                               <td>${formatMonthYear(user.created_at)}</td>
                               <td>${currency(dashboard?.total_portfolio_value ?? user.portfolio_value ?? 0)}</td>
                               <td>${dashboard?.total_holdings ?? user.total_holdings ?? 0}</td>
+                              <td>${user.fund_top_up_count ?? 0}</td>
                               <td class="${Number(dashboard?.total_profit_loss || 0) >= 0 ? "profit" : "loss"}">${currency(dashboard?.total_profit_loss || 0)}</td>
                               <td style="display:flex;gap:6px;">
                                 <button class="secondary-btn compact-btn" type="button"
@@ -3806,7 +3891,7 @@ async function renderAdminDatabasePage(options = {}) {
                           `;
                         })
                         .join("")
-                    : `<tr><td colspan="16"><span class="helper-text">No investors found in the database.</span></td></tr>`}
+                    : `<tr><td colspan="17"><span class="helper-text">No investors found in the database.</span></td></tr>`}
                 </tbody>
               </table>
             </div>
@@ -3916,6 +4001,62 @@ async function renderAdminDatabasePage(options = {}) {
                 </tbody>
               </table>
             </div>
+
+            <div class="panel-head admin-database-subhead" style="margin-top:24px;">
+              <div>
+                <h3>Sold History</h3>
+                <p class="helper-text admin-positions-helper">Complete record of all investor exits and realised P&amp;L.</p>
+              </div>
+              <span class="badge ${safeSoldHistory.length ? "green" : ""}">${safeSoldHistory.length} Records</span>
+            </div>
+            <div class="table-wrap admin-position-table-wrap admin-database-table-wrap" id="adminDatabaseSoldWrap">
+              <table class="admin-position-table admin-database-table" id="adminDatabaseSoldTable">
+                <thead>
+                  <tr>
+                    <th>Investor Name</th>
+                    <th>Client ID</th>
+                    <th>Stock</th>
+                    <th>Exchange</th>
+                    <th>Purchase Date</th>
+                    <th>Qty Sold</th>
+                    <th>Avg Price</th>
+                    <th>Sell Price</th>
+                    <th>Sold Date</th>
+                    <th>Realised P&amp;L</th>
+                    <th>P&amp;L %</th>
+                    <th>Sold By</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${safeSoldHistory.length
+                    ? safeSoldHistory.map((entry) => {
+                        const pnlPct = Number(entry.buy_price) > 0
+                          ? ((Number(entry.sell_price) - Number(entry.buy_price)) / Number(entry.buy_price)) * 100
+                          : 0;
+                        return `
+                          <tr>
+                            <td><strong style="color:#2c90f0">${escapeHtml(entry.full_name || "")}</strong></td>
+                            <td>${escapeHtml(entry.fixed_user_id || "")}</td>
+                            <td>${escapeHtml(entry.symbol || "")}</td>
+                            <td>${escapeHtml(entry.exchange || "NSE")}</td>
+                            <td>${formatDate(entry.created_at)}</td>
+                            <td>${entry.quantity}</td>
+                            <td>${currency(entry.buy_price)}</td>
+                            <td>${currency(entry.sell_price)}</td>
+                            <td>${formatDate(entry.sold_at)}</td>
+                            <td class="${Number(entry.profit_loss) >= 0 ? "profit" : "loss"}">${currency(entry.profit_loss)}</td>
+                            <td class="${pnlPct >= 0 ? "profit" : "loss"}">${percent(pnlPct)}</td>
+                            <td><small>${escapeHtml(entry.sold_by_role || "")}${entry.sold_by_identifier ? ` (${escapeHtml(entry.sold_by_identifier)})` : ""}</small></td>
+                          </tr>
+                        `;
+                      }).join("")
+                    : `<tr><td colspan="12"><span class="helper-text">No sold history records found.</span></td></tr>`}
+                </tbody>
+              </table>
+            </div>
+            <div class="admin-table-bottom-scroll" id="adminDatabaseSoldScroller" aria-label="Scroll sold history table horizontally">
+              <div class="admin-table-bottom-scroll-inner"></div>
+            </div>
           </article>
         </div>
       </section>
@@ -3933,6 +4074,7 @@ async function renderAdminDatabasePage(options = {}) {
     setupPortalActions();
     setupScrollSync("adminDatabaseUsersWrap", "adminDatabaseUsersScroller");
     setupScrollSync("adminDatabaseHoldingsWrap", "adminDatabaseHoldingsScroller");
+    setupScrollSync("adminDatabaseSoldWrap", "adminDatabaseSoldScroller");
     setupAdminDatabaseExport(safeUsers, userDashboards);
     setupAdminClearButtons();
     setupAdminManagement();
@@ -4336,10 +4478,11 @@ async function renderAdminCustomerPage() {
     badge: "Admin Only",
     bodyMarkup: `
       <form id="adminCustomerForm" class="portfolio-form admin-customer-form admin-action-form">
-        <label><span>Customer Name</span><input name="full_name" type="text" placeholder="Customer full name" autocomplete="name" required /></label>
+        <label><span>Investor Name</span><input name="full_name" type="text" placeholder="Investor full name" autocomplete="name" required /></label>
         <label><span>Email</span><input name="email" type="email" placeholder="client@email.com" autocomplete="email" required /></label>
         <label><span>Phone</span><input name="phone_number" type="tel" placeholder="Phone number" autocomplete="tel" required /></label>
         <label><span>Password</span><input name="password" type="password" placeholder="Minimum 8 characters" autocomplete="new-password" required /></label>
+        <label><span>Initial Funds (₹)</span><input name="initial_funds" type="number" min="0" step="0.01" placeholder="0" /></label>
         <button class="primary-btn" type="submit">Create Customer</button>
         <p class="helper-text admin-deal-status" id="adminCustomerStatus">${escapeHtml(adminCustomerStatus)}</p>
       </form>
@@ -4399,7 +4542,7 @@ async function renderAdminDealPage() {
           </select>
         </label>
         <div class="admin-deal-balance-info" id="adminDealBalanceInfo" style="display:none">
-          <div class="admin-deal-balance-row"><span>Customer Balance Funds</span><strong id="adminDealBalanceFunds">—</strong></div>
+          <div class="admin-deal-balance-row"><span>Available Balance</span><strong id="adminDealBalanceFunds">—</strong></div>
           <div class="admin-deal-balance-row"><span>Max Stocks Purchasable</span><strong id="adminDealAffordable">Select a stock first</strong></div>
         </div>
         <div class="portfolio-live-price-preview" id="adminDealLivePricePreview" data-state="idle">
@@ -4610,7 +4753,7 @@ async function renderAdminPortal(options = {}) {
           <div class="user-topbar-actions admin-toolbar-right">
             <a class="secondary-btn compact-btn admin-nav-btn" href="./admin-add-customer.html">Add Customer</a>
             <a class="secondary-btn compact-btn admin-nav-btn" href="./admin-add-deal.html">Add Deal</a>
-            <a class="secondary-btn compact-btn admin-nav-btn" href="./admin-add-funds.html">Add Funds</a>
+            <a class="secondary-btn compact-btn admin-nav-btn" href="./admin-add-funds.html">Top Up Funds</a>
             <div class="admin-search-wrap">
               <input class="user-search admin-universal-search" id="adminUniversalSearch" type="text" placeholder="Search client or stock…" autocomplete="off" value="${escapeHtml(adminUiState.search)}" />
               <div class="admin-search-dropdown" id="adminSearchDropdown" hidden></div>
@@ -4721,7 +4864,7 @@ async function renderAdminPortal(options = {}) {
               <thead>
                 <tr>
                   <th>Investor</th>
-                  <th>Symbol</th>
+                  <th><button class="admin-eye-btn admin-master-eye-btn ${adminUiState.masterStockReveal ? "is-active" : ""}" type="button" id="adminMasterStockEye" title="${adminUiState.masterStockReveal ? "Hide all stocks" : "Show all stocks"}">&#128065; Symbol</button></th>
                   <th>Purchase Date</th>
                   <th>Qty</th>
                   <th>Avg Price</th>
@@ -4748,11 +4891,8 @@ async function renderAdminPortal(options = {}) {
                         <tr>
                           <td><button class="table-link" type="button" data-user-detail="${holding.user_id}">${holding.owner}</button><br /><small>${holding.fixed_user_id || ""}</small></td>
                           <td>
-                            <div class="admin-stock-cell">
-                              <button class="admin-eye-btn ${isAdminStockRevealed(holding.symbol) ? "is-active" : ""}" type="button" data-stock-visibility-toggle="${escapeHtml(String(holding.symbol || "").toUpperCase())}" aria-label="${isAdminStockRevealed(holding.symbol) ? "Hide stock name" : "Show stock name"}">&#128065;</button>
-                              <button class="table-link" type="button" data-stock-detail="${holding.symbol}" data-stock-user-id="${holding.user_id}" data-stock-label="${escapeHtml(String(holding.symbol || "").toUpperCase())}">${isAdminStockRevealed(holding.symbol) ? holding.symbol : maskStockSymbol(holding.symbol)}</button>
-                            </div>
-                            <small>${holding.exchange || "NSE"}</small>
+                            <button class="table-link" type="button" data-stock-detail="${holding.symbol}" data-stock-user-id="${holding.user_id}" data-stock-label="${escapeHtml(String(holding.symbol || "").toUpperCase())}">${isAdminStockRevealed(holding.symbol) ? holding.symbol : maskStockSymbol(holding.symbol)}</button>
+                            <br/><small>${holding.exchange || "NSE"}</small>
                           </td>
                           <td>${formatDate(holding.created_at)}</td>
                           <td>${holding.quantity}</td>
@@ -4808,7 +4948,7 @@ async function renderAdminPortal(options = {}) {
           <div class="sold-history-body">
           <div class="table-wrap admin-position-table-wrap" id="adminSoldHistoryWrap">
             <table class="admin-position-table">
-              <thead><tr><th>Investor Name</th><th>Stock</th><th>Purchase Date</th><th>Qty Sold</th><th>Avg Price</th><th>Sell Price</th><th>Sold Date</th><th>Realised P&amp;L</th><th>P&amp;L %</th></tr></thead>
+              <thead><tr><th>Investor Name</th><th>Stock</th><th>Purchase Date</th><th>Qty Sold</th><th>Avg Price</th><th>Sell Price</th><th>Sold Date</th><th>Realised P&amp;L</th><th>P&amp;L %</th><th>Action</th></tr></thead>
               <tbody>
                 ${filteredSoldHistory.length
                   ? filteredSoldHistory
@@ -4829,11 +4969,12 @@ async function renderAdminPortal(options = {}) {
                             <td>${formatDate(entry.sold_at)}</td>
                             <td class="${Number(entry.profit_loss) >= 0 ? "profit" : "loss"}">${currency(entry.profit_loss)}</td>
                             <td class="${Number(entry.sell_price) >= Number(entry.buy_price) ? "profit" : "loss"}">${percent((((Number(entry.sell_price) - Number(entry.buy_price)) / Math.max(Number(entry.buy_price), 1)) * 100))}</td>
+                            <td><button class="danger-outline-btn compact-btn" type="button" data-delete-sold-history="${entry.id}" data-sold-symbol="${escapeHtml(String(entry.symbol || "").toUpperCase())}" data-sold-owner="${escapeHtml(entry.full_name || "")}">Delete</button></td>
                           </tr>
                         `
                       )
                       .join("")
-                  : `<tr><td colspan="9"><div class="dash-empty-state"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 48L32 20l16 28H16z" stroke="#2c90f0" stroke-width="2" stroke-linejoin="round" opacity="0.35"/><path d="M32 30v8M32 42v2" stroke="#2c90f0" stroke-width="2" stroke-linecap="round" opacity="0.6"/></svg><strong>No records match the filters</strong><span>Try clearing filters to see all sold history.</span></div></td></tr>`}
+                  : `<tr><td colspan="10"><div class="dash-empty-state"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 48L32 20l16 28H16z" stroke="#2c90f0" stroke-width="2" stroke-linejoin="round" opacity="0.35"/><path d="M32 30v8M32 42v2" stroke="#2c90f0" stroke-width="2" stroke-linecap="round" opacity="0.6"/></svg><strong>No records match the filters</strong><span>Try clearing filters to see all sold history.</span></div></td></tr>`}
               </tbody>
               <tfoot>
                 <tr class="admin-total-row">

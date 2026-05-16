@@ -89,8 +89,15 @@ async def admin_users(
     redis: Redis = Depends(get_redis),
 ) -> list[AdminUserSummary]:
     users = list((await db.execute(select(User).where(User.role == UserRole.USER))).scalars().all())
+    fund_counts_raw = (await db.execute(
+        select(AdminAuditLog.entity_id, func.count().label("cnt"))
+        .where(AdminAuditLog.action == "add_funds", AdminAuditLog.entity_type == "user")
+        .group_by(AdminAuditLog.entity_id)
+    )).all()
+    fund_count_map: dict[str, int] = {row.entity_id: row.cnt for row in fund_counts_raw}
     summaries: list[AdminUserSummary] = []
     for user in users:
+        top_up_count = fund_count_map.get(str(user.id), 0)
         try:
             holdings = list(
                 (await db.execute(select(PortfolioHolding).where(PortfolioHolding.user_id == user.id))).scalars().all()
@@ -111,6 +118,7 @@ async def admin_users(
                     total_holdings=len(holdings),
                     initial_funds=float(user.initial_funds or 0),
                     balance_funds=float(user.balance_funds or 0),
+                    fund_top_up_count=top_up_count,
                 )
             )
         except Exception:
@@ -129,6 +137,7 @@ async def admin_users(
                     total_holdings=0,
                     initial_funds=float(user.initial_funds or 0),
                     balance_funds=float(user.balance_funds or 0),
+                    fund_top_up_count=top_up_count,
                 )
             )
     return summaries
@@ -354,8 +363,12 @@ async def admin_add_funds(
             "amount": float(payload.amount),
             "new_balance_funds": float(user.balance_funds or 0),
             "note": payload.note,
+            "date": payload.date,
         },
     )
+    top_up_count = (await db.execute(
+        select(func.count()).where(AdminAuditLog.action == "add_funds", AdminAuditLog.entity_type == "user", AdminAuditLog.entity_id == str(user.id))
+    )).scalar_one()
     return AdminUserSummary(
         user_id=user.id,
         username=user.username,
@@ -370,6 +383,7 @@ async def admin_add_funds(
         total_holdings=len(holdings),
         initial_funds=float(user.initial_funds or 0),
         balance_funds=float(user.balance_funds or 0),
+        fund_top_up_count=top_up_count,
     )
 
 
@@ -1035,6 +1049,31 @@ async def admin_operations_overview(
             auth_rate_limit_window_minutes=settings.auth_rate_limit_window_minutes,
             auth_max_failed_attempts=settings.auth_max_failed_attempts,
         ),
+    )
+
+
+@router.delete("/sold-history/{sold_history_id}", status_code=204)
+async def delete_sold_history_entry(
+    sold_history_id: int,
+    request: Request,
+    current_admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    entry = (await db.execute(select(SoldHistory).where(SoldHistory.id == sold_history_id))).scalar_one_or_none()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Sold history entry not found")
+    symbol = entry.symbol
+    user_id = entry.user_id
+    await db.delete(entry)
+    await db.commit()
+    await log_admin_action(
+        db,
+        admin_user=current_admin,
+        action="delete_sold_history",
+        entity_type="sold_history",
+        entity_id=str(sold_history_id),
+        ip_address=request.client.host if request.client else None,
+        details={"symbol": symbol, "user_id": user_id},
     )
 
 

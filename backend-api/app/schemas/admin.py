@@ -24,6 +24,7 @@ class AdminUserSummary(BaseModel):
     total_holdings: int
     initial_funds: float
     balance_funds: float
+    fund_top_up_count: int = 0
 
 
 class AdminHoldingSnapshot(BaseModel):
@@ -85,6 +86,7 @@ class AdminUserCreateRequest(BaseModel):
 class AdminAddFundsRequest(BaseModel):
     amount: float = Field(ge=0.01)
     note: str | None = None
+    date: str | None = None
 
 
 class AdminAuditLogResponse(BaseModel):
