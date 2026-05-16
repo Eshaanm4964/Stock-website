@@ -2223,9 +2223,18 @@ function setupAdminManagementButtons() {
 
   const masterEyeBtn = document.getElementById("adminMasterStockEye");
   if (masterEyeBtn) {
-    masterEyeBtn.addEventListener("click", async () => {
+    masterEyeBtn.addEventListener("click", () => {
       adminUiState.masterStockReveal = !adminUiState.masterStockReveal;
-      await renderAdminPortal({ silent: true });
+      const revealed = adminUiState.masterStockReveal;
+      // Update the header button appearance
+      masterEyeBtn.classList.toggle("is-active", revealed);
+      masterEyeBtn.title = revealed ? "Hide all stocks" : "Show all stocks";
+      // Update every stock cell in the positions table directly (no re-render needed)
+      document.querySelectorAll("[data-stock-label]").forEach((el) => {
+        const symbol = el.dataset.stockLabel || "";
+        const show = revealed || adminUiState.revealedStocks.includes(symbol);
+        el.textContent = show ? symbol : maskStockSymbol(symbol);
+      });
     });
   }
 
@@ -2780,7 +2789,12 @@ function showDeleteSoldHistoryModal(entryId, symbol, ownerName) {
       await api(`/admin/sold-history/${entryId}`, { method: "DELETE" });
       overlay.remove();
       _adminCache = null;
-      await renderAdminPortal({ silent: true });
+      // Remove the row directly — avoids re-render race with adminRenderInFlight
+      const deleteBtn = document.querySelector(`[data-delete-sold-history="${entryId}"]`);
+      if (deleteBtn) {
+        const row = deleteBtn.closest("tr");
+        if (row) row.remove();
+      }
     } catch (err) {
       errEl.textContent = formatError(err); errEl.style.display = "block";
       confirmBtn.disabled = false; confirmBtn.textContent = "Delete";
