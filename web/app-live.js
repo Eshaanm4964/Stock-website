@@ -4515,6 +4515,7 @@ async function renderAdminCustomerPage() {
       </form>
     `
   });
+  hideDashboardLoading();
   revealPortal(mount);
   activeRole = "admin";
   setupAdminCustomerForm();
@@ -4583,6 +4584,7 @@ async function renderAdminDealPage() {
       </form>
     `
   });
+  hideDashboardLoading();
   revealPortal(mount);
   activeRole = "admin";
   setupAdminDealForm();
