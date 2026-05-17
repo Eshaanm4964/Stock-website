@@ -18,6 +18,7 @@ from app.models.review import Review
 from app.models.sold_history import SoldHistory
 from app.models.user import User, UserRole
 from app.schemas.admin import (
+    AdminAllDashboardsResponse,
     AdminAuditLogResponse,
     AdminAddFundsRequest,
     AdminAdminSummary,
@@ -222,6 +223,129 @@ async def admin_create_user(
         initial_funds=float(user.initial_funds or 0),
         balance_funds=float(user.balance_funds or 0),
     )
+
+
+@router.get("/users/all-dashboards", response_model=AdminAllDashboardsResponse)
+async def admin_all_dashboards(
+    _: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+    redis: Redis = Depends(get_redis),
+) -> AdminAllDashboardsResponse:
+    import asyncio
+    from collections import defaultdict
+
+    users = list((await db.execute(select(User).where(User.role == UserRole.USER))).scalars().all())
+    if not users:
+        return AdminAllDashboardsResponse(users=[], dashboards=[])
+
+    user_ids = [u.id for u in users]
+    all_holdings = list(
+        (await db.execute(select(PortfolioHolding).where(PortfolioHolding.user_id.in_(user_ids)))).scalars().all()
+    )
+    fund_counts_raw = (await db.execute(
+        select(AdminAuditLog.entity_id, func.count().label("cnt"))
+        .where(AdminAuditLog.action == "add_funds", AdminAuditLog.entity_type == "user")
+        .group_by(AdminAuditLog.entity_id)
+    )).all()
+    fund_count_map: dict[str, int] = {row.entity_id: row.cnt for row in fund_counts_raw}
+
+    holdings_by_user: dict[int, list] = defaultdict(list)
+    for h in all_holdings:
+        holdings_by_user[h.user_id].append(h)
+
+    unique_pairs = list({(h.symbol.upper(), (h.exchange or "NSE").upper()) for h in all_holdings})
+    if unique_pairs:
+        raw_quotes = await asyncio.gather(
+            *[fetch_quote(sym, ex, redis) for sym, ex in unique_pairs],
+            return_exceptions=True,
+        )
+        quote_map = {
+            f"{sym}:{ex}": q
+            for (sym, ex), q in zip(unique_pairs, raw_quotes)
+            if not isinstance(q, Exception)
+        }
+    else:
+        quote_map = {}
+
+    users_out: list[AdminUserSummary] = []
+    dashboards_out: list[AdminUserDashboardResponse] = []
+
+    for user in users:
+        user_holdings = holdings_by_user.get(user.id, [])
+        top_up_count = fund_count_map.get(str(user.id), 0)
+
+        grouped: dict[tuple[str, str], dict] = {}
+        for h in user_holdings:
+            key = (h.symbol.upper(), (h.exchange or "NSE").upper())
+            if key not in grouped:
+                grouped[key] = {"holding": h, "quantity": 0.0, "invested": 0.0, "created_at": h.created_at}
+            grouped[key]["quantity"] += float(h.quantity or 0)
+            grouped[key]["invested"] += float(h.quantity or 0) * float(h.buy_price or 0)
+            if h.created_at and (grouped[key]["created_at"] is None or h.created_at < grouped[key]["created_at"]):
+                grouped[key]["created_at"] = h.created_at
+
+        snapshots: list[AdminHoldingSnapshot] = []
+        total_value = 0.0
+        total_pl = 0.0
+
+        for (symbol, exchange), g in grouped.items():
+            q = quote_map.get(f"{symbol}:{exchange}")
+            if not q:
+                continue
+            qty = g["quantity"]
+            invested = g["invested"]
+            bp = invested / qty if qty else 0.0
+            cp = q.price
+            value = cp * qty
+            pl = (cp - bp) * qty
+            pct = ((cp - bp) / bp * 100) if bp else 0.0
+            total_value += value
+            total_pl += pl
+            snapshots.append(AdminHoldingSnapshot(
+                holding_id=g["holding"].id,
+                symbol=symbol,
+                quantity=qty,
+                buy_price=round(bp, 2),
+                current_price=cp,
+                value=round(value, 2),
+                profit_loss=round(pl, 2),
+                percent_change=round(pct, 2),
+                sector=q.sector or g["holding"].sector,
+                exchange=exchange,
+                created_at=g["created_at"],
+            ))
+
+        users_out.append(AdminUserSummary(
+            user_id=user.id,
+            username=user.username,
+            fixed_user_id=user.fixed_user_id,
+            full_name=user.full_name,
+            phone_number=user.phone_number,
+            role=user.role.value,
+            is_active=user.is_active,
+            is_demo=user.is_demo,
+            created_at=user.created_at,
+            portfolio_value=round(total_value, 2),
+            total_holdings=len(snapshots),
+            initial_funds=float(user.initial_funds or 0),
+            balance_funds=float(user.balance_funds or 0),
+            fund_top_up_count=top_up_count,
+        ))
+        dashboards_out.append(AdminUserDashboardResponse(
+            user_id=user.id,
+            username=user.username,
+            fixed_user_id=user.fixed_user_id,
+            full_name=user.full_name,
+            phone_number=user.phone_number,
+            total_portfolio_value=round(total_value, 2),
+            total_profit_loss=round(total_pl, 2),
+            total_holdings=len(snapshots),
+            initial_funds=float(user.initial_funds or 0),
+            balance_funds=float(user.balance_funds or 0),
+            holdings=snapshots,
+        ))
+
+    return AdminAllDashboardsResponse(users=users_out, dashboards=dashboards_out)
 
 
 @router.get("/users/{user_id}/dashboard", response_model=AdminUserDashboardResponse)

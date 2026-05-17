@@ -3780,17 +3780,17 @@ async function renderAdminDatabasePage(options = {}) {
     if (useCache) {
       ({ safeUsers, safeSoldHistory, userDashboards } = _adminCache);
     } else {
-      const [users, soldHistoryData] = await Promise.all([
-        api("/admin/users"),
+      const [allData, soldHistoryData] = await Promise.all([
+        api("/admin/users/all-dashboards"),
         api("/admin/sold-history?limit=500").catch(() => [])
       ]);
-      safeUsers = Array.isArray(users) ? users : [];
+      safeUsers = Array.isArray(allData?.users) ? allData.users : [];
+      userDashboards = Array.isArray(allData?.dashboards) ? allData.dashboards : [];
       safeSoldHistory = Array.isArray(soldHistoryData) ? soldHistoryData : [];
-      userDashboards = await safeAdminUserDashboards(safeUsers);
+      _adminCache = { safeUsers, safeSoldHistory, userDashboards, feedFlat: [] };
+      _saveAdminSession(_adminCache);
     }
-    const [adminUsers] = await Promise.all([
-      api("/admin/admins").catch(() => [])
-    ]);
+    const adminUsers = await api("/admin/admins").catch(() => []);
     const safeAdmins = Array.isArray(adminUsers) ? adminUsers : [];
     const dashboardMap = new Map(userDashboards.map((dashboard) => [String(dashboard.user_id), dashboard]));
     const totalPortfolioValue = userDashboards.reduce((sum, dashboard) => sum + Number(dashboard.total_portfolio_value || 0), 0);
@@ -4623,28 +4623,14 @@ async function renderAdminPortal(options = {}) {
     if (useCache) {
       ({ safeUsers, safeSoldHistory, userDashboards, feedFlat } = _adminCache);
     } else {
-      const [users, soldHistory] = await Promise.all([
-        api("/admin/users"),
+      const [allData, soldHistory] = await Promise.all([
+        api("/admin/users/all-dashboards"),
         api("/admin/sold-history?limit=100").catch(() => [])
       ]);
-      safeUsers = Array.isArray(users) ? users : [];
+      safeUsers = Array.isArray(allData?.users) ? allData.users : [];
+      userDashboards = Array.isArray(allData?.dashboards) ? allData.dashboards : [];
       safeSoldHistory = Array.isArray(soldHistory) ? soldHistory : [];
-      userDashboards = await safeAdminUserDashboards(safeUsers);
-      const baseHoldingsForFeed = userDashboards.flatMap((u) =>
-        (Array.isArray(u.holdings) ? u.holdings : []).map((h) => ({ symbol: h.symbol, exchange: h.exchange || "NSE" }))
-      );
-      const symsByEx = {};
-      for (const h of baseHoldingsForFeed) {
-        const ex = (h.exchange || "NSE").toUpperCase();
-        if (!symsByEx[ex]) symsByEx[ex] = new Set();
-        symsByEx[ex].add(h.symbol);
-      }
-      const feedResults = await Promise.all(
-        Object.entries(symsByEx).map(([ex, syms]) =>
-          api(`/stocks/feed?symbols=${encodeURIComponent([...syms].join(","))}&exchange=${ex}`).catch(() => [])
-        )
-      );
-      feedFlat = feedResults.flat();
+      feedFlat = [];
       _adminCache = { safeUsers, safeSoldHistory, userDashboards, feedFlat };
       _saveAdminSession(_adminCache);
     }

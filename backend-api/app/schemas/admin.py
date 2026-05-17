@@ -227,3 +227,8 @@ class AdminUpdateUserRequest(BaseModel):
     initial_funds: float = Field(default=0.0, ge=0)
     balance_funds: float = Field(default=0.0, ge=0)
     email: str | None = None
+
+
+class AdminAllDashboardsResponse(BaseModel):
+    users: list[AdminUserSummary]
+    dashboards: list[AdminUserDashboardResponse]
