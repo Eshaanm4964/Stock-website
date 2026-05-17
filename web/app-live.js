@@ -3710,13 +3710,14 @@ async function renderAdminDealPage() {
 async function renderAdminFundsPage() {
   const mount = document.getElementById("adminPortal");
   if (!mount) return;
-  showDashboardLoading("Add Funds", "Loading funds management form");
-
-  let users = [];
-  try {
-    users = await api("/admin/users");
-  } catch {
-    users = [];
+  let users = _adminCache?.safeUsers ? [..._adminCache.safeUsers] : null;
+  if (!users) {
+    showDashboardLoading("Add Funds", "Loading funds management form");
+    try {
+      users = await api("/admin/users");
+    } catch {
+      users = [];
+    }
   }
 
   mount.innerHTML = `
@@ -3768,21 +3769,29 @@ async function renderAdminDatabasePage(options = {}) {
   if (adminRenderInFlight) return;
   adminRenderInFlight = true;
   const { silent = false } = options;
+  const useCache = !!_adminCache;
 
-  if (!silent) {
+  if (!silent && !useCache) {
     showDashboardLoading("Loading Database", "Fetching investor records, holdings, and portfolio data");
   }
 
   try {
-    const [users, adminUsers, soldHistoryData] = await Promise.all([
-      api("/admin/users"),
-      api("/admin/admins").catch(() => []),
-      api("/admin/sold-history?limit=500").catch(() => [])
+    let safeUsers, safeSoldHistory, userDashboards;
+    if (useCache) {
+      ({ safeUsers, safeSoldHistory, userDashboards } = _adminCache);
+    } else {
+      const [users, soldHistoryData] = await Promise.all([
+        api("/admin/users"),
+        api("/admin/sold-history?limit=500").catch(() => [])
+      ]);
+      safeUsers = Array.isArray(users) ? users : [];
+      safeSoldHistory = Array.isArray(soldHistoryData) ? soldHistoryData : [];
+      userDashboards = await safeAdminUserDashboards(safeUsers);
+    }
+    const [adminUsers] = await Promise.all([
+      api("/admin/admins").catch(() => [])
     ]);
-    const safeUsers = Array.isArray(users) ? users : [];
     const safeAdmins = Array.isArray(adminUsers) ? adminUsers : [];
-    const safeSoldHistory = Array.isArray(soldHistoryData) ? soldHistoryData : [];
-    const userDashboards = await safeAdminUserDashboards(safeUsers);
     const dashboardMap = new Map(userDashboards.map((dashboard) => [String(dashboard.user_id), dashboard]));
     const totalPortfolioValue = userDashboards.reduce((sum, dashboard) => sum + Number(dashboard.total_portfolio_value || 0), 0);
     const totalProfitLoss = userDashboards.reduce((sum, dashboard) => sum + Number(dashboard.total_profit_loss || 0), 0);
@@ -4487,7 +4496,6 @@ function buildAdminActionPageShell({
 async function renderAdminCustomerPage() {
   const mount = document.getElementById("adminCustomerPortal");
   if (!mount) return;
-  showDashboardLoading("Add Customer", "Loading the customer registration form");
   const adminCustomerStatus =
     sessionStorage.getItem("assetyantra_admin_customer_status") ||
     "Client ID will be generated like ABC123 and shown here.";
@@ -4507,7 +4515,6 @@ async function renderAdminCustomerPage() {
       </form>
     `
   });
-  hideDashboardLoading();
   revealPortal(mount);
   activeRole = "admin";
   setupAdminCustomerForm();
@@ -4517,13 +4524,15 @@ async function renderAdminCustomerPage() {
 async function renderAdminDealPage() {
   const mount = document.getElementById("adminDealPortal");
   if (!mount) return;
-  showDashboardLoading("Add Deal", "Loading deal entry form");
-  let liveUserDashboards = [];
-  try {
-    const users = await api("/admin/users");
-    liveUserDashboards = Array.isArray(users) ? users : [];
-  } catch {
-    liveUserDashboards = [];
+  let liveUserDashboards = _adminCache?.safeUsers ? [..._adminCache.safeUsers] : null;
+  if (!liveUserDashboards) {
+    showDashboardLoading("Add Deal", "Loading deal entry form");
+    try {
+      const users = await api("/admin/users");
+      liveUserDashboards = Array.isArray(users) ? users : [];
+    } catch {
+      liveUserDashboards = [];
+    }
   }
   mount.innerHTML = buildAdminActionPageShell({
     title: "Add Deal",
@@ -4574,7 +4583,6 @@ async function renderAdminDealPage() {
       </form>
     `
   });
-  hideDashboardLoading();
   revealPortal(mount);
   activeRole = "admin";
   setupAdminDealForm();
@@ -4608,7 +4616,7 @@ async function renderAdminPortal(options = {}) {
   const { silent = false, scrollToDetail = false } = options;
   const useCache = !!_adminCache && !silent;
 
-  if (!silent) showDashboardLoading("Loading Dashboard", "Fetching investor portfolios and live market prices");
+  if (!silent && !_adminCache) showDashboardLoading("Loading Dashboard", "Fetching investor portfolios and live market prices");
   try {
     let safeUsers, safeSoldHistory, userDashboards, feedFlat;
 
@@ -6050,6 +6058,8 @@ function setupDashboardPages() {
       window.location.href = "./login.html";
       return;
     }
+    const _dbSessionCache = _loadAdminSession();
+    if (_dbSessionCache) _adminCache = _dbSessionCache;
     renderAdminDatabasePage().then(hideDashLoader).catch(() => {
       hideDashLoader();
       renderPortalError(
@@ -6069,6 +6079,8 @@ function setupDashboardPages() {
       window.location.href = "./login.html";
       return;
     }
+    const _actionSessionCache = _loadAdminSession();
+    if (_actionSessionCache) _adminCache = _actionSessionCache;
     if (isAdminCustomerPage()) {
       renderAdminCustomerPage().then(hideDashLoader).catch(() => {
         hideDashLoader();
