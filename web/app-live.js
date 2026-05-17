@@ -3646,7 +3646,7 @@ async function renderAdminDealPage() {
           <div>
             <p class="eyebrow">Deal Entry</p>
             <h3>Add Deal</h3>
-            <p class="helper-text">Add a stock position directly to a customer portfolio. Repeated buys for the same stock are merged into one averaged holding.</p>
+            <p class="helper-text">Add a stock position directly to an investor portfolio. Repeated buys for the same stock are merged into one averaged holding.</p>
           </div>
           <span class="badge">Workflow</span>
         </div>
@@ -3968,54 +3968,6 @@ async function renderAdminDatabasePage(options = {}) {
               <div class="admin-table-bottom-scroll-inner"></div>
             </div>
 
-            <div class="panel-head admin-database-subhead">
-              <div>
-                <h3>Admin Management</h3>
-                <p class="helper-text admin-positions-helper">View, create, and manage admin accounts. Reset passwords directly from here.</p>
-              </div>
-              <button class="primary-btn compact-btn" type="button" id="adminCreateAdminBtn">+ New Admin</button>
-            </div>
-
-            <div class="table-wrap admin-position-table-wrap admin-database-table-wrap" id="adminDatabaseAdminsWrap">
-              <table class="admin-position-table admin-database-table" id="adminDatabaseAdminsTable">
-                <thead>
-                  <tr>
-                    <th>Full Name</th>
-                    <th>Username / Email</th>
-                    <th>Phone Number</th>
-                    <th>Status</th>
-                    <th>Created At</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${safeAdmins.length
-                    ? safeAdmins.map((admin) => `
-                      <tr>
-                        <td><strong style="color:#2c90f0">${escapeHtml(admin.full_name || "")}</strong></td>
-                        <td>${escapeHtml(admin.username || "")}</td>
-                        <td>${escapeHtml(admin.phone_number || "")}</td>
-                        <td><span class="badge ${admin.is_active ? "green" : "red"}">${admin.is_active ? "Active" : "Inactive"}</span></td>
-                        <td>${formatDateTime(admin.created_at)}</td>
-                        <td style="display:flex;gap:6px;flex-wrap:wrap;">
-                          <button class="secondary-btn compact-btn" type="button"
-                            data-admin-edit="${admin.admin_id}"
-                            data-admin-name="${escapeHtml(admin.full_name || "")}"
-                            data-admin-is-active="${admin.is_active ? "1" : "0"}">Edit</button>
-                          <button class="secondary-btn compact-btn" type="button"
-                            data-admin-reset-admin-password="${admin.admin_id}"
-                            data-admin-name="${escapeHtml(admin.full_name || admin.username || '')}">Reset Password</button>
-                          <button class="danger-outline-btn compact-btn" type="button"
-                            data-admin-delete="${admin.admin_id}"
-                            data-admin-name="${escapeHtml(admin.full_name || admin.username || '')}">Delete</button>
-                        </td>
-                      </tr>
-                    `).join("")
-                    : `<tr><td colspan="6" class="text-center"><span class="helper-text">No admin accounts found.</span></td></tr>`}
-                </tbody>
-              </table>
-            </div>
-
             <div class="panel-head admin-database-subhead" style="margin-top:24px;">
               <div>
                 <h3>Sold History</h3>
@@ -4070,6 +4022,54 @@ async function renderAdminDatabasePage(options = {}) {
             </div>
             <div class="admin-table-bottom-scroll" id="adminDatabaseSoldScroller" aria-label="Scroll sold history table horizontally">
               <div class="admin-table-bottom-scroll-inner"></div>
+            </div>
+
+            <div class="panel-head admin-database-subhead" style="margin-top:24px;">
+              <div>
+                <h3>Admin Management</h3>
+                <p class="helper-text admin-positions-helper">View, create, and manage admin accounts. Reset passwords directly from here.</p>
+              </div>
+              <button class="primary-btn compact-btn" type="button" id="adminCreateAdminBtn">+ New Admin</button>
+            </div>
+
+            <div class="table-wrap admin-position-table-wrap admin-database-table-wrap" id="adminDatabaseAdminsWrap">
+              <table class="admin-position-table admin-database-table" id="adminDatabaseAdminsTable">
+                <thead>
+                  <tr>
+                    <th>Full Name</th>
+                    <th>Username / Email</th>
+                    <th>Phone Number</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${safeAdmins.length
+                    ? safeAdmins.map((admin) => `
+                      <tr>
+                        <td><strong style="color:#2c90f0">${escapeHtml(admin.full_name || "")}</strong></td>
+                        <td>${escapeHtml(admin.username || "")}</td>
+                        <td>${escapeHtml(admin.phone_number || "")}</td>
+                        <td><span class="badge ${admin.is_active ? "green" : "red"}">${admin.is_active ? "Active" : "Inactive"}</span></td>
+                        <td>${formatDateTime(admin.created_at)}</td>
+                        <td style="display:flex;gap:6px;flex-wrap:wrap;">
+                          <button class="secondary-btn compact-btn" type="button"
+                            data-admin-edit="${admin.admin_id}"
+                            data-admin-name="${escapeHtml(admin.full_name || "")}"
+                            data-admin-is-active="${admin.is_active ? "1" : "0"}">Edit</button>
+                          <button class="secondary-btn compact-btn" type="button"
+                            data-admin-reset-admin-password="${admin.admin_id}"
+                            data-admin-name="${escapeHtml(admin.full_name || admin.username || '')}">Reset Password</button>
+                          <button class="danger-outline-btn compact-btn" type="button"
+                            data-admin-delete="${admin.admin_id}"
+                            data-admin-name="${escapeHtml(admin.full_name || admin.username || '')}">Delete</button>
+                        </td>
+                      </tr>
+                    `).join("")
+                    : `<tr><td colspan="6" class="text-center"><span class="helper-text">No admin accounts found.</span></td></tr>`}
+                </tbody>
+              </table>
             </div>
           </article>
         </div>
@@ -4878,7 +4878,7 @@ async function renderAdminPortal(options = {}) {
               <thead>
                 <tr>
                   <th>Investor</th>
-                  <th><button class="admin-eye-btn admin-master-eye-btn ${adminUiState.masterStockReveal ? "is-active" : ""}" type="button" id="adminMasterStockEye" title="${adminUiState.masterStockReveal ? "Hide all stocks" : "Show all stocks"}">&#128065; Symbol</button></th>
+                  <th style="white-space:nowrap;"><button class="admin-eye-btn admin-master-eye-btn ${adminUiState.masterStockReveal ? "is-active" : ""}" type="button" id="adminMasterStockEye" title="${adminUiState.masterStockReveal ? "Hide all stocks" : "Show all stocks"}" style="margin-right:4px;">&#128065;</button>Symbol</th>
                   <th>Purchase Date</th>
                   <th>Qty</th>
                   <th>Avg Price</th>
