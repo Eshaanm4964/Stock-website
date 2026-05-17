@@ -2059,7 +2059,12 @@ function setupAdminManagementButtons() {
   if (searchInput) {
     searchInput.value = adminUiState.search;
     searchInput.addEventListener("input", () => {
-      showSearchSuggestions(searchInput.value.trim());
+      const q = searchInput.value.trim();
+      showSearchSuggestions(q);
+      const lq = q.toLowerCase();
+      document.querySelectorAll("#adminPositionsTable tbody tr").forEach((row) => {
+        row.style.display = !lq || row.textContent.toLowerCase().includes(lq) ? "" : "none";
+      });
     });
     searchInput.addEventListener("keydown", async (e) => {
       if (e.key === "Enter") {
