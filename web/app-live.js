@@ -4186,7 +4186,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
           <table class="admin-position-table">
             <thead>
               <tr>
-                <th>Stock</th>
+                <th style="white-space:nowrap;"><button id="adminDetailMasterEye" class="admin-eye-btn" type="button" style="margin-right:4px;" title="Show all stocks" aria-label="Toggle all stock names">&#128065;</button>Stock</th>
                 <th>Purchase Date</th>
                 <th>Qty</th>
                 <th>Avg Price</th>
@@ -4362,6 +4362,21 @@ function closeAdminViewDropdown(dropdownId) {
   if (el) el.removeAttribute("open");
 }
 
+function setupDetailMasterEye(container) {
+  const btn = container.querySelector("#adminDetailMasterEye");
+  if (!btn) return;
+  let revealed = false;
+  btn.addEventListener("click", () => {
+    revealed = !revealed;
+    btn.classList.toggle("is-active", revealed);
+    btn.title = revealed ? "Hide all stocks" : "Show all stocks";
+    container.querySelectorAll("[data-stock-label]").forEach((el) => {
+      const sym = el.dataset.stockLabel || "";
+      el.textContent = revealed ? sym : maskStockSymbol(sym);
+    });
+  });
+}
+
 function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
   const detailMount = document.getElementById("adminDetailMount");
   if (!detailMount) return;
@@ -4378,6 +4393,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       detailMount.classList.remove("hidden");
       detailMount.classList.add("portal-visible");
       setupDetailEyeButtons(detailMount);
+      setupDetailMasterEye(detailMount);
       setupScrollSync("adminDetailLiveWrap", "adminDetailLiveScroller");
       setupScrollSync("adminDetailSoldWrap", "adminDetailSoldScroller");
       setupPortalActions();
@@ -4397,6 +4413,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       if (user) {
         detailMount.innerHTML = buildAdminClientDetail(user, soldHistory, symbol);
         setupDetailEyeButtons(detailMount);
+        setupDetailMasterEye(detailMount);
         setupScrollSync("adminDetailLiveWrap", "adminDetailLiveScroller");
         setupScrollSync("adminDetailSoldWrap", "adminDetailSoldScroller");
         setupPortalActions();
@@ -4592,12 +4609,14 @@ async function renderAdminDealPage() {
 }
 
 let _adminCache = null;
+let _adminCacheTs = 0;
 
 const _ADMIN_SESSION_KEY = "adminPortalCache_v2";
 const _ADMIN_SESSION_TTL = 170000;
 
 function _saveAdminSession(cache) {
-  try { sessionStorage.setItem(_ADMIN_SESSION_KEY, JSON.stringify({ ts: Date.now(), d: cache })); } catch {}
+  _adminCacheTs = Date.now();
+  try { sessionStorage.setItem(_ADMIN_SESSION_KEY, JSON.stringify({ ts: _adminCacheTs, d: cache })); } catch {}
 }
 
 function _loadAdminSession() {
@@ -4606,6 +4625,7 @@ function _loadAdminSession() {
     if (!raw) return null;
     const p = JSON.parse(raw);
     if (!p || Date.now() - p.ts > _ADMIN_SESSION_TTL) return null;
+    _adminCacheTs = p.ts;
     return p.d;
   } catch { return null; }
 }
@@ -5021,7 +5041,12 @@ async function renderAdminPortal(options = {}) {
     } else {
       mount.classList.remove("hidden");
     }
-    if (useCache) setTimeout(() => { adminRenderInFlight = false; renderAdminPortal({ silent: true }).catch(() => {}); }, 0);
+    if (useCache) {
+      const cacheAgeMs = Date.now() - _adminCacheTs;
+      if (cacheAgeMs > 30000) {
+        setTimeout(() => { adminRenderInFlight = false; renderAdminPortal({ silent: true }).catch(() => {}); }, 1500);
+      }
+    }
     activeRole = "admin";
     activeUserId = null;
     startAdminRefresh();
@@ -6563,9 +6588,10 @@ setupDashboardPages();
     }
   }
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", tryLiveData);
+    document.addEventListener("DOMContentLoaded", () => { tryLiveData(); setInterval(tryLiveData, 60000); });
   } else {
     tryLiveData();
+    setInterval(tryLiveData, 60000);
   }
 })();
 

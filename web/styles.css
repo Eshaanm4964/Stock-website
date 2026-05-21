@@ -1393,7 +1393,7 @@ select {
 }
 
 @keyframes adminSilentFadeIn {
-  from { opacity: 0.75; }
+  from { opacity: 0.97; }
   to   { opacity: 1; }
 }
 
@@ -2134,10 +2134,15 @@ th {
   margin-bottom: 18px;
 }
 
+.detail-stat-grid--5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
 .detail-stat-grid article {
   padding: 16px;
-  border-radius: 18px;
+  border-radius: 12px;
   border: 1px solid var(--line);
+  border-left: 3px solid var(--accent, #2c90f0);
   background: linear-gradient(180deg, #fff 0%, #f6faff 100%);
 }
 
@@ -2147,9 +2152,17 @@ th {
 }
 
 .detail-stat-grid strong {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   font-family: "Playfair Display", serif;
-  font-size: 1.45rem;
+  font-size: 1.35rem;
+}
+
+.detail-stat-grid span {
+  font-size: 0.78rem;
+  color: var(--text-muted, #8895a7);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .detail-grid {
@@ -2505,7 +2518,8 @@ th {
   }
 
   .metrics-grid,
-  .detail-stat-grid {
+  .detail-stat-grid,
+  .detail-stat-grid--5 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -2547,7 +2561,8 @@ th {
   }
 
   .metrics-grid,
-  .detail-stat-grid {
+  .detail-stat-grid,
+  .detail-stat-grid--5 {
     grid-template-columns: 1fr;
   }
 
