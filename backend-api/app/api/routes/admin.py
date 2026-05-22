@@ -307,6 +307,7 @@ async def admin_all_dashboards(
                 quantity=qty,
                 buy_price=round(bp, 2),
                 current_price=cp,
+                previous_close=q.previous_close,
                 value=round(value, 2),
                 profit_loss=round(pl, 2),
                 percent_change=round(pct, 2),

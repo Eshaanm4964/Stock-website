@@ -33,6 +33,7 @@ class AdminHoldingSnapshot(BaseModel):
     quantity: float
     buy_price: float
     current_price: float
+    previous_close: float | None = None
     value: float
     profit_loss: float
     percent_change: float
