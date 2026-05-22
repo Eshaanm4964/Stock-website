@@ -2890,7 +2890,7 @@ async function setupAdminCustomerForm() {
         phone_number: String(data.get("phone_number") || "").trim(),
         password: String(data.get("password") || ""),
         initial_funds: Number(data.get("initial_funds") || 0),
-        balance_funds: Number(data.get("initial_funds") || 0)
+        balance_funds: Number(data.get("balance_funds") || data.get("initial_funds") || 0)
       };
 
       if (!payload.full_name || !payload.email || !payload.phone_number || !payload.password) {
