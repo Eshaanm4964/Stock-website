@@ -4445,7 +4445,6 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       const user = userDashboards.find((entry) => Number(entry.user_id) === userId);
       if (user) {
         detailMount.innerHTML = buildAdminClientDetail(user, soldHistory, symbol);
-        setupDetailEyeButtons(detailMount);
         setupDetailMasterEye(detailMount);
         setupScrollSync("adminDetailLiveWrap", "adminDetailLiveScroller");
         setupScrollSync("adminDetailSoldWrap", "adminDetailSoldScroller");
@@ -4979,9 +4978,9 @@ async function renderAdminPortal(options = {}) {
                           <td class="${Number(realizedProfit) >= 0 ? "profit" : "loss"}">${currency(realizedProfit)}</td>
                           <td class="${Number(totalProfit) >= 0 ? "profit" : "loss"}">${currency(totalProfit)}</td>
                           <td class="action-cell-duo">
-                            <button class="buy-action-btn" type="button" data-admin-buy-holding="${holding.holding_id}" data-user-id="${holding.user_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-exchange="${escapeHtml(holding.exchange || 'NSE')}" data-buy-price="${holding.buy_price}">Buy</button>
-                            <button class="edit-action-btn" type="button" data-admin-edit-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}" data-created-at="${escapeHtml(holding.created_at || '')}">Edit</button>
-                            <button class="sell-action-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${holding.symbol}" data-owner="${holding.owner}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}">Sell</button>
+                            <button class="buy-action-btn" type="button" data-admin-buy-holding="${holding.holding_id}" data-user-id="${holding.user_id}" data-symbol="${escapeHtml(String(holding.symbol || ''))}" data-owner="${escapeHtml(String(holding.owner || ''))}" data-exchange="${escapeHtml(holding.exchange || 'NSE')}" data-buy-price="${holding.buy_price}">Buy</button>
+                            <button class="edit-action-btn" type="button" data-admin-edit-holding="${holding.holding_id}" data-symbol="${escapeHtml(String(holding.symbol || ''))}" data-owner="${escapeHtml(String(holding.owner || ''))}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}" data-created-at="${escapeHtml(holding.created_at || '')}">Edit</button>
+                            <button class="sell-action-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${escapeHtml(String(holding.symbol || ''))}" data-owner="${escapeHtml(String(holding.owner || ''))}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}">Sell</button>
                           </td>
                         </tr>
                       `;
