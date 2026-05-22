@@ -3933,7 +3933,7 @@ async function renderAdminDatabasePage(options = {}) {
                               <td>${dashboard?.total_holdings ?? user.total_holdings ?? 0}</td>
                               <td>${user.fund_top_up_count ?? 0}</td>
                               <td class="${Number(dashboard?.total_profit_loss || 0) >= 0 ? "profit" : "loss"}">${currency(dashboard?.total_profit_loss || 0)}</td>
-                              <td class="${Number(dashboard?.total_profit_loss || 0) >= 0 ? "profit" : "loss"}">${Number(user.initial_funds) > 0 ? percent((Number(dashboard?.total_profit_loss || 0) / Number(user.initial_funds)) * 100) : "—"}</td>
+                              <td class="${Number(dashboard?.total_profit_loss || 0) >= 0 ? "profit" : "loss"}">${Number(user.balance_funds) > 0 ? percent((Number(dashboard?.total_profit_loss || 0) / Number(user.balance_funds)) * 100) : "—"}</td>
                               <td style="display:flex;gap:6px;">
                                 <button class="secondary-btn compact-btn" type="button"
                                   data-edit-investor="${user.user_id}"
