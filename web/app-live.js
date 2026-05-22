@@ -10,21 +10,21 @@ function _showNavGuardModal() {
   if (document.getElementById("navGuardModal")) return;
   const modal = document.createElement("div");
   modal.id = "navGuardModal";
-  modal.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(15,32,64,0.55);backdrop-filter:blur(6px);animation:ngFadeIn 0.2s ease both;";
+  modal.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(15,32,64,0.52);backdrop-filter:blur(8px);animation:ngFadeIn 0.2s ease both;";
   modal.innerHTML = `
     <style>
       @keyframes ngFadeIn  { from{opacity:0} to{opacity:1} }
       @keyframes ngCardIn  { from{opacity:0;transform:translateY(20px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
     </style>
-    <div style="width:min(460px,90%);background:#fff;border-radius:24px;padding:40px 36px 32px;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,0.18);animation:ngCardIn 0.25s ease both;">
-      <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:0 8px 24px rgba(239,68,68,0.35);">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    <div style="width:min(460px,90%);background:linear-gradient(180deg,#fff 0%,#f5f9ff 100%);border-radius:20px;border-top:3px solid #2c90f0;padding:32px 32px 26px;text-align:center;box-shadow:0 32px 80px rgba(15,32,64,0.22),0 0 0 1px rgba(44,144,240,0.14);animation:ngCardIn 0.25s ease both;">
+      <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#d95a5a 0%,#b94040 100%);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;box-shadow:0 8px 22px rgba(217,90,90,0.3);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       </div>
-      <h3 style="margin:0 0 10px;font-family:'Playfair Display',serif;font-size:1.45rem;color:#0f2040;font-weight:800;">Secure Logout Required</h3>
-      <p style="margin:0 0 28px;color:#6b7a99;font-size:0.95rem;line-height:1.65;">Please use the <strong style="color:#0f2040;">Secure Logout</strong> button to safely exit your dashboard. Leaving without logging out may keep your session active.</p>
-      <div style="display:flex;gap:12px;justify-content:center;">
-        <button id="ngStayBtn" style="flex:1;max-width:160px;padding:12px 20px;border-radius:12px;border:1.5px solid rgba(15,32,64,0.15);background:#fff;color:#0f2040;font-size:0.9rem;font-weight:600;cursor:pointer;">Stay</button>
-        <button id="ngLogoutBtn" style="flex:1;max-width:180px;padding:12px 20px;border-radius:12px;border:none;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:0.9rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(239,68,68,0.4);">Secure Logout</button>
+      <h3 style="margin:0 0 10px;font-family:'Playfair Display',serif;font-size:1.3rem;color:#2c90f0;font-weight:800;">Secure Logout Required</h3>
+      <p style="margin:0 0 24px;color:#4a6080;font-size:0.9rem;line-height:1.6;">Please use the <strong style="color:#0f2040;">Secure Logout</strong> button to safely exit your dashboard. Leaving without logging out may keep your session active.</p>
+      <div style="display:flex;gap:10px;justify-content:center;padding-top:14px;border-top:1px solid rgba(44,144,240,0.1);">
+        <button id="ngStayBtn" style="flex:1;max-width:160px;padding:11px 18px;border-radius:12px;border:1px solid rgba(15,32,64,0.12);background:linear-gradient(180deg,#fff 0%,#f3f6fa 100%);color:#0f2040;font-size:0.88rem;font-weight:600;cursor:pointer;">Stay</button>
+        <button id="ngLogoutBtn" style="flex:1;max-width:180px;padding:11px 18px;border-radius:12px;border:none;background:linear-gradient(135deg,#d95a5a 0%,#b94040 100%);color:#fff;font-size:0.88rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(217,90,90,0.3);">Secure Logout</button>
       </div>
     </div>
   `;
@@ -866,10 +866,10 @@ function showInactiveAccountModal(role = "user") {
   overlay.className = "admin-pwd-modal-overlay";
   overlay.innerHTML = `
     <div class="admin-pwd-modal" role="dialog" aria-modal="true" style="max-width:420px;text-align:center;">
-      <div style="width:56px;height:56px;border-radius:50%;background:rgba(239,68,68,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#d95a5a 0%,#b94040 100%);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 22px rgba(217,90,90,0.28);">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       </div>
-      <h3 style="color:#ef4444;margin-bottom:8px;">Account Inactive</h3>
+      <h3 style="margin-bottom:8px;">Account Inactive</h3>
       <p style="color:#4a5568;margin-bottom:20px;font-size:0.9rem;">Your ${role === "admin" ? "admin" : ""} account has been deactivated. Please contact AssetYantra to restore access.</p>
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:20px;text-align:left;">
         <p style="font-size:0.75rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#9aa5b8;margin:0 0 12px;">Contact Details</p>
