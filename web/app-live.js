@@ -2837,6 +2837,14 @@ function showDeleteSoldHistoryModal(entryId, symbol, ownerName) {
         const row = deleteBtn.closest("tr");
         if (row) row.remove();
       }
+      // Recalculate sold history tfoot total from remaining rows
+      const tfootCell = document.getElementById("adminDetailSoldRealizedTfoot");
+      if (tfootCell) {
+        const remaining = document.querySelectorAll("#adminDetailSoldBody [data-sold-pnl]");
+        const newTotal = Array.from(remaining).reduce((sum, td) => sum + Number(td.dataset.soldPnl || 0), 0);
+        tfootCell.className = newTotal >= 0 ? "profit" : "loss";
+        tfootCell.innerHTML = `<strong>${currency(newTotal)}</strong>`;
+      }
     } catch (err) {
       errEl.textContent = formatError(err); errEl.style.display = "block";
       confirmBtn.disabled = false; confirmBtn.textContent = "Delete";
@@ -4319,7 +4327,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
                       <td class="${Number(entry.sell_price) >= Number(entry.buy_price) ? "profit" : "loss"}">${currency(entry.buy_price)}</td>
                       <td class="${Number(entry.sell_price) >= Number(entry.buy_price) ? "profit" : "loss"}">${currency(entry.sell_price)}</td>
                       <td>${formatDate(entry.sold_at)}</td>
-                      <td class="${Number(entry.profit_loss) >= 0 ? "profit" : "loss"}">${currency(entry.profit_loss)}</td>
+                      <td class="${Number(entry.profit_loss) >= 0 ? "profit" : "loss"}" data-sold-pnl="${entry.profit_loss}">${currency(entry.profit_loss)}</td>
                       <td class="${Number(entry.sell_price) >= Number(entry.buy_price) ? "profit" : "loss"}">${percent((((Number(entry.sell_price) - Number(entry.buy_price)) / Math.max(Number(entry.buy_price), 1)) * 100))}</td>
                     </tr>
                   `).join("")
@@ -4332,7 +4340,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
                 <td>—</td>
                 <td>—</td>
                 <td>—</td>
-                <td class="${totalRealized >= 0 ? "profit" : "loss"}"><strong>${currency(totalRealized)}</strong></td>
+                <td class="${totalRealized >= 0 ? "profit" : "loss"}" id="adminDetailSoldRealizedTfoot"><strong>${currency(totalRealized)}</strong></td>
                 <td>—</td>
               </tr>
             </tfoot>
@@ -5106,6 +5114,7 @@ async function renderAdminPortal(options = {}) {
         detailMount.classList.remove("hidden");
         detailMount.classList.add("portal-visible");
         setupDetailEyeButtons(detailMount);
+        setupDetailMasterEye(detailMount);
         setupScrollSync("adminDetailLiveWrap", "adminDetailLiveScroller");
         setupScrollSync("adminDetailSoldWrap", "adminDetailSoldScroller");
         setupHoldingActionButtons(document.getElementById("adminUserActionStatus"));
