@@ -771,7 +771,7 @@ function showEditHoldingModal({ symbol, owner, currentQty, currentBuyPrice, curr
       const price = Number(priceInput.value);
       if (!Number.isFinite(qty) || qty <= 0) { errorEl.textContent = "Quantity must be greater than 0."; return; }
       if (!Number.isFinite(price) || price <= 0) { errorEl.textContent = "Avg price must be greater than 0."; return; }
-      const dateStr = dateInput.value ? new Date(dateInput.value).toISOString() : null;
+      const dateStr = dateInput.value ? new Date(dateInput.value + "T00:00:00+05:30").toISOString() : null;
       close({ quantity: qty, buy_price: price, created_at: dateStr });
     });
 
@@ -779,7 +779,7 @@ function showEditHoldingModal({ symbol, owner, currentQty, currentBuyPrice, curr
   });
 }
 
-function showBuyMoreModal({ symbol, owner, exchange, lastBuyPrice }) {
+function showBuyMoreModal({ symbol, owner, exchange, lastBuyPrice, currentPrice }) {
   return new Promise((resolve) => {
     const overlay = document.createElement("div");
     overlay.className = "sell-modal-overlay";
@@ -808,7 +808,7 @@ function showBuyMoreModal({ symbol, owner, exchange, lastBuyPrice }) {
           </label>
           <label class="sell-modal-field">
             <span>Buy Price (₹ per share)</span>
-            <input id="buyMorePrice" type="number" min="0.01" step="0.01" value="${lastBuyPrice ? Number(lastBuyPrice).toFixed(2) : ""}" placeholder="Enter buy price" class="sell-modal-input" />
+            <input id="buyMorePrice" type="number" min="0.01" step="0.01" value="${currentPrice ? Number(currentPrice).toFixed(2) : ""}" placeholder="Enter buy price" class="sell-modal-input" />
           </label>
           <label class="sell-modal-field">
             <span>Purchase Date</span>
@@ -846,7 +846,7 @@ function showBuyMoreModal({ symbol, owner, exchange, lastBuyPrice }) {
       const price = Number(priceInput.value);
       if (!Number.isFinite(qty) || qty <= 0) { errorEl.textContent = "Quantity must be greater than 0."; return; }
       if (!Number.isFinite(price) || price <= 0) { errorEl.textContent = "Buy price must be greater than 0."; return; }
-      const dateStr = dateInput.value ? new Date(dateInput.value).toISOString() : new Date().toISOString();
+      const dateStr = dateInput.value ? new Date(dateInput.value + "T00:00:00+05:30").toISOString() : new Date().toISOString();
       close({ quantity: qty, buy_price: price, created_at: dateStr });
     });
 
@@ -2351,8 +2351,9 @@ function setupHoldingActionButtons(statusMessage) {
       const owner = button.dataset.owner || "this customer";
       const exchange = button.dataset.exchange || "NSE";
       const lastBuyPrice = Number(button.dataset.buyPrice || 0);
+      const currentPrice = Number(button.dataset.currentPrice || 0);
 
-      const result = await showBuyMoreModal({ symbol, owner, exchange, lastBuyPrice });
+      const result = await showBuyMoreModal({ symbol, owner, exchange, lastBuyPrice, currentPrice });
       if (!result) return;
 
       const stopLoading = setButtonLoading(button, "Buying...");
@@ -3536,7 +3537,7 @@ function showInvestorEditModal({ userId, name, phone, email, isActive, initialFu
       await api(`/admin/users/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ full_name, phone_number, is_active, balance_funds, email: email_val || null }),
+        body: JSON.stringify({ full_name, phone_number, is_active, initial_funds: initialFunds, balance_funds, email: email_val || null }),
       });
       if (new_password) {
         await api(`/admin/users/${userId}/reset-password`, {
@@ -3561,6 +3562,30 @@ function showInvestorEditModal({ userId, name, phone, email, isActive, initialFu
   });
 
   setTimeout(() => { const el = document.getElementById("ief_name"); if (el) el.focus(); }, 50);
+}
+
+function setupSoldHistoryPagination(container) {
+  const LIMIT = 20;
+  const tbody = container ? container.querySelector("#adminDetailSoldBody tbody") : null;
+  if (!tbody) return;
+  const rows = Array.from(tbody.querySelectorAll("tr"));
+  if (rows.length <= LIMIT) return;
+  rows.slice(LIMIT).forEach((row) => { row.style.display = "none"; });
+  const scroller = container.querySelector("#adminDetailSoldScroller");
+  if (!scroller) return;
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "secondary-btn compact-btn";
+  btn.style.cssText = "margin:10px auto 4px;display:block;font-size:0.82rem;";
+  btn.dataset.soldPaginationToggle = "collapsed";
+  btn.textContent = `Show all ${rows.length} records`;
+  btn.addEventListener("click", () => {
+    const isCollapsed = btn.dataset.soldPaginationToggle === "collapsed";
+    rows.slice(LIMIT).forEach((row) => { row.style.display = isCollapsed ? "" : "none"; });
+    btn.dataset.soldPaginationToggle = isCollapsed ? "expanded" : "collapsed";
+    btn.textContent = isCollapsed ? "Show less" : `Show all ${rows.length} records`;
+  });
+  scroller.insertAdjacentElement("afterend", btn);
 }
 
 function setupScrollSync(wrapId, scrollerId) {
@@ -3941,7 +3966,7 @@ async function renderAdminDatabasePage(options = {}) {
                               <td>${dashboard?.total_holdings ?? user.total_holdings ?? 0}</td>
                               <td>${user.fund_top_up_count ?? 0}</td>
                               <td class="${Number(dashboard?.total_profit_loss || 0) >= 0 ? "profit" : "loss"}">${currency(dashboard?.total_profit_loss || 0)}</td>
-                              <td class="${Number(dashboard?.total_profit_loss || 0) >= 0 ? "profit" : "loss"}">${Number(user.balance_funds) > 0 ? percent((Number(dashboard?.total_profit_loss || 0) / Number(user.balance_funds)) * 100) : "—"}</td>
+                              <td class="${Number(dashboard?.total_profit_loss || 0) >= 0 ? "profit" : "loss"}">${Number(user.initial_funds) > 0 ? percent((Number(dashboard?.total_profit_loss || 0) / Number(user.initial_funds)) * 100) : "—"}</td>
                               <td style="display:flex;gap:6px;">
                                 <button class="secondary-btn compact-btn" type="button"
                                   data-edit-investor="${user.user_id}"
@@ -4268,7 +4293,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
                         <td class="${realizedProfit >= 0 ? "profit" : "loss"}">${currency(realizedProfit)}</td>
                         <td class="${totalProfit >= 0 ? "profit" : "loss"}">${currency(totalProfit)}</td>
                         <td class="action-cell-duo">
-                          <button class="buy-action-btn" type="button" data-admin-buy-holding="${holding.holding_id}" data-user-id="${user.user_id}" data-symbol="${escapeHtml(holding.symbol)}" data-owner="${escapeHtml(user.full_name || '')}" data-exchange="${escapeHtml(holding.exchange || 'NSE')}" data-buy-price="${holding.buy_price}">Buy</button>
+                          <button class="buy-action-btn" type="button" data-admin-buy-holding="${holding.holding_id}" data-user-id="${user.user_id}" data-symbol="${escapeHtml(holding.symbol)}" data-owner="${escapeHtml(user.full_name || '')}" data-exchange="${escapeHtml(holding.exchange || 'NSE')}" data-buy-price="${holding.buy_price}" data-current-price="${holding.current_price || ''}">Buy</button>
                           <button class="edit-action-btn" type="button" data-admin-edit-holding="${holding.holding_id}" data-symbol="${escapeHtml(holding.symbol)}" data-owner="${escapeHtml(user.full_name || '')}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}" data-created-at="${escapeHtml(holding.created_at || '')}">Edit</button>
                           <button class="sell-action-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${escapeHtml(holding.symbol)}" data-owner="${escapeHtml(user.full_name || '')}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}">Sell</button>
                         </td>
@@ -4437,6 +4462,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       setupDetailMasterEye(detailMount);
       setupScrollSync("adminDetailLiveWrap", "adminDetailLiveScroller");
       setupScrollSync("adminDetailSoldWrap", "adminDetailSoldScroller");
+      setupSoldHistoryPagination(detailMount);
       setupPortalActions();
       setupHoldingActionButtons(document.getElementById("adminUserActionStatus"));
       detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -4456,6 +4482,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
         setupDetailMasterEye(detailMount);
         setupScrollSync("adminDetailLiveWrap", "adminDetailLiveScroller");
         setupScrollSync("adminDetailSoldWrap", "adminDetailSoldScroller");
+        setupSoldHistoryPagination(detailMount);
         setupPortalActions();
         setupHoldingActionButtons(document.getElementById("adminUserActionStatus"));
         maybeShowBalanceWarning(user);
@@ -4687,7 +4714,7 @@ async function renderAdminPortal(options = {}) {
     } else {
       const [allData, soldHistory] = await Promise.all([
         api("/admin/users/all-dashboards"),
-        api("/admin/sold-history?limit=100").catch(() => [])
+        api("/admin/sold-history?limit=500").catch(() => [])
       ]);
       safeUsers = Array.isArray(allData?.users) ? allData.users : [];
       userDashboards = Array.isArray(allData?.dashboards) ? allData.dashboards : [];
@@ -4986,7 +5013,7 @@ async function renderAdminPortal(options = {}) {
                           <td class="${Number(realizedProfit) >= 0 ? "profit" : "loss"}">${currency(realizedProfit)}</td>
                           <td class="${Number(totalProfit) >= 0 ? "profit" : "loss"}">${currency(totalProfit)}</td>
                           <td class="action-cell-duo">
-                            <button class="buy-action-btn" type="button" data-admin-buy-holding="${holding.holding_id}" data-user-id="${holding.user_id}" data-symbol="${escapeHtml(String(holding.symbol || ''))}" data-owner="${escapeHtml(String(holding.owner || ''))}" data-exchange="${escapeHtml(holding.exchange || 'NSE')}" data-buy-price="${holding.buy_price}">Buy</button>
+                            <button class="buy-action-btn" type="button" data-admin-buy-holding="${holding.holding_id}" data-user-id="${holding.user_id}" data-symbol="${escapeHtml(String(holding.symbol || ''))}" data-owner="${escapeHtml(String(holding.owner || ''))}" data-exchange="${escapeHtml(holding.exchange || 'NSE')}" data-buy-price="${holding.buy_price}" data-current-price="${holding.current_price || ''}">Buy</button>
                             <button class="edit-action-btn" type="button" data-admin-edit-holding="${holding.holding_id}" data-symbol="${escapeHtml(String(holding.symbol || ''))}" data-owner="${escapeHtml(String(holding.owner || ''))}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}" data-created-at="${escapeHtml(holding.created_at || '')}">Edit</button>
                             <button class="sell-action-btn" type="button" data-admin-sell-holding="${holding.holding_id}" data-symbol="${escapeHtml(String(holding.symbol || ''))}" data-owner="${escapeHtml(String(holding.owner || ''))}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}">Sell</button>
                           </td>
@@ -5117,6 +5144,7 @@ async function renderAdminPortal(options = {}) {
         setupDetailMasterEye(detailMount);
         setupScrollSync("adminDetailLiveWrap", "adminDetailLiveScroller");
         setupScrollSync("adminDetailSoldWrap", "adminDetailSoldScroller");
+        setupSoldHistoryPagination(detailMount);
         setupHoldingActionButtons(document.getElementById("adminUserActionStatus"));
         if (scrollToDetail) {
           requestAnimationFrame(() => detailMount.scrollIntoView({ behavior: "smooth", block: "start" }));
