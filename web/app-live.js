@@ -2728,6 +2728,43 @@ function showAdminResetPasswordModal(adminId, adminName) {
   input.addEventListener("keydown", (e) => { if (e.key === "Enter") confirmBtn.click(); });
 }
 
+function showDeleteUserModal(userId, userName) {
+  const existing = document.getElementById("adminDeleteUserOverlay");
+  if (existing) existing.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "adminDeleteUserOverlay";
+  overlay.className = "admin-pwd-modal-overlay";
+  overlay.innerHTML = `
+    <div class="admin-pwd-modal" role="dialog" aria-modal="true">
+      <h3>Delete Investor Account</h3>
+      <p>This will permanently delete <strong>${escapeHtml(userName)}</strong> and all their holdings and data. This action cannot be undone.</p>
+      <p id="aduErr" style="color:var(--loss);font-size:0.84rem;margin:0 0 12px;display:none;"></p>
+      <div class="admin-pwd-modal-actions">
+        <button class="secondary-btn compact-btn" type="button" id="aduCancel">Cancel</button>
+        <button class="danger-outline-btn compact-btn" type="button" id="aduConfirm">Delete Investor</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const errEl = document.getElementById("aduErr");
+  const confirmBtn = document.getElementById("aduConfirm");
+  const close = () => overlay.remove();
+  document.getElementById("aduCancel").addEventListener("click", close);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+  confirmBtn.addEventListener("click", async () => {
+    confirmBtn.disabled = true; confirmBtn.textContent = "Deleting..."; errEl.style.display = "none";
+    try {
+      await api(`/admin/users/${userId}`, { method: "DELETE" });
+      overlay.remove();
+      showAdminSuccessModal("Investor Deleted", [["Investor", userName], ["Status", "Account removed"]]);
+      setTimeout(() => renderAdminDatabasePage({ silent: true }), 900);
+    } catch (err) {
+      errEl.textContent = formatError(err); errEl.style.display = "block";
+      confirmBtn.disabled = false; confirmBtn.textContent = "Delete Investor";
+    }
+  });
+}
+
 function showAdminDeleteModal(adminId, adminName) {
   const existing = document.getElementById("adminDeleteAdminOverlay");
   if (existing) existing.remove();
@@ -3376,19 +3413,10 @@ function setupPortalActions() {
   document.querySelectorAll("[data-delete-user]").forEach((button) => {
     if (button.dataset.deleteBound === "true") return;
     button.dataset.deleteBound = "true";
-    button.addEventListener("click", async () => {
+    button.addEventListener("click", () => {
       const userId = button.dataset.deleteUser;
       const userName = button.dataset.userName || "this investor";
-      if (!confirm(`Delete ${userName}? This will remove all their holdings and data permanently.`)) return;
-      const stopLoading = setButtonLoading(button, "Deleting...");
-      try {
-        await api(`/admin/users/${userId}`, { method: "DELETE" });
-        await renderAdminDatabasePage({ silent: true });
-      } catch (error) {
-        alert(formatError(error));
-      } finally {
-        stopLoading();
-      }
+      showDeleteUserModal(userId, userName);
     });
   });
 
@@ -3805,6 +3833,8 @@ async function renderAdminDatabasePage(options = {}) {
       }))
     );
 
+    const _savedScrollYDb = silent ? window.scrollY : 0;
+
     mount.innerHTML = `
       <section class="user-shell admin-simple-shell no-sidebar-shell">
         <div class="user-shell-main admin-simple-main dashboard-stack admin-dashboard-stack">
@@ -3822,8 +3852,6 @@ async function renderAdminDatabasePage(options = {}) {
               <a class="secondary-btn compact-btn" href="./admin-dashboard.html">Back to Dashboard</a>
               <button class="secondary-btn compact-btn" type="button" id="adminDatabaseExportBtn">Download Excel</button>
               <a class="secondary-btn compact-btn" href="./admin-add-funds.html">Top Up Funds</a>
-              <button class="danger-outline-btn compact-btn" type="button" id="clearSoldHistoryBtn">Clear Sold History</button>
-              <button class="danger-outline-btn compact-btn" type="button" id="clearAllUsersBtn">Clear All Users</button>
               <button class="logout-btn" type="button" data-logout="true">Secure Logout</button>
             </div>
           </header>
@@ -3878,6 +3906,7 @@ async function renderAdminDatabasePage(options = {}) {
                     <th>Total Holdings</th>
                     <th>Fund Top-ups</th>
                     <th>Total P&amp;L</th>
+                    <th>Return %</th>
                     <th>Action</th>
                   </tr>
                 </thead>
@@ -3904,6 +3933,7 @@ async function renderAdminDatabasePage(options = {}) {
                               <td>${dashboard?.total_holdings ?? user.total_holdings ?? 0}</td>
                               <td>${user.fund_top_up_count ?? 0}</td>
                               <td class="${Number(dashboard?.total_profit_loss || 0) >= 0 ? "profit" : "loss"}">${currency(dashboard?.total_profit_loss || 0)}</td>
+                              <td class="${Number(dashboard?.total_profit_loss || 0) >= 0 ? "profit" : "loss"}">${Number(user.initial_funds) > 0 ? percent((Number(dashboard?.total_profit_loss || 0) / Number(user.initial_funds)) * 100) : "—"}</td>
                               <td style="display:flex;gap:6px;">
                                 <button class="secondary-btn compact-btn" type="button"
                                   data-edit-investor="${user.user_id}"
@@ -3919,7 +3949,7 @@ async function renderAdminDatabasePage(options = {}) {
                           `;
                         })
                         .join("")
-                    : `<tr><td colspan="17"><span class="helper-text">No investors found in the database.</span></td></tr>`}
+                    : `<tr><td colspan="18"><span class="helper-text">No investors found in the database.</span></td></tr>`}
                 </tbody>
               </table>
             </div>
@@ -4106,6 +4136,9 @@ async function renderAdminDatabasePage(options = {}) {
     setupAdminDatabaseExport(safeUsers, userDashboards);
     setupAdminClearButtons();
     setupAdminManagement();
+    if (silent && _savedScrollYDb > 0) {
+      requestAnimationFrame(() => window.scrollTo({ top: _savedScrollYDb, behavior: "instant" }));
+    }
   } catch (error) {
     hideDashboardLoading();
     renderPortalError(mount, "Database View", `The database view could not load yet. ${formatError(error)}`);
@@ -4771,6 +4804,8 @@ async function renderAdminPortal(options = {}) {
       }
     }
 
+    const _savedScrollY = silent ? window.scrollY : 0;
+
     if (silent) {
       mount.classList.add("admin-silent-refresh");
       requestAnimationFrame(() => mount.classList.remove("admin-silent-refresh"));
@@ -5082,6 +5117,9 @@ async function renderAdminPortal(options = {}) {
     }
     setupPortalActions();
     void refreshTableLivePrices();
+    if (silent && !scrollToDetail && _savedScrollY > 0) {
+      requestAnimationFrame(() => window.scrollTo({ top: _savedScrollY, behavior: "instant" }));
+    }
   } catch (error) {
     hideDashboardLoading();
     renderPortalError(mount, "Admin Dashboard", `Login succeeded, but admin dashboard data could not load yet. ${formatError(error)}`);
