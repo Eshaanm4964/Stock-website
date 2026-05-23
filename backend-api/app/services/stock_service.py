@@ -259,7 +259,7 @@ async def search_stock_symbols(query: str, exchange: str = "NSE", limit: int = 1
     exchange_targets = ["NSE", "BSE"] if safe_exchange in {"ALL", "SME", "MSME"} else [safe_exchange]
 
     # Attempt 0: Kite instruments list (complete NSE+BSE coverage)
-    if redis:
+    if True:
         from app.services.kite_service import kite_search_instruments
         kite_results: list[StockSearchResult] = []
         seen_kite: set[tuple[str, str]] = set()
@@ -445,13 +445,15 @@ async def fetch_quote(symbol: str, exchange: str = "NSE", redis: Redis | None = 
     is_fallback = False
 
     # Attempt 0: Kite Connect live feed (real-time, authorized NSE+BSE)
-    if redis:
-        from app.services.kite_service import kite_fetch_quote
-        kite_data = await kite_fetch_quote(symbol, exchange, redis)
-        if kite_data and kite_data.get("currentPrice"):
-            quote = _build_quote(symbol, exchange, kite_data, source="kite", is_fallback=False)
+    from app.services.kite_service import kite_fetch_quote
+    kite_data = await kite_fetch_quote(symbol, exchange, redis)
+    if kite_data and kite_data.get("currentPrice"):
+        quote = _build_quote(symbol, exchange, kite_data, source="kite", is_fallback=False)
+        if redis:
             await set_cached_json(redis, cache_key, _serialize_quote(quote), settings.cache_ttl_seconds)
-            return quote
+        else:
+            _set_local_cached_quote(cache_key, quote)
+        return quote
 
     yahoo_symbol = _normalize_symbol(symbol, exchange)
     alt_symbol = _normalize_symbol(symbol, "BSE" if exchange.upper() == "NSE" else "NSE")
