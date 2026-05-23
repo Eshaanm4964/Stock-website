@@ -45,7 +45,7 @@ def get_login_url() -> str:
     return _make_kite().login_url()
 
 
-async def exchange_and_store_token(request_token: str, redis: Redis) -> str:
+async def exchange_and_store_token(request_token: str, redis: Redis | None) -> str:
     kite = _make_kite()
     data = kite.generate_session(request_token, api_secret=settings.kite_api_secret)
     access_token: str = data["access_token"]

@@ -259,25 +259,24 @@ async def search_stock_symbols(query: str, exchange: str = "NSE", limit: int = 1
     exchange_targets = ["NSE", "BSE"] if safe_exchange in {"ALL", "SME", "MSME"} else [safe_exchange]
 
     # Attempt 0: Kite instruments list (complete NSE+BSE coverage)
-    if True:
-        from app.services.kite_service import kite_search_instruments
-        kite_results: list[StockSearchResult] = []
-        seen_kite: set[tuple[str, str]] = set()
-        for target_exchange in exchange_targets:
-            for inst in await kite_search_instruments(cleaned_query, target_exchange, redis, safe_limit):
-                key = (inst["symbol"], inst["exchange"])
-                if key in seen_kite:
-                    continue
-                seen_kite.add(key)
-                kite_results.append(StockSearchResult(
-                    symbol=inst["symbol"],
-                    name=inst["name"],
-                    exchange=inst["exchange"],
-                    sector=None,
-                    source="kite",
-                ))
-        if kite_results:
-            return kite_results[:safe_limit]
+    from app.services.kite_service import kite_search_instruments
+    kite_results: list[StockSearchResult] = []
+    seen_kite: set[tuple[str, str]] = set()
+    for target_exchange in exchange_targets:
+        for inst in await kite_search_instruments(cleaned_query, target_exchange, redis, safe_limit):
+            key = (inst["symbol"], inst["exchange"])
+            if key in seen_kite:
+                continue
+            seen_kite.add(key)
+            kite_results.append(StockSearchResult(
+                symbol=inst["symbol"],
+                name=inst["name"],
+                exchange=inst["exchange"],
+                sector=None,
+                source="kite",
+            ))
+    if kite_results:
+        return kite_results[:safe_limit]
 
     results: list[StockSearchResult] = []
     seen: set[tuple[str, str]] = set()
