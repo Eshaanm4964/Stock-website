@@ -14,6 +14,10 @@ settings = get_settings()
 KITE_TOKEN_KEY = "kite:access_token"
 INSTRUMENTS_TTL = 86400  # 24 hours — refresh daily
 
+# In-memory fallback when Redis is not configured
+_MEM_TOKEN: str | None = None
+_MEM_INSTRUMENTS: dict[str, list[dict]] = {}
+
 
 def _make_kite(access_token: str | None = None):
     from kiteconnect import KiteConnect
@@ -23,13 +27,18 @@ def _make_kite(access_token: str | None = None):
     return kite
 
 
-async def get_kite_token(redis: Redis) -> str | None:
-    val = await redis.get(KITE_TOKEN_KEY)
-    return val.decode() if val else None
+async def get_kite_token(redis: Redis | None) -> str | None:
+    if redis:
+        val = await redis.get(KITE_TOKEN_KEY)
+        return val.decode() if val else None
+    return _MEM_TOKEN
 
 
-async def set_kite_token(redis: Redis, access_token: str) -> None:
-    await redis.set(KITE_TOKEN_KEY, access_token, ex=INSTRUMENTS_TTL)
+async def set_kite_token(redis: Redis | None, access_token: str) -> None:
+    global _MEM_TOKEN
+    _MEM_TOKEN = access_token
+    if redis:
+        await redis.set(KITE_TOKEN_KEY, access_token, ex=INSTRUMENTS_TTL)
 
 
 def get_login_url() -> str:
@@ -47,7 +56,7 @@ async def exchange_and_store_token(request_token: str, redis: Redis) -> str:
     return access_token
 
 
-async def _cache_instruments(access_token: str, redis: Redis) -> None:
+async def _cache_instruments(access_token: str, redis: Redis | None) -> None:
     import asyncio
     for exchange in ("NSE", "BSE"):
         try:
@@ -57,7 +66,9 @@ async def _cache_instruments(access_token: str, redis: Redis) -> None:
                 for i in raw
                 if i.get("instrument_type") == "EQ"
             ]
-            await redis.set(f"kite:instruments:{exchange}", json.dumps(equities), ex=INSTRUMENTS_TTL)
+            _MEM_INSTRUMENTS[exchange] = equities
+            if redis:
+                await redis.set(f"kite:instruments:{exchange}", json.dumps(equities), ex=INSTRUMENTS_TTL)
             logger.info("Cached %d %s instruments", len(equities), exchange)
         except Exception as exc:
             logger.warning("Failed to cache %s instruments: %s", exchange, exc)
@@ -68,7 +79,7 @@ def _fetch_instruments_sync(access_token: str, exchange: str) -> list[dict]:
     return kite.instruments(exchange)
 
 
-async def kite_fetch_quote(symbol: str, exchange: str, redis: Redis) -> dict[str, Any] | None:
+async def kite_fetch_quote(symbol: str, exchange: str, redis: Redis | None) -> dict[str, Any] | None:
     token = await get_kite_token(redis)
     if not token:
         return None
@@ -101,29 +112,37 @@ def _quote_sync(access_token: str, instrument_key: str) -> dict:
     return _make_kite(access_token).quote([instrument_key])
 
 
-async def kite_search_instruments(query: str, exchange: str, redis: Redis, limit: int = 10) -> list[dict]:
+async def kite_search_instruments(query: str, exchange: str, redis: Redis | None, limit: int = 10) -> list[dict]:
     token = await get_kite_token(redis)
     if not token:
         return []
 
-    cache_key = f"kite:instruments:{exchange.upper()}"
-    raw = await redis.get(cache_key)
+    exch = exchange.upper()
+    instruments: list[dict] = []
 
-    if raw:
-        instruments: list[dict] = json.loads(raw)
-    else:
+    # Check Redis first, then memory cache
+    if redis:
+        raw = await redis.get(f"kite:instruments:{exch}")
+        if raw:
+            instruments = json.loads(raw)
+    if not instruments and exch in _MEM_INSTRUMENTS:
+        instruments = _MEM_INSTRUMENTS[exch]
+
+    if not instruments:
         # Fetch and cache on demand
         try:
             import asyncio
-            fetched = await asyncio.to_thread(_fetch_instruments_sync, token, exchange.upper())
+            fetched = await asyncio.to_thread(_fetch_instruments_sync, token, exch)
             instruments = [
-                {"symbol": i["tradingsymbol"], "name": i.get("name") or i["tradingsymbol"], "exchange": exchange.upper()}
+                {"symbol": i["tradingsymbol"], "name": i.get("name") or i["tradingsymbol"], "exchange": exch}
                 for i in fetched
                 if i.get("instrument_type") == "EQ"
             ]
-            await redis.set(cache_key, json.dumps(instruments), ex=INSTRUMENTS_TTL)
+            _MEM_INSTRUMENTS[exch] = instruments
+            if redis:
+                await redis.set(f"kite:instruments:{exch}", json.dumps(instruments), ex=INSTRUMENTS_TTL)
         except Exception as exc:
-            logger.warning("Kite instruments fetch failed for %s: %s", exchange, exc)
+            logger.warning("Kite instruments fetch failed for %s: %s", exch, exc)
             return []
 
     q = query.strip().upper()
@@ -142,7 +161,11 @@ async def kite_search_instruments(query: str, exchange: str, redis: Redis, limit
     return results
 
 
-async def kite_status(redis: Redis) -> dict:
+async def kite_status(redis: Redis | None) -> dict:
     token = await get_kite_token(redis)
-    ttl = await redis.ttl(KITE_TOKEN_KEY) if token else -1
+    ttl = -1
+    if token and redis:
+        ttl = await redis.ttl(KITE_TOKEN_KEY)
+    elif token:
+        ttl = INSTRUMENTS_TTL
     return {"active": bool(token), "expires_in_seconds": ttl if ttl > 0 else 0}
