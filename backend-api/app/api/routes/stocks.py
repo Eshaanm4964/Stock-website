@@ -30,8 +30,9 @@ async def stock_search(
     q: str = Query(default="", min_length=1),
     exchange: str = Query(default="NSE"),
     limit: int = Query(default=10, ge=1, le=20),
+    redis: Redis = Depends(get_redis),
 ) -> list[StockSearchResult]:
-    return await search_stock_symbols(q, exchange, limit)
+    return await search_stock_symbols(q, exchange, limit, redis)
 
 
 @router.get("/{symbol}", response_model=StockDetailResponse)

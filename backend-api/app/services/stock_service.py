@@ -250,13 +250,35 @@ async def _search_yahoo_symbols(query: str, limit: int, exchange_filter: str = "
     return results
 
 
-async def search_stock_symbols(query: str, exchange: str = "NSE", limit: int = 10) -> list[StockSearchResult]:
+async def search_stock_symbols(query: str, exchange: str = "NSE", limit: int = 10, redis: Redis | None = None) -> list[StockSearchResult]:
     cleaned_query = query.strip()
     if len(cleaned_query) < 1:
         return []
     safe_limit = max(1, min(limit, 20))
     safe_exchange = (exchange or "NSE").upper()
     exchange_targets = ["NSE", "BSE"] if safe_exchange in {"ALL", "SME", "MSME"} else [safe_exchange]
+
+    # Attempt 0: Kite instruments list (complete NSE+BSE coverage)
+    if redis:
+        from app.services.kite_service import kite_search_instruments
+        kite_results: list[StockSearchResult] = []
+        seen_kite: set[tuple[str, str]] = set()
+        for target_exchange in exchange_targets:
+            for inst in await kite_search_instruments(cleaned_query, target_exchange, redis, safe_limit):
+                key = (inst["symbol"], inst["exchange"])
+                if key in seen_kite:
+                    continue
+                seen_kite.add(key)
+                kite_results.append(StockSearchResult(
+                    symbol=inst["symbol"],
+                    name=inst["name"],
+                    exchange=inst["exchange"],
+                    sector=None,
+                    source="kite",
+                ))
+        if kite_results:
+            return kite_results[:safe_limit]
+
     results: list[StockSearchResult] = []
     seen: set[tuple[str, str]] = set()
 
@@ -421,6 +443,15 @@ async def fetch_quote(symbol: str, exchange: str = "NSE", redis: Redis | None = 
     info: dict[str, Any]
     source = "yfinance"
     is_fallback = False
+
+    # Attempt 0: Kite Connect live feed (real-time, authorized NSE+BSE)
+    if redis:
+        from app.services.kite_service import kite_fetch_quote
+        kite_data = await kite_fetch_quote(symbol, exchange, redis)
+        if kite_data and kite_data.get("currentPrice"):
+            quote = _build_quote(symbol, exchange, kite_data, source="kite", is_fallback=False)
+            await set_cached_json(redis, cache_key, _serialize_quote(quote), settings.cache_ttl_seconds)
+            return quote
 
     yahoo_symbol = _normalize_symbol(symbol, exchange)
     alt_symbol = _normalize_symbol(symbol, "BSE" if exchange.upper() == "NSE" else "NSE")

@@ -55,6 +55,8 @@ class Settings(BaseSettings):
         alias="ADMIN_ALLOWED_PHONE_NUMBERS",
     )
     admin_password: str = Field(default="admin123", alias="ADMIN_PASSWORD")
+    kite_api_key: str = Field(default="", alias="KITE_API_KEY")
+    kite_api_secret: str = Field(default="", alias="KITE_API_SECRET")
 
     model_config = SettingsConfigDict(
         env_file=".env",

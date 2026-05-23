@@ -15,3 +15,4 @@ openai==1.107.0
 yfinance==0.2.65
 pandas==2.3.2
 python-multipart==0.0.20
+kiteconnect==5.0.1
