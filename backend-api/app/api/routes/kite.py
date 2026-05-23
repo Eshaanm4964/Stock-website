@@ -50,7 +50,7 @@ async def kite_callback(
         return HTMLResponse("""
             <html><body style='font-family:sans-serif;text-align:center;padding:60px;background:#f5f9ff'>
             <h2 style='color:#27b27e'>&#10003; Kite Connect token activated</h2>
-            <p style='color:#0f203d'>Live NSE &amp; BSE prices are now active. This token is valid until midnight.</p>
+            <p style='color:#0f203d'>Live NSE &amp; BSE prices are now active. This token is valid until 6 AM next day.</p>
             <p style='font-size:0.85rem;color:#6b7a99'>You can close this tab.</p>
             </body></html>
         """)

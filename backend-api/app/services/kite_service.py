@@ -100,11 +100,16 @@ async def kite_fetch_quote(symbol: str, exchange: str, redis: Redis | None) -> d
         if not q or not q.get("last_price"):
             return None
         ohlc = q.get("ohlc") or {}
+        prev_close = float(ohlc.get("close") or 0) or None
+        net_change = float(q.get("net_change") or 0)
+        last_price = float(q["last_price"])
+        change_pct = (net_change / (last_price - net_change) * 100) if net_change and (last_price - net_change) > 0 else None
         return {
-            "currentPrice": float(q["last_price"]),
-            "previousClose": float(ohlc.get("close") or 0) or None,
+            "currentPrice": last_price,
+            "previousClose": prev_close,
             "shortName": q.get("tradingsymbol") or symbol.upper(),
             "currency": "INR",
+            "regularMarketChangePercent": change_pct,
         }
     except Exception as exc:
         logger.warning("Kite quote failed for %s:%s — %s", exchange, symbol, exc)
