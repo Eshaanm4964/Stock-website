@@ -26,7 +26,7 @@ async def kite_token_status(
 
 
 @router.get("/login-url")
-async def kite_login_url(_: User = Depends(get_admin_user)) -> dict:
+async def kite_login_url() -> dict:
     try:
         url = get_login_url()
         return {"login_url": url}
