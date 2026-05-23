@@ -50,6 +50,9 @@ async def exchange_and_store_token(request_token: str, redis: Redis | None) -> s
     data = kite.generate_session(request_token, api_secret=settings.kite_api_secret)
     access_token: str = data["access_token"]
     await set_kite_token(redis, access_token)
+    # Clear local quote cache so next requests use Kite immediately
+    from app.services.stock_service import LOCAL_QUOTE_CACHE
+    LOCAL_QUOTE_CACHE.clear()
     # Warm up instruments cache in background
     import asyncio
     asyncio.create_task(_cache_instruments(access_token, redis))
