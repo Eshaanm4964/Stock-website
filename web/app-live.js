@@ -2012,6 +2012,60 @@ function showXirrCalculatorModal(userDashboards) {
   });
 }
 
+let _kiteStatusPollTimer = null;
+
+async function refreshKiteStatus() {
+  const chip = document.getElementById("kiteStatusChip");
+  const label = document.getElementById("kiteStatusLabel");
+  if (!chip || !label) return;
+  try {
+    const data = await api("/kite/status");
+    if (data.active) {
+      const h = Math.floor(data.expires_in_seconds / 3600);
+      const m = Math.floor((data.expires_in_seconds % 3600) / 60);
+      const timeLeft = h > 0 ? `${h}h left` : m > 0 ? `${m}m left` : "expiring";
+      chip.dataset.state = "live";
+      label.textContent = `Kite Live · ${timeLeft}`;
+    } else {
+      chip.dataset.state = "expired";
+      label.textContent = "Kite Expired";
+    }
+  } catch {
+    chip.dataset.state = "expired";
+    label.textContent = "Kite Offline";
+  }
+}
+
+function setupKiteStatusChip() {
+  refreshKiteStatus();
+  if (_kiteStatusPollTimer) clearInterval(_kiteStatusPollTimer);
+  _kiteStatusPollTimer = setInterval(refreshKiteStatus, 60000);
+
+  const btn = document.getElementById("kiteReconnectBtn");
+  if (!btn) return;
+  btn.addEventListener("click", async () => {
+    btn.textContent = "Opening…";
+    btn.disabled = true;
+    try {
+      const data = await api("/kite/login-url");
+      window.open(data.login_url, "_blank");
+      // Poll every 5s for up to 2 minutes to detect when token is active
+      let polls = 0;
+      const poll = setInterval(async () => {
+        polls++;
+        await refreshKiteStatus();
+        const chip = document.getElementById("kiteStatusChip");
+        if (chip?.dataset.state === "live" || polls >= 24) clearInterval(poll);
+      }, 5000);
+    } catch {
+      alert("Could not get Kite login URL. Check your API key on Render.");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Reconnect";
+    }
+  });
+}
+
 function setupAdminManagementButtons() {
   const statusMessage = document.getElementById("adminUserActionStatus");
   const searchInput = document.getElementById("adminUniversalSearch");
@@ -3115,7 +3169,7 @@ async function setupAdminDealForm() {
     if (selectedExchangeInput) {
       selectedExchangeInput.value = searchExchange === "ALL" ? "" : searchExchange;
     }
-    if (query.length < 3) {
+    if (query.length < 1) {
       clearSuggestions();
       setLivePricePreview();
       return;
@@ -4859,6 +4913,11 @@ async function renderAdminPortal(options = {}) {
             </div>
           </div>
           <div class="user-topbar-actions admin-toolbar-right">
+            <div class="kite-status-chip" id="kiteStatusChip" data-state="loading">
+              <span class="kite-status-dot"></span>
+              <span class="kite-status-label" id="kiteStatusLabel">Kite…</span>
+              <button class="kite-reconnect-btn" id="kiteReconnectBtn" type="button">Connect</button>
+            </div>
             <a class="secondary-btn compact-btn admin-nav-btn" href="./admin-add-customer.html">Add Customer</a>
             <a class="secondary-btn compact-btn admin-nav-btn" href="./admin-add-deal.html">Add Deal</a>
             <a class="secondary-btn compact-btn admin-nav-btn" href="./admin-add-funds.html">Top Up Funds</a>
@@ -5125,6 +5184,7 @@ async function renderAdminPortal(options = {}) {
     startAdminRefresh();
     setupDownloadButtons(userDashboards);
     setupAdminManagementButtons();
+    setupKiteStatusChip();
     setupAdminDrilldowns(userDashboards, allHoldings, filteredSoldHistory);
     document.getElementById("adminXirrCalcBtn")?.addEventListener("click", () => showXirrCalculatorModal(userDashboards));
     setupScrollSync("adminPositionsTableWrap", "adminPositionsTableScroller");
