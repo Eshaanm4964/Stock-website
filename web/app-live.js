@@ -3367,8 +3367,32 @@ async function refreshTableLivePrices() {
     if (price != null && price > 0) {
       cell.textContent = currency(price);
       cell.classList.add("live-price-loaded");
-      if (avgPrice > 0) {
-        cell.classList.add(price >= avgPrice ? "profit" : "loss");
+      cell.classList.remove("profit", "loss");
+      if (avgPrice > 0) cell.classList.add(price >= avgPrice ? "profit" : "loss");
+
+      // Update sibling cells on the same row
+      const row = cell.closest("tr[data-price-row]");
+      if (row) {
+        const qty = parseFloat(row.dataset.qty) || 0;
+        const buyPrice = parseFloat(row.dataset.avgPrice) || 0;
+        const prevClose = parseFloat(row.dataset.prevClose) || 0;
+        const realized = parseFloat(row.dataset.realized) || 0;
+        const investedValue = buyPrice * qty;
+        const currentValue = price * qty;
+        const unrealized = (price - buyPrice) * qty;
+        const pct = buyPrice > 0 ? ((price - buyPrice) / buyPrice * 100) : 0;
+        const todayPnl = prevClose > 0 ? (price - prevClose) * qty : 0;
+        const totalPnl = unrealized + realized;
+
+        const cvCell = row.querySelector("[data-current-value-cell]");
+        const unCell = row.querySelector("[data-unrealized-cell]");
+        const tdCell = row.querySelector("[data-today-cell]");
+        const tpCell = row.querySelector("[data-total-pnl-cell]");
+
+        if (cvCell) { cvCell.className = currentValue >= investedValue ? "profit" : "loss"; cvCell.textContent = currency(currentValue); }
+        if (unCell) { unCell.className = unrealized >= 0 ? "profit" : "loss"; unCell.innerHTML = `${currency(unrealized)}<br /><small>${percent(pct)}</small>`; }
+        if (tdCell) { tdCell.className = todayPnl >= 0 ? "profit" : "loss"; tdCell.textContent = currency(todayPnl); }
+        if (tpCell) { tpCell.className = totalPnl >= 0 ? "profit" : "loss"; tpCell.textContent = currency(totalPnl); }
       }
     } else {
       cell.textContent = "—";
@@ -4559,6 +4583,14 @@ function stopLiveDashboardPrices() {
   liveDashboardPriceTimer = null;
 }
 
+function startLivePriceTick() {
+  stopLiveDashboardPrices();
+  liveDashboardPriceTimer = window.setInterval(() => {
+    if (document.hidden) return;
+    refreshTableLivePrices().catch(() => {});
+  }, 10000);
+}
+
 function startAdminDashboardAutoRefresh() {
   if (!isAdminDashboardPage() || activeRole !== "admin") return;
   window.clearInterval(adminDashboardRefreshTimer);
@@ -4802,6 +4834,7 @@ async function renderAdminPortal(options = {}) {
       return {
         ...holding,
         current_price: currentPrice,
+        prev_close: prevClose,
         percent_change: Number(holding.percent_change ?? ((currentPrice - holding.buy_price) / Math.max(holding.buy_price, 1)) * 100),
         profit_loss: (currentPrice - Number(holding.buy_price || 0)) * Number(holding.quantity || 0),
         today_profit: Number.isFinite(todayProfit) ? todayProfit : 0
@@ -5055,7 +5088,7 @@ async function renderAdminPortal(options = {}) {
                         const realizedProfit = realizedMap.get(`${holding.user_id}::${String(holding.symbol || "").toUpperCase()}`) || 0;
                         const totalProfit = Number(holding.profit_loss || 0) + Number(realizedProfit || 0);
                         return `
-                        <tr>
+                        <tr data-price-row data-qty="${holding.quantity}" data-avg-price="${Number(holding.buy_price || 0)}" data-prev-close="${holding.prev_close || ''}" data-realized="${realizedProfit}">
                           <td><button class="table-link" type="button" data-user-detail="${holding.user_id}">${holding.owner}</button><br /><small>${holding.fixed_user_id || ""}</small></td>
                           <td>
                             <button class="table-link" type="button" data-stock-detail="${holding.symbol}" data-stock-user-id="${holding.user_id}" data-stock-label="${escapeHtml(String(holding.symbol || "").toUpperCase())}">${isAdminStockRevealed(holding.symbol) ? holding.symbol : maskStockSymbol(holding.symbol)}</button>
@@ -5065,12 +5098,12 @@ async function renderAdminPortal(options = {}) {
                           <td>${holding.quantity}</td>
                           <td>${currency(holding.buy_price)}</td>
                           <td data-live-price-cell="${escapeHtml(String(holding.symbol || "").toUpperCase())}::${escapeHtml(holding.exchange || "NSE")}" data-avg-price="${Number(holding.buy_price || 0)}" class="live-price-fetching">—</td>
-                          <td class="${valueClass}">${currency(investedValue)}</td>
-                          <td class="${valueClass}">${currency(currentValue)}</td>
-                          <td class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
-                          <td class="${Number(holding.today_profit) >= 0 ? "profit" : "loss"}">${currency(holding.today_profit)}</td>
+                          <td data-invested-cell class="${valueClass}">${currency(investedValue)}</td>
+                          <td data-current-value-cell class="${valueClass}">${currency(currentValue)}</td>
+                          <td data-unrealized-cell class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
+                          <td data-today-cell class="${Number(holding.today_profit) >= 0 ? "profit" : "loss"}">${currency(holding.today_profit)}</td>
                           <td class="${Number(realizedProfit) >= 0 ? "profit" : "loss"}">${currency(realizedProfit)}</td>
-                          <td class="${Number(totalProfit) >= 0 ? "profit" : "loss"}">${currency(totalProfit)}</td>
+                          <td data-total-pnl-cell class="${Number(totalProfit) >= 0 ? "profit" : "loss"}">${currency(totalProfit)}</td>
                           <td class="action-cell-duo">
                             <button class="buy-action-btn" type="button" data-admin-buy-holding="${holding.holding_id}" data-user-id="${holding.user_id}" data-symbol="${escapeHtml(String(holding.symbol || ''))}" data-owner="${escapeHtml(String(holding.owner || ''))}" data-exchange="${escapeHtml(holding.exchange || 'NSE')}" data-buy-price="${holding.buy_price}" data-current-price="${holding.current_price || ''}">Buy</button>
                             <button class="edit-action-btn" type="button" data-admin-edit-holding="${holding.holding_id}" data-symbol="${escapeHtml(String(holding.symbol || ''))}" data-owner="${escapeHtml(String(holding.owner || ''))}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}" data-created-at="${escapeHtml(holding.created_at || '')}">Edit</button>
@@ -5213,6 +5246,7 @@ async function renderAdminPortal(options = {}) {
     }
     setupPortalActions();
     void refreshTableLivePrices();
+    startLivePriceTick();
     if (silent && !scrollToDetail && _savedScrollY > 0) {
       requestAnimationFrame(() => window.scrollTo({ top: _savedScrollY, behavior: "instant" }));
     }

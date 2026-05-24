@@ -346,6 +346,13 @@ def _set_local_cached_quote(key: str, quote: StockQuote) -> None:
     )
 
 
+def _set_local_cached_quote_kite(key: str, quote: StockQuote) -> None:
+    LOCAL_QUOTE_CACHE[key] = (
+        _utc_now() + timedelta(seconds=settings.kite_cache_ttl_seconds),
+        _serialize_quote(quote),
+    )
+
+
 def _build_quote(symbol: str, exchange: str, info: dict[str, Any], *, source: str, is_fallback: bool) -> StockQuote:
     price = float(info.get("currentPrice") or info.get("regularMarketPrice") or info.get("price") or 0.0)
 
@@ -449,9 +456,9 @@ async def fetch_quote(symbol: str, exchange: str = "NSE", redis: Redis | None = 
     if kite_data and kite_data.get("currentPrice"):
         quote = _build_quote(symbol, exchange, kite_data, source="kite", is_fallback=False)
         if redis:
-            await set_cached_json(redis, cache_key, _serialize_quote(quote), settings.cache_ttl_seconds)
+            await set_cached_json(redis, cache_key, _serialize_quote(quote), settings.kite_cache_ttl_seconds)
         else:
-            _set_local_cached_quote(cache_key, quote)
+            _set_local_cached_quote_kite(cache_key, quote)
         return quote
 
     yahoo_symbol = _normalize_symbol(symbol, exchange)

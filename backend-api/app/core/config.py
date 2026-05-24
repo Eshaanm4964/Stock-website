@@ -34,6 +34,7 @@ class Settings(BaseSettings):
         alias="ALLOWED_ORIGINS",
     )
     cache_ttl_seconds: int = 180
+    kite_cache_ttl_seconds: int = 15
     alert_poll_interval_seconds: int = 60
     otp_expire_minutes: int = 3
     otp_debug_mode: bool = Field(default=True, alias="OTP_DEBUG_MODE")
