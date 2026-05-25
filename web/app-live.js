@@ -4898,7 +4898,7 @@ async function renderAdminPortal(options = {}) {
     const allHoldings = baseHoldings.map((holding) => {
       const ex = (holding.exchange || "NSE").toUpperCase();
       const quote = quoteMap.get(`${holding.symbol}:${ex}`);
-      const currentPrice = Number(quote?.price ?? holding.current_price ?? holding.buy_price);
+      const currentPrice = (quote?.price > 0) ? Number(quote.price) : Number(holding.current_price || holding.buy_price || 0);
       const prevClose = quote?.previous_close
         ? Number(quote.previous_close)
         : holding.previous_close
