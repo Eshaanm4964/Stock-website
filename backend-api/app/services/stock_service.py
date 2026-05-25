@@ -446,11 +446,7 @@ async def fetch_quote(symbol: str, exchange: str = "NSE", redis: Redis | None = 
         if local_cached:
             return local_cached
 
-    info: dict[str, Any]
-    source = "yfinance"
-    is_fallback = False
-
-    # Attempt 0: Kite Connect live feed (real-time, authorized NSE+BSE)
+    # Only Kite — no Yahoo Finance fallback
     from app.services.kite_service import kite_fetch_quote
     kite_data = await kite_fetch_quote(symbol, exchange, redis)
     if kite_data and kite_data.get("currentPrice"):
@@ -461,60 +457,18 @@ async def fetch_quote(symbol: str, exchange: str = "NSE", redis: Redis | None = 
             _set_local_cached_quote_kite(cache_key, quote)
         return quote
 
-    yahoo_symbol = _normalize_symbol(symbol, exchange)
-    alt_symbol = _normalize_symbol(symbol, "BSE" if exchange.upper() == "NSE" else "NSE")
-
-    # Attempt 1: fast_info on both symbols concurrently (fastest, returns price + prev_close)
-    (lp_main, pc_main), (lp_alt, pc_alt) = await asyncio.gather(
-        asyncio.to_thread(_yf_fetch_fast_info, yahoo_symbol),
-        asyncio.to_thread(_yf_fetch_fast_info, alt_symbol),
+    # Kite unavailable or token expired — return zero price (not cached, retries on next call)
+    return StockQuote(
+        symbol=symbol.upper(),
+        short_name=symbol.upper(),
+        exchange=exchange.upper(),
+        price=0.0,
+        change_percent=0.0,
+        currency="INR",
+        previous_close=None,
+        data_source="unavailable",
+        is_fallback=True,
     )
-    lp = lp_main or lp_alt
-    pc = pc_main or pc_alt
-    if lp:
-        info = {"currentPrice": lp, "shortName": symbol.upper(), "currency": "INR"}
-        if pc:
-            info["previousClose"] = pc
-    else:
-        info = {}
-
-    price = lp or 0.0
-
-    # Attempt 2: ticker.info for richer metadata (name, sector) — only if fast_info missed price
-    if not price:
-        info = await asyncio.to_thread(_yf_fetch_info, yahoo_symbol)
-        price = float(info.get("currentPrice") or info.get("regularMarketPrice") or info.get("price") or 0.0)
-
-    # Attempt 3: history as last resort (covers illiquid / less active stocks)
-    has_prev = bool(info.get("previousClose") or info.get("regularMarketPreviousClose"))
-    if not price or not has_prev:
-        (curr_main, prev_main), (curr_alt, prev_alt) = await asyncio.gather(
-            asyncio.to_thread(_yf_fetch_history, yahoo_symbol),
-            asyncio.to_thread(_yf_fetch_history, alt_symbol),
-        )
-        curr = curr_main or curr_alt
-        prev = prev_main or prev_alt
-        if curr:
-            patch: dict[str, Any] = {"currentPrice": curr, "shortName": info.get("shortName") or symbol.upper(), "currency": "INR"}
-            if prev and not has_prev:
-                patch["previousClose"] = prev
-            info = {**info, **patch}
-            price = curr
-
-    # Attempt 4: named fallback quotes
-    if not price:
-        fb = FALLBACK_QUOTES.get(symbol.upper(), {})
-        if fb:
-            info = fb
-            source = "fallback"
-            is_fallback = True
-
-    quote = _build_quote(symbol, exchange, info, source=source, is_fallback=is_fallback)
-    if redis:
-        await set_cached_json(redis, cache_key, _serialize_quote(quote), settings.cache_ttl_seconds)
-    else:
-        _set_local_cached_quote(cache_key, quote)
-    return quote
 
 
 async def fetch_market_feed(
