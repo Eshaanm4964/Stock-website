@@ -4,6 +4,7 @@ from redis.asyncio import Redis
 from app.db.session import get_redis
 from app.schemas.stock import StockDetailResponse, StockQuote, StockSearchResult
 from app.services.news_service import fetch_market_news, fetch_news
+from app.services.kite_service import get_random_instruments
 from app.services.stock_service import fetch_indicator_bundle, fetch_market_feed, fetch_quote, search_stock_symbols
 
 router = APIRouter(prefix="/stocks", tags=["stocks"])
@@ -18,6 +19,20 @@ async def market_feed(
 ) -> list[StockQuote]:
     selected = [item.strip() for item in symbols.split(",")] if symbols else DEFAULT_SYMBOLS
     return await fetch_market_feed(selected, exchange, redis)
+
+
+@router.get("/random", response_model=list[StockQuote])
+async def random_stocks(
+    count: int = Query(default=12, ge=1, le=30),
+    exchange: str = Query(default="NSE"),
+    redis: Redis = Depends(get_redis),
+) -> list[StockQuote]:
+    symbols = await get_random_instruments(exchange, count * 3, redis)  # fetch 3x to account for missing quotes
+    if not symbols:
+        return []
+    feed = await fetch_market_feed(symbols, exchange, redis)
+    live = [q for q in feed if q.price and q.price > 0]
+    return live[:count]
 
 
 @router.get("/market/news")

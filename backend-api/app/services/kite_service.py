@@ -169,6 +169,42 @@ async def kite_search_instruments(query: str, exchange: str, redis: Redis | None
     return results
 
 
+async def get_random_instruments(exchange: str, count: int, redis: Redis | None) -> list[str]:
+    import random
+    exch = exchange.upper()
+    instruments: list[dict] = []
+
+    if redis:
+        raw = await redis.get(f"kite:instruments:{exch}")
+        if raw:
+            instruments = json.loads(raw)
+    if not instruments and exch in _MEM_INSTRUMENTS:
+        instruments = _MEM_INSTRUMENTS[exch]
+
+    if not instruments:
+        token = await get_kite_token(redis)
+        if token:
+            try:
+                import asyncio
+                fetched = await asyncio.to_thread(_fetch_instruments_sync, token, exch)
+                instruments = [
+                    {"symbol": i["tradingsymbol"], "name": i.get("name") or i["tradingsymbol"], "exchange": exch}
+                    for i in fetched
+                    if i.get("instrument_type") == "EQ"
+                ]
+                _MEM_INSTRUMENTS[exch] = instruments
+                if redis:
+                    await redis.set(f"kite:instruments:{exch}", json.dumps(instruments), ex=INSTRUMENTS_TTL)
+            except Exception as exc:
+                logger.warning("Random instruments fetch failed: %s", exc)
+
+    if not instruments:
+        return []
+
+    sample = random.sample(instruments, min(count, len(instruments)))
+    return [i["symbol"] for i in sample]
+
+
 async def kite_status(redis: Redis | None) -> dict:
     token = await get_kite_token(redis)
     ttl = -1
