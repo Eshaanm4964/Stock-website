@@ -4393,7 +4393,33 @@ function maybeShowBalanceWarning(user) {
   }
 }
 
-function printClientReport(user, soldHistory = []) {
+let _reportLogoDataUrl = null;
+async function _getReportLogo() {
+  if (_reportLogoDataUrl) return _reportLogoDataUrl;
+  try {
+    const resp = await fetch("./assets/updated_logo.png");
+    const blob = await resp.blob();
+    _reportLogoDataUrl = await new Promise((res) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.readAsDataURL(blob);
+    });
+  } catch {
+    _reportLogoDataUrl = "";
+  }
+  return _reportLogoDataUrl;
+}
+
+function _openReportWindow(html, title) {
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, "_blank");
+  if (!win) { URL.revokeObjectURL(url); alert("Please allow popups to download the PDF report."); return; }
+  win.addEventListener("load", () => { win.focus(); win.print(); }, { once: true });
+  setTimeout(() => URL.revokeObjectURL(url), 120000);
+}
+
+async function printClientReport(user, soldHistory = []) {
   const safeHoldings = Array.isArray(user.holdings) ? user.holdings : [];
   const userSoldHistory = soldHistory.filter((e) => Number(e.user_id) === Number(user.user_id));
   const detailRealizedMap = userSoldHistory.reduce((map, e) => {
@@ -4452,9 +4478,13 @@ function printClientReport(user, soldHistory = []) {
     </tr>`;
   }).join("");
 
-  const css = `*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#1a1a2e;padding:24px}.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #2c90f0}.brand{font-size:18px;font-weight:700;color:#2c90f0}.brand small{display:block;font-size:9px;font-weight:400;color:#6b7280;text-transform:uppercase;letter-spacing:.1em}.meta{text-align:right;font-size:10px;color:#6b7280}.meta strong{display:block;font-size:13px;color:#1a1a2e;font-weight:700}.client{margin-bottom:18px}.client h1{font-size:16px;font-weight:700;color:#2c90f0}.client p{font-size:10px;color:#6b7280;margin-top:2px}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}.card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px}.card .lbl{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.card .val{font-size:13px;font-weight:700}.sec{font-size:12px;font-weight:700;margin:18px 0 8px;border-left:3px solid #2c90f0;padding-left:8px}table{width:100%;border-collapse:collapse;font-size:10px}th{background:#f1f5f9;color:#374151;font-weight:600;padding:6px 8px;text-align:left;border-bottom:1px solid #e2e8f0;white-space:nowrap}td{padding:5px 8px;border-bottom:1px solid #f1f5f9}tfoot td{background:#f8fafc;font-weight:700;border-top:1px solid #e2e8f0}.foot{margin-top:24px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9px;color:#9ca3af;text-align:center}@media print{body{padding:12px}}`;
+  const logo = await _getReportLogo();
+  const wmHtml = logo ? `<div class="wm"><img src="${logo}" alt=""/></div>` : "";
 
-  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><title>Report — ${escapeHtml(user.full_name)}</title><style>${css}</style></head><body>
+  const css = `*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#1a1a2e;padding:24px;position:relative}.wm{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:-1}.wm img{width:45%;opacity:.06;transform:rotate(-25deg)}.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #2c90f0}.brand{font-size:18px;font-weight:700;color:#2c90f0}.brand small{display:block;font-size:9px;font-weight:400;color:#6b7280;text-transform:uppercase;letter-spacing:.1em}.meta{text-align:right;font-size:10px;color:#6b7280}.meta strong{display:block;font-size:13px;color:#1a1a2e;font-weight:700}.client{margin-bottom:18px}.client h1{font-size:16px;font-weight:700;color:#2c90f0}.client p{font-size:10px;color:#6b7280;margin-top:2px}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}.card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px}.card .lbl{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.card .val{font-size:13px;font-weight:700}.sec{font-size:12px;font-weight:700;margin:18px 0 8px;border-left:3px solid #2c90f0;padding-left:8px}table{width:100%;border-collapse:collapse;font-size:10px}th{background:#f1f5f9;color:#374151;font-weight:600;padding:6px 8px;text-align:left;border-bottom:1px solid #e2e8f0;white-space:nowrap}td{padding:5px 8px;border-bottom:1px solid #f1f5f9}tfoot td{background:#f8fafc;font-weight:700;border-top:1px solid #e2e8f0}.foot{margin-top:24px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9px;color:#9ca3af;text-align:center}@media print{body{padding:12px}}`;
+
+  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><title>Portfolio Report — ${escapeHtml(user.full_name)}</title><style>${css}</style></head><body>
+${wmHtml}
 <div class="hdr"><div><div class="brand">Asset Yantra<small>Markets. Insights. Wealth.</small></div></div><div class="meta"><strong>Portfolio Report</strong>${reportDate}, ${reportTime}</div></div>
 <div class="client"><h1>${escapeHtml(user.full_name)}</h1><p>Client ID: ${escapeHtml(user.fixed_user_id || user.username || "—")} &nbsp;|&nbsp; Phone: ${escapeHtml(user.phone_number || "—")}</p></div>
 <div class="grid">
@@ -4476,15 +4506,10 @@ ${userSoldHistory.length ? `<table><thead><tr><th>Symbol</th><th>Exch</th><th>Bu
 <div class="foot">Generated by Asset Yantra on ${reportDate} at ${reportTime}. Prices reflect the last market data fetch. For advisory purposes only.</div>
 </body></html>`;
 
-  const win = window.open("", "_blank", "width=1100,height=750");
-  if (!win) { alert("Please allow popups to download the PDF report."); return; }
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  setTimeout(() => win.print(), 600);
+  _openReportWindow(html, `Portfolio Report — ${user.full_name}`);
 }
 
-function printStockReport(symbol, holdings) {
+async function printStockReport(symbol, holdings) {
   const totalQty = holdings.reduce((s, h) => s + Number(h.quantity || 0), 0);
   const totalInvested = holdings.reduce((s, h) => s + Number(h.buy_price || 0) * Number(h.quantity || 0), 0);
   const totalCurrent = holdings.reduce((s, h) => s + Number(h.current_price || 0) * Number(h.quantity || 0), 0);
@@ -4506,9 +4531,13 @@ function printStockReport(symbol, holdings) {
     </tr>`;
   }).join("");
 
-  const css = `*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#1a1a2e;padding:24px}.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #2c90f0}.brand{font-size:18px;font-weight:700;color:#2c90f0}.brand small{display:block;font-size:9px;font-weight:400;color:#6b7280;text-transform:uppercase;letter-spacing:.1em}.meta{text-align:right;font-size:10px;color:#6b7280}.meta strong{display:block;font-size:13px;color:#1a1a2e;font-weight:700}.stk{margin-bottom:18px}.stk h1{font-size:20px;font-weight:700;color:#2c90f0}.stk p{font-size:10px;color:#6b7280;margin-top:2px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}.card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px}.card .lbl{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.card .val{font-size:14px;font-weight:700}.sec{font-size:12px;font-weight:700;margin:18px 0 8px;border-left:3px solid #2c90f0;padding-left:8px}table{width:100%;border-collapse:collapse;font-size:10px}th{background:#f1f5f9;color:#374151;font-weight:600;padding:6px 8px;text-align:left;border-bottom:1px solid #e2e8f0;white-space:nowrap}td{padding:5px 8px;border-bottom:1px solid #f1f5f9}tfoot td{background:#f8fafc;font-weight:700;border-top:1px solid #e2e8f0}.foot{margin-top:24px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9px;color:#9ca3af;text-align:center}@media print{body{padding:12px}}`;
+  const logo = await _getReportLogo();
+  const wmHtml = logo ? `<div class="wm"><img src="${logo}" alt=""/></div>` : "";
+
+  const css = `*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#1a1a2e;padding:24px;position:relative}.wm{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:-1}.wm img{width:45%;opacity:.06;transform:rotate(-25deg)}.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #2c90f0}.brand{font-size:18px;font-weight:700;color:#2c90f0}.brand small{display:block;font-size:9px;font-weight:400;color:#6b7280;text-transform:uppercase;letter-spacing:.1em}.meta{text-align:right;font-size:10px;color:#6b7280}.meta strong{display:block;font-size:13px;color:#1a1a2e;font-weight:700}.stk{margin-bottom:18px}.stk h1{font-size:20px;font-weight:700;color:#2c90f0}.stk p{font-size:10px;color:#6b7280;margin-top:2px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}.card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px}.card .lbl{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.card .val{font-size:14px;font-weight:700}.sec{font-size:12px;font-weight:700;margin:18px 0 8px;border-left:3px solid #2c90f0;padding-left:8px}table{width:100%;border-collapse:collapse;font-size:10px}th{background:#f1f5f9;color:#374151;font-weight:600;padding:6px 8px;text-align:left;border-bottom:1px solid #e2e8f0;white-space:nowrap}td{padding:5px 8px;border-bottom:1px solid #f1f5f9}tfoot td{background:#f8fafc;font-weight:700;border-top:1px solid #e2e8f0}.foot{margin-top:24px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9px;color:#9ca3af;text-align:center}@media print{body{padding:12px}}`;
 
   const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><title>Stock Report — ${escapeHtml(symbol)}</title><style>${css}</style></head><body>
+${wmHtml}
 <div class="hdr"><div><div class="brand">Asset Yantra<small>Markets. Insights. Wealth.</small></div></div><div class="meta"><strong>Stock Investor Report</strong>${reportDate}, ${reportTime}</div></div>
 <div class="stk"><h1>${escapeHtml(symbol)}</h1><p>Investor breakdown — all clients holding this stock</p></div>
 <div class="grid">
@@ -4524,12 +4553,7 @@ function printStockReport(symbol, holdings) {
 <div class="foot">Generated by Asset Yantra on ${reportDate} at ${reportTime}. Prices reflect the last market data fetch. For advisory purposes only.</div>
 </body></html>`;
 
-  const win = window.open("", "_blank", "width=1000,height=700");
-  if (!win) { alert("Please allow popups to download the PDF report."); return; }
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  setTimeout(() => win.print(), 600);
+  _openReportWindow(html, `Stock Report — ${symbol}`);
 }
 
 function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
