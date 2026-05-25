@@ -7117,32 +7117,31 @@ a.pill-link {
    LEGAL PAGE — Content styling
 ═══════════════════════════════════════════════════════════════ */
 .legal-nav-bar {
-  padding: 0 max(6vw, 48px) !important;
+  padding: 16px max(6vw, 48px) !important;
+  border-top: 1px solid rgba(44,144,240,0.08);
 }
 .legal-jump-nav {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0;
-  border-bottom: 1px solid rgba(44,144,240,0.12);
 }
 .legal-jump-nav a {
-  padding: 14px 22px;
+  padding: 4px 20px;
   border-radius: 0;
   background: none;
   border: none;
-  border-bottom: 2px solid transparent;
-  color: #64748b;
-  font-size: 0.86rem;
+  border-right: 1px solid rgba(44,144,240,0.2);
+  color: #4a6080;
+  font-size: 0.88rem;
   font-weight: 500;
-  letter-spacing: 0.01em;
   text-decoration: none;
-  transition: color 180ms ease, border-color 180ms ease;
-  margin-bottom: -1px;
+  transition: color 150ms ease;
+  white-space: nowrap;
 }
-.legal-jump-nav a:hover {
-  color: #2c90f0;
-  border-bottom-color: #2c90f0;
-}
+.legal-jump-nav a:first-child { padding-left: 0; }
+.legal-jump-nav a:last-child { border-right: none; }
+.legal-jump-nav a:hover { color: #2c90f0; }
 
 .legal-section {
   scroll-margin-top: 80px;
