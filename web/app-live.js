@@ -2295,6 +2295,18 @@ function setupAdminManagementButtons() {
     });
   }
 
+  const mainTableToggleBtn = document.getElementById("adminMainTableToggle");
+  if (mainTableToggleBtn) {
+    let mainTableHidden = false;
+    mainTableToggleBtn.addEventListener("click", () => {
+      mainTableHidden = !mainTableHidden;
+      mainTableToggleBtn.classList.toggle("is-active", mainTableHidden);
+      mainTableToggleBtn.title = mainTableHidden ? "Show table" : "Hide table";
+      const wrap = document.getElementById("adminPositionsTableWrap");
+      if (wrap) wrap.style.display = mainTableHidden ? "none" : "";
+    });
+  }
+
   document.querySelectorAll("[data-delete-sold-history]").forEach((btn) => {
     btn.addEventListener("click", () => {
       showDeleteSoldHistoryModal(
@@ -5386,7 +5398,10 @@ async function renderAdminPortal(options = {}) {
               <h3>All Investor Positions</h3>
               <p class="helper-text admin-positions-helper">Filters are available from the dropdown above. Stock names remain masked until you reveal them.</p>
             </div>
-            <span class="badge">Protected View</span>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="badge">Protected View</span>
+              <button class="admin-eye-btn" type="button" id="adminMainTableToggle" title="Hide table" aria-label="Toggle positions table">&#128065;</button>
+            </div>
           </div>
           <div class="table-wrap admin-position-table-wrap" id="adminPositionsTableWrap">
             <table class="admin-position-table" id="adminPositionsTable">
