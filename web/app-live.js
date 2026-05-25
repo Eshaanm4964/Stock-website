@@ -3344,14 +3344,19 @@ async function refreshTableLivePrices() {
 
   // Fetch prices per exchange group in parallel
   const priceMap = new Map();
+  const prevCloseMap = new Map();
   await Promise.all(
     [...byExchange.entries()].map(async ([exchange, { symbols }]) => {
       const feed = await api(
         `/stocks/feed?symbols=${encodeURIComponent([...symbols].join(","))}&exchange=${encodeURIComponent(exchange)}`
       ).catch(() => []);
       (Array.isArray(feed) ? feed : []).forEach((q) => {
+        const key = `${String(q.symbol).toUpperCase()}::${exchange}`;
         if (q?.symbol && q?.price != null && q.price > 0) {
-          priceMap.set(`${String(q.symbol).toUpperCase()}::${exchange}`, Number(q.price));
+          priceMap.set(key, Number(q.price));
+        }
+        if (q?.symbol && q?.previous_close != null && q.previous_close > 0) {
+          prevCloseMap.set(key, Number(q.previous_close));
         }
       });
     })
@@ -3373,8 +3378,14 @@ async function refreshTableLivePrices() {
       if (row) {
         const qty = parseFloat(row.dataset.qty) || 0;
         const buyPrice = parseFloat(row.dataset.avgPrice) || 0;
-        const prevClose = parseFloat(row.dataset.prevClose) || 0;
         const realized = parseFloat(row.dataset.realized) || 0;
+
+        // Refresh prev_close from live feed if available — fixes stocks where it was null at render
+        const feedKey = `${symbol.toUpperCase()}::${exchange.toUpperCase()}`;
+        const freshPrevClose = prevCloseMap.get(feedKey);
+        if (freshPrevClose > 0) row.dataset.prevClose = String(freshPrevClose);
+        const prevClose = parseFloat(row.dataset.prevClose) || 0;
+
         const investedValue = buyPrice * qty;
         const currentValue = price * qty;
         const unrealized = (price - buyPrice) * qty;
