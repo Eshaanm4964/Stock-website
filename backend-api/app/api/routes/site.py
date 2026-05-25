@@ -120,7 +120,7 @@ async def get_algo_data() -> Any:
     if _algo_cache["data"] is not None and now - _algo_cache["ts"] < ALGO_CACHE_TTL:
         return _algo_cache["data"]
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
+        async with httpx.AsyncClient(timeout=10, headers={"User-Agent": "Mozilla/5.0 (compatible; AssetYantra/1.0)"}) as client:
             resp = await client.get(ALGO_DATA_URL)
             resp.raise_for_status()
             data = resp.json()

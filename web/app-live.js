@@ -6691,15 +6691,18 @@ setupDashboardPages();
     const bars = weeks.map(w => {
       const heightPct = Math.abs(w.profit) / maxAbs * 100;
       const isNeg = w.profit < 0;
-      return `<div class="algo-bar-group"><div class="algo-bar-col">${!isNeg ? `<span class="algo-bar-label">${fmtUSD(w.profit)}</span>` : ""}<div class="algo-bar ${isNeg ? "algo-bar-neg" : ""}" style="height:${heightPct.toFixed(1)}%"></div>${isNeg ? `<span class="algo-bar-label algo-bar-label-neg">${fmtUSD(w.profit)}</span>` : ""}</div><span class="algo-bar-week">${w.label}</span></div>`;
+      return `<div class="algo-bar-group"><div class="algo-bar-col">${!isNeg ? `<span class="algo-bar-label">${fmtUSD(w.profit)}</span>` : ""}<div class="algo-bar ${isNeg ? "algo-bar-neg" : ""}" style="height:${heightPct.toFixed(1)}%"></div>${isNeg ? `<span class="algo-bar-label algo-bar-label-neg">${fmtUSD(w.profit)}</span>` : ""}</div><span class="algo-bar-week">${fmtLabel(w.label)}</span></div>`;
     }).join("");
     const tickLines = ticks.map(t => `<div class="algo-tick-line"><span class="algo-tick-val">${fmtUSD(t)}</span></div>`).join("");
     return `<div class="algo-chart-wrap"><div class="algo-chart-ticks">${tickLines}</div><div class="algo-chart-bars">${bars}</div></div>`;
   }
+  function fmtLabel(label) {
+    return (label || "").replace(/ - /g, " – ");
+  }
   function buildTableRows(weeks) {
     const totalTrades = weeks.reduce((s, w) => s + w.trades, 0);
     const totalProfit = weeks.reduce((s, w) => s + w.profit, 0);
-    const rows = weeks.map(w => `<tr><td>${w.label}</td><td>${w.trades.toLocaleString()}</td><td class="${w.winPct >= 50 ? "profit" : ""}">${w.winPct.toFixed(1)}%</td><td class="${w.profit >= 0 ? "profit" : "loss"}">${fmtUSD(w.profit)}</td><td class="${w.roi >= 0 ? "profit" : "loss"}">${w.roi >= 0 ? "+" : ""}${w.roi.toFixed(1)}%</td></tr>`).join("");
+    const rows = weeks.map(w => `<tr><td>${fmtLabel(w.label)}</td><td>${w.trades.toLocaleString()}</td><td class="${w.winPct >= 50 ? "profit" : ""}">${w.winPct.toFixed(1)}%</td><td class="${w.profit >= 0 ? "profit" : "loss"}">${fmtUSD(w.profit)}</td><td class="${w.roi >= 0 ? "profit" : "loss"}">${w.roi >= 0 ? "+" : ""}${w.roi.toFixed(1)}%</td></tr>`).join("");
     return rows + `<tr class="algo-table-total"><td>TOTAL</td><td>${totalTrades.toLocaleString()}</td><td></td><td class="${totalProfit >= 0 ? "profit" : "loss"}">${fmtUSD(totalProfit)}</td><td></td></tr>`;
   }
   function buildAccountCard(acct) {
@@ -6738,7 +6741,7 @@ setupDashboardPages();
   }
   async function tryLiveData() {
     try {
-      const resp = await fetch("/api/site/algo-data", { cache: "no-store" });
+      const resp = await fetch(getApiBase().replace("/api/v1", "") + "/api/v1/site/algo-data", { cache: "no-store" });
       if (!resp.ok) throw new Error("Non-200");
       const raw = await resp.json();
       const algos = Array.isArray(raw) ? raw : [];
