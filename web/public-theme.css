@@ -7808,11 +7808,25 @@ a.pill-link {
   border-radius: 0;
   border: none;
   box-shadow: none;
+  overflow: visible;
   background: linear-gradient(135deg, #e6f0ff 0%, #f4f8ff 100%);
   margin: 0;
   padding: 60px max(6vw, 48px) 0;
 }
 [data-page="home"] .hero-shell::before { display: none; }
+
+/* ── Home: ticker edge-to-edge ── */
+[data-page="home"] .hero-ticker-wrap {
+  margin-left: calc(-1 * max(6vw, 48px));
+  margin-right: calc(-1 * max(6vw, 48px));
+  margin-bottom: 0;
+}
+[data-page="home"] #homeLiveTicker {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+}
 
 /* ── Home: stats strip dark accent ── */
 [data-page="home"] .stats-shell {
