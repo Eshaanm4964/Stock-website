@@ -3389,7 +3389,8 @@ async function refreshTableLivePrices() {
 
         if (cvCell) { cvCell.className = currentValue >= investedValue ? "profit" : "loss"; cvCell.textContent = currency(currentValue); }
         if (unCell) { unCell.className = unrealized >= 0 ? "profit" : "loss"; unCell.innerHTML = `${currency(unrealized)}<br /><small>${percent(pct)}</small>`; }
-        if (tdCell) { tdCell.className = todayPnl >= 0 ? "profit" : "loss"; tdCell.textContent = currency(todayPnl); }
+        // Only overwrite Today's P&L when prevClose is valid — otherwise leave the API-rendered value intact
+        if (tdCell && prevClose > 0) { tdCell.className = todayPnl >= 0 ? "profit" : "loss"; tdCell.textContent = currency(todayPnl); }
         if (tpCell) { tpCell.className = totalPnl >= 0 ? "profit" : "loss"; tpCell.textContent = currency(totalPnl); }
       }
     } else {
