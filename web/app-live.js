@@ -4410,13 +4410,53 @@ async function _getReportLogo() {
   return _reportLogoDataUrl;
 }
 
-function _openReportWindow(html, title) {
-  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const win = window.open(url, "_blank");
-  if (!win) { URL.revokeObjectURL(url); alert("Please allow popups to download the PDF report."); return; }
-  win.addEventListener("load", () => { win.focus(); win.print(); }, { once: true });
-  setTimeout(() => URL.revokeObjectURL(url), 120000);
+let _html2pdfLoadPromise = null;
+async function _loadHtml2Pdf() {
+  if (window.html2pdf) return window.html2pdf;
+  if (!_html2pdfLoadPromise) {
+    _html2pdfLoadPromise = new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+      s.onload = () => resolve(window.html2pdf);
+      s.onerror = () => { _html2pdfLoadPromise = null; reject(new Error("html2pdf failed to load")); };
+      document.head.appendChild(s);
+    });
+  }
+  return _html2pdfLoadPromise;
+}
+
+async function _openReportWindow(html, filename) {
+  let h2p;
+  try {
+    h2p = await _loadHtml2Pdf();
+  } catch {
+    alert("Could not load PDF library. Please check your internet connection and try again.");
+    return;
+  }
+
+  // Render full HTML inside a hidden iframe so all <style> rules apply correctly
+  const iframe = document.createElement("iframe");
+  iframe.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:794px;height:1px;border:none;visibility:hidden;";
+  document.body.appendChild(iframe);
+
+  await new Promise((resolve) => {
+    iframe.addEventListener("load", resolve, { once: true });
+    iframe.contentDocument.open();
+    iframe.contentDocument.write(html);
+    iframe.contentDocument.close();
+  });
+
+  try {
+    await h2p().set({
+      margin: 0,
+      filename: filename.replace(/[^\w\s\-]/g, "_") + ".pdf",
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, allowTaint: true },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+    }).from(iframe.contentDocument.body).save();
+  } finally {
+    document.body.removeChild(iframe);
+  }
 }
 
 async function printClientReport(user, soldHistory = []) {
@@ -4836,7 +4876,10 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       setupPortalActions();
       setupHoldingActionButtons(document.getElementById("adminUserActionStatus"));
       const _pdfBtn = detailMount.querySelector("#adminDetailPdfBtn");
-      if (_pdfBtn) _pdfBtn.addEventListener("click", () => printClientReport(user, soldHistory));
+      if (_pdfBtn) _pdfBtn.addEventListener("click", async () => {
+        _pdfBtn.textContent = "Generating…"; _pdfBtn.disabled = true;
+        try { await printClientReport(user, soldHistory); } finally { _pdfBtn.textContent = "Download PDF"; _pdfBtn.disabled = false; }
+      });
       void refreshTableLivePrices();
       detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
       maybeShowBalanceWarning(user);
@@ -4859,14 +4902,20 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
         setupPortalActions();
         setupHoldingActionButtons(document.getElementById("adminUserActionStatus"));
         const _cpdfBtn = detailMount.querySelector("#adminDetailPdfBtn");
-        if (_cpdfBtn) _cpdfBtn.addEventListener("click", () => printClientReport(user, soldHistory));
+        if (_cpdfBtn) _cpdfBtn.addEventListener("click", async () => {
+          _cpdfBtn.textContent = "Generating…"; _cpdfBtn.disabled = true;
+          try { await printClientReport(user, soldHistory); } finally { _cpdfBtn.textContent = "Download PDF"; _cpdfBtn.disabled = false; }
+        });
         maybeShowBalanceWarning(user);
       } else {
         const holdings = allHoldings.filter((entry) => String(entry.symbol || "").toUpperCase() === symbol);
         if (!holdings.length) return;
         detailMount.innerHTML = buildAdminStockDetail(symbol, holdings);
         const _spdfBtn = detailMount.querySelector("#adminStockPdfBtn");
-        if (_spdfBtn) _spdfBtn.addEventListener("click", () => printStockReport(symbol, holdings));
+        if (_spdfBtn) _spdfBtn.addEventListener("click", async () => {
+          _spdfBtn.textContent = "Generating…"; _spdfBtn.disabled = true;
+          try { await printStockReport(symbol, holdings); } finally { _spdfBtn.textContent = "Download PDF"; _spdfBtn.disabled = false; }
+        });
       }
       detailMount.classList.remove("hidden");
       detailMount.classList.add("portal-visible");
