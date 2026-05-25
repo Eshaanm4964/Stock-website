@@ -6680,6 +6680,9 @@ setupDashboardPages();
     const abs = Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 0 });
     return (n < 0 ? "-$" : "$") + abs;
   }
+  function fmtLabel(label) {
+    return (label || "").replace(/ - /g, " – ");
+  }
   function buildBarChart(weeks) {
     const profits = weeks.map(w => w.profit);
     const maxAbs = Math.max(...profits.map(Math.abs), 1);
@@ -6695,9 +6698,6 @@ setupDashboardPages();
     }).join("");
     const tickLines = ticks.map(t => `<div class="algo-tick-line"><span class="algo-tick-val">${fmtUSD(t)}</span></div>`).join("");
     return `<div class="algo-chart-wrap"><div class="algo-chart-ticks">${tickLines}</div><div class="algo-chart-bars">${bars}</div></div>`;
-  }
-  function fmtLabel(label) {
-    return (label || "").replace(/ - /g, " – ");
   }
   function buildTableRows(weeks) {
     const totalTrades = weeks.reduce((s, w) => s + w.trades, 0);
