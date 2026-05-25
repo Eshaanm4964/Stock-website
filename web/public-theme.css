@@ -7117,67 +7117,54 @@ a.pill-link {
    LEGAL PAGE — Content styling
 ═══════════════════════════════════════════════════════════════ */
 .legal-nav-bar {
-  padding: 16px 28px !important;
+  padding: 0 max(6vw, 48px) !important;
 }
 .legal-jump-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 0;
+  border-bottom: 1px solid rgba(44,144,240,0.12);
 }
 .legal-jump-nav a {
-  padding: 8px 18px;
-  border-radius: 999px;
-  background: rgba(44,144,240,0.07);
-  border: 1px solid rgba(44,144,240,0.15);
-  color: var(--brand-text-secondary);
-  font-size: 0.83rem;
-  font-weight: 600;
+  padding: 14px 22px;
+  border-radius: 0;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #64748b;
+  font-size: 0.86rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
   text-decoration: none;
-  transition: background 200ms ease, color 200ms ease;
+  transition: color 180ms ease, border-color 180ms ease;
+  margin-bottom: -1px;
 }
 .legal-jump-nav a:hover {
-  background: rgba(44,144,240,0.14);
-  color: var(--brand-accent);
+  color: #2c90f0;
+  border-bottom-color: #2c90f0;
 }
 
 .legal-section {
   scroll-margin-top: 80px;
 }
 .legal-section-head {
-  display: flex;
-  align-items: flex-start;
-  gap: 18px;
-  margin-bottom: 24px;
+  display: block;
+  margin-bottom: 28px;
   padding-bottom: 20px;
+  padding-left: 20px;
   border-bottom: 1px solid rgba(44,144,240,0.1);
+  border-left: 3px solid #2c90f0;
 }
-.legal-section-icon {
-  width: 48px; height: 48px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(44,144,240,0.1), rgba(124,58,237,0.08));
-  border: 1px solid rgba(44,144,240,0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.3rem;
-  flex-shrink: 0;
-  color: #2c90f0;
-  font-weight: 900;
-}
-.legal-icon-warn {
-  background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(239,68,68,0.08));
-  border-color: rgba(245,158,11,0.2);
-  color: #d97706;
-}
-.legal-icon-risk {
-  background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(245,158,11,0.08));
-  border-color: rgba(239,68,68,0.15);
-  color: #ef4444;
-}
+.legal-icon-warn ~ div,
+.legal-section-head:has(.legal-icon-warn) { border-left-color: #d97706; }
+.legal-icon-risk ~ div,
+.legal-section-head:has(.legal-icon-risk) { border-left-color: #ef4444; }
+.legal-section-icon { display: none; }
 .legal-section-head h2 {
-  margin: 6px 0 0;
-  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
-  letter-spacing: -0.01em;
+  margin: 4px 0 0;
+  font-size: clamp(1.1rem, 1.8vw, 1.45rem);
+  letter-spacing: -0.02em;
+  color: #0b1d35;
 }
 .legal-body {
   max-width: 780px;
@@ -7256,50 +7243,10 @@ a.pill-link {
   box-shadow: 0 8px 36px rgba(44,144,240,0.1), inset 4px 0 0 0 #2c90f0;
 }
 
-.legal-section-icon {
-  animation: legalIconPulse 4s ease-in-out infinite;
-}
-@keyframes legalIconPulse {
-  0%,100% { box-shadow: 0 0 0 0 rgba(44,144,240,0); transform: scale(1); }
-  50%     { box-shadow: 0 0 0 6px rgba(44,144,240,0.1); transform: scale(1.06); }
-}
+.legal-section-icon { animation: none; }
 
-.legal-section-head {
-  position: relative;
-  overflow: hidden;
-}
-.legal-section-head::after {
-  content: "";
-  position: absolute;
-  top: 0; left: -100%;
-  width: 60%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(44,144,240,0.06), transparent);
-  animation: legalShimmer 5s ease-in-out infinite;
-  pointer-events: none;
-}
-@keyframes legalShimmer {
-  0%   { left: -100%; }
-  40%,100% { left: 140%; }
-}
-
-.legal-nav-bar {
-  position: relative;
-}
-.legal-jump-nav a {
-  position: relative;
-  overflow: hidden;
-}
-.legal-jump-nav a::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(44,144,240,0.12), rgba(124,58,237,0.08));
-  opacity: 0;
-  transition: opacity 200ms ease;
-  border-radius: 999px;
-}
-.legal-jump-nav a:hover::after { opacity: 1; }
+.legal-section-head { position: relative; overflow: visible; }
+.legal-section-head::after { display: none; }
 
 /* ═══════════════════════════════════════════════════════════════
    CAPITAL SAFETY — Premium Fintech Section
