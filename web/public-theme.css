@@ -7837,13 +7837,23 @@ a.pill-link {
   padding: 80px max(6vw, 48px);
 }
 [data-page="products"] .section-card + .section-card.cta-band {
-  background: #0b1d35;
+  background: linear-gradient(135deg, #0f2847 0%, #1a3f6e 100%);
   border-top: none;
+  border-bottom: 3px solid rgba(255,255,255,0.07);
 }
 [data-page="products"] .section-card.cta-band .section-kicker,
 [data-page="products"] .section-card.cta-band h2,
 [data-page="products"] .section-card.cta-band p { color: #ffffff; }
 [data-page="products"] .section-card.cta-band .section-kicker { color: #60a8f8; }
+[data-page="products"] .section-card.cta-band .pill-link {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.35);
+  color: #ffffff;
+}
+[data-page="products"] .section-card.cta-band .pill-link:hover {
+  background: rgba(255,255,255,0.2);
+  border-color: rgba(255,255,255,0.6);
+}
 
 /* ── Contact: hero gradient, form stays in subtle card ── */
 [data-page="contact"] .section-card.page-hero {
