@@ -3460,7 +3460,7 @@ async function refreshTableLivePrices() {
     if (sTodayWrap) sTodayWrap.className = s.today >= 0 ? "profit" : "loss";
   }
 
-  // User table: update footer totals
+  // User table: update footer totals and summary strip
   const userTable = document.getElementById("userPositionsTable");
   if (userTable) {
     const s = sumTableRows(userTable);
@@ -3472,6 +3472,46 @@ async function refreshTableLivePrices() {
     if (fUnreal) { fUnreal.className = s.unrealized >= 0 ? "profit" : "loss"; fUnreal.innerHTML = `<strong>${currency(s.unrealized)}</strong>`; }
     if (fToday) { fToday.className = s.today >= 0 ? "profit" : "loss"; fToday.innerHTML = `<strong>${currency(s.today)}</strong>`; }
     if (fTotal) { fTotal.className = s.total >= 0 ? "profit" : "loss"; fTotal.innerHTML = `<strong>${currency(s.total)}</strong>`; }
+
+    const sPortVal = document.getElementById("userStripPortfolioValue");
+    const sPortValWrap = document.getElementById("userStripPortfolioValueWrap");
+    const sUnreal = document.getElementById("userStripUnrealized");
+    const sUnrealWrap = document.getElementById("userStripUnrealizedWrap");
+    const sToday = document.getElementById("userStripToday");
+    const sTodayWrap = document.getElementById("userStripTodayWrap");
+    if (sPortVal) sPortVal.textContent = currency(s.current);
+    if (sPortValWrap) sPortValWrap.className = s.current >= s.invested ? "profit" : "loss";
+    if (sUnreal) sUnreal.textContent = currency(s.unrealized);
+    if (sUnrealWrap) sUnrealWrap.className = s.unrealized >= 0 ? "profit" : "loss";
+    if (sToday) sToday.textContent = currency(s.today);
+    if (sTodayWrap) sTodayWrap.className = s.today >= 0 ? "profit" : "loss";
+  }
+
+  // Client detail table: update footer totals and stat cards
+  const detailTable = document.getElementById("adminDetailPositionsTable");
+  if (detailTable) {
+    const sd = sumTableRows(detailTable);
+    const dfCurr = document.getElementById("adminDetailFooterCurrentValue");
+    const dfUnreal = document.getElementById("adminDetailFooterUnrealized");
+    const dfToday = document.getElementById("adminDetailFooterToday");
+    const dfTotal = document.getElementById("adminDetailFooterTotal");
+    if (dfCurr) { dfCurr.className = sd.current >= sd.invested ? "profit" : "loss"; dfCurr.innerHTML = `<strong>${currency(sd.current)}</strong>`; }
+    if (dfUnreal) { dfUnreal.className = sd.unrealized >= 0 ? "profit" : "loss"; dfUnreal.innerHTML = `<strong>${currency(sd.unrealized)}</strong>`; }
+    if (dfToday) { dfToday.className = sd.today >= 0 ? "profit" : "loss"; dfToday.innerHTML = `<strong>${currency(sd.today)}</strong>`; }
+    if (dfTotal) { dfTotal.className = sd.total >= 0 ? "profit" : "loss"; dfTotal.innerHTML = `<strong>${currency(sd.total)}</strong>`; }
+
+    const statGrid = document.getElementById("adminDetailStatGrid");
+    if (statGrid) {
+      const totalInvestment = parseFloat(statGrid.dataset.totalInvestment) || 0;
+      const liveReturn = sd.current - sd.invested;
+      const liveReturnPct = totalInvestment > 0 ? (liveReturn / totalInvestment) * 100 : 0;
+      const statCurr = document.getElementById("adminDetailStatCurrentFunds");
+      const statRet = document.getElementById("adminDetailStatTotalReturn");
+      const statPct = document.getElementById("adminDetailStatReturnPct");
+      if (statCurr) statCurr.textContent = currency(sd.current);
+      if (statRet) { statRet.className = liveReturn >= 0 ? "profit" : "loss"; statRet.textContent = currency(liveReturn); }
+      if (statPct) { statPct.className = liveReturnPct >= 0 ? "profit" : "loss"; statPct.textContent = percent(liveReturnPct); }
+    }
   }
 }
 
@@ -4365,7 +4405,11 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
   const totalInvested = safeHoldings.reduce((s, h) => s + Number(h.buy_price || 0) * Number(h.quantity || 0), 0);
   const totalCurrent = safeHoldings.reduce((s, h) => s + Number(h.current_price || 0) * Number(h.quantity || 0), 0);
   const totalUnrealized = safeHoldings.reduce((s, h) => s + Number(h.profit_loss || 0), 0);
-  const totalToday = safeHoldings.reduce((s, h) => s + Number(h.today_profit || 0), 0);
+  const totalToday = safeHoldings.reduce((s, h) => {
+    const pc = Number(h.previous_close || 0);
+    const cp = Number(h.current_price || 0);
+    return s + (pc > 0 && cp > 0 ? (cp - pc) * Number(h.quantity || 0) : 0);
+  }, 0);
   const totalRealized = userSoldHistory.reduce((s, e) => s + Number(e.profit_loss || 0), 0);
   const totalPnl = totalUnrealized + totalRealized;
   const totalQty = safeHoldings.reduce((s, h) => s + Number(h.quantity || 0), 0);
@@ -4387,12 +4431,12 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
           <p class="detail-subtitle" style="font-size:0.9rem;color:var(--text-muted,#8895a7);margin:0;">${escapeHtml(user.fixed_user_id || user.username || "")}</p>
         </div>
       </div>
-      <div class="detail-stat-grid detail-stat-grid--5">
+      <div class="detail-stat-grid detail-stat-grid--5" id="adminDetailStatGrid" data-total-investment="${totalInvestment}">
         <article><strong>${currency(totalInvestment)}</strong><span>Total Investment</span></article>
         <article><strong class="${balanceFund >= 0 ? "" : "loss"}">${currency(balanceFund)}</strong><span>Balance Fund</span></article>
-        <article><strong>${currency(currentFunds)}</strong><span>Current Funds</span></article>
-        <article><strong class="${totalReturn >= 0 ? "profit" : "loss"}">${currency(totalReturn)}</strong><span>Total Return</span></article>
-        <article><strong class="${totalReturnPct >= 0 ? "profit" : "loss"}">${percent(totalReturnPct)}</strong><span>Total Return %</span></article>
+        <article><strong id="adminDetailStatCurrentFunds">${currency(currentFunds)}</strong><span>Current Funds</span></article>
+        <article><strong id="adminDetailStatTotalReturn" class="${totalReturn >= 0 ? "profit" : "loss"}">${currency(totalReturn)}</strong><span>Total Return</span></article>
+        <article><strong id="adminDetailStatReturnPct" class="${totalReturnPct >= 0 ? "profit" : "loss"}">${percent(totalReturnPct)}</strong><span>Total Return %</span></article>
       </div>
       ${balanceFund < 0 ? `
       <div class="balance-negative-banner">
@@ -4402,7 +4446,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
       <article class="table-card" style="margin-top:18px;">
         <div class="panel-head"><h3>Live Positions</h3><span class="badge">Realtime</span></div>
         <div class="table-wrap admin-position-table-wrap" id="adminDetailLiveWrap">
-          <table class="admin-position-table">
+          <table class="admin-position-table" id="adminDetailPositionsTable">
             <thead>
               <tr>
                 <th style="white-space:nowrap;"><button id="adminDetailMasterEye" class="admin-eye-btn" type="button" style="margin-right:4px;" title="Show all stocks" aria-label="Toggle all stock names">&#128065;</button>Stock</th>
@@ -4427,6 +4471,9 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
                     const valueClass = currentValue >= investedValue ? "profit" : "loss";
                     const realizedProfit = detailRealizedMap.get(String(holding.symbol || "").toUpperCase()) || 0;
                     const totalProfit = Number(holding.profit_loss || 0) + realizedProfit;
+                    const rowPrevClose = Number(holding.previous_close || 0);
+                    const rowCurPrice = Number(holding.current_price || 0);
+                    const rowTodayProfit = rowPrevClose > 0 && rowCurPrice > 0 ? (rowCurPrice - rowPrevClose) * Number(holding.quantity || 0) : 0;
                     const isFocus = focusSymbol && String(holding.symbol || "").toUpperCase() === String(focusSymbol || "").toUpperCase();
                     return `
                       <tr data-price-row data-qty="${holding.quantity}" data-avg-price="${Number(holding.buy_price || 0)}" data-prev-close="${Number(holding.previous_close || 0)}" data-realized="${realizedProfit}"${isFocus ? ' class="admin-detail-highlight-row"' : ""}>
@@ -4444,7 +4491,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
                         <td data-invested-cell class="${valueClass}">${currency(investedValue)}</td>
                         <td data-current-value-cell class="${valueClass}">${currency(currentValue)}</td>
                         <td data-unrealized-cell class="${Number(holding.profit_loss || 0) >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change || 0)}</small></td>
-                        <td data-today-cell class="${Number(holding.today_profit || 0) >= 0 ? "profit" : "loss"}">${currency(holding.today_profit || 0)}</td>
+                        <td data-today-cell class="${rowTodayProfit >= 0 ? "profit" : "loss"}">${currency(rowTodayProfit)}</td>
                         <td class="${realizedProfit >= 0 ? "profit" : "loss"}">${currency(realizedProfit)}</td>
                         <td data-total-pnl-cell class="${totalProfit >= 0 ? "profit" : "loss"}">${currency(totalProfit)}</td>
                         <td class="action-cell-duo">
@@ -4464,11 +4511,11 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
                 <td>—</td>
                 <td>—</td>
                 <td class="${totalCurrent >= totalInvested ? "profit" : "loss"}"><strong>${currency(totalInvested)}</strong></td>
-                <td class="${totalCurrent >= totalInvested ? "profit" : "loss"}"><strong>${currency(totalCurrent)}</strong></td>
-                <td class="${totalUnrealized >= 0 ? "profit" : "loss"}"><strong>${currency(totalUnrealized)}</strong></td>
-                <td class="${totalToday >= 0 ? "profit" : "loss"}"><strong>${currency(totalToday)}</strong></td>
+                <td id="adminDetailFooterCurrentValue" class="${totalCurrent >= totalInvested ? "profit" : "loss"}"><strong>${currency(totalCurrent)}</strong></td>
+                <td id="adminDetailFooterUnrealized" class="${totalUnrealized >= 0 ? "profit" : "loss"}"><strong>${currency(totalUnrealized)}</strong></td>
+                <td id="adminDetailFooterToday" class="${totalToday >= 0 ? "profit" : "loss"}"><strong>${currency(totalToday)}</strong></td>
                 <td class="${totalRealized >= 0 ? "profit" : "loss"}"><strong>${currency(totalRealized)}</strong></td>
-                <td class="${totalPnl >= 0 ? "profit" : "loss"}"><strong>${currency(totalPnl)}</strong></td>
+                <td id="adminDetailFooterTotal" class="${totalPnl >= 0 ? "profit" : "loss"}"><strong>${currency(totalPnl)}</strong></td>
                 <td>—</td>
               </tr>
             </tfoot>
@@ -5625,10 +5672,10 @@ async function renderUserPortal(options = {}) {
         </header>
 
         <section class="simple-summary-strip admin-summary-strip" style="grid-template-columns: repeat(4, minmax(0, 1fr))">
-          <span class="${filteredCurrentValue >= filteredInvestedValue ? "profit" : "loss"}"><strong>${currency(filteredCurrentValue)}</strong> Portfolio Value</span>
-          <span class="${totalUnrealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalUnrealizedProfit)}</strong> Unrealised P&amp;L</span>
+          <span id="userStripPortfolioValueWrap" class="${filteredCurrentValue >= filteredInvestedValue ? "profit" : "loss"}"><strong id="userStripPortfolioValue">${currency(filteredCurrentValue)}</strong> Portfolio Value</span>
+          <span id="userStripUnrealizedWrap" class="${totalUnrealizedProfit >= 0 ? "profit" : "loss"}"><strong id="userStripUnrealized">${currency(totalUnrealizedProfit)}</strong> Unrealised P&amp;L</span>
           <span class="${totalRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalRealizedProfit)}</strong> Lifetime Realised P&amp;L</span>
-          <span class="${totalTodayProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalTodayProfit)}</strong> Today&apos;s P&amp;L</span>
+          <span id="userStripTodayWrap" class="${totalTodayProfit >= 0 ? "profit" : "loss"}"><strong id="userStripToday">${currency(totalTodayProfit)}</strong> Today&apos;s P&amp;L</span>
         </section>
 
         <article class="table-card full-span-card user-charts-card">
