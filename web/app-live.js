@@ -6738,21 +6738,27 @@ setupDashboardPages();
   }
   async function tryLiveData() {
     try {
-      const resp = await fetch("https://goctechnology.com/gocglobalalgo/data/algos.json", { mode: "cors" });
+      const resp = await fetch("https://goctechnology.com/gocglobalalgo/data/algos.json?t=" + Date.now(), { mode: "cors", cache: "no-store" });
       if (!resp.ok) throw new Error("Non-200");
       const raw = await resp.json();
       const algos = Array.isArray(raw) ? raw : [];
       if (!algos.length) throw new Error("Empty");
       const mapped = algos.map(a => ({
         id: a.id, name: a.name,
-        invested: Number(a.stats.invested.value),
-        current: Number(a.stats.invested.value) + Number(a.stats.net_profit.value),
-        profit: Number(a.stats.net_profit.value),
-        profitPct: Number(a.stats.return_pct.value),
-        period: a.meta.period_label,
-        totalTrades: Number(a.meta.trades),
-        winRate: Number(a.totals.win_pct.value),
-        weeks: (a.weekly || []).map(w => ({ label: w.week, trades: Number(w.trades.value), winPct: Number(w.win_pct.value), profit: Number(w.ret_dollar.value), roi: Number(w.ret_pct.value) }))
+        invested: Number(a.stats?.invested?.value ?? a.invested ?? 0),
+        current: Number(a.stats?.invested?.value ?? a.invested ?? 0) + Number(a.stats?.net_profit?.value ?? a.profit ?? 0),
+        profit: Number(a.stats?.net_profit?.value ?? a.profit ?? 0),
+        profitPct: Number(a.stats?.return_pct?.value ?? a.profitPct ?? 0),
+        period: a.meta?.period_label ?? a.period ?? "",
+        totalTrades: Number(a.meta?.trades ?? a.totalTrades ?? 0),
+        winRate: Number(a.totals?.win_pct?.value ?? a.winRate ?? 0),
+        weeks: (a.weekly || a.weeks || []).map(w => ({
+          label: w.week ?? w.label,
+          trades: Number(w.trades?.value ?? w.trades ?? 0),
+          winPct: Number(w.win_pct?.value ?? w.winPct ?? 0),
+          profit: Number(w.ret_dollar?.value ?? w.profit ?? 0),
+          roi: Number(w.ret_pct?.value ?? w.roi ?? 0)
+        }))
       }));
       renderAccounts(mapped);
     } catch (_) {
