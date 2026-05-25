@@ -4917,7 +4917,7 @@ async function renderAdminPortal(options = {}) {
     // Snapshot detail before re-render to avoid flicker on silent refresh
     let _savedDetailHtml = null;
     let _detailWasOpen = false;
-    if (silent && adminUiState.openDetailUserId) {
+    if (silent) {
       const _existingDetail = document.getElementById("adminDetailMount");
       if (_existingDetail && !_existingDetail.classList.contains("hidden") && _existingDetail.innerHTML.trim()) {
         _savedDetailHtml = _existingDetail.innerHTML;
@@ -5242,6 +5242,17 @@ async function renderAdminPortal(options = {}) {
         if (scrollToDetail) {
           requestAnimationFrame(() => detailMount.scrollIntoView({ behavior: "smooth", block: "start" }));
         }
+      }
+    } else if (_detailWasOpen && _savedDetailHtml) {
+      const detailMount = document.getElementById("adminDetailMount");
+      if (detailMount) {
+        detailMount.innerHTML = _savedDetailHtml;
+        detailMount.classList.remove("hidden");
+        detailMount.classList.add("portal-visible");
+        setupDetailEyeButtons(detailMount);
+        setupDetailMasterEye(detailMount);
+        setupScrollSync("adminDetailLiveWrap", "adminDetailLiveScroller");
+        setupScrollSync("adminDetailSoldWrap", "adminDetailSoldScroller");
       }
     }
     setupPortalActions();
