@@ -7945,7 +7945,7 @@ a.pill-link {
   background: #ffffff;
   padding: 20px max(6vw, 48px);
   position: sticky;
-  top: 80px;
+  top: 66px;
   z-index: 10;
   border-bottom: 1px solid rgba(44,144,240,0.1);
 }
