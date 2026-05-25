@@ -7773,7 +7773,8 @@ a.pill-link {
 
 [data-page="home"] .public-main,
 [data-page="products"] .public-main,
-[data-page="contact"] .public-main {
+[data-page="contact"] .public-main,
+[data-page="forex"] .public-main {
   display: block;
   padding: 0;
   gap: 0;
@@ -7782,7 +7783,8 @@ a.pill-link {
 /* Strip card appearance from all section-cards */
 [data-page="home"] .section-card,
 [data-page="products"] .section-card,
-[data-page="contact"] .section-card {
+[data-page="contact"] .section-card,
+[data-page="forex"] .section-card {
   background: #ffffff;
   border: none;
   border-radius: 0;
@@ -7792,10 +7794,12 @@ a.pill-link {
 }
 [data-page="home"] .section-card::before,
 [data-page="products"] .section-card::before,
-[data-page="contact"] .section-card::before { display: none; }
+[data-page="contact"] .section-card::before,
+[data-page="forex"] .section-card::before { display: none; }
 [data-page="home"] .section-card + .section-card,
 [data-page="products"] .section-card + .section-card,
-[data-page="contact"] .section-card + .section-card {
+[data-page="contact"] .section-card + .section-card,
+[data-page="forex"] .section-card + .section-card {
   border-top: 1px solid rgba(44, 144, 240, 0.1);
 }
 
@@ -7868,10 +7872,11 @@ a.pill-link {
   box-shadow: 0 8px 32px rgba(44, 144, 240, 0.07);
 }
 
-/* ── Dark footer for all three pages ── */
+/* ── Dark footer for all flow pages ── */
 [data-page="home"] .footer-shell.footer-pro,
 [data-page="products"] .footer-shell.footer-pro,
-[data-page="contact"] .footer-shell.footer-pro {
+[data-page="contact"] .footer-shell.footer-pro,
+[data-page="forex"] .footer-shell.footer-pro {
   border-radius: 0;
   border: none;
   box-shadow: none;
@@ -7884,15 +7889,19 @@ a.pill-link {
 [data-page="products"] .footer-shell.footer-pro::before,
 [data-page="products"] .footer-shell.footer-pro::after,
 [data-page="contact"] .footer-shell.footer-pro::before,
-[data-page="contact"] .footer-shell.footer-pro::after { display: none; }
+[data-page="contact"] .footer-shell.footer-pro::after,
+[data-page="forex"] .footer-shell.footer-pro::before,
+[data-page="forex"] .footer-shell.footer-pro::after { display: none; }
 
 [data-page="home"] .footer-grid,
 [data-page="products"] .footer-grid,
-[data-page="contact"] .footer-grid { border-bottom-color: rgba(255,255,255,0.1); }
+[data-page="contact"] .footer-grid,
+[data-page="forex"] .footer-grid { border-bottom-color: rgba(255,255,255,0.1); }
 
 [data-page="home"] .footer-col-head,
 [data-page="products"] .footer-col-head,
-[data-page="contact"] .footer-col-head { color: #60a8f8; }
+[data-page="contact"] .footer-col-head,
+[data-page="forex"] .footer-col-head { color: #60a8f8; }
 
 [data-page="home"] .footer-shell .footer-tagline,
 [data-page="home"] .footer-shell .footer-contact-item,
@@ -7908,44 +7917,57 @@ a.pill-link {
 [data-page="contact"] .footer-shell .footer-contact-item,
 [data-page="contact"] .footer-shell .footer-nav-col a,
 [data-page="contact"] .footer-shell .footer-disclaimer,
-[data-page="contact"] .footer-shell .footer-copy { color: rgba(255,255,255,0.6); }
+[data-page="contact"] .footer-shell .footer-copy,
+[data-page="forex"] .footer-shell .footer-tagline,
+[data-page="forex"] .footer-shell .footer-contact-item,
+[data-page="forex"] .footer-shell .footer-nav-col a,
+[data-page="forex"] .footer-shell .footer-disclaimer,
+[data-page="forex"] .footer-shell .footer-copy { color: rgba(255,255,255,0.6); }
 
 [data-page="home"] .footer-shell .footer-contact-item:hover,
 [data-page="home"] .footer-shell .footer-nav-col a:hover,
 [data-page="products"] .footer-shell .footer-contact-item:hover,
 [data-page="products"] .footer-shell .footer-nav-col a:hover,
 [data-page="contact"] .footer-shell .footer-contact-item:hover,
-[data-page="contact"] .footer-shell .footer-nav-col a:hover { color: #ffffff; }
+[data-page="contact"] .footer-shell .footer-nav-col a:hover,
+[data-page="forex"] .footer-shell .footer-contact-item:hover,
+[data-page="forex"] .footer-shell .footer-nav-col a:hover { color: #ffffff; }
 
 [data-page="home"] .footer-shell .brand-wordmark,
 [data-page="products"] .footer-shell .brand-wordmark,
-[data-page="contact"] .footer-shell .brand-wordmark { color: #ffffff; }
+[data-page="contact"] .footer-shell .brand-wordmark,
+[data-page="forex"] .footer-shell .brand-wordmark { color: #ffffff; }
 
 [data-page="home"] .footer-shell .brand-tagline,
 [data-page="products"] .footer-shell .brand-tagline,
-[data-page="contact"] .footer-shell .brand-tagline { color: rgba(255,255,255,0.5); }
+[data-page="contact"] .footer-shell .brand-tagline,
+[data-page="forex"] .footer-shell .brand-tagline { color: rgba(255,255,255,0.5); }
 
 [data-page="home"] .footer-shell .footer-legal-links a,
 [data-page="products"] .footer-shell .footer-legal-links a,
-[data-page="contact"] .footer-shell .footer-legal-links a {
+[data-page="contact"] .footer-shell .footer-legal-links a,
+[data-page="forex"] .footer-shell .footer-legal-links a {
   color: rgba(255,255,255,0.5);
   text-decoration: none;
   font-size: 0.85rem;
 }
 [data-page="home"] .footer-shell .footer-legal-links a:hover,
 [data-page="products"] .footer-shell .footer-legal-links a:hover,
-[data-page="contact"] .footer-shell .footer-legal-links a:hover { color: #ffffff; }
+[data-page="contact"] .footer-shell .footer-legal-links a:hover,
+[data-page="forex"] .footer-shell .footer-legal-links a:hover { color: #ffffff; }
 
 [data-page="home"] .footer-shell .footer-social-link,
 [data-page="products"] .footer-shell .footer-social-link,
-[data-page="contact"] .footer-shell .footer-social-link {
+[data-page="contact"] .footer-shell .footer-social-link,
+[data-page="forex"] .footer-shell .footer-social-link {
   background: rgba(255,255,255,0.08);
   border-color: rgba(255,255,255,0.12);
   color: rgba(255,255,255,0.7);
 }
 [data-page="home"] .footer-shell .footer-social-link:hover,
 [data-page="products"] .footer-shell .footer-social-link:hover,
-[data-page="contact"] .footer-shell .footer-social-link:hover {
+[data-page="contact"] .footer-shell .footer-social-link:hover,
+[data-page="forex"] .footer-shell .footer-social-link:hover {
   background: rgba(96,168,248,0.2);
   color: #ffffff;
 }
