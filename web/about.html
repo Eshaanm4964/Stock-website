@@ -165,7 +165,7 @@
         <section class="section-card fade-up" style="padding: 40px 42px;">
           <div class="page-hero-copy">
             <p class="section-kicker">Believe. Earn. Trust.</p>
-            <h1>Elevate Your Financial Future with Asset Yantra</h1>
+            <h1 id="aboutTypewriter"></h1>
             <p class="section-intro">Asset Yantra was built to turn complexity into confidence for Indian investors, wealth teams, and institutions looking for a one-click financial solution.</p>
           </div>
         </section>
@@ -300,6 +300,30 @@
       </main>
     </div>
     <script src="./app-live.js"></script>
+    <script>
+      (function () {
+        var el = document.getElementById("aboutTypewriter");
+        if (!el) return;
+        var text = "Elevate Your Financial Future with Asset Yantra";
+        var i = 0;
+        el.style.borderRight = "2px solid #2c90f0";
+        el.style.display = "inline-block";
+        function type() {
+          if (i < text.length) {
+            el.textContent += text[i++];
+            setTimeout(type, 42);
+          } else {
+            // blink cursor then remove it
+            var blinks = 0;
+            var cur = setInterval(function () {
+              el.style.borderRight = blinks % 2 === 0 ? "2px solid transparent" : "2px solid #2c90f0";
+              if (++blinks >= 6) { clearInterval(cur); el.style.borderRight = "none"; }
+            }, 420);
+          }
+        }
+        type();
+      })();
+    </script>
   <script defer src="/_vercel/insights/script.js"></script></body>
 </html>
 
