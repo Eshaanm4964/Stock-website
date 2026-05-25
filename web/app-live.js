@@ -1671,7 +1671,10 @@ async function renderHomeTicker() {
   const mount = document.getElementById("homeLiveTicker");
   if (!mount) return;
 
-  const feed = await api(`/stocks/random?count=12&exchange=NSE`).catch(() => []);
+  let feed = await api(`/stocks/random?count=12&exchange=NSE`).catch(() => []);
+  if (!Array.isArray(feed) || !feed.length) {
+    feed = await api(`/stocks/feed?symbols=RELIANCE,TCS,INFY,HDFCBANK,ICICIBANK,SBIN,WIPRO,BAJFINANCE,AXISBANK,ITC,BHARTIARTL,TATAMOTORS`).catch(() => []);
+  }
   const safeFeed = Array.isArray(feed) ? feed.filter((quote) => quote?.symbol && Number(quote.price) > 0) : [];
 
   if (!safeFeed.length) {
