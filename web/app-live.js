@@ -4425,41 +4425,13 @@ async function _loadHtml2Pdf() {
   return _html2pdfLoadPromise;
 }
 
-async function _openReportWindow(html, filename) {
-  let h2p;
-  try {
-    h2p = await _loadHtml2Pdf();
-  } catch {
-    alert("Could not load PDF library. Please check your internet connection and try again.");
-    return;
-  }
-
-  // Parse out the <style> and body content, inject into main document so
-  // html2canvas can render them (it cannot cross iframe boundaries)
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
-
-  const styleEl = document.createElement("style");
-  styleEl.textContent = doc.querySelector("style")?.textContent || "";
-  document.head.appendChild(styleEl);
-
-  const container = document.createElement("div");
-  container.style.cssText = "position:absolute;left:-9999px;top:0;width:794px;min-height:1123px;background:#fff;overflow:hidden;";
-  container.innerHTML = doc.body.innerHTML;
-  document.body.appendChild(container);
-
-  try {
-    await h2p().set({
-      margin: 0,
-      filename: filename.replace(/[^\w\s\-]/g, "_") + ".pdf",
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false, allowTaint: true, scrollX: 0, scrollY: 0 },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-    }).from(container).save();
-  } finally {
-    document.head.removeChild(styleEl);
-    document.body.removeChild(container);
-  }
+function _openReportWindow(html, filename) {
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, "_blank");
+  if (!win) { URL.revokeObjectURL(url); alert("Please allow popups to download the PDF report."); return; }
+  win.addEventListener("load", () => { win.focus(); win.print(); }, { once: true });
+  setTimeout(() => URL.revokeObjectURL(url), 120000);
 }
 
 async function printClientReport(user, soldHistory = []) {
@@ -4524,7 +4496,7 @@ async function printClientReport(user, soldHistory = []) {
   const logo = await _getReportLogo();
   const wmHtml = logo ? `<div class="wm"><img src="${logo}" alt=""/></div>` : "";
 
-  const css = `*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#1a1a2e;padding:24px}.wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:999}.wm img{width:60%;opacity:.12}.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #2c90f0}.brand{font-size:20px;font-weight:800;color:#2c90f0;letter-spacing:.02em}.brand-tag{font-size:8px;color:#6b7280;text-transform:uppercase;letter-spacing:.15em;margin-top:2px}.rpt-title{font-size:22px;font-weight:800;color:#1a1a2e;letter-spacing:.06em;text-transform:uppercase;text-align:right}.rpt-date{font-size:10px;color:#6b7280;margin-top:3px;text-align:right}.client{margin-bottom:18px}.client h1{font-size:16px;font-weight:700;color:#2c90f0}.client p{font-size:10px;color:#6b7280;margin-top:2px}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}.card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px}.card .lbl{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.card .val{font-size:13px;font-weight:700}.sec{font-size:12px;font-weight:700;margin:18px 0 8px;border-left:3px solid #2c90f0;padding-left:8px}table{width:100%;border-collapse:collapse;font-size:10px}th{background:#f1f5f9;color:#374151;font-weight:600;padding:6px 8px;text-align:left;border-bottom:1px solid #e2e8f0;white-space:nowrap}td{padding:5px 8px;border-bottom:1px solid #f1f5f9}tfoot td{background:#f8fafc;font-weight:700;border-top:1px solid #e2e8f0}.foot{margin-top:24px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9px;color:#9ca3af;text-align:center}@page{margin:0}@media print{body{padding:16px 20px}}`;
+  const css = `*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#1a1a2e;padding:24px}.wm{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:999}.wm img{width:50%;opacity:.12}.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #2c90f0}.brand{font-size:20px;font-weight:800;color:#2c90f0;letter-spacing:.02em}.brand-tag{font-size:8px;color:#6b7280;text-transform:uppercase;letter-spacing:.15em;margin-top:2px}.rpt-title{font-size:22px;font-weight:800;color:#1a1a2e;letter-spacing:.06em;text-transform:uppercase;text-align:right}.rpt-date{font-size:10px;color:#6b7280;margin-top:3px;text-align:right}.client{margin-bottom:18px}.client h1{font-size:16px;font-weight:700;color:#2c90f0}.client p{font-size:10px;color:#6b7280;margin-top:2px}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}.card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px}.card .lbl{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.card .val{font-size:13px;font-weight:700}.sec{font-size:12px;font-weight:700;margin:18px 0 8px;border-left:3px solid #2c90f0;padding-left:8px}table{width:100%;border-collapse:collapse;font-size:10px}th{background:#f1f5f9;color:#374151;font-weight:600;padding:6px 8px;text-align:left;border-bottom:1px solid #e2e8f0;white-space:nowrap}td{padding:5px 8px;border-bottom:1px solid #f1f5f9}tfoot td{background:#f8fafc;font-weight:700;border-top:1px solid #e2e8f0}.foot{margin-top:24px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9px;color:#9ca3af;text-align:center}@page{margin:0}@media print{body{padding:16px 20px}}`;
 
   const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><title>Portfolio Report — ${escapeHtml(user.full_name)}</title><style>${css}</style></head><body>
 ${wmHtml}
@@ -4577,7 +4549,7 @@ async function printStockReport(symbol, holdings) {
   const logo = await _getReportLogo();
   const wmHtml = logo ? `<div class="wm"><img src="${logo}" alt=""/></div>` : "";
 
-  const css = `*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#1a1a2e;padding:24px}.wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:999}.wm img{width:60%;opacity:.12}.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #2c90f0}.brand{font-size:20px;font-weight:800;color:#2c90f0;letter-spacing:.02em}.brand-tag{font-size:8px;color:#6b7280;text-transform:uppercase;letter-spacing:.15em;margin-top:2px}.rpt-title{font-size:22px;font-weight:800;color:#1a1a2e;letter-spacing:.06em;text-transform:uppercase;text-align:right}.rpt-date{font-size:10px;color:#6b7280;margin-top:3px;text-align:right}.stk{margin-bottom:18px}.stk h1{font-size:20px;font-weight:700;color:#2c90f0}.stk p{font-size:10px;color:#6b7280;margin-top:2px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}.card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px}.card .lbl{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.card .val{font-size:14px;font-weight:700}.sec{font-size:12px;font-weight:700;margin:18px 0 8px;border-left:3px solid #2c90f0;padding-left:8px}table{width:100%;border-collapse:collapse;font-size:10px}th{background:#f1f5f9;color:#374151;font-weight:600;padding:6px 8px;text-align:left;border-bottom:1px solid #e2e8f0;white-space:nowrap}td{padding:5px 8px;border-bottom:1px solid #f1f5f9}tfoot td{background:#f8fafc;font-weight:700;border-top:1px solid #e2e8f0}.foot{margin-top:24px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9px;color:#9ca3af;text-align:center}@page{margin:0}@media print{body{padding:16px 20px}}`;
+  const css = `*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#1a1a2e;padding:24px}.wm{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:999}.wm img{width:50%;opacity:.12}.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #2c90f0}.brand{font-size:20px;font-weight:800;color:#2c90f0;letter-spacing:.02em}.brand-tag{font-size:8px;color:#6b7280;text-transform:uppercase;letter-spacing:.15em;margin-top:2px}.rpt-title{font-size:22px;font-weight:800;color:#1a1a2e;letter-spacing:.06em;text-transform:uppercase;text-align:right}.rpt-date{font-size:10px;color:#6b7280;margin-top:3px;text-align:right}.stk{margin-bottom:18px}.stk h1{font-size:20px;font-weight:700;color:#2c90f0}.stk p{font-size:10px;color:#6b7280;margin-top:2px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}.card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px}.card .lbl{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.card .val{font-size:14px;font-weight:700}.sec{font-size:12px;font-weight:700;margin:18px 0 8px;border-left:3px solid #2c90f0;padding-left:8px}table{width:100%;border-collapse:collapse;font-size:10px}th{background:#f1f5f9;color:#374151;font-weight:600;padding:6px 8px;text-align:left;border-bottom:1px solid #e2e8f0;white-space:nowrap}td{padding:5px 8px;border-bottom:1px solid #f1f5f9}tfoot td{background:#f8fafc;font-weight:700;border-top:1px solid #e2e8f0}.foot{margin-top:24px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9px;color:#9ca3af;text-align:center}@page{margin:0}@media print{body{padding:16px 20px}}`;
 
   const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><title>Stock Report — ${escapeHtml(symbol)}</title><style>${css}</style></head><body>
 ${wmHtml}
@@ -4880,8 +4852,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       setupHoldingActionButtons(document.getElementById("adminUserActionStatus"));
       const _pdfBtn = detailMount.querySelector("#adminDetailPdfBtn");
       if (_pdfBtn) _pdfBtn.addEventListener("click", async () => {
-        _pdfBtn.textContent = "Generating…"; _pdfBtn.disabled = true;
-        try { await printClientReport(user, soldHistory); } finally { _pdfBtn.textContent = "Download PDF"; _pdfBtn.disabled = false; }
+        printClientReport(user, soldHistory);
       });
       void refreshTableLivePrices();
       detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -4916,8 +4887,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
         detailMount.innerHTML = buildAdminStockDetail(symbol, holdings);
         const _spdfBtn = detailMount.querySelector("#adminStockPdfBtn");
         if (_spdfBtn) _spdfBtn.addEventListener("click", async () => {
-          _spdfBtn.textContent = "Generating…"; _spdfBtn.disabled = true;
-          try { await printStockReport(symbol, holdings); } finally { _spdfBtn.textContent = "Download PDF"; _spdfBtn.disabled = false; }
+          printStockReport(symbol, holdings);
         });
       }
       detailMount.classList.remove("hidden");
