@@ -6738,7 +6738,7 @@ setupDashboardPages();
   }
   async function tryLiveData() {
     try {
-      const resp = await fetch("https://goctechnology.com/gocglobalalgo/data/algos.json?t=" + Date.now(), { mode: "cors", cache: "no-store" });
+      const resp = await fetch("/api/site/algo-data", { cache: "no-store" });
       if (!resp.ok) throw new Error("Non-200");
       const raw = await resp.json();
       const algos = Array.isArray(raw) ? raw : [];

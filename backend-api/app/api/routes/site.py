@@ -1,3 +1,9 @@
+import asyncio
+import logging
+import time
+from typing import Any
+
+import httpx
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +16,12 @@ from app.models.user import User
 from app.schemas.review import ReviewCreateRequest, ReviewResponse
 from app.schemas.site import SiteSettingsResponse, SiteSettingsUpdateRequest
 from app.services.security_service import log_admin_action
+
+logger = logging.getLogger(__name__)
+
+ALGO_DATA_URL = "https://goctechnology.com/gocglobalalgo/data/algos.json"
+_algo_cache: dict[str, Any] = {"data": None, "ts": 0}
+ALGO_CACHE_TTL = 300  # 5 minutes
 
 router = APIRouter(prefix="/site", tags=["site"])
 
@@ -100,3 +112,23 @@ async def clear_reviews(
         ip_address=request.client.host if request.client else None,
         details={"scope": "non_seeded_reviews"},
     )
+
+
+@router.get("/algo-data")
+async def get_algo_data() -> Any:
+    now = time.time()
+    if _algo_cache["data"] is not None and now - _algo_cache["ts"] < ALGO_CACHE_TTL:
+        return _algo_cache["data"]
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(ALGO_DATA_URL)
+            resp.raise_for_status()
+            data = resp.json()
+            _algo_cache["data"] = data
+            _algo_cache["ts"] = now
+            return data
+    except Exception as exc:
+        logger.warning("Failed to fetch algo data: %s", exc)
+        if _algo_cache["data"] is not None:
+            return _algo_cache["data"]
+        return []
