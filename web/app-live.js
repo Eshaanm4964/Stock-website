@@ -4416,7 +4416,7 @@ async function _loadHtml2Pdf() {
   if (!_html2pdfLoadPromise) {
     _html2pdfLoadPromise = new Promise((resolve, reject) => {
       const s = document.createElement("script");
-      s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+      s.src = "./assets/html2pdf.bundle.min.js";
       s.onload = () => resolve(window.html2pdf);
       s.onerror = () => { _html2pdfLoadPromise = null; reject(new Error("html2pdf failed to load")); };
       document.head.appendChild(s);
