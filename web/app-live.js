@@ -4393,6 +4393,145 @@ function maybeShowBalanceWarning(user) {
   }
 }
 
+function printClientReport(user, soldHistory = []) {
+  const safeHoldings = Array.isArray(user.holdings) ? user.holdings : [];
+  const userSoldHistory = soldHistory.filter((e) => Number(e.user_id) === Number(user.user_id));
+  const detailRealizedMap = userSoldHistory.reduce((map, e) => {
+    const key = String(e.symbol || "").toUpperCase();
+    map.set(key, (map.get(key) || 0) + Number(e.profit_loss || 0));
+    return map;
+  }, new Map());
+
+  const totalInvested = safeHoldings.reduce((s, h) => s + Number(h.buy_price || 0) * Number(h.quantity || 0), 0);
+  const totalCurrent = safeHoldings.reduce((s, h) => s + Number(h.current_price || 0) * Number(h.quantity || 0), 0);
+  const totalUnrealized = safeHoldings.reduce((s, h) => s + Number(h.profit_loss || 0), 0);
+  const totalToday = safeHoldings.reduce((s, h) => {
+    const pc = Number(h.previous_close || 0), cp = Number(h.current_price || 0);
+    return s + (pc > 0 && cp > 0 ? (cp - pc) * Number(h.quantity || 0) : 0);
+  }, 0);
+  const totalRealized = userSoldHistory.reduce((s, e) => s + Number(e.profit_loss || 0), 0);
+  const totalPnl = totalUnrealized + totalRealized;
+  const totalInvestment = Number(user.balance_funds || 0);
+  const balanceFund = totalInvestment - totalInvested;
+  const totalReturn = totalCurrent - totalInvested;
+  const totalReturnPct = totalInvestment > 0 ? (totalReturn / totalInvestment) * 100 : 0;
+
+  const now = new Date();
+  const reportDate = now.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  const reportTime = now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+  const col = (v) => v >= 0 ? "#16a34a" : "#dc2626";
+
+  const posRows = safeHoldings.map((h) => {
+    const investedVal = Number(h.buy_price || 0) * Number(h.quantity || 0);
+    const currentVal = Number(h.current_price || 0) * Number(h.quantity || 0);
+    const realized = detailRealizedMap.get(String(h.symbol || "").toUpperCase()) || 0;
+    const total = Number(h.profit_loss || 0) + realized;
+    const pc = Number(h.previous_close || 0), cp = Number(h.current_price || 0);
+    const todayPnl = pc > 0 && cp > 0 ? (cp - pc) * Number(h.quantity || 0) : 0;
+    return `<tr>
+      <td>${escapeHtml(h.symbol || "—")}</td><td>${escapeHtml(h.exchange || "NSE")}</td>
+      <td>${formatDate(h.created_at)}</td><td>${h.quantity}</td>
+      <td>${currency(h.buy_price)}</td><td>${currency(h.current_price)}</td>
+      <td>${currency(investedVal)}</td><td>${currency(currentVal)}</td>
+      <td style="color:${col(Number(h.profit_loss || 0))}">${currency(h.profit_loss)}</td>
+      <td style="color:${col(todayPnl)}">${currency(todayPnl)}</td>
+      <td style="color:${col(realized)}">${currency(realized)}</td>
+      <td style="color:${col(total)};font-weight:600">${currency(total)}</td>
+    </tr>`;
+  }).join("");
+
+  const soldRows = userSoldHistory.map((e) => {
+    const pct = Number(e.buy_price) > 0 ? ((Number(e.sell_price) - Number(e.buy_price)) / Number(e.buy_price)) * 100 : 0;
+    return `<tr>
+      <td>${escapeHtml(e.symbol || "—")}</td><td>${escapeHtml(e.exchange || "NSE")}</td>
+      <td>${formatDate(e.created_at)}</td><td>${e.quantity}</td>
+      <td>${currency(e.buy_price)}</td><td>${currency(e.sell_price)}</td>
+      <td>${formatDate(e.sold_at)}</td>
+      <td style="color:${col(Number(e.profit_loss))};font-weight:600">${currency(e.profit_loss)}</td>
+      <td style="color:${col(pct)}">${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%</td>
+    </tr>`;
+  }).join("");
+
+  const css = `*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#1a1a2e;padding:24px}.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #2c90f0}.brand{font-size:18px;font-weight:700;color:#2c90f0}.brand small{display:block;font-size:9px;font-weight:400;color:#6b7280;text-transform:uppercase;letter-spacing:.1em}.meta{text-align:right;font-size:10px;color:#6b7280}.meta strong{display:block;font-size:13px;color:#1a1a2e;font-weight:700}.client{margin-bottom:18px}.client h1{font-size:16px;font-weight:700;color:#2c90f0}.client p{font-size:10px;color:#6b7280;margin-top:2px}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}.card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px}.card .lbl{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.card .val{font-size:13px;font-weight:700}.sec{font-size:12px;font-weight:700;margin:18px 0 8px;border-left:3px solid #2c90f0;padding-left:8px}table{width:100%;border-collapse:collapse;font-size:10px}th{background:#f1f5f9;color:#374151;font-weight:600;padding:6px 8px;text-align:left;border-bottom:1px solid #e2e8f0;white-space:nowrap}td{padding:5px 8px;border-bottom:1px solid #f1f5f9}tfoot td{background:#f8fafc;font-weight:700;border-top:1px solid #e2e8f0}.foot{margin-top:24px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9px;color:#9ca3af;text-align:center}@media print{body{padding:12px}}`;
+
+  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><title>Report — ${escapeHtml(user.full_name)}</title><style>${css}</style></head><body>
+<div class="hdr"><div><div class="brand">Asset Yantra<small>Markets. Insights. Wealth.</small></div></div><div class="meta"><strong>Portfolio Report</strong>${reportDate}, ${reportTime}</div></div>
+<div class="client"><h1>${escapeHtml(user.full_name)}</h1><p>Client ID: ${escapeHtml(user.fixed_user_id || user.username || "—")} &nbsp;|&nbsp; Phone: ${escapeHtml(user.phone_number || "—")}</p></div>
+<div class="grid">
+  <div class="card"><div class="lbl">Total Investment</div><div class="val">${currency(totalInvestment)}</div></div>
+  <div class="card"><div class="lbl">Invested Value</div><div class="val">${currency(totalInvested)}</div></div>
+  <div class="card"><div class="lbl">Current Value</div><div class="val" style="color:${col(totalReturn)}">${currency(totalCurrent)}</div></div>
+  <div class="card"><div class="lbl">Balance Fund</div><div class="val" style="color:${col(balanceFund)}">${currency(balanceFund)}</div></div>
+  <div class="card"><div class="lbl">Total Return</div><div class="val" style="color:${col(totalReturn)}">${currency(totalReturn)} (${totalReturnPct >= 0 ? "+" : ""}${totalReturnPct.toFixed(2)}%)</div></div>
+  <div class="card"><div class="lbl">Unrealised P&amp;L</div><div class="val" style="color:${col(totalUnrealized)}">${currency(totalUnrealized)}</div></div>
+  <div class="card"><div class="lbl">Realised P&amp;L</div><div class="val" style="color:${col(totalRealized)}">${currency(totalRealized)}</div></div>
+  <div class="card"><div class="lbl">Today's P&amp;L</div><div class="val" style="color:${col(totalToday)}">${currency(totalToday)}</div></div>
+  <div class="card"><div class="lbl">Combined P&amp;L</div><div class="val" style="color:${col(totalPnl)}">${currency(totalPnl)}</div></div>
+  <div class="card"><div class="lbl">Active Holdings</div><div class="val">${safeHoldings.length}</div></div>
+</div>
+<div class="sec">Live Positions (${safeHoldings.length})</div>
+${safeHoldings.length ? `<table><thead><tr><th>Symbol</th><th>Exch</th><th>Buy Date</th><th>Qty</th><th>Avg Price</th><th>Curr Price</th><th>Invested</th><th>Curr Value</th><th>Unrealised P&amp;L</th><th>Today's P&amp;L</th><th>Realised P&amp;L</th><th>Total P&amp;L</th></tr></thead><tbody>${posRows}</tbody><tfoot><tr><td colspan="6">Totals</td><td>${currency(totalInvested)}</td><td>${currency(totalCurrent)}</td><td style="color:${col(totalUnrealized)}">${currency(totalUnrealized)}</td><td style="color:${col(totalToday)}">${currency(totalToday)}</td><td style="color:${col(totalRealized)}">${currency(totalRealized)}</td><td style="color:${col(totalPnl)}">${currency(totalPnl)}</td></tr></tfoot></table>` : `<p style="color:#6b7280">No active positions.</p>`}
+<div class="sec">Sold History (${userSoldHistory.length})</div>
+${userSoldHistory.length ? `<table><thead><tr><th>Symbol</th><th>Exch</th><th>Buy Date</th><th>Qty</th><th>Avg Price</th><th>Sell Price</th><th>Sold Date</th><th>Realised P&amp;L</th><th>P&amp;L %</th></tr></thead><tbody>${soldRows}</tbody><tfoot><tr><td colspan="7">Total Realised</td><td style="color:${col(totalRealized)}">${currency(totalRealized)}</td><td>—</td></tr></tfoot></table>` : `<p style="color:#6b7280">No sold history.</p>`}
+<div class="foot">Generated by Asset Yantra on ${reportDate} at ${reportTime}. Prices reflect the last market data fetch. For advisory purposes only.</div>
+</body></html>`;
+
+  const win = window.open("", "_blank", "width=1100,height=750");
+  if (!win) { alert("Please allow popups to download the PDF report."); return; }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 600);
+}
+
+function printStockReport(symbol, holdings) {
+  const totalQty = holdings.reduce((s, h) => s + Number(h.quantity || 0), 0);
+  const totalInvested = holdings.reduce((s, h) => s + Number(h.buy_price || 0) * Number(h.quantity || 0), 0);
+  const totalCurrent = holdings.reduce((s, h) => s + Number(h.current_price || 0) * Number(h.quantity || 0), 0);
+  const totalPnl = holdings.reduce((s, h) => s + Number(h.profit_loss || 0), 0);
+
+  const now = new Date();
+  const reportDate = now.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  const reportTime = now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+  const col = (v) => v >= 0 ? "#16a34a" : "#dc2626";
+
+  const rows = holdings.map((h) => {
+    const pct = Number(h.buy_price) > 0 ? ((Number(h.current_price) - Number(h.buy_price)) / Number(h.buy_price)) * 100 : 0;
+    return `<tr>
+      <td>${escapeHtml(h.owner || "—")}</td><td>${escapeHtml(h.fixed_user_id || "—")}</td>
+      <td>${formatDate(h.created_at)}</td><td>${h.quantity}</td>
+      <td>${currency(h.buy_price)}</td><td>${currency(h.current_price)}</td>
+      <td style="color:${col(Number(h.profit_loss))};font-weight:600">${currency(h.profit_loss)}</td>
+      <td style="color:${col(pct)}">${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%</td>
+    </tr>`;
+  }).join("");
+
+  const css = `*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#1a1a2e;padding:24px}.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #2c90f0}.brand{font-size:18px;font-weight:700;color:#2c90f0}.brand small{display:block;font-size:9px;font-weight:400;color:#6b7280;text-transform:uppercase;letter-spacing:.1em}.meta{text-align:right;font-size:10px;color:#6b7280}.meta strong{display:block;font-size:13px;color:#1a1a2e;font-weight:700}.stk{margin-bottom:18px}.stk h1{font-size:20px;font-weight:700;color:#2c90f0}.stk p{font-size:10px;color:#6b7280;margin-top:2px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}.card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px}.card .lbl{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.card .val{font-size:14px;font-weight:700}.sec{font-size:12px;font-weight:700;margin:18px 0 8px;border-left:3px solid #2c90f0;padding-left:8px}table{width:100%;border-collapse:collapse;font-size:10px}th{background:#f1f5f9;color:#374151;font-weight:600;padding:6px 8px;text-align:left;border-bottom:1px solid #e2e8f0;white-space:nowrap}td{padding:5px 8px;border-bottom:1px solid #f1f5f9}tfoot td{background:#f8fafc;font-weight:700;border-top:1px solid #e2e8f0}.foot{margin-top:24px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9px;color:#9ca3af;text-align:center}@media print{body{padding:12px}}`;
+
+  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><title>Stock Report — ${escapeHtml(symbol)}</title><style>${css}</style></head><body>
+<div class="hdr"><div><div class="brand">Asset Yantra<small>Markets. Insights. Wealth.</small></div></div><div class="meta"><strong>Stock Investor Report</strong>${reportDate}, ${reportTime}</div></div>
+<div class="stk"><h1>${escapeHtml(symbol)}</h1><p>Investor breakdown — all clients holding this stock</p></div>
+<div class="grid">
+  <div class="card"><div class="lbl">Total Investors</div><div class="val">${holdings.length}</div></div>
+  <div class="card"><div class="lbl">Total Quantity</div><div class="val">${totalQty}</div></div>
+  <div class="card"><div class="lbl">Total Invested</div><div class="val">${currency(totalInvested)}</div></div>
+  <div class="card"><div class="lbl">Combined P&amp;L</div><div class="val" style="color:${col(totalPnl)}">${currency(totalPnl)}</div></div>
+</div>
+<div class="sec">Investors (${holdings.length})</div>
+<table><thead><tr><th>Investor</th><th>Client ID</th><th>Purchase Date</th><th>Qty</th><th>Avg Price</th><th>Current Price</th><th>P&amp;L</th><th>P&amp;L %</th></tr></thead>
+<tbody>${rows}</tbody>
+<tfoot><tr><td colspan="3">Totals</td><td>${totalQty}</td><td>—</td><td>—</td><td style="color:${col(totalPnl)}">${currency(totalPnl)}</td><td>—</td></tr></tfoot></table>
+<div class="foot">Generated by Asset Yantra on ${reportDate} at ${reportTime}. Prices reflect the last market data fetch. For advisory purposes only.</div>
+</body></html>`;
+
+  const win = window.open("", "_blank", "width=1000,height=700");
+  if (!win) { alert("Please allow popups to download the PDF report."); return; }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 600);
+}
+
 function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
   const safeHoldings = Array.isArray(user.holdings) ? user.holdings : [];
   const userSoldHistory = soldHistory.filter((entry) => Number(entry.user_id) === Number(user.user_id));
@@ -4430,6 +4569,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
           <h2 style="color:#2c90f0;font-size:1.45rem;margin:0 0 4px;font-weight:700;">${escapeHtml(user.full_name)}</h2>
           <p class="detail-subtitle" style="font-size:0.9rem;color:var(--text-muted,#8895a7);margin:0;">${escapeHtml(user.fixed_user_id || user.username || "")}</p>
         </div>
+        <button class="secondary-btn compact-btn" type="button" id="adminDetailPdfBtn">Download PDF</button>
       </div>
       <div class="detail-stat-grid detail-stat-grid--5" id="adminDetailStatGrid" data-total-investment="${totalInvestment}">
         <article><strong>${currency(totalInvestment)}</strong><span>Total Investment</span></article>
@@ -4594,7 +4734,10 @@ function buildAdminStockDetail(symbol, holdings) {
           <h3 style="color:#2c90f0">${escapeHtml(symbol)}</h3>
           <p class="detail-subtitle">Click any investor name to open their dashboard. The table shows each investor's buy value, live value, and return on this stock.</p>
         </div>
-        <span class="badge">${holdings.length} Holders</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="badge">${holdings.length} Holders</span>
+          <button class="secondary-btn compact-btn" type="button" id="adminStockPdfBtn">Download PDF</button>
+        </div>
       </div>
       <div class="detail-stat-grid">
         <article><strong>${holdings.length}</strong><span>Total Investors</span></article>
@@ -4668,6 +4811,8 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       setupSoldHistoryPagination(detailMount);
       setupPortalActions();
       setupHoldingActionButtons(document.getElementById("adminUserActionStatus"));
+      const _pdfBtn = detailMount.querySelector("#adminDetailPdfBtn");
+      if (_pdfBtn) _pdfBtn.addEventListener("click", () => printClientReport(user, soldHistory));
       void refreshTableLivePrices();
       detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
       maybeShowBalanceWarning(user);
@@ -4689,11 +4834,15 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
         setupSoldHistoryPagination(detailMount);
         setupPortalActions();
         setupHoldingActionButtons(document.getElementById("adminUserActionStatus"));
+        const _cpdfBtn = detailMount.querySelector("#adminDetailPdfBtn");
+        if (_cpdfBtn) _cpdfBtn.addEventListener("click", () => printClientReport(user, soldHistory));
         maybeShowBalanceWarning(user);
       } else {
         const holdings = allHoldings.filter((entry) => String(entry.symbol || "").toUpperCase() === symbol);
         if (!holdings.length) return;
         detailMount.innerHTML = buildAdminStockDetail(symbol, holdings);
+        const _spdfBtn = detailMount.querySelector("#adminStockPdfBtn");
+        if (_spdfBtn) _spdfBtn.addEventListener("click", () => printStockReport(symbol, holdings));
       }
       detailMount.classList.remove("hidden");
       detailMount.classList.add("portal-visible");
