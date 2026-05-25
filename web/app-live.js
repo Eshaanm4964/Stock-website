@@ -3396,6 +3396,71 @@ async function refreshTableLivePrices() {
       cell.textContent = "—";
     }
   });
+
+  // Helper: sum all price-row values in a table using the already-fetched priceMap
+  function sumTableRows(tableEl) {
+    let invested = 0, current = 0, unrealized = 0, today = 0, realized = 0, total = 0;
+    tableEl.querySelectorAll("tr[data-price-row]").forEach((row) => {
+      const qty = parseFloat(row.dataset.qty) || 0;
+      const buyPrice = parseFloat(row.dataset.avgPrice) || 0;
+      const prevClose = parseFloat(row.dataset.prevClose) || 0;
+      const real = parseFloat(row.dataset.realized) || 0;
+      const priceCell = row.querySelector("[data-live-price-cell]");
+      if (!priceCell) return;
+      const [sym, exch = "NSE"] = priceCell.dataset.livePriceCell.split("::");
+      const price = priceMap.get(`${sym.toUpperCase()}::${exch.toUpperCase()}`);
+      if (!price || price <= 0) return;
+      invested += buyPrice * qty;
+      current += price * qty;
+      unrealized += (price - buyPrice) * qty;
+      today += prevClose > 0 ? (price - prevClose) * qty : 0;
+      realized += real;
+      total += (price - buyPrice) * qty + real;
+    });
+    return { invested, current, unrealized, today, realized, total };
+  }
+
+  // Admin main table: update footer totals and summary strip
+  const adminTable = document.getElementById("adminPositionsTable");
+  if (adminTable) {
+    const s = sumTableRows(adminTable);
+    const fInv = document.getElementById("adminFooterInvested");
+    const fCurr = document.getElementById("adminFooterCurrentValue");
+    const fUnreal = document.getElementById("adminFooterUnrealized");
+    const fToday = document.getElementById("adminFooterToday");
+    const fTotal = document.getElementById("adminFooterTotal");
+    if (fInv) { fInv.className = s.current >= s.invested ? "profit" : "loss"; fInv.innerHTML = `<strong>${currency(s.invested)}</strong>`; }
+    if (fCurr) { fCurr.className = s.current >= s.invested ? "profit" : "loss"; fCurr.innerHTML = `<strong>${currency(s.current)}</strong>`; }
+    if (fUnreal) { fUnreal.className = s.unrealized >= 0 ? "profit" : "loss"; fUnreal.innerHTML = `<strong>${currency(s.unrealized)}</strong>`; }
+    if (fToday) { fToday.className = s.today >= 0 ? "profit" : "loss"; fToday.innerHTML = `<strong>${currency(s.today)}</strong>`; }
+    if (fTotal) { fTotal.className = s.total >= 0 ? "profit" : "loss"; fTotal.innerHTML = `<strong>${currency(s.total)}</strong>`; }
+    const sCurrEl = document.getElementById("adminStripCurrentValue");
+    const sUnrealEl = document.getElementById("adminStripUnrealized");
+    const sTodayEl = document.getElementById("adminStripToday");
+    const sCurrWrap = document.getElementById("adminStripCurrentValueWrap");
+    const sUnrealWrap = document.getElementById("adminStripUnrealizedWrap");
+    const sTodayWrap = document.getElementById("adminStripTodayWrap");
+    if (sCurrEl) sCurrEl.textContent = currency(s.current);
+    if (sCurrWrap) sCurrWrap.className = s.current >= s.invested ? "" : "loss";
+    if (sUnrealEl) sUnrealEl.textContent = currency(s.unrealized);
+    if (sUnrealWrap) sUnrealWrap.className = s.unrealized >= 0 ? "profit" : "loss";
+    if (sTodayEl) sTodayEl.textContent = currency(s.today);
+    if (sTodayWrap) sTodayWrap.className = s.today >= 0 ? "profit" : "loss";
+  }
+
+  // User table: update footer totals
+  const userTable = document.getElementById("userPositionsTable");
+  if (userTable) {
+    const s = sumTableRows(userTable);
+    const fCurr = document.getElementById("userFooterCurrentValue");
+    const fUnreal = document.getElementById("userFooterUnrealized");
+    const fToday = document.getElementById("userFooterToday");
+    const fTotal = document.getElementById("userFooterTotal");
+    if (fCurr) { fCurr.className = s.current >= s.invested ? "profit" : "loss"; fCurr.innerHTML = `<strong>${currency(s.current)}</strong>`; }
+    if (fUnreal) { fUnreal.className = s.unrealized >= 0 ? "profit" : "loss"; fUnreal.innerHTML = `<strong>${currency(s.unrealized)}</strong>`; }
+    if (fToday) { fToday.className = s.today >= 0 ? "profit" : "loss"; fToday.innerHTML = `<strong>${currency(s.today)}</strong>`; }
+    if (fTotal) { fTotal.className = s.total >= 0 ? "profit" : "loss"; fTotal.innerHTML = `<strong>${currency(s.total)}</strong>`; }
+  }
 }
 
 function setupDetailEyeButtons(container) {
@@ -4607,13 +4672,9 @@ function startAdminDashboardAutoRefresh() {
 
 function startUserRefresh() {
   attachNavGuard();
+  // Live price tick handles in-place cell updates — no full re-render needed here.
   window.clearInterval(userRefreshTimer);
-  userRefreshTimer = window.setInterval(async () => {
-    if (document.hidden) return;
-    if (activeRole !== "user") return;
-    if (document.activeElement?.matches?.("input, select, textarea")) return;
-    await renderUserPortal({ silent: true }).catch(() => {});
-  }, 10000);
+  userRefreshTimer = null;
 }
 
 async function refreshAdminCurrentView() {
@@ -5048,9 +5109,9 @@ async function renderAdminPortal(options = {}) {
 
         <section class="simple-summary-strip admin-summary-strip">
           <span><strong>${currency(filteredInvestedValue)}</strong> Invested Value</span>
-          <span><strong>${currency(filteredCurrentValue)}</strong> Current Value</span>
-          <span class="${filteredUnrealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredUnrealizedProfit)}</strong> Unrealised P&amp;L</span>
-          <span class="${filteredTodayProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredTodayProfit)}</strong> Today&apos;s P&amp;L</span>
+          <span id="adminStripCurrentValueWrap"><strong id="adminStripCurrentValue">${currency(filteredCurrentValue)}</strong> Current Value</span>
+          <span class="${filteredUnrealizedProfit >= 0 ? "profit" : "loss"}" id="adminStripUnrealizedWrap"><strong id="adminStripUnrealized">${currency(filteredUnrealizedProfit)}</strong> Unrealised P&amp;L</span>
+          <span class="${filteredTodayProfit >= 0 ? "profit" : "loss"}" id="adminStripTodayWrap"><strong id="adminStripToday">${currency(filteredTodayProfit)}</strong> Today&apos;s P&amp;L</span>
           <span class="${filteredPositionsRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredPositionsRealizedProfit)}</strong> Realised P&amp;L</span>
         </section>
 
@@ -5124,12 +5185,12 @@ async function renderAdminPortal(options = {}) {
                   <td>—</td>
                   <td>—</td>
                   <td>—</td>
-                  <td class="${filteredCurrentValue >= filteredInvestedValue ? "profit" : "loss"}"><strong>${currency(filteredInvestedValue)}</strong></td>
-                  <td class="${filteredCurrentValue >= filteredInvestedValue ? "profit" : "loss"}"><strong>${currency(filteredCurrentValue)}</strong></td>
-                  <td class="${filteredUnrealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredUnrealizedProfit)}</strong></td>
-                  <td class="${filteredTodayProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredTodayProfit)}</strong></td>
+                  <td id="adminFooterInvested" class="${filteredCurrentValue >= filteredInvestedValue ? "profit" : "loss"}"><strong>${currency(filteredInvestedValue)}</strong></td>
+                  <td id="adminFooterCurrentValue" class="${filteredCurrentValue >= filteredInvestedValue ? "profit" : "loss"}"><strong>${currency(filteredCurrentValue)}</strong></td>
+                  <td id="adminFooterUnrealized" class="${filteredUnrealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredUnrealizedProfit)}</strong></td>
+                  <td id="adminFooterToday" class="${filteredTodayProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredTodayProfit)}</strong></td>
                   <td class="${filteredPositionsRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredPositionsRealizedProfit)}</strong></td>
-                  <td class="${filteredPositionsTotalProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredPositionsTotalProfit)}</strong></td>
+                  <td id="adminFooterTotal" class="${filteredPositionsTotalProfit >= 0 ? "profit" : "loss"}"><strong>${currency(filteredPositionsTotalProfit)}</strong></td>
                   <td>—</td>
                 </tr>
               </tfoot>
@@ -5600,7 +5661,7 @@ async function renderUserPortal(options = {}) {
             <table class="admin-position-table user-position-table" id="userPositionsTable">
               <thead>
                 <tr>
-                  <th>Symbol</th><th>Purchase Date</th><th>Qty</th><th>Avg Price</th>
+                  <th>Symbol</th><th>Purchase Date</th><th>Qty</th><th>Avg Price</th><th>Live Price</th>
                   <th>Total Investment</th><th>Current Value</th>
                   <th>Unrealised P&amp;L</th><th>Today&apos;s P&amp;L</th><th>Realised P&amp;L</th><th>Total P&amp;L</th>
                 </tr>
@@ -5611,32 +5672,34 @@ async function renderUserPortal(options = {}) {
                       const investedValue = Number(holding.buy_price || 0) * Number(holding.quantity || 0);
                       const currentValue = Number(holding.current_price || 0) * Number(holding.quantity || 0);
                       const vsc = currentValue >= investedValue ? "profit" : "loss";
-                      return `<tr>
-                        <td><strong>${escapeHtml(holding.symbol)}</strong></td>
+                      return `<tr data-price-row data-qty="${holding.quantity}" data-avg-price="${Number(holding.buy_price || 0)}" data-prev-close="${Number(holding.previous_close || 0)}" data-realized="${holding.realized_profit || 0}">
+                        <td><strong>${escapeHtml(holding.symbol)}</strong><br/><small>${escapeHtml(holding.exchange || "NSE")}</small></td>
                         <td>${formatDate(holding.created_at)}</td>
                         <td>${Number(holding.quantity || 0).toFixed(2)}</td>
                         <td>${currency(holding.buy_price)}</td>
+                        <td data-live-price-cell="${escapeHtml(String(holding.symbol || "").toUpperCase())}::${escapeHtml(holding.exchange || "NSE")}" data-avg-price="${Number(holding.buy_price || 0)}" class="live-price-fetching">—</td>
                         <td class="${vsc} user-invested-cell">${currency(investedValue)}</td>
-                        <td class="${vsc} user-current-cell">${currency(currentValue)}</td>
-                        <td class="${Number(holding.profit_loss) >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
-                        <td class="${Number(holding.today_profit) >= 0 ? "profit" : "loss"}">${currency(holding.today_profit)}</td>
+                        <td data-current-value-cell class="${vsc} user-current-cell">${currency(currentValue)}</td>
+                        <td data-unrealized-cell class="${Number(holding.profit_loss) >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
+                        <td data-today-cell class="${Number(holding.today_profit) >= 0 ? "profit" : "loss"}">${currency(holding.today_profit)}</td>
                         <td class="${Number(holding.realized_profit) >= 0 ? "profit" : "loss"}">${currency(holding.realized_profit)}</td>
-                        <td class="${Number(holding.total_profit) >= 0 ? "profit" : "loss"}">${currency(holding.total_profit)}</td>
+                        <td data-total-pnl-cell class="${Number(holding.total_profit) >= 0 ? "profit" : "loss"}">${currency(holding.total_profit)}</td>
                       </tr>`;
                     }).join("")
-                  : `<tr><td colspan="10"><div class="dash-empty-state">${performance.length ? `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" stroke="#2c90f0" stroke-width="2" stroke-dasharray="6 4" opacity="0.4"/><path d="M20 38l8-8 6 6 10-12" stroke="#2c90f0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/></svg><strong>No results for filters</strong><span>Try clearing filters to see all holdings.</span>` : `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="20" width="40" height="28" rx="6" stroke="#2c90f0" stroke-width="2" opacity="0.35"/><path d="M20 32h24M20 38h16" stroke="#2c90f0" stroke-width="2" stroke-linecap="round" opacity="0.5"/><circle cx="44" cy="18" r="8" fill="#edf5ff" stroke="#2c90f0" stroke-width="2"/><path d="M44 15v3l2 2" stroke="#2c90f0" stroke-width="1.8" stroke-linecap="round"/></svg><strong>No holdings yet</strong><span>Once the admin adds your first stock, it will appear here.</span>`}</div></td></tr>`}
+                  : `<tr><td colspan="11"><div class="dash-empty-state">${performance.length ? `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" stroke="#2c90f0" stroke-width="2" stroke-dasharray="6 4" opacity="0.4"/><path d="M20 38l8-8 6 6 10-12" stroke="#2c90f0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/></svg><strong>No results for filters</strong><span>Try clearing filters to see all holdings.</span>` : `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="20" width="40" height="28" rx="6" stroke="#2c90f0" stroke-width="2" opacity="0.35"/><path d="M20 32h24M20 38h16" stroke="#2c90f0" stroke-width="2" stroke-linecap="round" opacity="0.5"/><circle cx="44" cy="18" r="8" fill="#edf5ff" stroke="#2c90f0" stroke-width="2"/><path d="M44 15v3l2 2" stroke="#2c90f0" stroke-width="1.8" stroke-linecap="round"/></svg><strong>No holdings yet</strong><span>Once the admin adds your first stock, it will appear here.</span>`}</div></td></tr>`}
               </tbody>
               <tfoot>
                 <tr class="admin-total-row">
                   <td colspan="2"><strong>Totals</strong></td>
                   <td><strong>${filteredTotalQuantity.toFixed(2)}</strong></td>
                   <td>—</td>
+                  <td>—</td>
                   <td><strong>${currency(filteredInvestedValue)}</strong></td>
-                  <td class="${filteredCurrentValue >= filteredInvestedValue ? "profit" : "loss"}"><strong>${currency(filteredCurrentValue)}</strong></td>
-                  <td class="${totalUnrealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalUnrealizedProfit)}</strong></td>
-                  <td class="${totalTodayProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalTodayProfit)}</strong></td>
+                  <td id="userFooterCurrentValue" class="${filteredCurrentValue >= filteredInvestedValue ? "profit" : "loss"}"><strong>${currency(filteredCurrentValue)}</strong></td>
+                  <td id="userFooterUnrealized" class="${totalUnrealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalUnrealizedProfit)}</strong></td>
+                  <td id="userFooterToday" class="${totalTodayProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalTodayProfit)}</strong></td>
                   <td class="${totalRealizedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalRealizedProfit)}</strong></td>
-                  <td class="${totalCombinedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalCombinedProfit)}</strong></td>
+                  <td id="userFooterTotal" class="${totalCombinedProfit >= 0 ? "profit" : "loss"}"><strong>${currency(totalCombinedProfit)}</strong></td>
                 </tr>
               </tfoot>
             </table>
@@ -5739,6 +5802,8 @@ async function renderUserPortal(options = {}) {
     activeRole = "user";
     activeUserId = profile.id;
     startUserRefresh();
+    void refreshTableLivePrices();
+    startLivePriceTick();
     setupUserPortfolioFilters();
     setupScrollSync("userPositionsTableWrap", "userPositionsTableScroller");
     setupPortalActions();
