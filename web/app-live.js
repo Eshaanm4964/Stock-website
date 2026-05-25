@@ -1680,7 +1680,7 @@ async function renderHomeTicker() {
   function shuffle(arr) { return arr.slice().sort(() => Math.random() - 0.5); }
   const defaultSymbols = ["NIFTY50", "SENSEX", ...shuffle(allSymbols.filter(s => s !== "NIFTY50" && s !== "SENSEX")).slice(0, 8)];
   const feed = await api(`/stocks/feed?symbols=${encodeURIComponent(defaultSymbols.join(","))}`).catch(() => []);
-  const safeFeed = Array.isArray(feed) ? feed.filter((quote) => quote?.symbol) : [];
+  const safeFeed = Array.isArray(feed) ? feed.filter((quote) => quote?.symbol && Number(quote.price) > 0) : [];
 
   if (!safeFeed.length) {
     mount.innerHTML = `
