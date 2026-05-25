@@ -1671,7 +1671,14 @@ async function renderHomeTicker() {
   const mount = document.getElementById("homeLiveTicker");
   if (!mount) return;
 
-  const defaultSymbols = ["NIFTY50", "SENSEX", "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN"];
+  const allSymbols = [
+    "NIFTY50","SENSEX","RELIANCE","TCS","INFY","HDFCBANK","ICICIBANK","SBIN",
+    "WIPRO","LTIM","BAJFINANCE","AXISBANK","KOTAKBANK","ITC","HINDUNILVR",
+    "SUNPHARMA","ONGC","NTPC","POWERGRID","ADANIENT","TATAMOTORS","MARUTI",
+    "ASIANPAINT","TITAN","ULTRACEMCO","NESTLEIND","DRREDDY","CIPLA","BPCL","COALINDIA"
+  ];
+  function shuffle(arr) { return arr.slice().sort(() => Math.random() - 0.5); }
+  const defaultSymbols = ["NIFTY50", "SENSEX", ...shuffle(allSymbols.filter(s => s !== "NIFTY50" && s !== "SENSEX")).slice(0, 8)];
   const feed = await api(`/stocks/feed?symbols=${encodeURIComponent(defaultSymbols.join(","))}`).catch(() => []);
   const safeFeed = Array.isArray(feed) ? feed.filter((quote) => quote?.symbol) : [];
 
