@@ -4334,6 +4334,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
                 <th>Purchase Date</th>
                 <th>Qty</th>
                 <th>Avg Price</th>
+                <th>Live Price</th>
                 <th>Invested Value</th>
                 <th>Current Value</th>
                 <th>Unrealised P&amp;L</th>
@@ -4353,7 +4354,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
                     const totalProfit = Number(holding.profit_loss || 0) + realizedProfit;
                     const isFocus = focusSymbol && String(holding.symbol || "").toUpperCase() === String(focusSymbol || "").toUpperCase();
                     return `
-                      <tr${isFocus ? ' class="admin-detail-highlight-row"' : ""}>
+                      <tr data-price-row data-qty="${holding.quantity}" data-avg-price="${Number(holding.buy_price || 0)}" data-prev-close="${Number(holding.previous_close || 0)}" data-realized="${realizedProfit}"${isFocus ? ' class="admin-detail-highlight-row"' : ""}>
                         <td>
                           <div class="admin-stock-cell">
                             <button class="admin-eye-btn ${isAdminStockRevealed(holding.symbol) ? "is-active" : ""}" type="button" data-stock-visibility-toggle="${escapeHtml(String(holding.symbol || "").toUpperCase())}" aria-label="Toggle stock name">&#128065;</button>
@@ -4364,12 +4365,13 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
                         <td>${formatDate(holding.created_at)}</td>
                         <td>${holding.quantity}</td>
                         <td>${currency(holding.buy_price)}</td>
-                        <td class="${valueClass}">${currency(investedValue)}</td>
-                        <td class="${valueClass}">${currency(currentValue)}</td>
-                        <td class="${Number(holding.profit_loss || 0) >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change || 0)}</small></td>
-                        <td class="${Number(holding.today_profit || 0) >= 0 ? "profit" : "loss"}">${currency(holding.today_profit || 0)}</td>
+                        <td data-live-price-cell="${escapeHtml(String(holding.symbol || "").toUpperCase())}::${escapeHtml(holding.exchange || "NSE")}" data-avg-price="${Number(holding.buy_price || 0)}" class="live-price-fetching">—</td>
+                        <td data-invested-cell class="${valueClass}">${currency(investedValue)}</td>
+                        <td data-current-value-cell class="${valueClass}">${currency(currentValue)}</td>
+                        <td data-unrealized-cell class="${Number(holding.profit_loss || 0) >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change || 0)}</small></td>
+                        <td data-today-cell class="${Number(holding.today_profit || 0) >= 0 ? "profit" : "loss"}">${currency(holding.today_profit || 0)}</td>
                         <td class="${realizedProfit >= 0 ? "profit" : "loss"}">${currency(realizedProfit)}</td>
-                        <td class="${totalProfit >= 0 ? "profit" : "loss"}">${currency(totalProfit)}</td>
+                        <td data-total-pnl-cell class="${totalProfit >= 0 ? "profit" : "loss"}">${currency(totalProfit)}</td>
                         <td class="action-cell-duo">
                           <button class="buy-action-btn" type="button" data-admin-buy-holding="${holding.holding_id}" data-user-id="${user.user_id}" data-symbol="${escapeHtml(holding.symbol)}" data-owner="${escapeHtml(user.full_name || '')}" data-exchange="${escapeHtml(holding.exchange || 'NSE')}" data-buy-price="${holding.buy_price}" data-current-price="${holding.current_price || ''}">Buy</button>
                           <button class="edit-action-btn" type="button" data-admin-edit-holding="${holding.holding_id}" data-symbol="${escapeHtml(holding.symbol)}" data-owner="${escapeHtml(user.full_name || '')}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}" data-created-at="${escapeHtml(holding.created_at || '')}">Edit</button>
@@ -4378,11 +4380,12 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
                       </tr>
                     `;
                   }).join("")
-                : `<tr><td colspan="11"><span class="helper-text">No live positions for this investor.</span></td></tr>`}
+                : `<tr><td colspan="12"><span class="helper-text">No live positions for this investor.</span></td></tr>`}
             </tbody>
             <tfoot>
               <tr class="admin-total-row">
                 <td colspan="2"><strong>Totals</strong></td>
+                <td>—</td>
                 <td>—</td>
                 <td>—</td>
                 <td class="${totalCurrent >= totalInvested ? "profit" : "loss"}"><strong>${currency(totalInvested)}</strong></td>
@@ -4543,6 +4546,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       setupSoldHistoryPagination(detailMount);
       setupPortalActions();
       setupHoldingActionButtons(document.getElementById("adminUserActionStatus"));
+      void refreshTableLivePrices();
       detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
       maybeShowBalanceWarning(user);
     });
@@ -4572,6 +4576,7 @@ function setupAdminDrilldowns(userDashboards, allHoldings, soldHistory = []) {
       detailMount.classList.remove("hidden");
       detailMount.classList.add("portal-visible");
       setupDetailEyeButtons(detailMount);
+      void refreshTableLivePrices();
       detailMount.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
