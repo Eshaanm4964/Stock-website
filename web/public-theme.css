@@ -7985,3 +7985,30 @@ a.pill-link {
   background: rgba(96,168,248,0.2);
   color: #ffffff;
 }
+
+/* ── Login page: dark footer ── */
+[data-page="login"] .footer-shell.footer-pro {
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  margin: 0;
+  background: #0b1d35;
+  padding: 60px max(6vw, 48px) 32px;
+}
+[data-page="login"] .footer-shell.footer-pro::before,
+[data-page="login"] .footer-shell.footer-pro::after { display: none; }
+[data-page="login"] .footer-grid { border-bottom-color: rgba(255,255,255,0.1); }
+[data-page="login"] .footer-col-head { color: #60a8f8; }
+[data-page="login"] .footer-shell .footer-tagline,
+[data-page="login"] .footer-shell .footer-contact-item,
+[data-page="login"] .footer-shell .footer-nav-col a,
+[data-page="login"] .footer-shell .footer-disclaimer,
+[data-page="login"] .footer-shell .footer-copy { color: rgba(255,255,255,0.6); }
+[data-page="login"] .footer-shell .footer-contact-item:hover,
+[data-page="login"] .footer-shell .footer-nav-col a:hover { color: #ffffff; }
+[data-page="login"] .footer-shell .brand-wordmark { color: #ffffff; }
+[data-page="login"] .footer-shell .brand-tagline { color: rgba(255,255,255,0.5); }
+[data-page="login"] .footer-shell .footer-legal-links a { color: rgba(255,255,255,0.5); text-decoration: none; font-size: 0.85rem; }
+[data-page="login"] .footer-shell .footer-legal-links a:hover { color: #ffffff; }
+[data-page="login"] .footer-shell .footer-social-link { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); }
+[data-page="login"] .footer-shell .footer-social-link:hover { background: rgba(96,168,248,0.2); color: #ffffff; }
