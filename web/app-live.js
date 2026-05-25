@@ -238,10 +238,8 @@ function startAdminRefresh() {
     if (document.hidden) return;
     if (activeRole !== "admin") return;
     if (adminUiState.actionsMenuOpen) return;
-    if (isAdminDashboardPage()) {
-      await renderAdminPortal({ silent: true }).catch(() => {});
-      return;
-    }
+    // Dashboard live prices are handled by the 10s startLivePriceTick() tick —
+    // no full re-render here to avoid page blink.
     if (isAdminDatabasePage()) {
       await renderAdminDatabasePage({ silent: true }).catch(() => {});
     }
