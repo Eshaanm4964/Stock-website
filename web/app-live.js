@@ -4623,7 +4623,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
       </div>` : ""}
 
       <article class="table-card" style="margin-top:18px;">
-        <div class="panel-head"><h3>Live Positions</h3><span class="badge">Realtime</span></div>
+        <div class="panel-head"><h3>Live Positions</h3><div style="display:flex;align-items:center;gap:10px;"><span class="badge">Realtime</span><button class="admin-eye-btn" type="button" id="adminDetailTableToggle" title="Hide/Show table" aria-label="Toggle positions table">&#128065;</button></div></div>
         <div class="table-wrap admin-position-table-wrap" id="adminDetailLiveWrap">
           <table class="admin-position-table" id="adminDetailPositionsTable">
             <thead>
@@ -4825,6 +4825,17 @@ function setupDetailMasterEye(container) {
       const sym = el.dataset.stockLabel || "";
       el.textContent = revealed ? sym : maskStockSymbol(sym);
     });
+  });
+
+  const toggleBtn = container.querySelector("#adminDetailTableToggle");
+  if (!toggleBtn) return;
+  let hidden = false;
+  const targets = ["adminDetailLiveWrap", "adminDetailLiveScroller", "adminDetailPositionsTable"].map((id) => container.querySelector(`#${id}`) || document.getElementById(id));
+  toggleBtn.addEventListener("click", () => {
+    hidden = !hidden;
+    toggleBtn.classList.toggle("is-active", hidden);
+    toggleBtn.title = hidden ? "Show table" : "Hide table";
+    targets.forEach((el) => { if (el) el.style.display = hidden ? "none" : ""; });
   });
 }
 
