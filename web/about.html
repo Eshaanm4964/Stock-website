@@ -25,6 +25,70 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./styles.css" />
     <link rel="stylesheet" href="./public-theme.css" />
+    <style>
+      /* ── About page: single-flow layout, no card boxes ── */
+      [data-page="about"] .public-main {
+        display: block;
+        padding: 0;
+        gap: 0;
+      }
+      [data-page="about"] .section-card {
+        background: #ffffff;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        padding: 80px max(6vw, 48px);
+      }
+      [data-page="about"] .section-card::before {
+        display: none;
+      }
+      /* alternating section tint */
+      [data-page="about"] .section-card:nth-child(odd) {
+        background: #f4f8ff;
+      }
+      /* hero gets a richer gradient treatment */
+      [data-page="about"] .section-card:first-child {
+        background: linear-gradient(135deg, #e6f0ff 0%, #f4f8ff 100%);
+        padding: 100px max(6vw, 48px) 80px;
+        text-align: center;
+      }
+      [data-page="about"] .section-card:first-child .page-hero-copy {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+      [data-page="about"] .section-card:first-child h1 {
+        font-size: clamp(2rem, 4vw, 3rem);
+        line-height: 1.15;
+        margin: 12px 0 20px;
+      }
+      /* thin divider between sections */
+      [data-page="about"] .section-card + .section-card {
+        border-top: 1px solid rgba(44, 144, 240, 0.1);
+      }
+      /* leader card: remove its own box since section provides separation */
+      [data-page="about"] .leader-card {
+        background: transparent;
+        box-shadow: none;
+        border: none;
+        padding: 0;
+        margin-top: 40px;
+      }
+      /* values grid cards: keep a light border for definition */
+      [data-page="about"] .team-card {
+        background: #ffffff;
+        border: 1px solid rgba(44, 144, 240, 0.13);
+        border-radius: 18px;
+        padding: 32px 28px;
+        box-shadow: 0 4px 16px rgba(44, 144, 240, 0.06);
+      }
+      /* footer stays as-is */
+      [data-page="about"] .footer-shell {
+        border-radius: 30px;
+        margin: 32px;
+        margin-top: 0;
+      }
+    </style>
   </head>
   <body data-page="about" class="public-page">
     <div class="page-progress" id="pageProgress" aria-hidden="true"></div>
