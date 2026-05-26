@@ -1938,10 +1938,10 @@ body.public-page .site-shell {
   left: 305px;
   top: 155px;
   transform: translate(-50%, -50%);
-  width: 88px;
-  height: 88px;
-  border-radius: 20px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+  width: 100px;
+  height: auto;
+  filter: brightness(0) invert(1);
+  opacity: 0.92;
   pointer-events: none;
   z-index: 2;
 }
