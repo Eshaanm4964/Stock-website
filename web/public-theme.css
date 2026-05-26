@@ -1950,9 +1950,28 @@ body.public-page .site-shell {
   display: none;
 }
 
-.safety-person {
-  left: 138px;
+/* Walker wrapper: person + carried coin animate together */
+.safety-walker {
+  position: absolute;
+  left: 60px;
   top: 88px;
+  width: 88px;
+  height: 220px;
+  animation: walkerIn 6s ease-in-out infinite;
+}
+
+@keyframes walkerIn {
+  0%   { transform: translateX(-140px); }
+  40%  { transform: translateX(80px); }   /* arrived at shield */
+  75%  { transform: translateX(80px); }   /* presenting */
+  90%  { transform: translateX(80px); }
+  100% { transform: translateX(-140px); } /* reset */
+}
+
+.safety-person {
+  position: absolute;
+  left: 0;
+  top: 0;
   width: 88px;
   height: 220px;
   background: none;
@@ -1960,6 +1979,70 @@ body.public-page .site-shell {
 
 .safety-person::before,
 .safety-person::after { display: none; }
+
+/* Carried coin sits above person's raised left arm */
+.safety-coin-carried {
+  position: absolute;
+  left: -30px;
+  top: -55px;
+  animation: coinCarryAndLaunch 6s ease-in-out infinite;
+}
+
+@keyframes coinCarryAndLaunch {
+  0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  38%  { transform: translate(0, 0) scale(1); opacity: 1; }  /* walks with person */
+  55%  { transform: translate(130px, -20px) scale(0.85); opacity: 1; } /* flies to shield */
+  70%  { transform: translate(130px, -20px) scale(0.0); opacity: 0; }  /* absorbed */
+  72%  { transform: translate(0, 0) scale(0); opacity: 0; }  /* teleport back */
+  80%  { transform: translate(0, 0) scale(1); opacity: 1; }  /* reappear */
+  100% { transform: translate(0, 0) scale(1); opacity: 1; }
+}
+
+/* Leg swing during walk */
+.p-leg-l {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: legSwingL 0.55s ease-in-out infinite alternate;
+}
+.p-leg-r {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: legSwingR 0.55s ease-in-out infinite alternate;
+}
+@keyframes legSwingL {
+  from { transform: rotate(-20deg); }
+  to   { transform: rotate(20deg); }
+}
+@keyframes legSwingR {
+  from { transform: rotate(20deg); }
+  to   { transform: rotate(-20deg); }
+}
+
+/* Arm swing */
+.p-arm-l {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: armSwingL 6s ease-in-out infinite;
+}
+.p-arm-r {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: armSwingR 6s ease-in-out infinite;
+}
+@keyframes armSwingL {
+  0%   { transform: rotate(20deg); }
+  38%  { transform: rotate(-20deg); }
+  45%  { transform: rotate(-55deg); } /* raise arm to present coin */
+  75%  { transform: rotate(-55deg); }
+  100% { transform: rotate(20deg); }
+}
+@keyframes armSwingR {
+  0%   { transform: rotate(-20deg); }
+  38%  { transform: rotate(20deg); }
+  45%  { transform: rotate(10deg); }
+  75%  { transform: rotate(10deg); }
+  100% { transform: rotate(-20deg); }
+}
 
 .safety-coin {
   left: 126px;
