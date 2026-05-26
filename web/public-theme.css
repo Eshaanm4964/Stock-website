@@ -1951,37 +1951,15 @@ body.public-page .site-shell {
 }
 
 .safety-person {
-  left: 150px;
-  top: 126px;
-  width: 74px;
-  height: 182px;
-  background:
-    radial-gradient(circle at 50% 18%, #f7b58f 0 17px, transparent 18px),
-    linear-gradient(90deg, transparent 0 34%, #0f4c85 34% 66%, transparent 66%),
-    linear-gradient(180deg, transparent 0 34%, #1576d6 34% 66%, #102f49 66% 100%);
-  border-radius: 40px 40px 10px 10px;
+  left: 138px;
+  top: 88px;
+  width: 88px;
+  height: 220px;
+  background: none;
 }
 
 .safety-person::before,
-.safety-person::after {
-  content: "";
-  position: absolute;
-  top: 12px;
-  width: 14px;
-  height: 78px;
-  border-radius: 999px;
-  background: #f7b58f;
-}
-
-.safety-person::before {
-  left: -8px;
-  transform: rotate(28deg);
-}
-
-.safety-person::after {
-  right: -8px;
-  transform: rotate(-28deg);
-}
+.safety-person::after { display: none; }
 
 .safety-coin {
   left: 126px;
