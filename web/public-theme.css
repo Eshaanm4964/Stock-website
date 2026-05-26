@@ -1936,22 +1936,18 @@ body.public-page .site-shell {
 .safety-shield-logo {
   position: absolute;
   left: 305px;
-  top: 148px;
+  top: 155px;
   transform: translate(-50%, -50%);
-  width: 72px;
-  height: auto;
-  filter: brightness(0) invert(1);
-  opacity: 0.88;
+  width: 88px;
+  height: 88px;
+  border-radius: 20px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.18);
   pointer-events: none;
   z-index: 2;
 }
 
 .safety-shield::after {
-  content: "";
-  position: absolute;
-  inset: 14px 22px 22px;
-  border: 3px solid rgba(255, 255, 255, 0.72);
-  clip-path: polygon(50% 0, 94% 16%, 86% 70%, 50% 100%, 14% 70%, 6% 16%);
+  display: none;
 }
 
 .safety-person {
