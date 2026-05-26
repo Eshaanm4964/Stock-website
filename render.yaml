@@ -31,9 +31,9 @@ services:
       - key: ADMIN_ALLOWED_PHONE_NUMBERS
         sync: false
       - key: FRONTEND_URL
-        value: https://web-ruddy-eight-73.vercel.app
+        value: https://www.assetyantra.com
       - key: ALLOWED_ORIGINS
-        value: https://web-ruddy-eight-73.vercel.app
+        value: https://www.assetyantra.com,https://assetyantra.com,https://web-ruddy-eight-73.vercel.app
       - key: DATABASE_URL
         sync: false
       - key: SMS_PROVIDER
