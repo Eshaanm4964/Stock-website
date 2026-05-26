@@ -1935,14 +1935,15 @@ body.public-page .site-shell {
 
 .safety-shield-logo {
   position: absolute;
-  left: 50%;
-  top: 38%;
+  left: 305px;
+  top: 148px;
   transform: translate(-50%, -50%);
-  width: 80px;
+  width: 72px;
   height: auto;
   filter: brightness(0) invert(1);
-  opacity: 0.92;
+  opacity: 0.88;
   pointer-events: none;
+  z-index: 2;
 }
 
 .safety-shield::after {
