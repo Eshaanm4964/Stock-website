@@ -2033,16 +2033,16 @@ body.public-page .site-shell {
   height: 64px;
   border-radius: 50%;
   background: #1a82e8;
+  display: grid;
+  place-items: center;
 }
 
 .safety-badge.one::before {
-  content: "";
-  position: absolute;
-  inset: 16px 18px;
-  background:
-    repeating-linear-gradient(90deg, #ffffff 0 7px, transparent 7px 14px),
-    repeating-linear-gradient(0deg, #ffffff 0 7px, transparent 7px 14px);
-  opacity: 0.92;
+  content: "₹";
+  color: #ffffff;
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .safety-badge.two {
@@ -2052,14 +2052,16 @@ body.public-page .site-shell {
   height: 58px;
   border-radius: 50%;
   background: #f73768;
+  display: grid;
+  place-items: center;
 }
 
 .safety-badge.two::before {
-  content: "";
-  position: absolute;
-  inset: 15px;
-  background: #ffffff;
-  clip-path: polygon(50% 0, 62% 34%, 100% 34%, 69% 56%, 80% 94%, 50% 72%, 20% 94%, 31% 56%, 0 34%, 38% 34%);
+  content: "₿";
+  color: #ffffff;
+  font-size: 1.7rem;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .safety-hero-illustration::before {
