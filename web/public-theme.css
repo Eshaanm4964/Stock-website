@@ -1950,124 +1950,15 @@ body.public-page .site-shell {
   display: none;
 }
 
-/* Walker wrapper: person + carried coin animate together */
-.safety-walker {
-  position: absolute;
-  left: 40px;
+.safety-person {
+  left: 138px;
   top: 88px;
   width: 88px;
   height: 220px;
-  animation: walkerIn 7s ease-in-out infinite;
-}
-
-@keyframes walkerIn {
-  0%   { transform: translateX(-220px); }  /* off-screen left */
-  38%  { transform: translateX(0); }       /* arrived beside shield */
-  78%  { transform: translateX(0); }       /* hold — presenting */
-  95%  { transform: translateX(-220px); }  /* walk back off */
-  100% { transform: translateX(-220px); }
-}
-
-.safety-person {
-  position: absolute;
-  left: 0; top: 0;
-  width: 88px; height: 220px;
   background: none;
 }
 .safety-person::before,
 .safety-person::after { display: none; }
-
-/* Coin held above person's raised left hand */
-.safety-coin-carried {
-  position: absolute;
-  left: -38px;
-  top: -68px;
-  animation: coinPresent 7s ease-in-out infinite;
-}
-
-@keyframes coinPresent {
-  /* Walk phase: bob gently with person */
-  0%   { transform: translateY(0);  }
-  18%  { transform: translateY(-6px); }
-  36%  { transform: translateY(0); }
-  /* Present phase: rise up toward shield */
-  52%  { transform: translateY(-18px); }
-  65%  { transform: translateY(-12px); }
-  78%  { transform: translateY(-18px); }
-  /* Reset with person */
-  95%  { transform: translateY(0); }
-  100% { transform: translateY(0); }
-}
-
-/* Leg swing — active during walk, pause when standing */
-.p-leg-l {
-  transform-box: fill-box;
-  transform-origin: 50% 0%;
-  animation: legSwingL 7s ease-in-out infinite;
-}
-.p-leg-r {
-  transform-box: fill-box;
-  transform-origin: 50% 0%;
-  animation: legSwingR 7s ease-in-out infinite;
-}
-@keyframes legSwingL {
-  0%  { transform: rotate(-22deg); }
-  5%  { transform: rotate(22deg); }
-  10% { transform: rotate(-22deg); }
-  15% { transform: rotate(22deg); }
-  20% { transform: rotate(-22deg); }
-  25% { transform: rotate(22deg); }
-  30% { transform: rotate(-22deg); }
-  35% { transform: rotate(0deg); }  /* stop on arrival */
-  95% { transform: rotate(0deg); }
-  100%{ transform: rotate(-22deg); }
-}
-@keyframes legSwingR {
-  0%  { transform: rotate(22deg); }
-  5%  { transform: rotate(-22deg); }
-  10% { transform: rotate(22deg); }
-  15% { transform: rotate(-22deg); }
-  20% { transform: rotate(22deg); }
-  25% { transform: rotate(-22deg); }
-  30% { transform: rotate(22deg); }
-  35% { transform: rotate(0deg); }
-  95% { transform: rotate(0deg); }
-  100%{ transform: rotate(22deg); }
-}
-
-/* Arm swing — walk then raise to present */
-.p-arm-l {
-  transform-box: fill-box;
-  transform-origin: 50% 0%;
-  animation: armSwingL 7s ease-in-out infinite;
-}
-.p-arm-r {
-  transform-box: fill-box;
-  transform-origin: 50% 0%;
-  animation: armSwingR 7s ease-in-out infinite;
-}
-@keyframes armSwingL {
-  0%  { transform: rotate(22deg); }
-  10% { transform: rotate(-22deg); }
-  20% { transform: rotate(22deg); }
-  30% { transform: rotate(-22deg); }
-  38% { transform: rotate(0deg); }
-  45% { transform: rotate(-55deg); } /* raise to present */
-  78% { transform: rotate(-55deg); }
-  95% { transform: rotate(0deg); }
-  100%{ transform: rotate(22deg); }
-}
-@keyframes armSwingR {
-  0%  { transform: rotate(-22deg); }
-  10% { transform: rotate(22deg); }
-  20% { transform: rotate(-22deg); }
-  30% { transform: rotate(22deg); }
-  38% { transform: rotate(0deg); }
-  45% { transform: rotate(15deg); }
-  78% { transform: rotate(15deg); }
-  95% { transform: rotate(0deg); }
-  100%{ transform: rotate(-22deg); }
-}
 
 .safety-coin {
   left: 126px;
