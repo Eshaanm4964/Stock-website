@@ -125,9 +125,12 @@
                   <div class="sma-orb sma-orb-2"></div>
                   <div class="sma-orb sma-orb-3"></div>
                 </div>
-                <label><span>Username</span><input name="username" type="text" placeholder="admin username" autocomplete="username" required /></label>
-                <label><span>Password</span><input name="password" type="password" placeholder="password" autocomplete="current-password" required /></label>
-                <label><span>Phone Number</span><input name="phone" type="tel" placeholder="registered phone number" autocomplete="tel" required /></label>
+                <label><span>Username</span><input id="adminUsername" name="username" type="text" placeholder="admin username" autocomplete="username" /><span class="lv-error" id="err-admin-username"></span></label>
+                <label><span>Password</span>
+                  <div class="pw-wrap"><input id="adminPassword" name="password" type="password" placeholder="password" autocomplete="current-password" /><button type="button" class="pw-eye" data-pw-toggle="adminPassword" aria-label="Show password" tabindex="-1"><svg class="eye-icon eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-icon eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button></div>
+                  <span class="lv-error" id="err-admin-password"></span>
+                </label>
+                <label><span>Phone Number</span><input id="adminPhone" name="phone" type="tel" placeholder="registered phone number" autocomplete="tel" /><span class="lv-error" id="err-admin-phone"></span></label>
                 <div class="split-row" style="opacity:0.45;pointer-events:none;">
                   <label><span>OTP <span style="font-size:0.65rem;font-weight:700;letter-spacing:0.06em;background:#e2e8f0;color:#64748b;border-radius:4px;padding:2px 6px;margin-left:4px;vertical-align:middle;">Coming Soon</span></span><input name="otp" type="text" placeholder="6 digit code" disabled /></label>
                   <button class="secondary-outline" type="button" disabled>Send OTP</button>
@@ -167,8 +170,11 @@
                 <form id="userFormIdPwd" class="auth-form-card" novalidate style="padding:0;border:none;background:none;box-shadow:none;">
                   <p class="section-kicker" style="margin-bottom:6px;margin-top:16px;font-family:'DM Sans',sans-serif;">Client ID &amp; Password</p>
                   <p class="auth-subtitle">Login with your Client ID and password.</p>
-                  <label><span>Client ID</span><input name="userId" type="text" placeholder="e.g. ABC123" autocomplete="username" required /></label>
-                  <label><span>Password</span><input name="password" type="password" placeholder="password" autocomplete="current-password" required /></label>
+                  <label><span>Client ID</span><input id="userClientId" name="userId" type="text" placeholder="e.g. ABC123" autocomplete="username" /><span class="lv-error" id="err-user-id"></span></label>
+                  <label><span>Password</span>
+                    <div class="pw-wrap"><input id="userPassword" name="password" type="password" placeholder="password" autocomplete="current-password" /><button type="button" class="pw-eye" data-pw-toggle="userPassword" aria-label="Show password" tabindex="-1"><svg class="eye-icon eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-icon eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button></div>
+                    <span class="lv-error" id="err-user-password"></span>
+                  </label>
                   <p class="error-text" id="userIdPwdError"></p>
                   <button class="submit-btn" type="submit">Login</button>
                 </form>
@@ -271,6 +277,74 @@
         </div>
       </div>
     </div>
+    <style>
+      .pw-wrap { position: relative; display: flex; }
+      .pw-wrap input { flex: 1; padding-right: 40px; }
+      .pw-eye { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; padding: 0; color: #94a3b8; display: flex; align-items: center; }
+      .pw-eye:hover { color: #475569; }
+      .eye-icon { width: 18px; height: 18px; }
+      .lv-error { display: block; color: #c2413a; font-size: 0.78rem; margin-top: 4px; min-height: 1em; }
+      .lv-input-error { border-color: #c2413a !important; }
+    </style>
+    <script>
+      (function () {
+        // Password eye toggle
+        document.querySelectorAll('.pw-eye').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var input = document.getElementById(btn.dataset.pwToggle);
+            if (!input) return;
+            var isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            btn.querySelector('.eye-show').style.display = isHidden ? 'none' : '';
+            btn.querySelector('.eye-hide').style.display = isHidden ? '' : 'none';
+          });
+        });
+
+        function setErr(id, msg) {
+          var el = document.getElementById(id);
+          if (el) el.textContent = msg;
+          // highlight input — find sibling input/select before the error span
+          var label = el && el.closest('label');
+          var input = label && (label.querySelector('input') || label.querySelector('select'));
+          if (input) input.classList.toggle('lv-input-error', !!msg);
+        }
+
+        function clearErr() {
+          ['err-admin-username','err-admin-password','err-admin-phone','err-user-id','err-user-password'].forEach(function(id){ setErr(id,''); });
+        }
+
+        // Admin form validation
+        var adminForm = document.getElementById('adminForm');
+        if (adminForm) {
+          adminForm.addEventListener('submit', function (e) {
+            clearErr();
+            var ok = true;
+            var username = (document.getElementById('adminUsername') || {}).value || '';
+            var password = (document.getElementById('adminPassword') || {}).value || '';
+            var phone    = (document.getElementById('adminPhone') || {}).value || '';
+            if (!username.trim()) { setErr('err-admin-username', 'Please enter your username.'); ok = false; }
+            if (!password) { setErr('err-admin-password', 'Please enter your password.'); ok = false; }
+            if (!phone.trim()) { setErr('err-admin-phone', 'Please enter your phone number.'); ok = false; }
+            else if (!/^[+]?[\d\s\-()]{10,15}$/.test(phone.trim())) { setErr('err-admin-phone', 'Please enter a valid phone number.'); ok = false; }
+            if (!ok) e.preventDefault();
+          }, true);
+        }
+
+        // User Client ID & Password form validation
+        var userForm = document.getElementById('userFormIdPwd');
+        if (userForm) {
+          userForm.addEventListener('submit', function (e) {
+            clearErr();
+            var ok = true;
+            var userId   = (document.getElementById('userClientId') || {}).value || '';
+            var password = (document.getElementById('userPassword') || {}).value || '';
+            if (!userId.trim()) { setErr('err-user-id', 'Please enter your Client ID.'); ok = false; }
+            if (!password) { setErr('err-user-password', 'Please enter your password.'); ok = false; }
+            if (!ok) e.preventDefault();
+          }, true);
+        }
+      })();
+    </script>
     <script src="./app-live.js?v=20260425-userauth2"></script>
   <script defer src="/_vercel/insights/script.js"></script></body>
 </html>
