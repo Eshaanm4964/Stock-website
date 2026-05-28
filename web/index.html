@@ -70,7 +70,29 @@
           "@id": "https://www.assetyantra.com/#website",
           "url": "https://www.assetyantra.com",
           "name": "Asset Yantra",
-          "publisher": { "@id": "https://www.assetyantra.com/#organization" }
+          "description": "AI-Powered Wealth Management & Algo Trading for Indian Investors",
+          "publisher": { "@id": "https://www.assetyantra.com/#organization" },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://www.assetyantra.com/faq?q={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "ItemList",
+          "name": "Asset Yantra Site Navigation",
+          "itemListElement": [
+            { "@type": "SiteLinksSearchBox", "url": "https://www.assetyantra.com" },
+            { "@type": "ListItem", "position": 1, "name": "About Asset Yantra", "url": "https://www.assetyantra.com/about", "description": "Our mission to democratise intelligent wealth management for every Indian investor." },
+            { "@type": "ListItem", "position": 2, "name": "Products", "url": "https://www.assetyantra.com/products", "description": "AI-powered portfolio management, algorithmic trading strategies, and wealth growth tools." },
+            { "@type": "ListItem", "position": 3, "name": "Forex & Algo Trading", "url": "https://www.assetyantra.com/forex", "description": "Live XAU/USD algorithmic trading results and automated forex strategies." },
+            { "@type": "ListItem", "position": 4, "name": "Contact", "url": "https://www.assetyantra.com/contact", "description": "Reach Asset Yantra — Rajapushpa Summit, Hyderabad. Call +91 98858 00023." },
+            { "@type": "ListItem", "position": 5, "name": "Trust & Safety", "url": "https://www.assetyantra.com/trust-safety", "description": "Secure from the start. Your security comes first. We use advanced encryption and SEBI-compliant practices." },
+            { "@type": "ListItem", "position": 6, "name": "Legal", "url": "https://www.assetyantra.com/legal", "description": "Terms of use, privacy policy, and legal disclosures for Asset Yantra services." }
+          ]
         }
       ]
     }
