@@ -288,16 +288,16 @@
     </style>
     <script>
       (function () {
-        // Password eye toggle
-        document.querySelectorAll('.pw-eye').forEach(function (btn) {
-          btn.addEventListener('click', function () {
-            var input = document.getElementById(btn.dataset.pwToggle);
-            if (!input) return;
-            var isHidden = input.type === 'password';
-            input.type = isHidden ? 'text' : 'password';
-            btn.querySelector('.eye-show').style.display = isHidden ? 'none' : '';
-            btn.querySelector('.eye-hide').style.display = isHidden ? '' : 'none';
-          });
+        // Password eye toggle — use delegation so it works after app-live.js DOM changes
+        document.addEventListener('click', function (e) {
+          var btn = e.target.closest('.pw-eye');
+          if (!btn) return;
+          var input = document.getElementById(btn.dataset.pwToggle);
+          if (!input) return;
+          var isHidden = input.type === 'password';
+          input.type = isHidden ? 'text' : 'password';
+          btn.querySelector('.eye-show').style.display = isHidden ? 'none' : '';
+          btn.querySelector('.eye-hide').style.display = isHidden ? '' : 'none';
         });
 
         function setErr(id, msg) {
