@@ -3359,6 +3359,7 @@ async function refreshTableLivePrices() {
   // Fetch prices per exchange group in parallel
   const priceMap = new Map();
   const prevCloseMap = new Map();
+  const closedMap = new Set();
   await Promise.all(
     [...byExchange.entries()].map(async ([exchange, { symbols }]) => {
       const feed = await api(
@@ -3372,6 +3373,9 @@ async function refreshTableLivePrices() {
         if (q?.symbol && q?.previous_close != null && q.previous_close > 0) {
           prevCloseMap.set(key, Number(q.previous_close));
         }
+        if (q?.is_market_closed) {
+          closedMap.add(key);
+        }
       });
     })
   );
@@ -3379,13 +3383,19 @@ async function refreshTableLivePrices() {
   cells.forEach((cell) => {
     const [symbol, exchange = "NSE"] = cell.dataset.livePriceCell.split("::");
     const price = priceMap.get(`${symbol}::${exchange.toUpperCase()}`);
+    const isClosed = closedMap.has(`${symbol.toUpperCase()}::${exchange.toUpperCase()}`);
     const avgPrice = parseFloat(cell.dataset.avgPrice) || 0;
     cell.classList.remove("live-price-fetching");
     if (price != null && price > 0) {
-      cell.textContent = currency(price);
-      cell.classList.add("live-price-loaded");
       cell.classList.remove("profit", "loss");
-      if (avgPrice > 0) cell.classList.add(price >= avgPrice ? "profit" : "loss");
+      if (isClosed) {
+        cell.innerHTML = `${currency(price)}<br><small class="market-closed-label">Prev Close</small>`;
+        cell.classList.add("market-closed");
+      } else {
+        cell.textContent = currency(price);
+        cell.classList.add("live-price-loaded");
+        if (avgPrice > 0) cell.classList.add(price >= avgPrice ? "profit" : "loss");
+      }
 
       // Update sibling cells on the same row
       const row = cell.closest("tr[data-price-row]");

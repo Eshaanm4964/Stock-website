@@ -15,6 +15,7 @@ class StockQuote(BaseModel):
     cache_until: str | None = None
     data_source: str = "provider"
     is_fallback: bool = False
+    is_market_closed: bool = False
 
 
 class StockSearchResult(BaseModel):

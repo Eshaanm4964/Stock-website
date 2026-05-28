@@ -4401,6 +4401,8 @@ body.public-page .site-shell {
 .algo-perf-table .loss, .algo-perf-table td.loss { color: #c2413a; font-weight: 700; }
 .profit { color: #0f8a55; }
 .loss { color: #c2413a; }
+.market-closed { color: #64748b; }
+.market-closed-label { font-size: 0.68rem; color: #94a3b8; letter-spacing: 0.03em; text-transform: uppercase; }
 
 .algo-edge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
 .algo-edge-card { padding: 28px 24px; border-radius: 22px; border: 1px solid rgba(44,144,240,0.1); background: linear-gradient(180deg, #ffffff, #f5f9ff); box-shadow: 0 12px 28px rgba(44,144,240,0.07); }

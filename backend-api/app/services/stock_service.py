@@ -401,6 +401,7 @@ def _build_quote(symbol: str, exchange: str, info: dict[str, Any], *, source: st
         cache_until=cache_until.isoformat(),
         data_source=source,
         is_fallback=is_fallback,
+        is_market_closed=bool(info.get("is_market_closed", False)),
     )
 
 

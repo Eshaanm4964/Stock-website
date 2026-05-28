@@ -98,6 +98,18 @@ async def kite_fetch_quote(symbol: str, exchange: str, redis: Redis | None) -> d
             data2 = await asyncio.to_thread(_quote_sync, token, alt_key)
             q = data2.get(alt_key) or {}
         if not q or not q.get("last_price"):
+            # Market may be closed — serve last known price from ohlc.close
+            ohlc_closed = q.get("ohlc") or {} if q else {}
+            closed_price = float(ohlc_closed.get("close") or 0)
+            if closed_price > 0:
+                return {
+                    "currentPrice": closed_price,
+                    "previousClose": closed_price,
+                    "shortName": (q.get("tradingsymbol") or symbol.upper()) if q else symbol.upper(),
+                    "currency": "INR",
+                    "regularMarketChangePercent": 0.0,
+                    "is_market_closed": True,
+                }
             return None
         ohlc = q.get("ohlc") or {}
         prev_close = float(ohlc.get("close") or 0) or None
