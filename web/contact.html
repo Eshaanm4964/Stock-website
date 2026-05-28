@@ -129,20 +129,34 @@
               </div>
               <form class="contact-form" id="contactForm"
                 action="https://formspree.io/f/xjgzjlld"
-                method="POST">
-                <label>Name<input type="text" name="name" placeholder="Your full name" required /></label>
-                <label>Email<input type="email" name="email" placeholder="you@example.com" required /></label>
-                <label>Phone<input type="tel" name="phone" placeholder="+91 98765 43210" /></label>
+                method="POST"
+                novalidate>
+                <label>Name
+                  <input type="text" name="name" id="cf-name" placeholder="Your full name" />
+                  <span class="cf-error" id="err-name"></span>
+                </label>
+                <label>Email
+                  <input type="email" name="email" id="cf-email" placeholder="you@example.com" />
+                  <span class="cf-error" id="err-email"></span>
+                </label>
+                <label>Phone
+                  <input type="tel" name="phone" id="cf-phone" placeholder="+91 98765 43210" />
+                  <span class="cf-error" id="err-phone"></span>
+                </label>
                 <label>Interested In
-                  <select name="interest">
+                  <select name="interest" id="cf-interest">
                     <option value="">Select a product…</option>
                     <option value="Forex / Algo Trading">Forex / Algo Trading (Asset Yantra Algo)</option>
                     <option value="Portfolio Management Service">Portfolio Management Service (PMS)</option>
                     <option value="General Enquiry">General Enquiry</option>
                   </select>
+                  <span class="cf-error" id="err-interest"></span>
                 </label>
-                <label>Message<textarea name="message" placeholder="How can we help you?" required></textarea></label>
-                <button class="submit-btn" type="submit">Send Message</button>
+                <label>Message
+                  <textarea name="message" id="cf-message" placeholder="How can we help you?"></textarea>
+                  <span class="cf-error" id="err-message"></span>
+                </label>
+                <button class="submit-btn" type="submit" id="cf-submit">Send Message</button>
                 <p class="helper-text" id="contactStatus"></p>
               </form>
             </article>
@@ -277,6 +291,55 @@
     </a>
 
     <script src="./app-live.js"></script>
+    <style>
+      .cf-error { display: block; color: #c2413a; font-size: 0.78rem; margin-top: 4px; min-height: 1em; }
+      .cf-input-error { border-color: #c2413a !important; }
+    </style>
+    <script>
+      (function () {
+        const form = document.getElementById("contactForm");
+        if (!form) return;
+
+        function showError(id, msg) {
+          const el = document.getElementById(id);
+          const input = form.querySelector("#cf-" + id.replace("err-", ""));
+          if (el) el.textContent = msg;
+          if (input) input.classList.toggle("cf-input-error", !!msg);
+        }
+
+        function clearErrors() {
+          ["err-name","err-email","err-phone","err-interest","err-message"].forEach(function(id) { showError(id, ""); });
+        }
+
+        function validate() {
+          var ok = true;
+          clearErrors();
+
+          var name = document.getElementById("cf-name").value.trim();
+          var email = document.getElementById("cf-email").value.trim();
+          var phone = document.getElementById("cf-phone").value.trim();
+          var interest = document.getElementById("cf-interest").value;
+          var message = document.getElementById("cf-message").value.trim();
+
+          if (!name) { showError("err-name", "Please fill in your name."); ok = false; }
+          if (!email) { showError("err-email", "Please fill in your email address."); ok = false; }
+          else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError("err-email", "Please enter a valid email address."); ok = false; }
+          if (phone && !/^[+]?[\d\s\-()]{10,15}$/.test(phone)) { showError("err-phone", "Please enter a valid phone number."); ok = false; }
+          if (!interest) { showError("err-interest", "Please select an option."); ok = false; }
+          if (!message) { showError("err-message", "Please fill in your message."); ok = false; }
+
+          return ok;
+        }
+
+        form.addEventListener("submit", function (e) {
+          if (!validate()) {
+            e.preventDefault();
+            var first = form.querySelector(".cf-input-error");
+            if (first) first.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        });
+      })();
+    </script>
   <script defer src="/_vercel/insights/script.js"></script></body>
 </html>
 
