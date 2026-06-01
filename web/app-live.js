@@ -5700,7 +5700,7 @@ async function renderAdminPortal(options = {}) {
     setupKiteStatusChip();
     setupAdminDrilldowns(userDashboards, allHoldings, filteredSoldHistory);
     document.getElementById("adminXirrCalcBtn")?.addEventListener("click", () => showXirrCalculatorModal(userDashboards));
-    document.getElementById("adminHistoryBtn")?.addEventListener("click", () => showHistoryModal(allHoldings, filteredSoldHistory, safeUsers));
+    document.getElementById("adminHistoryBtn")?.addEventListener("click", () => showHistoryModal(baseHoldings, safeSoldHistory, safeUsers));
     setupScrollSync("adminPositionsTableWrap", "adminPositionsTableScroller");
     setupScrollSync("adminSoldHistoryWrap", "adminSoldHistoryScroller");
     if (adminUiState.openDetailUserId) {
