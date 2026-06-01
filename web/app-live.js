@@ -1925,9 +1925,14 @@ function showHistoryModal(allHoldings, soldHistory, safeUsers) {
 
   document.body.appendChild(overlay);
   document.body.style.overflow = "hidden";
+  requestAnimationFrame(() => overlay.classList.add("sell-modal-visible"));
 
-  overlay.querySelector("#histClose").addEventListener("click", () => { overlay.remove(); document.body.style.overflow = ""; });
-  overlay.addEventListener("click", (e) => { if (e.target === overlay) { overlay.remove(); document.body.style.overflow = ""; } });
+  const closeHistory = () => {
+    overlay.classList.remove("sell-modal-visible");
+    setTimeout(() => { overlay.remove(); document.body.style.overflow = ""; }, 220);
+  };
+  overlay.querySelector("#histClose").addEventListener("click", closeHistory);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) closeHistory(); });
 
   const tabBuy = overlay.querySelector("#histTabBuy");
   const tabSell = overlay.querySelector("#histTabSell");
