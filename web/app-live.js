@@ -1875,17 +1875,17 @@ function showHistoryModal(allHoldings, soldHistory, safeUsers) {
     }).join("") || `<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:20px;">No purchases found.</td></tr>`;
 
   const sellRows = [...soldHistory]
-    .sort((a, b) => new Date(b.sold_date || b.created_at) - new Date(a.sold_date || a.created_at))
+    .sort((a, b) => new Date(b.sold_at || b.created_at) - new Date(a.sold_at || a.created_at))
     .map((e) => {
-      const name = userNameMap.get(String(e.user_id)) || e.investor_name || "—";
+      const name = userNameMap.get(String(e.user_id)) || e.full_name || "—";
       return `<tr>
         <td>${escapeHtml(name)}</td>
         <td>${escapeHtml(String(e.symbol || "—"))}</td>
         <td>${escapeHtml(e.exchange || "NSE")}</td>
-        <td>${e.quantity_sold || e.quantity || "—"}</td>
-        <td>${currency(e.buy_price || e.avg_price)}</td>
+        <td>${e.quantity || "—"}</td>
+        <td>${currency(e.buy_price)}</td>
         <td>${currency(e.sell_price)}</td>
-        <td>${formatDate(e.sold_date || e.created_at)}</td>
+        <td>${formatDate(e.sold_at || e.created_at)}</td>
       </tr>`;
     }).join("") || `<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:20px;">No sold history found.</td></tr>`;
 
