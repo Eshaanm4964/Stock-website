@@ -3539,7 +3539,7 @@ async function refreshTableLivePrices() {
         if (unCell) { unCell.className = unrealized >= 0 ? "profit" : "loss"; unCell.innerHTML = `${currency(unrealized)}<br /><small>${percent(pct)}</small>`; }
         // Only overwrite Today's P&L when prevClose is valid — otherwise leave the API-rendered value intact
         if (tdCell && prevClose > 0) { tdCell.className = todayPnl >= 0 ? "profit" : "loss"; tdCell.textContent = currency(todayPnl); }
-        if (tpCell) { tpCell.className = totalPnl >= 0 ? "profit" : "loss"; tpCell.textContent = currency(totalPnl); }
+        if (tpCell) { const tpPct = investedValue > 0 ? (totalPnl / investedValue * 100) : 0; tpCell.className = totalPnl >= 0 ? "profit" : "loss"; tpCell.innerHTML = `${currency(totalPnl)}<br /><small>${percent(tpPct)}</small>`; }
       }
     } else {
       cell.textContent = "—";
@@ -4809,7 +4809,7 @@ function buildAdminClientDetail(user, soldHistory = [], focusSymbol = "") {
                         <td data-unrealized-cell class="${Number(holding.profit_loss || 0) >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change || 0)}</small></td>
                         <td data-today-cell class="${rowTodayProfit >= 0 ? "profit" : "loss"}">${currency(rowTodayProfit)}</td>
                         <td class="${realizedProfit >= 0 ? "profit" : "loss"}">${currency(realizedProfit)}</td>
-                        <td data-total-pnl-cell class="${totalProfit >= 0 ? "profit" : "loss"}">${currency(totalProfit)}</td>
+                        <td data-total-pnl-cell class="${totalProfit >= 0 ? "profit" : "loss"}">${currency(totalProfit)}<br /><small>${percent(investedValue > 0 ? (totalProfit / investedValue * 100) : 0)}</small></td>
                         <td class="action-cell-duo">
                           <button class="buy-action-btn" type="button" data-admin-buy-holding="${holding.holding_id}" data-user-id="${user.user_id}" data-symbol="${escapeHtml(holding.symbol)}" data-owner="${escapeHtml(user.full_name || '')}" data-exchange="${escapeHtml(holding.exchange || 'NSE')}" data-buy-price="${holding.buy_price}" data-current-price="${holding.current_price || ''}">Buy</button>
                           <button class="edit-action-btn" type="button" data-admin-edit-holding="${holding.holding_id}" data-symbol="${escapeHtml(holding.symbol)}" data-owner="${escapeHtml(user.full_name || '')}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}" data-created-at="${escapeHtml(holding.created_at || '')}">Edit</button>
@@ -5597,7 +5597,7 @@ async function renderAdminPortal(options = {}) {
                           <td data-unrealized-cell class="${holding.profit_loss >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
                           <td data-today-cell class="${Number(holding.today_profit) >= 0 ? "profit" : "loss"}">${currency(holding.today_profit)}</td>
                           <td class="${Number(realizedProfit) >= 0 ? "profit" : "loss"}">${currency(realizedProfit)}</td>
-                          <td data-total-pnl-cell class="${Number(totalProfit) >= 0 ? "profit" : "loss"}">${currency(totalProfit)}</td>
+                          <td data-total-pnl-cell class="${Number(totalProfit) >= 0 ? "profit" : "loss"}">${currency(totalProfit)}<br /><small>${percent(investedValue > 0 ? (totalProfit / investedValue * 100) : 0)}</small></td>
                           <td class="action-cell-duo">
                             <button class="buy-action-btn" type="button" data-admin-buy-holding="${holding.holding_id}" data-user-id="${holding.user_id}" data-symbol="${escapeHtml(String(holding.symbol || ''))}" data-owner="${escapeHtml(String(holding.owner || ''))}" data-exchange="${escapeHtml(holding.exchange || 'NSE')}" data-buy-price="${holding.buy_price}" data-current-price="${holding.current_price || ''}">Buy</button>
                             <button class="edit-action-btn" type="button" data-admin-edit-holding="${holding.holding_id}" data-symbol="${escapeHtml(String(holding.symbol || ''))}" data-owner="${escapeHtml(String(holding.owner || ''))}" data-quantity="${holding.quantity}" data-buy-price="${holding.buy_price}" data-created-at="${escapeHtml(holding.created_at || '')}">Edit</button>
@@ -6114,7 +6114,7 @@ async function renderUserPortal(options = {}) {
                         <td data-unrealized-cell class="${Number(holding.profit_loss) >= 0 ? "profit" : "loss"}">${currency(holding.profit_loss)}<br /><small>${percent(holding.percent_change)}</small></td>
                         <td data-today-cell class="${Number(holding.today_profit) >= 0 ? "profit" : "loss"}">${currency(holding.today_profit)}</td>
                         <td class="${Number(holding.realized_profit) >= 0 ? "profit" : "loss"}">${currency(holding.realized_profit)}</td>
-                        <td data-total-pnl-cell class="${Number(holding.total_profit) >= 0 ? "profit" : "loss"}">${currency(holding.total_profit)}</td>
+                        <td data-total-pnl-cell class="${Number(holding.total_profit) >= 0 ? "profit" : "loss"}">${currency(holding.total_profit)}<br /><small>${percent(investedValue > 0 ? (Number(holding.total_profit) / investedValue * 100) : 0)}</small></td>
                       </tr>`;
                     }).join("")
                   : `<tr><td colspan="11"><div class="dash-empty-state">${performance.length ? `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" stroke="#2c90f0" stroke-width="2" stroke-dasharray="6 4" opacity="0.4"/><path d="M20 38l8-8 6 6 10-12" stroke="#2c90f0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/></svg><strong>No results for filters</strong><span>Try clearing filters to see all holdings.</span>` : `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="20" width="40" height="28" rx="6" stroke="#2c90f0" stroke-width="2" opacity="0.35"/><path d="M20 32h24M20 38h16" stroke="#2c90f0" stroke-width="2" stroke-linecap="round" opacity="0.5"/><circle cx="44" cy="18" r="8" fill="#edf5ff" stroke="#2c90f0" stroke-width="2"/><path d="M44 15v3l2 2" stroke="#2c90f0" stroke-width="1.8" stroke-linecap="round"/></svg><strong>No holdings yet</strong><span>Once the admin adds your first stock, it will appear here.</span>`}</div></td></tr>`}
