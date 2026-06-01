@@ -4065,7 +4065,7 @@ async function renderAdminDatabasePage(options = {}) {
       safeUsers = Array.isArray(allData?.users) ? allData.users : [];
       userDashboards = Array.isArray(allData?.dashboards) ? allData.dashboards : [];
       safeSoldHistory = Array.isArray(soldHistoryData) ? soldHistoryData : [];
-      _adminCache = { safeUsers, safeSoldHistory, userDashboards, feedFlat: [] };
+      _adminCache = { safeUsers, safeSoldHistory, userDashboards, feedFlat: _adminCache?.feedFlat || [] };
       _saveAdminSession(_adminCache);
     }
     const adminUsers = await api("/admin/admins").catch(() => []);
@@ -5158,7 +5158,26 @@ async function renderAdminPortal(options = {}) {
       safeUsers = Array.isArray(allData?.users) ? allData.users : [];
       userDashboards = Array.isArray(allData?.dashboards) ? allData.dashboards : [];
       safeSoldHistory = Array.isArray(soldHistory) ? soldHistory : [];
-      feedFlat = [];
+
+      // Build exchange→symbols map from all holdings so we can fetch previous_close
+      const _tempHoldings = userDashboards.flatMap((u) => Array.isArray(u.holdings) ? u.holdings : []);
+      const _byEx = new Map();
+      _tempHoldings.forEach((h) => {
+        const ex = (h.exchange || "NSE").toUpperCase();
+        if (!_byEx.has(ex)) _byEx.set(ex, new Set());
+        _byEx.get(ex).add(String(h.symbol || "").toUpperCase());
+      });
+      feedFlat = _byEx.size
+        ? (await Promise.all(
+            [..._byEx.entries()].map(async ([ex, syms]) => {
+              const feed = await api(
+                `/stocks/feed?symbols=${encodeURIComponent([...syms].join(","))}&exchange=${encodeURIComponent(ex)}`
+              ).catch(() => []);
+              return Array.isArray(feed) ? feed : [];
+            })
+          )).flat()
+        : [];
+
       _adminCache = { safeUsers, safeSoldHistory, userDashboards, feedFlat };
       _saveAdminSession(_adminCache);
     }
@@ -5171,10 +5190,10 @@ async function renderAdminPortal(options = {}) {
         user_id: user.user_id
       }))
     );
-    const quoteMap = new Map(feedFlat.map((q) => [`${q.symbol}:${(q.exchange || "NSE").toUpperCase()}`, q]));
+    const quoteMap = new Map(feedFlat.map((q) => [`${String(q.symbol || "").toUpperCase()}:${(q.exchange || "NSE").toUpperCase()}`, q]));
     const allHoldings = baseHoldings.map((holding) => {
       const ex = (holding.exchange || "NSE").toUpperCase();
-      const quote = quoteMap.get(`${holding.symbol}:${ex}`);
+      const quote = quoteMap.get(`${String(holding.symbol || "").toUpperCase()}:${ex}`);
       const currentPrice = (quote?.price > 0) ? Number(quote.price) : Number(holding.current_price || holding.buy_price || 0);
       const prevClose = quote?.previous_close
         ? Number(quote.previous_close)
@@ -5256,14 +5275,19 @@ async function renderAdminPortal(options = {}) {
     const activeStockOptions = [...new Set(allHoldings.map((h) => String(h.symbol || "").toUpperCase()).filter(Boolean))].sort();
     adminSearchCache.users = safeUsers;
     adminSearchCache.stocks = availableStockOptions;
+    // Key by user_id only — realized P&L is the investor's total across all sold stocks
     const realizedMap = safeSoldHistory.reduce((map, entry) => {
-      const key = `${entry.user_id}::${String(entry.symbol || "").toUpperCase()}`;
+      const key = `${entry.user_id}`;
       map.set(key, (map.get(key) || 0) + Number(entry.profit_loss || 0));
       return map;
     }, new Map());
 
+    // Only count each investor's realized profit once (avoid double-counting across multiple holdings)
+    const seenUsers = new Set();
     const filteredPositionsRealizedProfit = filteredHoldings.reduce((sum, h) => {
-      return sum + (realizedMap.get(`${h.user_id}::${String(h.symbol || "").toUpperCase()}`) || 0);
+      if (seenUsers.has(h.user_id)) return sum;
+      seenUsers.add(h.user_id);
+      return sum + (realizedMap.get(`${h.user_id}`) || 0);
     }, 0);
     const filteredPositionsTotalProfit = filteredUnrealizedProfit + filteredPositionsRealizedProfit;
 
@@ -5441,7 +5465,7 @@ async function renderAdminPortal(options = {}) {
                         const investedValue = Number(holding.buy_price || 0) * Number(holding.quantity || 0);
                         const currentValue = Number(holding.current_price || 0) * Number(holding.quantity || 0);
                         const valueClass = currentValue >= investedValue ? "profit" : "loss";
-                        const realizedProfit = realizedMap.get(`${holding.user_id}::${String(holding.symbol || "").toUpperCase()}`) || 0;
+                        const realizedProfit = realizedMap.get(`${holding.user_id}`) || 0;
                         const totalProfit = Number(holding.profit_loss || 0) + Number(realizedProfit || 0);
                         return `
                         <tr data-price-row data-qty="${holding.quantity}" data-avg-price="${Number(holding.buy_price || 0)}" data-prev-close="${holding.prev_close || ''}" data-realized="${realizedProfit}">
