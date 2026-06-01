@@ -1859,20 +1859,30 @@ function showHistoryModal(allHoldings, soldHistory, safeUsers) {
   const userNameMap = new Map();
   safeUsers.forEach((u) => userNameMap.set(String(u.user_id), u.full_name || u.username || String(u.user_id)));
 
-  const buyRows = [...allHoldings]
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .map((h) => {
-      const name = userNameMap.get(String(h.user_id)) || h.owner || "—";
-      return `<tr>
-        <td>${escapeHtml(name)}</td>
-        <td>${escapeHtml(String(h.symbol || "—"))}</td>
-        <td>${escapeHtml(h.exchange || "NSE")}</td>
-        <td>${h.quantity}</td>
-        <td>${currency(h.buy_price)}</td>
-        <td>—</td>
-        <td>${formatDate(h.created_at)}</td>
-      </tr>`;
-    }).join("") || `<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:20px;">No purchases found.</td></tr>`;
+  // Combine current holdings + buy side of sold records for complete purchase history
+  const allPurchases = [
+    ...allHoldings.map((h) => ({
+      name: h.owner || userNameMap.get(String(h.user_id)) || "—",
+      symbol: h.symbol, exchange: h.exchange, quantity: h.quantity,
+      buy_price: h.buy_price, date: h.created_at, status: "Holding"
+    })),
+    ...soldHistory.map((e) => ({
+      name: e.full_name || userNameMap.get(String(e.user_id)) || "—",
+      symbol: e.symbol, exchange: e.exchange, quantity: e.quantity,
+      buy_price: e.buy_price, date: e.created_at, status: "Sold"
+    }))
+  ].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const statusColor = (s) => s === "Sold" ? "color:#ef4444;font-weight:600;" : "color:#10b981;font-weight:600;";
+  const buyRows = allPurchases.map((r) => `<tr>
+    <td>${escapeHtml(r.name)}</td>
+    <td>${escapeHtml(String(r.symbol || "—"))}</td>
+    <td>${escapeHtml(r.exchange || "NSE")}</td>
+    <td>${r.quantity}</td>
+    <td>${currency(r.buy_price)}</td>
+    <td>${formatDate(r.date)}</td>
+    <td style="${statusColor(r.status)}">${r.status}</td>
+  </tr>`).join("") || `<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:20px;">No purchases found.</td></tr>`;
 
   const sellRows = [...soldHistory]
     .sort((a, b) => new Date(b.sold_at || b.created_at) - new Date(a.sold_at || a.created_at))
@@ -1891,11 +1901,15 @@ function showHistoryModal(allHoldings, soldHistory, safeUsers) {
 
   const thStyle = `style="padding:10px 12px;font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;white-space:nowrap;"`;
   const tableStyle = `style="width:100%;border-collapse:collapse;font-size:0.82rem;"`;
-  const tdStyle = `style="padding:9px 12px;border-bottom:1px solid #f1f5f9;color:#1e293b;white-space:nowrap;"`;
 
-  const tableHead = `<thead><tr>
+  const buyTableHead = `<thead><tr>
     <th ${thStyle}>Investor</th><th ${thStyle}>Stock</th><th ${thStyle}>Exchange</th>
-    <th ${thStyle}>Qty</th><th ${thStyle}>Buy Price</th><th ${thStyle}>Sell Price</th><th ${thStyle}>Date</th>
+    <th ${thStyle}>Qty</th><th ${thStyle}>Buy Price</th><th ${thStyle}>Date</th><th ${thStyle}>Status</th>
+  </tr></thead>`;
+
+  const sellTableHead = `<thead><tr>
+    <th ${thStyle}>Investor</th><th ${thStyle}>Stock</th><th ${thStyle}>Exchange</th>
+    <th ${thStyle}>Qty</th><th ${thStyle}>Buy Price</th><th ${thStyle}>Sell Price</th><th ${thStyle}>Sold Date</th>
   </tr></thead>`;
 
   overlay.innerHTML = `
@@ -1906,15 +1920,15 @@ function showHistoryModal(allHoldings, soldHistory, safeUsers) {
         <p class="sell-modal-owner" style="color:rgba(255,255,255,0.55);font-size:0.8rem;margin:0;">All investor transactions — purchases and sales</p>
       </div>
       <div style="display:flex;border-bottom:2px solid #e2e8f0;background:#f8fafc;flex-shrink:0;">
-        <button id="histTabBuy" type="button" style="flex:1;padding:12px;font-size:0.82rem;font-weight:700;border:none;background:transparent;cursor:pointer;color:#2c90f0;border-bottom:2px solid #2c90f0;margin-bottom:-2px;">Purchase History (${allHoldings.length})</button>
+        <button id="histTabBuy" type="button" style="flex:1;padding:12px;font-size:0.82rem;font-weight:700;border:none;background:transparent;cursor:pointer;color:#2c90f0;border-bottom:2px solid #2c90f0;margin-bottom:-2px;">Purchase History (${allPurchases.length})</button>
         <button id="histTabSell" type="button" style="flex:1;padding:12px;font-size:0.82rem;font-weight:700;border:none;background:transparent;cursor:pointer;color:#64748b;border-bottom:2px solid transparent;margin-bottom:-2px;">Sell History (${soldHistory.length})</button>
       </div>
       <div style="overflow-y:auto;flex:1;padding:20px 24px;">
         <div id="histBuyPanel">
-          <div style="overflow-x:auto;"><table ${tableStyle}>${tableHead}<tbody>${buyRows}</tbody></table></div>
+          <div style="overflow-x:auto;"><table ${tableStyle}>${buyTableHead}<tbody>${buyRows}</tbody></table></div>
         </div>
         <div id="histSellPanel" style="display:none;">
-          <div style="overflow-x:auto;"><table ${tableStyle}>${tableHead}<tbody>${sellRows}</tbody></table></div>
+          <div style="overflow-x:auto;"><table ${tableStyle}>${sellTableHead}<tbody>${sellRows}</tbody></table></div>
         </div>
       </div>
       <div class="sell-modal-actions" style="padding:16px 24px 20px;flex-shrink:0;">
