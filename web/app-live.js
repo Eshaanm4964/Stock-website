@@ -6696,7 +6696,11 @@ function setupLogin() {
       await renderUserPortal({ silent: true }).catch(() => {});
       return;
     }
-  }, 3000);
+    if (activeRole === "admin" && isAdminDashboardPage()) {
+      await refreshTableLivePrices().catch(() => {});
+      return;
+    }
+  }, 10000);
 }
 
 function setupDashboardPages() {
