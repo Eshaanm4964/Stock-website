@@ -1852,6 +1852,100 @@ function setupWebsiteControlButtons() {
   }
 }
 
+function showHistoryModal(allHoldings, soldHistory, safeUsers) {
+  const overlay = document.createElement("div");
+  overlay.className = "sell-modal-overlay";
+
+  const userNameMap = new Map();
+  safeUsers.forEach((u) => userNameMap.set(String(u.user_id), u.full_name || u.username || String(u.user_id)));
+
+  const buyRows = [...allHoldings]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .map((h) => {
+      const name = userNameMap.get(String(h.user_id)) || h.owner || "—";
+      return `<tr>
+        <td>${escapeHtml(name)}</td>
+        <td>${escapeHtml(String(h.symbol || "—"))}</td>
+        <td>${escapeHtml(h.exchange || "NSE")}</td>
+        <td>${h.quantity}</td>
+        <td>${currency(h.buy_price)}</td>
+        <td>—</td>
+        <td>${formatDate(h.created_at)}</td>
+      </tr>`;
+    }).join("") || `<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:20px;">No purchases found.</td></tr>`;
+
+  const sellRows = [...soldHistory]
+    .sort((a, b) => new Date(b.sold_date || b.created_at) - new Date(a.sold_date || a.created_at))
+    .map((e) => {
+      const name = userNameMap.get(String(e.user_id)) || e.investor_name || "—";
+      return `<tr>
+        <td>${escapeHtml(name)}</td>
+        <td>${escapeHtml(String(e.symbol || "—"))}</td>
+        <td>${escapeHtml(e.exchange || "NSE")}</td>
+        <td>${e.quantity_sold || e.quantity || "—"}</td>
+        <td>${currency(e.buy_price || e.avg_price)}</td>
+        <td>${currency(e.sell_price)}</td>
+        <td>${formatDate(e.sold_date || e.created_at)}</td>
+      </tr>`;
+    }).join("") || `<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:20px;">No sold history found.</td></tr>`;
+
+  const thStyle = `style="padding:10px 12px;font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;white-space:nowrap;"`;
+  const tableStyle = `style="width:100%;border-collapse:collapse;font-size:0.82rem;"`;
+  const tdStyle = `style="padding:9px 12px;border-bottom:1px solid #f1f5f9;color:#1e293b;white-space:nowrap;"`;
+
+  const tableHead = `<thead><tr>
+    <th ${thStyle}>Investor</th><th ${thStyle}>Stock</th><th ${thStyle}>Exchange</th>
+    <th ${thStyle}>Qty</th><th ${thStyle}>Buy Price</th><th ${thStyle}>Sell Price</th><th ${thStyle}>Date</th>
+  </tr></thead>`;
+
+  overlay.innerHTML = `
+    <div class="sell-modal" role="dialog" aria-modal="true" style="max-width:860px;max-height:88vh;display:flex;flex-direction:column;">
+      <div class="sell-modal-header" style="background:linear-gradient(135deg,#0a1628 0%,#0f2040 60%,#112952 100%);border-radius:20px 20px 0 0;padding:22px 24px 18px;flex-shrink:0;">
+        <div class="sell-modal-badge" style="background:rgba(44,144,240,0.18);color:#7ec4f8;border:1px solid rgba(44,144,240,0.3);font-size:0.68rem;letter-spacing:0.12em;">TRANSACTION HISTORY</div>
+        <h3 class="sell-modal-title" style="color:#fff;margin:8px 0 4px;">Buy &amp; Sell History</h3>
+        <p class="sell-modal-owner" style="color:rgba(255,255,255,0.55);font-size:0.8rem;margin:0;">All investor transactions — purchases and sales</p>
+      </div>
+      <div style="display:flex;border-bottom:2px solid #e2e8f0;background:#f8fafc;flex-shrink:0;">
+        <button id="histTabBuy" type="button" style="flex:1;padding:12px;font-size:0.82rem;font-weight:700;border:none;background:transparent;cursor:pointer;color:#2c90f0;border-bottom:2px solid #2c90f0;margin-bottom:-2px;">Purchase History (${allHoldings.length})</button>
+        <button id="histTabSell" type="button" style="flex:1;padding:12px;font-size:0.82rem;font-weight:700;border:none;background:transparent;cursor:pointer;color:#64748b;border-bottom:2px solid transparent;margin-bottom:-2px;">Sell History (${soldHistory.length})</button>
+      </div>
+      <div style="overflow-y:auto;flex:1;padding:20px 24px;">
+        <div id="histBuyPanel">
+          <div style="overflow-x:auto;"><table ${tableStyle}>${tableHead}<tbody>${buyRows}</tbody></table></div>
+        </div>
+        <div id="histSellPanel" style="display:none;">
+          <div style="overflow-x:auto;"><table ${tableStyle}>${tableHead}<tbody>${sellRows}</tbody></table></div>
+        </div>
+      </div>
+      <div class="sell-modal-actions" style="padding:16px 24px 20px;flex-shrink:0;">
+        <button class="sell-modal-cancel" id="histClose" type="button">Close</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  document.body.style.overflow = "hidden";
+
+  overlay.querySelector("#histClose").addEventListener("click", () => { overlay.remove(); document.body.style.overflow = ""; });
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) { overlay.remove(); document.body.style.overflow = ""; } });
+
+  const tabBuy = overlay.querySelector("#histTabBuy");
+  const tabSell = overlay.querySelector("#histTabSell");
+  const panelBuy = overlay.querySelector("#histBuyPanel");
+  const panelSell = overlay.querySelector("#histSellPanel");
+
+  tabBuy.addEventListener("click", () => {
+    panelBuy.style.display = ""; panelSell.style.display = "none";
+    tabBuy.style.color = "#2c90f0"; tabBuy.style.borderBottomColor = "#2c90f0";
+    tabSell.style.color = "#64748b"; tabSell.style.borderBottomColor = "transparent";
+  });
+  tabSell.addEventListener("click", () => {
+    panelSell.style.display = ""; panelBuy.style.display = "none";
+    tabSell.style.color = "#2c90f0"; tabSell.style.borderBottomColor = "#2c90f0";
+    tabBuy.style.color = "#64748b"; tabBuy.style.borderBottomColor = "transparent";
+  });
+}
+
 function showXirrCalculatorModal(userDashboards) {
   const overlay = document.createElement("div");
   overlay.className = "sell-modal-overlay";
@@ -5341,6 +5435,7 @@ async function renderAdminPortal(options = {}) {
                 <p class="admin-dropdown-section-label">Quick Actions</p>
                 <div class="admin-quick-grid">
                   <button class="secondary-btn compact-btn admin-quick-action-btn" id="adminXirrCalcBtn" type="button">XIRR Calculator</button>
+                  <button class="secondary-btn compact-btn admin-quick-action-btn" id="adminHistoryBtn" type="button">History</button>
                   <a class="secondary-btn compact-btn admin-quick-action-btn" href="./admin-database.html">View Database</a>
                   <label class="admin-quick-action-btn admin-sort-label">
                     <span>Order By</span>
@@ -5600,6 +5695,7 @@ async function renderAdminPortal(options = {}) {
     setupKiteStatusChip();
     setupAdminDrilldowns(userDashboards, allHoldings, filteredSoldHistory);
     document.getElementById("adminXirrCalcBtn")?.addEventListener("click", () => showXirrCalculatorModal(userDashboards));
+    document.getElementById("adminHistoryBtn")?.addEventListener("click", () => showHistoryModal(allHoldings, filteredSoldHistory, safeUsers));
     setupScrollSync("adminPositionsTableWrap", "adminPositionsTableScroller");
     setupScrollSync("adminSoldHistoryWrap", "adminSoldHistoryScroller");
     if (adminUiState.openDetailUserId) {
